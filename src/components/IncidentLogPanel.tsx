@@ -1,0 +1,64 @@
+import { addLogEntryAction } from "@/app/actions/runs";
+
+type Entry = {
+  id: string;
+  dDayTime: string;
+  kind: string;
+  body: string;
+  author: string;
+  createdAt: string;
+};
+
+export default function IncidentLogPanel({
+  runId,
+  dDayHHMM,
+  entries,
+}: {
+  runId: string;
+  dDayHHMM: string;
+  entries: Entry[];
+}) {
+  return (
+    <div className="space-y-3">
+      <ul className="space-y-1 text-sm">
+        {entries.length === 0 && (
+          <li className="rounded border border-dashed border-slate-300 bg-white p-3 text-center text-slate-500">
+            No log entries yet.
+          </li>
+        )}
+        {entries.map((e) => (
+          <li key={e.id} className="rounded border border-slate-200 bg-white px-3 py-2">
+            <span className="font-mono text-xs text-slate-500">{e.dDayTime}</span>
+            <span className="mx-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs">{e.kind}</span>
+            <span className="text-slate-800">{e.body}</span>
+            <div className="text-xs text-slate-400">— {e.author}</div>
+          </li>
+        ))}
+      </ul>
+      <form action={addLogEntryAction} className="grid grid-cols-6 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm">
+        <input type="hidden" name="runId" value={runId} />
+        <input
+          name="dDayTime"
+          defaultValue={dDayHHMM}
+          required
+          pattern="[0-9]{2}:[0-9]{2}"
+          className="col-span-1 rounded border border-slate-300 px-2 py-1"
+        />
+        <select name="kind" required className="col-span-1 rounded border border-slate-300 px-2 py-1">
+          <option>DECISION</option>
+          <option>ACTION</option>
+          <option>CHALLENGE</option>
+          <option>RESOURCE</option>
+          <option>NOTE</option>
+        </select>
+        <input
+          name="body"
+          required
+          placeholder="What happened / decision made / action taken"
+          className="col-span-3 rounded border border-slate-300 px-2 py-1"
+        />
+        <button className="col-span-1 rounded-md bg-slate-900 px-2 py-1 text-white">Log</button>
+      </form>
+    </div>
+  );
+}

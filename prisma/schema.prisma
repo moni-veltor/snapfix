@@ -1,0 +1,405 @@
+// Operational Resilience Exercise Simulator — schema
+// Prisma 7 (driver-adapter ready for Neon serverless on Vercel)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth (NextAuth + role separation) ──────────────────────────────────────
+
+enum Role {
+  FACILITATOR
+  PARTICIPANT
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  role          Role      @default(PARTICIPANT)
+  emailVerified DateTime?
+  image         String?
+
+  accounts Account[]
+  sessions Session[]
+
+  participantProfile Participant?
+
+  createdScenarios   Scenario[]            @relation("ScenarioCreator")
+  facilitatedRuns    ExerciseRun[]         @relation("RunFacilitator")
+  incidentLogEntries IncidentLogEntry[]
+  responses          ParticipantResponse[]
+  comms              CommunicationDraft[]
+  debriefAnswers     DebriefAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Scenario design ────────────────────────────────────────────────────────
+
+model Scenario {
+  id          String   @id @default(cuid())
+  title       String
+  background  String
+  agenda      String?
+  dDayDate    DateTime
+  durationMin Int      @default(120)
+  createdById String?
+  createdBy   User?    @relation("ScenarioCreator", fields: [createdById], references: [id])
+
+  ibsList              ImportantBusinessService[]
+  events               Event[]
+  injects              Inject[]
+  facilitatorQuestions FacilitatorQuestion[]
+  debriefQuestions     DebriefQuestion[]
+  runs                 ExerciseRun[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ImportantBusinessService {
+  id                 String   @id @default(cuid())
+  scenarioId         String
+  scenario           Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  code               String
+  name               String
+  description        String?
+  impactToleranceMin Int
+  impactMetrics      String?
+  criticality        String
+
+  events   EventIBS[]
+  breaches ImpactBreach[]
+
+  @@unique([scenarioId, code])
+}
+
+model Event {
+  id              String   @id @default(cuid())
+  scenarioId      String
+  scenario        Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  eventNo         Int
+  scheduledTime   String
+  isScheduled     Boolean  @default(true)
+  title           String
+  description     String
+  expectedActions String[]
+  objectives      String[]
+
+  ibsLinks  EventIBS[]
+  injects   Inject[]
+  artefacts Artefact[]
+  releases  EventRelease[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([scenarioId, eventNo])
+}
+
+model EventIBS {
+  eventId String
+  ibsId   String
+  event   Event                    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ibs     ImportantBusinessService @relation(fields: [ibsId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, ibsId])
+}
+
+model Inject {
+  id            String   @id @default(cuid())
+  scenarioId    String
+  scenario      Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  eventId       String?
+  event         Event?   @relation(fields: [eventId], references: [id])
+  injectNo      Int
+  scheduledTime String
+  isScheduled   Boolean  @default(true)
+  summary       String
+  description   String
+  relation      String?
+  payload       Json?
+
+  artefacts Artefact[]
+  releases  InjectRelease[]
+  responses ParticipantResponse[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([scenarioId, injectNo])
+}
+
+model Artefact {
+  id          String   @id @default(cuid())
+  eventId     String?
+  injectId    String?
+  event       Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  inject      Inject?  @relation(fields: [injectId], references: [id], onDelete: Cascade)
+  kind        String
+  title       String
+  blobUrl     String
+  contentType String?
+  sizeBytes   Int?
+  createdAt   DateTime @default(now())
+}
+
+model FacilitatorQuestion {
+  id         String   @id @default(cuid())
+  scenarioId String
+  scenario   Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  category   String
+  text       String
+  orderIdx   Int      @default(0)
+}
+
+model DebriefQuestion {
+  id         String   @id @default(cuid())
+  scenarioId String
+  scenario   Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  category   String
+  text       String
+  orderIdx   Int      @default(0)
+
+  answers DebriefAnswer[]
+}
+
+// ─── Participants (the role being played in the exercise) ───────────────────
+
+model Participant {
+  id        String  @id @default(cuid())
+  userId    String? @unique
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  roleTitle String
+  team      String?
+
+  runMemberships ExerciseRunParticipant[]
+
+  createdAt DateTime @default(now())
+}
+
+// ─── Exercise execution (Run mode) ──────────────────────────────────────────
+
+enum RunStatus {
+  DRAFT
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  ABANDONED
+}
+
+model ExerciseRun {
+  id              String    @id @default(cuid())
+  scenarioId      String
+  scenario        Scenario  @relation(fields: [scenarioId], references: [id])
+  facilitatorId   String?
+  facilitator     User?     @relation("RunFacilitator", fields: [facilitatorId], references: [id])
+  title           String
+  status          RunStatus @default(DRAFT)
+  startedAt       DateTime?
+  pausedAt        DateTime?
+  completedAt     DateTime?
+  dDayAnchor      DateTime?
+  speedMultiplier Float     @default(1.0)
+
+  participants   ExerciseRunParticipant[]
+  eventReleases  EventRelease[]
+  injectReleases InjectRelease[]
+  incidentLog    IncidentLogEntry[]
+  responses      ParticipantResponse[]
+  comms          CommunicationDraft[]
+  recoveryPlans  RecoveryPlan[]
+  debriefAnswers DebriefAnswer[]
+  impactBreaches ImpactBreach[]
+  aar            AfterActionReport?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExerciseRunParticipant {
+  runId         String
+  participantId String
+  run           ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  joinedAt      DateTime    @default(now())
+
+  @@id([runId, participantId])
+}
+
+model EventRelease {
+  id          String      @id @default(cuid())
+  runId       String
+  run         ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  eventId     String
+  event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  releasedAt  DateTime    @default(now())
+  triggeredBy String?
+
+  @@unique([runId, eventId])
+}
+
+model InjectRelease {
+  id          String      @id @default(cuid())
+  runId       String
+  run         ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  injectId    String
+  inject      Inject      @relation(fields: [injectId], references: [id], onDelete: Cascade)
+  releasedAt  DateTime    @default(now())
+  triggeredBy String?
+
+  @@unique([runId, injectId])
+}
+
+model IncidentLogEntry {
+  id       String      @id @default(cuid())
+  runId    String
+  run      ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  authorId String?
+  author   User?       @relation(fields: [authorId], references: [id])
+  dDayTime String
+  kind     String
+  body     String
+
+  createdAt DateTime @default(now())
+}
+
+model ParticipantResponse {
+  id              String      @id @default(cuid())
+  runId           String
+  run             ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  injectId        String
+  inject          Inject      @relation(fields: [injectId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          User        @relation(fields: [authorId], references: [id])
+  assessment      String
+  proposedActions String
+  stakeholders    String?
+  resources       String?
+  commsNeeds      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum CommsAudience {
+  CUSTOMER
+  REGULATOR
+  INTERNAL
+  SENIOR_MGMT
+  MEDIA
+}
+
+enum CommsStatus {
+  DRAFT
+  SUBMITTED
+  SENT
+}
+
+model CommunicationDraft {
+  id       String        @id @default(cuid())
+  runId    String
+  run      ExerciseRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
+  authorId String?
+  author   User?         @relation(fields: [authorId], references: [id])
+  audience CommsAudience
+  subject  String
+  body     String
+  status   CommsStatus   @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RecoveryPlan {
+  id               String      @id @default(cuid())
+  runId            String
+  run              ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  priorityActions  String
+  resourceAlloc    String?
+  successCriteria  String?
+  timelineEstimate String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ImpactBreach {
+  id         String                   @id @default(cuid())
+  runId      String
+  run        ExerciseRun              @relation(fields: [runId], references: [id], onDelete: Cascade)
+  ibsId      String
+  ibs        ImportantBusinessService @relation(fields: [ibsId], references: [id], onDelete: Cascade)
+  detectedAt DateTime                 @default(now())
+  dDayTime   String
+  note       String?
+}
+
+model DebriefAnswer {
+  id         String          @id @default(cuid())
+  runId      String
+  run        ExerciseRun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+  questionId String
+  question   DebriefQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  authorId   String?
+  author     User?           @relation(fields: [authorId], references: [id])
+  body       String
+
+  createdAt DateTime @default(now())
+}
+
+model AfterActionReport {
+  id        String      @id @default(cuid())
+  runId     String      @unique
+  run       ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  summary   String
+  strengths String?
+  gaps      String?
+  actions   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
