@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { neonConfig, Pool } from "@neondatabase/serverless";
+import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "../src/generated/prisma/client";
 
@@ -10,8 +10,7 @@ if (typeof WebSocket !== "undefined") {
 async function main() {
   const connectionString = process.env.DATABASE_URL ?? process.env.DIRECT_URL;
   if (!connectionString) throw new Error("DATABASE_URL or DIRECT_URL must be set");
-  const pool = new Pool({ connectionString });
-  const adapter = new PrismaNeon(pool as never);
+  const adapter = new PrismaNeon({ connectionString });
   const prisma = new PrismaClient({ adapter });
 
   console.log("Seeding Simulation 2 — Operational Resilience…");
@@ -45,7 +44,7 @@ async function main() {
   });
   if (existing) {
     console.log("Scenario already seeded — skipping.");
-    await pool.end();
+    await prisma.$disconnect();
     return;
   }
 
@@ -334,7 +333,7 @@ async function main() {
   console.log("  Sign in as facilitator@example.com / password123 (FACILITATOR)");
   console.log("  Sign in as participant@example.com / password123 (PARTICIPANT)");
 
-  await pool.end();
+  await prisma.$disconnect();
 }
 
 main().catch((err) => {
