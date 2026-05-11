@@ -1,8 +1,8 @@
-import { requireRole } from "@/lib/auth";
+import { requireOrgRole } from "@/lib/auth";
 import { createScenarioAction } from "@/app/actions/scenarios";
 
 export default async function NewScenarioPage() {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">New scenario</h1>

@@ -11,21 +11,18 @@ export default function SignUpForm() {
 
   return (
     <form action={formAction} className="space-y-3">
-      <Field label="Name" name="name" required />
-      <Field label="Email" name="email" type="email" required />
+      <Field label="Your name" name="name" required />
+      <Field label="Work email" name="email" type="email" required />
       <Field label="Password" name="password" type="password" required minLength={8} />
-      <label className="block text-sm">
-        <span className="text-slate-700">Role</span>
-        <select
-          name="role"
-          required
-          className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
-          defaultValue="PARTICIPANT"
-        >
-          <option value="PARTICIPANT">Participant</option>
-          <option value="FACILITATOR">Facilitator</option>
-        </select>
-      </label>
+      <Field
+        label="Organisation name"
+        name="organizationName"
+        required
+        placeholder="e.g. Astro Bank"
+      />
+      <p className="text-xs text-slate-500">
+        You'll be the owner. Invite teammates after signing in.
+      </p>
       {state?.error && <p className="text-sm text-rose-700">{state.error}</p>}
       <button
         type="submit"

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireOrgUser } from "@/lib/auth";
 import { computeVisibility, loadRunWithScenario } from "@/lib/run-queries";
 import { createCommsDraftAction, upsertResponseAction } from "@/app/actions/runs";
 import DDayClockTicker from "@/components/DDayClockTicker";
@@ -11,9 +11,9 @@ export default async function ParticipantPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await requireUser();
+  const user = await requireOrgUser();
   const { id } = await params;
-  const run = await loadRunWithScenario(id);
+  const run = await loadRunWithScenario(id, user.orgId);
   if (!run) notFound();
   const { clock, events, injects } = computeVisibility(run);
 
@@ -30,7 +30,7 @@ export default async function ParticipantPage({
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{run.title}</h1>
           <p className="text-sm text-slate-500">
-            {run.scenario.title} · You: {user.name ?? user.email} ({user.role}) ·{" "}
+            {run.scenario.title} · You: {user.name ?? user.email} ({user.orgRole}) ·{" "}
             <Link href={`/runs/${run.id}/debrief`} className="underline">
               Debrief
             </Link>

@@ -1,17 +1,18 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function ScenariosPage() {
-  const user = await requireUser();
+  const user = await requireOrgUser();
   const scenarios = await prisma.scenario.findMany({
+    where: { orgId: user.orgId },
     orderBy: { createdAt: "desc" },
     include: {
       _count: { select: { events: true, injects: true, ibsList: true, runs: true } },
       createdBy: { select: { name: true, email: true } },
     },
   });
-  const isFacilitator = user.role === "FACILITATOR" || user.role === "ADMIN";
+  const isFacilitator = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

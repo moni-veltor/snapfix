@@ -5,16 +5,21 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { slugify } from "@/lib/slug";
 
 const SignUpSchema = z.object({
   name: z.string().min(1).max(100),
   email: z.email().transform((v) => v.toLowerCase()),
   password: z.string().min(8).max(200),
-  role: z.enum(["FACILITATOR", "PARTICIPANT"]),
+  organizationName: z.string().min(1).max(120),
 });
 
 export type AuthFormState = { error?: string } | undefined;
 
+/**
+ * First-user sign-up. Creates the Organization and the user as OWNER.
+ * (Invitees go through /accept-invitation/[token] instead.)
+ */
 export async function signUpAction(
   _prev: AuthFormState,
   formData: FormData,
@@ -23,20 +28,40 @@ export async function signUpAction(
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
-    role: formData.get("role"),
+    organizationName: formData.get("organizationName"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
-  const { name, email, password, role } = parsed.data;
+  const { name, email, password, organizationName } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "An account with that email already exists." };
 
   const passwordHash = await bcrypt.hash(password, 10);
-  await prisma.user.create({
-    data: { name, email, passwordHash, role },
+
+  await prisma.$transaction(async (tx) => {
+    const baseSlug = slugify(organizationName) || "org";
+    let slug = baseSlug;
+    let suffix = 1;
+    while (await tx.organization.findUnique({ where: { slug } })) {
+      suffix += 1;
+      slug = `${baseSlug}-${suffix}`;
+    }
+    const org = await tx.organization.create({
+      data: { name: organizationName, slug },
+    });
+    await tx.user.create({
+      data: {
+        name,
+        email,
+        passwordHash,
+        orgId: org.id,
+        orgRole: "OWNER",
+      },
+    });
   });
+
   redirect("/sign-in?registered=1");
 }
 

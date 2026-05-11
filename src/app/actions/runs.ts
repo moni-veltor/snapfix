@@ -4,20 +4,20 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireUser, requireRole } from "@/lib/auth";
+import { requireUser, requireOrgRole } from "@/lib/auth";
 
 export async function createRunAction(formData: FormData) {
-  const user = await requireRole("FACILITATOR", "ADMIN");
+  const user = await requireOrgRole("OWNER", "ADMIN");
   const scenarioId = String(formData.get("scenarioId"));
   const title = String(formData.get("title") || `Exercise run ${new Date().toISOString().slice(0, 16)}`);
   const run = await prisma.exerciseRun.create({
-    data: { scenarioId, title, facilitatorId: user.id },
+    data: { scenarioId, title, orgId: user.orgId, facilitatorId: user.id },
   });
   redirect(`/runs/${run.id}/facilitator`);
 }
 
 export async function startRunAction(formData: FormData) {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   const id = String(formData.get("id"));
   const speed = Number(formData.get("speed") || "1") || 1;
   const now = new Date();
@@ -35,7 +35,7 @@ export async function startRunAction(formData: FormData) {
 }
 
 export async function pauseRunAction(formData: FormData) {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   const id = String(formData.get("id"));
   await prisma.exerciseRun.update({
     where: { id },
@@ -45,7 +45,7 @@ export async function pauseRunAction(formData: FormData) {
 }
 
 export async function completeRunAction(formData: FormData) {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   const id = String(formData.get("id"));
   await prisma.exerciseRun.update({
     where: { id },
@@ -55,7 +55,7 @@ export async function completeRunAction(formData: FormData) {
 }
 
 export async function releaseEventAction(formData: FormData) {
-  const user = await requireRole("FACILITATOR", "ADMIN");
+  const user = await requireOrgRole("OWNER", "ADMIN");
   const runId = String(formData.get("runId"));
   const eventId = String(formData.get("eventId"));
   await prisma.eventRelease.upsert({
@@ -68,7 +68,7 @@ export async function releaseEventAction(formData: FormData) {
 }
 
 export async function releaseInjectAction(formData: FormData) {
-  const user = await requireRole("FACILITATOR", "ADMIN");
+  const user = await requireOrgRole("OWNER", "ADMIN");
   const runId = String(formData.get("runId"));
   const injectId = String(formData.get("injectId"));
   await prisma.injectRelease.upsert({
@@ -172,7 +172,7 @@ const AarInput = z.object({
 });
 
 export async function upsertAARAction(formData: FormData) {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   const data = AarInput.parse(Object.fromEntries(formData));
   await prisma.afterActionReport.upsert({
     where: { runId: data.runId },

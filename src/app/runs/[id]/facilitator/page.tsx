@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireOrgRole } from "@/lib/auth";
 import { computeVisibility, loadRunWithScenario } from "@/lib/run-queries";
 import {
   completeRunAction,
@@ -17,9 +17,9 @@ export default async function FacilitatorPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireRole("FACILITATOR", "ADMIN");
+  const user = await requireOrgRole("OWNER", "ADMIN");
   const { id } = await params;
-  const run = await loadRunWithScenario(id);
+  const run = await loadRunWithScenario(id, user.orgId);
   if (!run) notFound();
   const { clock, events, injects } = computeVisibility(run);
 

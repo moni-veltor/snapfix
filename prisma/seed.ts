@@ -1,3 +1,4 @@
+import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
@@ -13,34 +14,54 @@ async function main() {
   const adapter = new PrismaNeon({ connectionString });
   const prisma = new PrismaClient({ adapter });
 
-  console.log("Seeding Simulation 2 — Operational Resilience…");
+  console.log("Seeding Astro Bank organisation + Simulation 2…");
 
-  // ─── Users ────────────────────────────────────────────────────────────────
-  const passwordHash = await bcrypt.hash("password123", 10);
-  const facilitator = await prisma.user.upsert({
-    where: { email: "facilitator@example.com" },
-    create: {
-      email: "facilitator@example.com",
-      name: "Demo Facilitator",
-      passwordHash,
-      role: "FACILITATOR",
-    },
+  // ─── Organisation ─────────────────────────────────────────────────────────
+  const org = await prisma.organization.upsert({
+    where: { slug: "astro-bank" },
+    create: { name: "Astro Bank", slug: "astro-bank" },
     update: {},
   });
-  await prisma.user.upsert({
-    where: { email: "participant@example.com" },
+
+  // ─── Users (all members of Astro Bank) ────────────────────────────────────
+  const passwordHash = await bcrypt.hash("password123", 10);
+  const owner = await prisma.user.upsert({
+    where: { email: "admin@astrobank.com" },
     create: {
-      email: "participant@example.com",
+      email: "admin@astrobank.com",
+      name: "Astro Bank Admin",
+      passwordHash,
+      orgId: org.id,
+      orgRole: "OWNER",
+    },
+    update: { orgId: org.id, orgRole: "OWNER" },
+  });
+  await prisma.user.upsert({
+    where: { email: "cto@astrobank.com" },
+    create: {
+      email: "cto@astrobank.com",
+      name: "Casey Tan (CTO)",
+      passwordHash,
+      orgId: org.id,
+      orgRole: "ADMIN",
+    },
+    update: { orgId: org.id, orgRole: "ADMIN" },
+  });
+  await prisma.user.upsert({
+    where: { email: "participant@astrobank.com" },
+    create: {
+      email: "participant@astrobank.com",
       name: "Demo Participant",
       passwordHash,
-      role: "PARTICIPANT",
+      orgId: org.id,
+      orgRole: "MEMBER",
     },
-    update: {},
+    update: { orgId: org.id, orgRole: "MEMBER" },
   });
 
   // ─── Scenario ─────────────────────────────────────────────────────────────
   const existing = await prisma.scenario.findFirst({
-    where: { title: "Simulation 2 — Operational Resilience" },
+    where: { orgId: org.id, title: "Simulation 2 — Operational Resilience" },
   });
   if (existing) {
     console.log("Scenario already seeded — skipping.");
@@ -50,14 +71,15 @@ async function main() {
 
   const scenario = await prisma.scenario.create({
     data: {
+      orgId: org.id,
       title: "Simulation 2 — Operational Resilience",
       background:
-        "Afin Bank is conducting a functional simulation exercise to test the resilience of its important business services, ensuring the effectiveness of its Operational Resilience Policy and Recovery Plans. This exercise will assess the bank's ability to respond to and recover from a simulated disruption affecting mission-critical systems, including its mobile banking platform, savings, and lending services.",
+        "Astro Bank is conducting a functional simulation exercise to test the resilience of its important business services, ensuring the effectiveness of its Operational Resilience Policy and Recovery Plans. This exercise will assess the bank's ability to respond to and recover from a simulated disruption affecting mission-critical systems, including its mobile banking platform, savings, and lending services.",
       agenda:
         "11:00–11:05 Welcome and Introduction\n11:05–11:10 Exercise briefing (objectives, rules of engagement)\n11:10–12:45 Scenario discussion and resolution (hands-on)\n12:45–13:00 Debrief and Hot wash",
       dDayDate: new Date("2025-02-12T08:00:00Z"),
       durationMin: 120,
-      createdById: facilitator.id,
+      createdById: owner.id,
     },
   });
 
@@ -291,7 +313,7 @@ async function main() {
     { category: "Communication & Crisis Management", text: "How does the bank manage public perception and customer trust during an extended outage?" },
     { category: "IT System Recovery & Resilience", text: "Can recovery procedures be executed within the established Recovery Time Objectives (RTOs) and Recovery Point Objectives (RPOs)?" },
     { category: "Extended Outages & Escalation Scenarios", text: "If the outage lasts longer than 24 hours, what emergency measures are enacted to maintain business continuity?" },
-    { category: "Financial Resilience & Capital Management", text: "How does Afin Bank manage liquidity risks when customers withdraw funds during service disruptions?" },
+    { category: "Financial Resilience & Capital Management", text: "How does Astro Bank manage liquidity risks when customers withdraw funds during service disruptions?" },
     { category: "Lessons Learned & Future Improvements", text: "What additional resources, technology, or processes are needed to enhance recovery capabilities?" },
   ];
   await prisma.facilitatorQuestion.createMany({
@@ -301,8 +323,8 @@ async function main() {
   // ─── Debrief question bank ────────────────────────────────────────────────
   const debriefQs: { category: string; text: string }[] = [
     { category: "General Feedback", text: "Were there any key issues or concerns that were not discussed during the exercise?" },
-    { category: "General Feedback", text: "Did the scenario feel realistic and relevant to Afin Bank's operations?" },
-    { category: "Effectiveness of the Plan", text: "What worked well in Afin Bank's response to the simulated incident?" },
+    { category: "General Feedback", text: "Did the scenario feel realistic and relevant to Astro Bank's operations?" },
+    { category: "Effectiveness of the Plan", text: "What worked well in Astro Bank's response to the simulated incident?" },
     { category: "Effectiveness of the Plan", text: "Which aspects of the resilience and recovery plan require further development?" },
     { category: "IT & Business Service Recovery", text: "Did system recovery align with Recovery Time Objectives (RTOs) and Recovery Point Objectives (RPOs)?" },
     { category: "IT & Business Service Recovery", text: "Were any unforeseen dependencies, vulnerabilities, or bottlenecks identified?" },
@@ -330,8 +352,8 @@ async function main() {
   });
 
   console.log("✓ Seed complete.");
-  console.log("  Sign in as facilitator@example.com / password123 (FACILITATOR)");
-  console.log("  Sign in as participant@example.com / password123 (PARTICIPANT)");
+  console.log("  Sign in as admin@astrobank.com / password123 (OWNER of Astro Bank)");
+  console.log("  Sign in as participant@astrobank.com / password123 (MEMBER)");
 
   await prisma.$disconnect();
 }

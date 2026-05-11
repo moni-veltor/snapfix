@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireOrgUser } from "@/lib/auth";
 
 export default async function RunRouter({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await requireUser();
+  const user = await requireOrgUser();
   const { id } = await params;
-  if (user.role === "FACILITATOR" || user.role === "ADMIN") {
+  if (user.orgRole === "OWNER" || user.orgRole === "ADMIN") {
     redirect(`/runs/${id}/facilitator`);
   }
   redirect(`/runs/${id}/participant`);

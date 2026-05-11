@@ -10,22 +10,58 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── Auth (NextAuth + role separation) ──────────────────────────────────────
+// ─── Tenant: Organization + Membership (1 user → 1 org) ────────────────────
 
-enum Role {
-  FACILITATOR
-  PARTICIPANT
+enum OrgRole {
+  OWNER
   ADMIN
+  MEMBER
 }
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  invitations Invitation[]
+  scenarios   Scenario[]
+  runs        ExerciseRun[]
+}
+
+model Invitation {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  email       String
+  role        OrgRole      @default(MEMBER)
+  token       String       @unique
+  invitedById String?
+  invitedBy   User?        @relation("InvitationInvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@unique([orgId, email])
+}
+
+// ─── Auth (NextAuth) ────────────────────────────────────────────────────────
 
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
   name          String?
   passwordHash  String?
-  role          Role      @default(PARTICIPANT)
   emailVerified DateTime?
   image         String?
+
+  // Tenant membership (one user → one org)
+  orgId   String?
+  org     Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
+  orgRole OrgRole?
 
   accounts Account[]
   sessions Session[]
@@ -38,6 +74,7 @@ model User {
   responses          ParticipantResponse[]
   comms              CommunicationDraft[]
   debriefAnswers     DebriefAnswer[]
+  invitationsSent    Invitation[]          @relation("InvitationInvitedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -81,14 +118,16 @@ model VerificationToken {
 // ─── Scenario design ────────────────────────────────────────────────────────
 
 model Scenario {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   title       String
   background  String
   agenda      String?
   dDayDate    DateTime
-  durationMin Int      @default(120)
+  durationMin Int          @default(120)
   createdById String?
-  createdBy   User?    @relation("ScenarioCreator", fields: [createdById], references: [id])
+  createdBy   User?        @relation("ScenarioCreator", fields: [createdById], references: [id])
 
   ibsList              ImportantBusinessService[]
   events               Event[]
@@ -232,18 +271,20 @@ enum RunStatus {
 }
 
 model ExerciseRun {
-  id              String    @id @default(cuid())
+  id              String       @id @default(cuid())
+  orgId           String
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   scenarioId      String
-  scenario        Scenario  @relation(fields: [scenarioId], references: [id])
+  scenario        Scenario     @relation(fields: [scenarioId], references: [id])
   facilitatorId   String?
-  facilitator     User?     @relation("RunFacilitator", fields: [facilitatorId], references: [id])
+  facilitator     User?        @relation("RunFacilitator", fields: [facilitatorId], references: [id])
   title           String
-  status          RunStatus @default(DRAFT)
+  status          RunStatus    @default(DRAFT)
   startedAt       DateTime?
   pausedAt        DateTime?
   completedAt     DateTime?
   dDayAnchor      DateTime?
-  speedMultiplier Float     @default(1.0)
+  speedMultiplier Float        @default(1.0)
 
   participants   ExerciseRunParticipant[]
   eventReleases  EventRelease[]

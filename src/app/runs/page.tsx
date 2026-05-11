@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function RunsPage() {
-  await requireUser();
+  const user = await requireOrgUser();
   const runs = await prisma.exerciseRun.findMany({
+    where: { orgId: user.orgId },
     orderBy: { createdAt: "desc" },
     include: {
       scenario: { select: { title: true } },

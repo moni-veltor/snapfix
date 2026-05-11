@@ -2,9 +2,9 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { currentDDay, isDue } from "@/lib/dday";
 
-export async function loadRunWithScenario(id: string) {
-  return prisma.exerciseRun.findUnique({
-    where: { id },
+export async function loadRunWithScenario(id: string, orgId: string) {
+  return prisma.exerciseRun.findFirst({
+    where: { id, orgId },
     include: {
       scenario: {
         include: {

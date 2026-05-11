@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   addEventAction,
@@ -17,10 +17,10 @@ export default async function ScenarioDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await requireUser();
+  const user = await requireOrgUser();
   const { id } = await params;
-  const scenario = await prisma.scenario.findUnique({
-    where: { id },
+  const scenario = await prisma.scenario.findFirst({
+    where: { id, orgId: user.orgId },
     include: {
       ibsList: { orderBy: { code: "asc" } },
       events: { orderBy: { eventNo: "asc" } },
@@ -29,7 +29,7 @@ export default async function ScenarioDetailPage({
     },
   });
   if (!scenario) notFound();
-  const canEdit = user.role === "FACILITATOR" || user.role === "ADMIN";
+  const canEdit = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
 
   return (
     <div className="space-y-8">

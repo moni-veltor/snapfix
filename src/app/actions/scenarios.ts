@@ -4,7 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth";
+import { requireOrgRole } from "@/lib/auth";
 
 const ScenarioInput = z.object({
   title: z.string().min(1).max(200),
@@ -15,7 +15,7 @@ const ScenarioInput = z.object({
 });
 
 export async function createScenarioAction(formData: FormData) {
-  const user = await requireRole("FACILITATOR", "ADMIN");
+  const user = await requireOrgRole("OWNER", "ADMIN");
   const parsed = ScenarioInput.parse({
     title: formData.get("title"),
     background: formData.get("background"),
@@ -27,6 +27,7 @@ export async function createScenarioAction(formData: FormData) {
     data: {
       ...parsed,
       dDayDate: new Date(parsed.dDayDate),
+      orgId: user.orgId,
       createdById: user.id,
     },
   });
@@ -44,14 +45,14 @@ const IBSInput = z.object({
 });
 
 export async function addIBSAction(formData: FormData) {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   const data = IBSInput.parse(Object.fromEntries(formData));
   await prisma.importantBusinessService.create({ data });
   revalidatePath(`/scenarios/${data.scenarioId}`);
 }
 
 export async function deleteIBSAction(formData: FormData) {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   const id = String(formData.get("id"));
   const scenarioId = String(formData.get("scenarioId"));
   await prisma.importantBusinessService.delete({ where: { id } });
@@ -70,7 +71,7 @@ const EventInput = z.object({
 });
 
 export async function addEventAction(formData: FormData) {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   const raw = EventInput.parse(Object.fromEntries(formData));
   const splitLines = (s?: string) =>
     (s ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
@@ -90,7 +91,7 @@ export async function addEventAction(formData: FormData) {
 }
 
 export async function deleteEventAction(formData: FormData) {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   const id = String(formData.get("id"));
   const scenarioId = String(formData.get("scenarioId"));
   await prisma.event.delete({ where: { id } });
@@ -109,7 +110,7 @@ const InjectInput = z.object({
 });
 
 export async function addInjectAction(formData: FormData) {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   const data = InjectInput.parse(Object.fromEntries(formData));
   await prisma.inject.create({
     data: { ...data, eventId: data.eventId || null },
@@ -118,7 +119,7 @@ export async function addInjectAction(formData: FormData) {
 }
 
 export async function deleteInjectAction(formData: FormData) {
-  await requireRole("FACILITATOR", "ADMIN");
+  await requireOrgRole("OWNER", "ADMIN");
   const id = String(formData.get("id"));
   const scenarioId = String(formData.get("scenarioId"));
   await prisma.inject.delete({ where: { id } });

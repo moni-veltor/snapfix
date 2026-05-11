@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireOrgUser } from "@/lib/auth";
 import { loadRunWithScenario } from "@/lib/run-queries";
 import { answerDebriefAction, upsertAARAction } from "@/app/actions/runs";
 
@@ -9,11 +9,11 @@ export default async function DebriefPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await requireUser();
+  const user = await requireOrgUser();
   const { id } = await params;
-  const run = await loadRunWithScenario(id);
+  const run = await loadRunWithScenario(id, user.orgId);
   if (!run) notFound();
-  const isFacilitator = user.role === "FACILITATOR" || user.role === "ADMIN";
+  const isFacilitator = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
   const answersByQuestion = new Map<string, typeof run.debriefAnswers>();
   for (const a of run.debriefAnswers) {
     const list = answersByQuestion.get(a.questionId) ?? [];

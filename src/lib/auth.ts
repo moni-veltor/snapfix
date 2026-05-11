@@ -7,7 +7,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import type { Role } from "@/generated/prisma/client";
+import type { OrgRole } from "@/generated/prisma/client";
 
 declare module "next-auth" {
   interface Session {
@@ -15,18 +15,21 @@ declare module "next-auth" {
       id: string;
       email: string;
       name?: string | null;
-      role: Role;
+      orgId: string | null;
+      orgRole: OrgRole | null;
     };
   }
   interface User {
-    role: Role;
+    orgId: string | null;
+    orgRole: OrgRole | null;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     uid: string;
-    role: Role;
+    orgId: string | null;
+    orgRole: OrgRole | null;
   }
 }
 
@@ -53,23 +56,36 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name ?? null,
-          role: user.role,
+          orgId: user.orgId,
+          orgRole: user.orgRole,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.uid = user.id;
-        token.role = (user as { role: Role }).role;
+        token.orgId = (user as { orgId: string | null }).orgId;
+        token.orgRole = (user as { orgRole: OrgRole | null }).orgRole;
+      } else if (trigger === "update" && token.uid) {
+        // Refresh org info from DB (e.g. after accepting an invitation)
+        const fresh = await prisma.user.findUnique({
+          where: { id: token.uid as string },
+          select: { orgId: true, orgRole: true },
+        });
+        if (fresh) {
+          token.orgId = fresh.orgId;
+          token.orgRole = fresh.orgRole;
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.uid;
-        session.user.role = token.role;
+        session.user.orgId = token.orgId;
+        session.user.orgRole = token.orgRole;
       }
       return session;
     },
@@ -84,8 +100,14 @@ export async function requireUser() {
   return session.user;
 }
 
-export async function requireRole(...allowed: Role[]) {
+export async function requireOrgUser() {
   const user = await requireUser();
-  if (!allowed.includes(user.role)) redirect("/");
+  if (!user.orgId) redirect("/onboarding");
+  return user as typeof user & { orgId: string; orgRole: OrgRole };
+}
+
+export async function requireOrgRole(...allowed: OrgRole[]) {
+  const user = await requireOrgUser();
+  if (!user.orgRole || !allowed.includes(user.orgRole)) redirect("/");
   return user;
 }
