@@ -1,8 +1,14 @@
-// SnapFix brand mark — a bold geometric "S".
+// SnapFix brand mark — Variant E: filled S with snap-notch.
 //
-// Built from three horizontals + two short verticals (alternating ends),
-// sharp 90° corner joins, rounded open caps. Bold, architectural — visually
-// distinct from the flowing single-stroke S of Stripe/Starling.
+// A solid filled "S" letterform with a diagonal notch cut from the
+// upper-right corner — the "snap" that gives the mark a distinctive
+// silhouette. Indigo gradient. No tile.
+//
+// Variants:
+//   <Logo />          mark only
+//   <Wordmark />      mark + "SnapFix" wordmark
+//   tone="light"      light foreground for dark backgrounds (marketing)
+//   tone="brand"      brand foreground for light backgrounds (app)
 
 let counter = 0;
 function nextId() {
@@ -48,18 +54,11 @@ export function Logo({
           )}
         </linearGradient>
       </defs>
-      {/* Architectural S:
-            top horizontal → right vertical down → middle horizontal back left
-            → left vertical down → bottom horizontal right.
-            Sharp miter corners; rounded open caps. */}
+      {/* Filled "S" with a diagonal notch cut from the upper-right corner */}
       <path
-        d="M 4 4 H 20 V 16 H 4 V 28 H 20"
-        stroke={`url(#${id})`}
-        strokeWidth="4.5"
-        strokeLinecap="round"
-        strokeLinejoin="miter"
-        strokeMiterlimit="8"
-        fill="none"
+        d="M 3 3 H 17 L 21 7 V 9 H 9 V 13 H 21 V 23 H 3 V 17 H 15 V 13 H 3 Z M 3 23 H 21 V 29 H 3 Z"
+        fill={`url(#${id})`}
+        fillRule="evenodd"
       />
     </svg>
   );
