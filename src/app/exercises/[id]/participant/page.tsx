@@ -31,6 +31,10 @@ export default async function ParticipantPage({
           <h1 className="text-2xl font-semibold tracking-tight">{exercise.title}</h1>
           <p className="text-sm text-slate-500">
             {exercise.scenario.title} · You: {user.name ?? user.email} ({user.orgRole}) ·{" "}
+            <Link href={`/exercises/${exercise.id}/inbox`} className="underline">
+              Inbox
+            </Link>
+            {" · "}
             <Link href={`/exercises/${exercise.id}/debrief`} className="underline">
               Debrief
             </Link>

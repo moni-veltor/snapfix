@@ -109,6 +109,11 @@ export default async function ScenarioDetailPage({
                     Event #{e.eventNo} · {e.scheduledTime} — {e.title}
                   </div>
                   <p className="mt-1 whitespace-pre-wrap text-slate-700">{e.description}</p>
+                  <AddressingBlock
+                    from={e.senderRoleTitle}
+                    to={e.toRoleTitles}
+                    cc={e.ccRoleTitles}
+                  />
                   {e.expectedActions.length > 0 && (
                     <details className="mt-2">
                       <summary className="cursor-pointer text-xs text-slate-500">Expected actions</summary>
@@ -136,6 +141,9 @@ export default async function ScenarioDetailPage({
             <input name="scheduledTime" required pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM (D-Day)" className="rounded border border-slate-300 px-2 py-1" />
             <input name="title" required placeholder="Title" className="col-span-2 rounded border border-slate-300 px-2 py-1" />
             <textarea name="description" required placeholder="Description" className="col-span-2 rounded border border-slate-300 px-2 py-1" rows={3} />
+            <input name="senderRoleTitle" placeholder='From (role title — e.g. "CTO")' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
+            <input name="toRoleTitles" placeholder='To (comma-separated role titles — e.g. "Sn.TPM, TPM, ISM")' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
+            <input name="ccRoleTitles" placeholder='Cc (comma-separated role titles — e.g. "CEO, CRO")' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
             <textarea name="expectedActions" placeholder="Expected actions (one per line)" className="rounded border border-slate-300 px-2 py-1" rows={3} />
             <textarea name="objectives" placeholder="Objectives (one per line)" className="rounded border border-slate-300 px-2 py-1" rows={3} />
             <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700">Add event</button>
@@ -153,6 +161,11 @@ export default async function ScenarioDetailPage({
                     Inject #{j.injectNo} · {j.scheduledTime} — {j.summary}
                   </div>
                   <p className="mt-1 whitespace-pre-wrap text-slate-700">{j.description}</p>
+                  <AddressingBlock
+                    from={j.senderRoleTitle}
+                    to={j.toRoleTitles}
+                    cc={j.ccRoleTitles}
+                  />
                   {j.relation && (
                     <p className="mt-2 text-xs text-slate-500"><span className="font-semibold">Relation:</span> {j.relation}</p>
                   )}
@@ -175,6 +188,9 @@ export default async function ScenarioDetailPage({
             <input name="scheduledTime" required pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" className="rounded border border-slate-300 px-2 py-1" />
             <input name="summary" required placeholder="Summary" className="col-span-2 rounded border border-slate-300 px-2 py-1" />
             <textarea name="description" required placeholder="Description" className="col-span-2 rounded border border-slate-300 px-2 py-1" rows={3} />
+            <input name="senderRoleTitle" placeholder='From (role title)' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
+            <input name="toRoleTitles" placeholder='To (comma-separated role titles)' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
+            <input name="ccRoleTitles" placeholder='Cc (comma-separated role titles)' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
             <textarea name="relation" placeholder="How this relates to the scenario" className="col-span-2 rounded border border-slate-300 px-2 py-1" rows={2} />
             <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700">Add inject</button>
           </form>
@@ -205,5 +221,36 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="text-lg font-semibold">{title}</h2>
       {children}
     </section>
+  );
+}
+
+function AddressingBlock({
+  from,
+  to,
+  cc,
+}: {
+  from: string | null;
+  to: string[];
+  cc: string[];
+}) {
+  if (!from && to.length === 0 && cc.length === 0) return null;
+  return (
+    <div className="mt-2 space-y-0.5 text-xs text-slate-600">
+      {from && (
+        <div>
+          <span className="font-semibold text-slate-500">From:</span> {from}
+        </div>
+      )}
+      {to.length > 0 && (
+        <div>
+          <span className="font-semibold text-slate-500">To:</span> {to.join(", ")}
+        </div>
+      )}
+      {cc.length > 0 && (
+        <div>
+          <span className="font-semibold text-slate-500">Cc:</span> {cc.join(", ")}
+        </div>
+      )}
+    </div>
   );
 }

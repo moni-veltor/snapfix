@@ -30,6 +30,10 @@ export default async function FacilitatorPage({
           <h1 className="text-2xl font-semibold tracking-tight">{exercise.title}</h1>
           <p className="text-sm text-slate-500">
             {exercise.scenario.title} ·{" "}
+            <Link href={`/exercises/${exercise.id}/team`} className="underline">
+              Team
+            </Link>
+            {" · "}
             <Link href={`/exercises/${exercise.id}/debrief`} className="underline">
               Debrief
             </Link>

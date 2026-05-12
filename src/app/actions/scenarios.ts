@@ -68,7 +68,24 @@ const EventInput = z.object({
   description: z.string().min(1),
   expectedActions: z.string().optional(),
   objectives: z.string().optional(),
+  senderRoleTitle: z.string().optional(),
+  toRoleTitles: z.string().optional(),
+  ccRoleTitles: z.string().optional(),
 });
+
+/** Comma- or newline-separated → trimmed, deduped string list. */
+function splitRoles(raw?: string): string[] {
+  if (!raw) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of raw.split(/[,\n]/).map((s) => s.trim()).filter(Boolean)) {
+    if (!seen.has(r.toLowerCase())) {
+      seen.add(r.toLowerCase());
+      out.push(r);
+    }
+  }
+  return out;
+}
 
 export async function addEventAction(formData: FormData) {
   await requireOrgRole("OWNER", "ADMIN");
@@ -85,6 +102,9 @@ export async function addEventAction(formData: FormData) {
       description: raw.description,
       expectedActions: splitLines(raw.expectedActions),
       objectives: splitLines(raw.objectives),
+      senderRoleTitle: raw.senderRoleTitle?.trim() || null,
+      toRoleTitles: splitRoles(raw.toRoleTitles),
+      ccRoleTitles: splitRoles(raw.ccRoleTitles),
     },
   });
   revalidatePath(`/scenarios/${raw.scenarioId}`);
@@ -107,13 +127,28 @@ const InjectInput = z.object({
   summary: z.string().min(1).max(300),
   description: z.string().min(1),
   relation: z.string().optional(),
+  senderRoleTitle: z.string().optional(),
+  toRoleTitles: z.string().optional(),
+  ccRoleTitles: z.string().optional(),
 });
 
 export async function addInjectAction(formData: FormData) {
   await requireOrgRole("OWNER", "ADMIN");
   const data = InjectInput.parse(Object.fromEntries(formData));
   await prisma.inject.create({
-    data: { ...data, eventId: data.eventId || null },
+    data: {
+      scenarioId: data.scenarioId,
+      eventId: data.eventId || null,
+      injectNo: data.injectNo,
+      scheduledTime: data.scheduledTime,
+      isScheduled: data.isScheduled,
+      summary: data.summary,
+      description: data.description,
+      relation: data.relation ?? null,
+      senderRoleTitle: data.senderRoleTitle?.trim() || null,
+      toRoleTitles: splitRoles(data.toRoleTitles),
+      ccRoleTitles: splitRoles(data.ccRoleTitles),
+    },
   });
   revalidatePath(`/scenarios/${data.scenarioId}`);
 }

@@ -59,15 +59,12 @@ async function main() {
     update: { orgId: org.id, orgRole: "MEMBER" },
   });
 
-  // ─── Scenario ─────────────────────────────────────────────────────────────
-  const existing = await prisma.scenario.findFirst({
+  // ─── Scenario (idempotent: wipe + recreate) ───────────────────────────────
+  // Exercise has a non-cascading FK to Scenario, so drop dependent rows first.
+  await prisma.exercise.deleteMany({ where: { orgId: org.id } });
+  await prisma.scenario.deleteMany({
     where: { orgId: org.id, title: "Simulation 2 — Operational Resilience" },
   });
-  if (existing) {
-    console.log("Scenario already seeded — skipping.");
-    await prisma.$disconnect();
-    return;
-  }
 
   const scenario = await prisma.scenario.create({
     data: {
@@ -147,6 +144,9 @@ async function main() {
           "Test initial response procedures",
           "Assess team coordination",
         ],
+        senderRoleTitle: "CTO",
+        toRoleTitles: ["Sn.TPM", "TPM", "Sn. DA/E", "ISM"],
+        ccRoleTitles: ["CEO", "CRO"],
       },
       {
         scenarioId: scenario.id,
@@ -167,6 +167,9 @@ async function main() {
           "Validate communication procedures",
           "Assess regulatory reporting",
         ],
+        senderRoleTitle: "CTO",
+        toRoleTitles: ["Sn.TPM", "TPM", "Comms Lead"],
+        ccRoleTitles: ["Customer Ops Lead"],
       },
       {
         scenarioId: scenario.id,
@@ -187,6 +190,9 @@ async function main() {
           "Validate manual processes",
           "Assess impact management",
         ],
+        senderRoleTitle: "CTO",
+        toRoleTitles: ["Sn.TPM", "TPM"],
+        ccRoleTitles: ["CEO", "CRO"],
       },
       {
         scenarioId: scenario.id,
@@ -207,6 +213,9 @@ async function main() {
           "Validate backup systems",
           "Assess emergency response",
         ],
+        senderRoleTitle: "CTO",
+        toRoleTitles: ["Comms Lead"],
+        ccRoleTitles: ["TPM"],
       },
       {
         scenarioId: scenario.id,
@@ -227,6 +236,9 @@ async function main() {
           "Validate data consistency",
           "Assess restoration priorities",
         ],
+        senderRoleTitle: "CTO",
+        toRoleTitles: ["Sn.TPM", "TPM", "Sn. DA/E", "ISM"],
+        ccRoleTitles: ["CRO"],
       },
       {
         scenarioId: scenario.id,
@@ -247,6 +259,9 @@ async function main() {
           "Test handover procedures",
           "Assess documentation quality",
         ],
+        senderRoleTitle: "CTO",
+        toRoleTitles: ["CEO", "CRO"],
+        ccRoleTitles: ["Sn.TPM", "TPM", "Sn. DA/E", "ISM"],
       },
     ],
   });
@@ -264,6 +279,9 @@ async function main() {
           "A sophisticated malware activates across the savings platform, altering all fixed-term deposit rates to show 13% AER. The mobile app and online banking platform begin displaying inflated maturity values for all savings products. The system starts sending automated maturity notifications to fixed-term deposit holders showing incorrect enhanced returns. When staff attempt to correct rates manually, the system automatically doubles the erroneous rate. Simultaneously, the mortgage calculator begins showing monthly payments of £13 regardless of loan amount, causing a surge in online mortgage applications.",
         relation:
           "Occurs shortly after Event #2 service degradation. Exploits the initial AWS infrastructure breach. Tests IBS_01 (deposit account opening) and IBS_02 (deposit access). Challenges teams to maintain accurate customer data during cyber attack.",
+        senderRoleTitle: "ISM",
+        toRoleTitles: ["Sn.TPM", "TPM", "Sn. DA/E"],
+        ccRoleTitles: ["CRO"],
       },
       {
         scenarioId: scenario.id,
@@ -275,6 +293,9 @@ async function main() {
           "A system glitch begins triggering false early-access requests for fixed-term savings accounts, bypassing notice period requirements. The platform starts sending automated approval messages for penalty-free withdrawals to all savings customers. Customer notifications include legitimate-looking payment instructions directing funds to 'secure holding accounts.' The online servicing portal begins displaying countdown timers showing all fixed-term products maturing within 24 hours, while mortgage payment dates are shown as defaulting to immediate payment in full.",
         relation:
           "Precedes Event #3 (Thought Machine critical degradation). Tests emergency response procedures for unauthorised financial transactions. Directly impacts IBS_02 (deposit access service). Tests third-party dependency management with payment providers.",
+        senderRoleTitle: "Customer Ops Lead",
+        toRoleTitles: ["Sn.TPM", "TPM"],
+        ccRoleTitles: ["Comms Lead", "CRO"],
       },
       {
         scenarioId: scenario.id,
@@ -286,6 +307,9 @@ async function main() {
           "All mortgage documentation in the system begins showing property values from 1980s, with loan offers automatically adjusting to historical price levels. Savings account certificates start displaying maturity dates from random past decades, with interest calculations using historical base rates. KYC documents in the system appear to expire simultaneously, triggering automated lockouts across savings accounts. The document management system begins converting all PDFs to images of vintage savings passbooks, making them unreadable by automated processing systems.",
         relation:
           "Occurs between Events #3 and #4. Impacts IBS_03 (mortgage services). Tests document integrity and recovery procedures. Forces coordination between multiple third-party providers.",
+        senderRoleTitle: "Sn. DA/E",
+        toRoleTitles: ["Sn.TPM", "TPM", "ISM"],
+        ccRoleTitles: ["CRO"],
       },
       {
         scenarioId: scenario.id,
@@ -297,6 +321,9 @@ async function main() {
           "An AI-driven system compromise begins generating authentic-looking compliance breach notifications, suggesting savings balances exceed FSCS protection limits. The system automatically starts splitting savings accounts over £85,000 into multiple accounts without authorization. Meanwhile, automated communications are sent to mortgage customers claiming their loan-to-value ratios have breached lending criteria due to a 'market crash,' requesting immediate additional security. The bank's secure message system begins sending notifications in regulatory compliance jargon, making communications nearly incomprehensible to customers and causing panic about potential savings losses.",
         relation:
           "Follows Event #4 communication infrastructure attack. Directly tests IBS_05 (urgent communications). Tests regulatory reporting and compliance procedures. Forces prioritisation between different critical services.",
+        senderRoleTitle: "Comms Lead",
+        toRoleTitles: ["ISM", "Sn.TPM"],
+        ccRoleTitles: ["CRO", "CEO"],
       },
     ],
   });

@@ -168,10 +168,16 @@ model Event {
   expectedActions String[]
   objectives      String[]
 
+  // Addressing — resolved per-exercise by matching ExerciseParticipant.roleTitle
+  senderRoleTitle String?
+  toRoleTitles    String[]
+  ccRoleTitles    String[]
+
   ibsLinks  EventIBS[]
   injects   Inject[]
   artefacts Artefact[]
   releases  EventRelease[]
+  receipts  EventReceipt[]
 
   createdAt DateTime @default(now())
 
@@ -201,9 +207,15 @@ model Inject {
   relation      String?
   payload       Json?
 
+  // Addressing — resolved per-exercise by matching ExerciseParticipant.roleTitle
+  senderRoleTitle String?
+  toRoleTitles    String[]
+  ccRoleTitles    String[]
+
   artefacts Artefact[]
   releases  InjectRelease[]
   responses ParticipantResponse[]
+  receipts  InjectReceipt[]
 
   createdAt DateTime @default(now())
 
@@ -323,6 +335,9 @@ model ExerciseParticipant {
   roleTitle    String // e.g. "CTO", "Sn.TPM", "ISM"
   exerciseRole ExerciseRole  @default(PARTICIPANT)
   joinedAt     DateTime      @default(now())
+
+  eventReceipts  EventReceipt[]
+  injectReceipts InjectReceipt[]
 
   @@unique([exerciseId, userId])
 }
@@ -459,4 +474,28 @@ model AfterActionReport {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── Inbox read receipts (per participant, per event/inject) ───────────────
+
+model EventReceipt {
+  id            String              @id @default(cuid())
+  eventId       String
+  event         Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   ExerciseParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  readAt        DateTime            @default(now())
+
+  @@unique([eventId, participantId])
+}
+
+model InjectReceipt {
+  id            String              @id @default(cuid())
+  injectId      String
+  inject        Inject              @relation(fields: [injectId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   ExerciseParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  readAt        DateTime            @default(now())
+
+  @@unique([injectId, participantId])
 }
