@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Target } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import EmptyState from "@/components/EmptyState";
 
 export default async function ExercisesPage() {
   const user = await requireOrgUser();
@@ -29,10 +31,17 @@ export default async function ExercisesPage() {
         )}
       </div>
       {exercises.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
-          No exercises yet.{" "}
-          {canCreate ? "Plan one from a scenario to get started." : "Ask an admin to plan one."}
-        </p>
+        <EmptyState
+          icon={<Target size={20} />}
+          title="No exercises yet"
+          body={
+            canCreate
+              ? "Plan an exercise from one of your scenarios — pick a date, assemble your team, run it live."
+              : "Ask an admin to plan one."
+          }
+          ctaHref={canCreate ? "/exercises/new" : undefined}
+          ctaLabel={canCreate ? "Plan an exercise" : undefined}
+        />
       ) : (
         <ul className="space-y-2">
           {exercises.map((e) => (

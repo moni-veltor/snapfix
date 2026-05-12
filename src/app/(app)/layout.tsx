@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AppSidebar from "@/components/AppSidebar";
+import CommandPalette from "@/components/CommandPalette";
 
 export default async function AppLayout({
   children,
@@ -8,13 +9,11 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const orgName = session?.user?.orgId
-    ? (
-        await prisma.organization.findUnique({
-          where: { id: session.user.orgId },
-          select: { name: true },
-        })
-      )?.name ?? null
+  const org = session?.user?.orgId
+    ? await prisma.organization.findUnique({
+        where: { id: session.user.orgId },
+        select: { name: true, logoBlobUrl: true },
+      })
     : null;
   const canManageOrg =
     session?.user?.orgRole === "OWNER" || session?.user?.orgRole === "ADMIN";
@@ -24,7 +23,8 @@ export default async function AppLayout({
       {session?.user && (
         <AppSidebar
           user={{ name: session.user.name, email: session.user.email }}
-          orgName={orgName}
+          orgName={org?.name ?? null}
+          orgLogoUrl={org?.logoBlobUrl ?? null}
           canManageOrg={canManageOrg}
         />
       )}
@@ -34,6 +34,7 @@ export default async function AppLayout({
           SnapFix Simulator · part of the SnapFix platform
         </footer>
       </div>
+      {session?.user && <CommandPalette />}
     </div>
   );
 }

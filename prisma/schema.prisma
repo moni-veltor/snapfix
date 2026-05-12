@@ -25,12 +25,14 @@ enum FirmTier {
 }
 
 model Organization {
-  id        String    @id @default(cuid())
-  name      String
-  slug      String    @unique
-  tier      FirmTier?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  name         String
+  slug         String    @unique
+  tier         FirmTier?
+  logoBlobUrl  String?
+  logoBlobPath String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   users         User[]
   invitations   Invitation[]

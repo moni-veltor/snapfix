@@ -1,6 +1,10 @@
 import { requireOrgRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { updateOrgSettingsAction } from "@/app/actions/settings";
+import {
+  removeOrgLogoAction,
+  updateOrgSettingsAction,
+  uploadOrgLogoAction,
+} from "@/app/actions/settings";
 
 export const metadata = { title: "Settings — SnapFix" };
 
@@ -13,7 +17,7 @@ export default async function SettingsPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Organisation settings</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Manage your organisation's name and tier. The URL slug is fixed.
+          Manage your organisation's name, tier and branding.
         </p>
       </header>
 
@@ -21,6 +25,9 @@ export default async function SettingsPage() {
         action={updateOrgSettingsAction}
         className="space-y-4 rounded-md border border-slate-200 bg-white p-5"
       >
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
+          Profile
+        </h2>
         <label className="block text-sm">
           <span className="text-slate-700">Organisation name</span>
           <input
@@ -56,6 +63,51 @@ export default async function SettingsPage() {
           </button>
         </div>
       </form>
+
+      <section className="space-y-4 rounded-md border border-slate-200 bg-white p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
+          Branding
+        </h2>
+        <p className="text-xs text-slate-500">
+          Upload your organisation's logo. PNG, JPG, SVG or WebP up to 1 MB.
+          Square images work best — your logo appears in the sidebar.
+        </p>
+        {org.logoBlobUrl ? (
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-md border border-slate-200 bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={org.logoBlobUrl}
+                alt={`${org.name} logo`}
+                className="max-h-14 max-w-14 object-contain"
+              />
+            </div>
+            <form action={removeOrgLogoAction}>
+              <button className="text-xs text-rose-600 hover:underline">
+                Remove logo
+              </button>
+            </form>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500">No logo uploaded.</p>
+        )}
+        <form
+          action={uploadOrgLogoAction}
+          encType="multipart/form-data"
+          className="space-y-3"
+        >
+          <input
+            type="file"
+            name="logo"
+            accept="image/png,image/jpeg,image/svg+xml,image/webp"
+            required
+            className="block text-sm"
+          />
+          <button className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700">
+            Upload logo
+          </button>
+        </form>
+      </section>
     </div>
   );
 }

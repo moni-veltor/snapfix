@@ -262,26 +262,144 @@ export async function releaseEventAction(formData: FormData) {
   const user = await requireOrgRole("OWNER", "ADMIN");
   const exerciseId = String(formData.get("exerciseId"));
   const eventId = String(formData.get("eventId"));
+  const existing = await prisma.eventRelease.findUnique({
+    where: { exerciseId_eventId: { exerciseId, eventId } },
+  });
   await prisma.eventRelease.upsert({
     where: { exerciseId_eventId: { exerciseId, eventId } },
     create: { exerciseId, eventId, triggeredBy: user.id },
     update: {},
   });
+  if (!existing) {
+    // First-time release — notify addressed participants.
+    notifyAddressedParticipants(exerciseId, { kind: "EVENT", id: eventId }).catch(
+      (err) => console.error("[notify] event release failed:", err),
+    );
+  }
   revalidatePath(`/exercises/${exerciseId}/facilitator`);
   revalidatePath(`/exercises/${exerciseId}/participant`);
+  revalidatePath(`/exercises/${exerciseId}/inbox`);
 }
 
 export async function releaseInjectAction(formData: FormData) {
   const user = await requireOrgRole("OWNER", "ADMIN");
   const exerciseId = String(formData.get("exerciseId"));
   const injectId = String(formData.get("injectId"));
+  const existing = await prisma.injectRelease.findUnique({
+    where: { exerciseId_injectId: { exerciseId, injectId } },
+  });
   await prisma.injectRelease.upsert({
     where: { exerciseId_injectId: { exerciseId, injectId } },
     create: { exerciseId, injectId, triggeredBy: user.id },
     update: {},
   });
+  if (!existing) {
+    notifyAddressedParticipants(exerciseId, { kind: "INJECT", id: injectId }).catch(
+      (err) => console.error("[notify] inject release failed:", err),
+    );
+  }
   revalidatePath(`/exercises/${exerciseId}/facilitator`);
   revalidatePath(`/exercises/${exerciseId}/participant`);
+  revalidatePath(`/exercises/${exerciseId}/inbox`);
+}
+
+/**
+ * Sends an email to every exercise participant whose roleTitle is addressed
+ * (TO or CC) by the given event/inject. Fire-and-forget — caller catches.
+ */
+async function notifyAddressedParticipants(
+  exerciseId: string,
+  target: { kind: "EVENT" | "INJECT"; id: string },
+) {
+  const { sendEmail } = await import("@/lib/email");
+
+  const exercise = await prisma.exercise.findUnique({
+    where: { id: exerciseId },
+    include: {
+      org: { select: { name: true } },
+      scenario: { select: { title: true } },
+      participants: { include: { user: { select: { email: true, name: true } } } },
+    },
+  });
+  if (!exercise) return;
+
+  let payload: {
+    senderRoleTitle: string | null;
+    toRoleTitles: string[];
+    ccRoleTitles: string[];
+    title: string;
+    body: string;
+    scheduledTime: string;
+  };
+
+  if (target.kind === "EVENT") {
+    const e = await prisma.event.findUnique({ where: { id: target.id } });
+    if (!e) return;
+    payload = {
+      senderRoleTitle: e.senderRoleTitle,
+      toRoleTitles: e.toRoleTitles,
+      ccRoleTitles: e.ccRoleTitles,
+      title: `Event #${e.eventNo}: ${e.title}`,
+      body: e.description,
+      scheduledTime: e.scheduledTime,
+    };
+  } else {
+    const j = await prisma.inject.findUnique({ where: { id: target.id } });
+    if (!j) return;
+    payload = {
+      senderRoleTitle: j.senderRoleTitle,
+      toRoleTitles: j.toRoleTitles,
+      ccRoleTitles: j.ccRoleTitles,
+      title: `Inject #${j.injectNo}: ${j.summary}`,
+      body: j.description,
+      scheduledTime: j.scheduledTime,
+    };
+  }
+
+  const toSet = new Set(payload.toRoleTitles.map((s) => s.toLowerCase()));
+  const ccSet = new Set(payload.ccRoleTitles.map((s) => s.toLowerCase()));
+
+  const origin = process.env.NEXTAUTH_URL?.replace(/\/+$/, "") ?? "";
+  const link = `${origin}/exercises/${exerciseId}/inbox`;
+
+  await Promise.all(
+    exercise.participants
+      .filter((p) => {
+        const r = p.roleTitle.toLowerCase();
+        return toSet.has(r) || ccSet.has(r);
+      })
+      .map((p) => {
+        const addressing = toSet.has(p.roleTitle.toLowerCase()) ? "TO" : "CC";
+        const subject = `[${exercise.org.name}] ${payload.title}`;
+        const preheader = `D-Day ${payload.scheduledTime} · You are on the ${addressing} line for this message.`;
+        const html = `<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc;color:#0f172a;padding:24px">
+          <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px">
+            <div style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em">${escapeHtml(exercise.org.name)} · ${escapeHtml(exercise.scenario.title)}</div>
+            <h1 style="font-size:18px;margin:8px 0 4px">${escapeHtml(payload.title)}</h1>
+            <div style="font-size:12px;color:#64748b">D-Day ${escapeHtml(payload.scheduledTime)} · From: ${escapeHtml(payload.senderRoleTitle ?? "—")} · You are <strong>${addressing}</strong></div>
+            <div style="margin-top:16px;color:#334155;white-space:pre-wrap;line-height:1.5">${escapeHtml(payload.body)}</div>
+            <p style="margin-top:24px"><a href="${link}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600">Open your inbox</a></p>
+            <p style="margin-top:16px;font-size:11px;color:#94a3b8">You're receiving this because you are on the ${addressing} list of this exercise message as <strong>${escapeHtml(p.roleTitle)}</strong>.</p>
+          </div>
+        </body></html>`;
+        const text = `${payload.title}\n\nD-Day ${payload.scheduledTime} · From: ${payload.senderRoleTitle ?? "—"} · You are ${addressing}\n\n${payload.body}\n\nOpen your inbox: ${link}`;
+        return sendEmail({
+          to: p.user.email,
+          subject,
+          html,
+          text,
+          preheaderLink: preheader,
+        });
+      }),
+  );
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 const LogInput = z.object({

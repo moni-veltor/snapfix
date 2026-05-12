@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import EmptyState from "@/components/EmptyState";
 
 export default async function ScenariosPage() {
   const user = await requireOrgUser();
@@ -28,9 +30,19 @@ export default async function ScenariosPage() {
         )}
       </div>
       {scenarios.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
-          No scenarios yet. {isFacilitator ? "Create one to get started." : "Ask a facilitator to add one."}
-        </p>
+        <EmptyState
+          icon={<FileText size={20} />}
+          title="No scenarios yet"
+          body={
+            isFacilitator
+              ? "Clone one from the CMORG library to get started, or author your own from scratch."
+              : "Ask a facilitator to add one."
+          }
+          ctaHref={isFacilitator ? "/templates" : undefined}
+          ctaLabel={isFacilitator ? "Open library" : undefined}
+          secondaryHref={isFacilitator ? "/scenarios/new" : undefined}
+          secondaryLabel={isFacilitator ? "Create from scratch" : undefined}
+        />
       ) : (
         <ul className="grid gap-4 md:grid-cols-2">
           {scenarios.map((s) => (

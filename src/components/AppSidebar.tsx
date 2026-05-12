@@ -57,10 +57,12 @@ function isActive(pathname: string, href: string): boolean {
 export default function AppSidebar({
   user,
   orgName,
+  orgLogoUrl,
   canManageOrg,
 }: {
   user: { name: string | null | undefined; email: string };
   orgName: string | null;
+  orgLogoUrl?: string | null;
   canManageOrg: boolean;
 }) {
   const pathname = usePathname() ?? "/dashboard";
@@ -128,15 +130,24 @@ export default function AppSidebar({
             className="flex items-center gap-2 overflow-hidden"
             onClick={() => setMobileOpen(false)}
           >
-            <Logo size={26} tone="brand" />
+            {orgLogoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={orgLogoUrl}
+                alt={orgName ?? "Organisation"}
+                className="h-7 w-7 shrink-0 rounded object-contain"
+              />
+            ) : (
+              <Logo size={26} tone="brand" />
+            )}
             {!collapsed && (
               <div className="overflow-hidden">
                 <div className="truncate text-sm font-semibold tracking-tight text-slate-900">
-                  SnapFix
+                  {orgName ?? "SnapFix"}
                 </div>
-                {orgName && (
-                  <div className="truncate text-[11px] text-slate-500">{orgName}</div>
-                )}
+                <div className="truncate text-[11px] text-slate-500">
+                  {orgName ? "SnapFix" : "Operational resilience"}
+                </div>
               </div>
             )}
           </Link>

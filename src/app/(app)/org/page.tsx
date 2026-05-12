@@ -7,6 +7,13 @@ import {
   resendInvitationAction,
   revokeInvitationAction,
 } from "@/app/actions/org";
+import ConfirmButton from "@/components/ConfirmButton";
+
+function initials(s: string): string {
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return (s[0] ?? "?").toUpperCase();
+}
 
 export default async function OrgPage() {
   // Anyone in the org can see this page; only OWNER/ADMIN can act.
@@ -18,7 +25,14 @@ export default async function OrgPage() {
     prisma.user.findMany({
       where: { orgId: me.orgId },
       orderBy: [{ orgRole: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, email: true, orgRole: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        orgRole: true,
+        createdAt: true,
+        _count: { select: { exerciseParticipations: true } },
+      },
     }),
     canManage
       ? prisma.invitation.findMany({
@@ -51,9 +65,17 @@ export default async function OrgPage() {
         <ul className="divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200 bg-white">
           {members.map((m) => (
             <li key={m.id} className="flex items-center justify-between p-3 text-sm">
-              <div>
-                <div className="font-medium">{m.name ?? m.email}</div>
-                <div className="text-xs text-slate-500">{m.email}</div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
+                  {initials(m.name ?? m.email)}
+                </div>
+                <div>
+                  <div className="font-medium">{m.name ?? m.email}</div>
+                  <div className="text-xs text-slate-500">
+                    {m.email} · {m._count.exerciseParticipations}{" "}
+                    {m._count.exerciseParticipations === 1 ? "exercise" : "exercises"}
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 {canManage && m.id !== me.id ? (
@@ -76,10 +98,15 @@ export default async function OrgPage() {
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{m.orgRole}</span>
                 )}
                 {canManage && m.id !== me.id && (
-                  <form action={removeMemberAction}>
-                    <input type="hidden" name="userId" value={m.id} />
-                    <button className="text-xs text-rose-600 hover:underline">Remove</button>
-                  </form>
+                  <ConfirmButton
+                    action={removeMemberAction}
+                    hidden={{ userId: m.id }}
+                    label="Remove"
+                    title={`Remove ${m.name ?? m.email}?`}
+                    body="They'll lose access to the organisation immediately. They can be re-invited later."
+                    confirmLabel="Remove"
+                    successMessage="Member removed"
+                  />
                 )}
               </div>
             </li>
@@ -112,10 +139,15 @@ export default async function OrgPage() {
                       <input type="hidden" name="id" value={inv.id} />
                       <button className="text-xs text-slate-600 hover:underline">Resend</button>
                     </form>
-                    <form action={revokeInvitationAction}>
-                      <input type="hidden" name="id" value={inv.id} />
-                      <button className="text-xs text-rose-600 hover:underline">Revoke</button>
-                    </form>
+                    <ConfirmButton
+                      action={revokeInvitationAction}
+                      hidden={{ id: inv.id }}
+                      label="Revoke"
+                      title={`Revoke this invitation?`}
+                      body={`The invite to ${inv.email} will be cancelled and the accept link will stop working.`}
+                      confirmLabel="Revoke"
+                      successMessage="Invitation revoked"
+                    />
                   </div>
                 </li>
               ))}

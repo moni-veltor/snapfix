@@ -46,6 +46,9 @@ async function Dashboard({
     untestedIBS,
     recentAudit,
     coverage,
+    scenarioCount,
+    exerciseCount,
+    memberCount,
   ] = await Promise.all([
     prisma.exercise.findMany({
       where: {
@@ -104,7 +107,15 @@ async function Dashboard({
         },
       },
     }),
+    prisma.scenario.count({ where: { orgId, isTemplate: false } }),
+    prisma.exercise.count({ where: { orgId } }),
+    prisma.user.count({ where: { orgId } }),
   ]);
+
+  // Onboarding flags — for fresh admins we show a guided checklist instead of
+  // the analytics-heavy dashboard.
+  const isFreshOrg =
+    canManage && scenarioCount === 0 && exerciseCount === 0 && memberCount <= 1 && ibsCount === 0;
 
   const tested = {
     people: coverage.filter((e) => e.scenario.coversPeople).length,
@@ -114,6 +125,51 @@ async function Dashboard({
     dataIntegrity: coverage.filter((e) => e.scenario.coversDataIntegrity).length,
     thirdParty: coverage.filter((e) => e.scenario.coversThirdParty).length,
   };
+
+  if (isFreshOrg) {
+    return (
+      <div className="space-y-8">
+        <header>
+          <h1 className="text-2xl font-semibold tracking-tight">Welcome, {userName}</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Let's get your operational-resilience programme set up. Four steps and you're ready to run your first exercise.
+          </p>
+        </header>
+        <OnboardingChecklist
+          steps={[
+            {
+              done: scenarioCount > 0,
+              title: "Clone a scenario from the library",
+              body: "26 ready-made scenarios in the CMORG Dynamic Scenario Library. Pick one suited to your firm's tier.",
+              href: "/templates",
+              cta: "Open library",
+            },
+            {
+              done: ibsCount > 0,
+              title: "Capture your IBS register",
+              body: "Add your firm's Important Business Services with FCA and PRA tolerances. Required for coverage analytics.",
+              href: "/ibs/new",
+              cta: "Add an IBS",
+            },
+            {
+              done: memberCount > 1,
+              title: "Invite your team",
+              body: "Add the people who'll participate in exercises — CTO, ISM, CRO, comms lead, etc.",
+              href: "/org",
+              cta: "Invite teammates",
+            },
+            {
+              done: exerciseCount > 0,
+              title: "Plan your first exercise",
+              body: "Pick a scenario, set a date, assemble the team. The platform handles the rest.",
+              href: "/exercises/new",
+              cta: "Plan an exercise",
+            },
+          ]}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -311,6 +367,75 @@ function Empty({ body }: { body: string }) {
     <p className="rounded border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-xs text-slate-500">
       {body}
     </p>
+  );
+}
+
+function OnboardingChecklist({
+  steps,
+}: {
+  steps: { done: boolean; title: string; body: string; href: string; cta: string }[];
+}) {
+  const completed = steps.filter((s) => s.done).length;
+  const total = steps.length;
+  return (
+    <section className="space-y-4">
+      <div className="rounded-lg border border-slate-200 bg-white p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-semibold text-slate-900">Onboarding</div>
+            <div className="mt-1 text-xs text-slate-500">
+              {completed} of {total} complete
+            </div>
+          </div>
+          <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-indigo-500 transition-all"
+              style={{ width: `${(completed / total) * 100}%` }}
+            />
+          </div>
+        </div>
+      </div>
+      <ul className="space-y-2">
+        {steps.map((s, i) => (
+          <li
+            key={i}
+            className={`flex items-start justify-between gap-4 rounded-md border p-4 ${
+              s.done ? "border-emerald-200 bg-emerald-50/40" : "border-slate-200 bg-white"
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${
+                  s.done
+                    ? "bg-emerald-500 text-white"
+                    : "border border-slate-300 text-slate-400"
+                }`}
+              >
+                {s.done ? "✓" : i + 1}
+              </div>
+              <div className="space-y-1">
+                <div
+                  className={`text-sm font-medium ${
+                    s.done ? "text-slate-500 line-through" : "text-slate-900"
+                  }`}
+                >
+                  {s.title}
+                </div>
+                <p className="text-xs text-slate-600">{s.body}</p>
+              </div>
+            </div>
+            {!s.done && (
+              <Link
+                href={s.href}
+                className="shrink-0 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
+              >
+                {s.cta}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
