@@ -10,6 +10,13 @@ import {
   deleteIBSAction,
   deleteInjectAction,
 } from "@/app/actions/scenarios";
+import ArtefactList from "@/components/ArtefactList";
+import ArtefactUpload from "@/components/ArtefactUpload";
+
+const ARTEFACT_INCLUDE = {
+  orderBy: { createdAt: "asc" as const },
+  include: { uploadedBy: { select: { name: true, email: true } } },
+};
 
 export default async function ScenarioDetailPage({
   params,
@@ -22,9 +29,16 @@ export default async function ScenarioDetailPage({
     where: { id, orgId: user.orgId },
     include: {
       ibsList: { orderBy: { code: "asc" } },
-      events: { orderBy: { eventNo: "asc" } },
-      injects: { orderBy: { injectNo: "asc" } },
+      events: {
+        orderBy: { eventNo: "asc" },
+        include: { artefacts: ARTEFACT_INCLUDE },
+      },
+      injects: {
+        orderBy: { injectNo: "asc" },
+        include: { artefacts: ARTEFACT_INCLUDE },
+      },
       exercises: { orderBy: { createdAt: "desc" }, take: 5 },
+      artefacts: ARTEFACT_INCLUDE,
     },
   });
   if (!scenario) notFound();
@@ -52,6 +66,11 @@ export default async function ScenarioDetailPage({
           </Link>
         </div>
       )}
+
+      <Section title="Documents">
+        <ArtefactList artefacts={scenario.artefacts} canManage={canEdit} empty="No scenario documents yet (facilitator/participant/scenario guide, briefing docs)." />
+        {canEdit && <ArtefactUpload target="SCENARIO" targetId={scenario.id} />}
+      </Section>
 
       <Section title="Important Business Services">
         <ul className="space-y-2">
@@ -122,6 +141,17 @@ export default async function ScenarioDetailPage({
                       </ul>
                     </details>
                   )}
+                  {(e.artefacts.length > 0 || canEdit) && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs text-slate-500">
+                        Attachments ({e.artefacts.length})
+                      </summary>
+                      <div className="mt-2 space-y-2">
+                        <ArtefactList artefacts={e.artefacts} canManage={canEdit} empty="No attachments." />
+                        {canEdit && <ArtefactUpload target="EVENT" targetId={e.id} compact />}
+                      </div>
+                    </details>
+                  )}
                 </div>
                 {canEdit && (
                   <form action={deleteEventAction}>
@@ -168,6 +198,17 @@ export default async function ScenarioDetailPage({
                   />
                   {j.relation && (
                     <p className="mt-2 text-xs text-slate-500"><span className="font-semibold">Relation:</span> {j.relation}</p>
+                  )}
+                  {(j.artefacts.length > 0 || canEdit) && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs text-slate-500">
+                        Attachments ({j.artefacts.length})
+                      </summary>
+                      <div className="mt-2 space-y-2">
+                        <ArtefactList artefacts={j.artefacts} canManage={canEdit} empty="No attachments." />
+                        {canEdit && <ArtefactUpload target="INJECT" targetId={j.id} compact />}
+                      </div>
+                    </details>
                   )}
                 </div>
                 {canEdit && (

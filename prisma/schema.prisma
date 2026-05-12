@@ -74,6 +74,7 @@ model User {
   comms                  CommunicationDraft[]
   debriefAnswers         DebriefAnswer[]
   invitationsSent        Invitation[]          @relation("InvitationInvitedBy")
+  uploadedArtefacts      Artefact[]            @relation("ArtefactUploader")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -134,6 +135,7 @@ model Scenario {
   facilitatorQuestions FacilitatorQuestion[]
   debriefQuestions     DebriefQuestion[]
   exercises            Exercise[]
+  artefacts            Artefact[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -223,17 +225,25 @@ model Inject {
 }
 
 model Artefact {
-  id          String   @id @default(cuid())
-  eventId     String?
-  injectId    String?
-  event       Event?   @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  inject      Inject?  @relation(fields: [injectId], references: [id], onDelete: Cascade)
-  kind        String
-  title       String
-  blobUrl     String
-  contentType String?
-  sizeBytes   Int?
-  createdAt   DateTime @default(now())
+  id           String    @id @default(cuid())
+  scenarioId   String?
+  scenario     Scenario? @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  exerciseId   String?
+  exercise     Exercise? @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  eventId      String?
+  event        Event?    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  injectId     String?
+  inject       Inject?   @relation(fields: [injectId], references: [id], onDelete: Cascade)
+  kind         String // FACILITATOR_GUIDE | PARTICIPANT_GUIDE | SCENARIO_GUIDE | ALERT | EMAIL | REPORT | DOC | LOG | OTHER
+  title        String
+  description  String?
+  blobUrl      String
+  blobPath     String? // pathname inside the blob store (for deletion)
+  contentType  String?
+  sizeBytes    Int?
+  uploadedById String?
+  uploadedBy   User?     @relation("ArtefactUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
 }
 
 model FacilitatorQuestion {
@@ -306,6 +316,7 @@ model Exercise {
   debriefAnswers DebriefAnswer[]
   impactBreaches ImpactBreach[]
   aar            AfterActionReport?
+  artefacts      Artefact[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -21,6 +21,15 @@ function addressedTo(roleTitle: string, to: string[], cc: string[]): "TO" | "CC"
   return null;
 }
 
+export type InboxAttachment = {
+  id: string;
+  kind: string;
+  title: string;
+  blobUrl: string;
+  contentType: string | null;
+  sizeBytes: number | null;
+};
+
 export type InboxItem = {
   kind: "EVENT" | "INJECT";
   id: string;
@@ -34,6 +43,7 @@ export type InboxItem = {
   cc: string[];
   addressing: "TO" | "CC";
   unread: boolean;
+  attachments: InboxAttachment[];
 };
 
 export async function loadInbox(exerciseId: string, me: Roles): Promise<InboxItem[]> {
@@ -42,8 +52,14 @@ export async function loadInbox(exerciseId: string, me: Roles): Promise<InboxIte
     include: {
       scenario: {
         include: {
-          events: { orderBy: { scheduledTime: "asc" } },
-          injects: { orderBy: { scheduledTime: "asc" } },
+          events: {
+            orderBy: { scheduledTime: "asc" },
+            include: { artefacts: true },
+          },
+          injects: {
+            orderBy: { scheduledTime: "asc" },
+            include: { artefacts: true },
+          },
         },
       },
       eventReleases: true,
@@ -92,6 +108,14 @@ export async function loadInbox(exerciseId: string, me: Roles): Promise<InboxIte
       cc: e.ccRoleTitles,
       addressing,
       unread: !readEventIds.has(e.id),
+      attachments: e.artefacts.map((a) => ({
+        id: a.id,
+        kind: a.kind,
+        title: a.title,
+        blobUrl: a.blobUrl,
+        contentType: a.contentType,
+        sizeBytes: a.sizeBytes,
+      })),
     });
   }
 
@@ -115,6 +139,14 @@ export async function loadInbox(exerciseId: string, me: Roles): Promise<InboxIte
       cc: j.ccRoleTitles,
       addressing,
       unread: !readInjectIds.has(j.id),
+      attachments: j.artefacts.map((a) => ({
+        id: a.id,
+        kind: a.kind,
+        title: a.title,
+        blobUrl: a.blobUrl,
+        contentType: a.contentType,
+        sizeBytes: a.sizeBytes,
+      })),
     });
   }
 

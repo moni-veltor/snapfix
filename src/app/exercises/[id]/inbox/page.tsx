@@ -143,6 +143,36 @@ export default async function InboxPage({
                   </form>
                 )}
               </div>
+              {item.attachments.length > 0 && (
+                <ul className="mt-3 space-y-1 text-xs">
+                  {item.attachments.map((a) => (
+                    <li
+                      key={a.id}
+                      className="flex items-center gap-2 rounded border border-slate-200 bg-white px-2 py-1"
+                    >
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono">
+                        {a.kind}
+                      </span>
+                      <a
+                        href={a.blobUrl}
+                        target="_blank"
+                        rel="noopener"
+                        className="flex-1 truncate font-medium text-slate-800 hover:underline"
+                      >
+                        {a.title}
+                      </a>
+                      <span className="text-slate-400">
+                        {a.contentType ?? "file"} ·{" "}
+                        {a.sizeBytes
+                          ? a.sizeBytes < 1024 * 1024
+                            ? `${(a.sizeBytes / 1024).toFixed(1)} KB`
+                            : `${(a.sizeBytes / 1024 / 1024).toFixed(1)} MB`
+                          : "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {item.kind === "INJECT" && (
                 <div className="mt-3">
                   <Link

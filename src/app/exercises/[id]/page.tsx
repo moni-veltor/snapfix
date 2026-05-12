@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { startExerciseAction, transitionToReadyAction } from "@/app/actions/exercises";
+import ArtefactList from "@/components/ArtefactList";
+import ArtefactUpload from "@/components/ArtefactUpload";
 
 export default async function ExerciseOverviewPage({
   params,
@@ -16,11 +18,16 @@ export default async function ExerciseOverviewPage({
     include: {
       scenario: {
         select: {
+          id: true,
           title: true,
           dDayDate: true,
           durationMin: true,
           background: true,
           _count: { select: { events: true, injects: true, ibsList: true } },
+          artefacts: {
+            orderBy: { createdAt: "asc" },
+            include: { uploadedBy: { select: { name: true, email: true } } },
+          },
         },
       },
       facilitator: { select: { name: true, email: true } },
@@ -34,6 +41,10 @@ export default async function ExerciseOverviewPage({
       },
       participants: {
         include: { user: { select: { name: true, email: true } } },
+      },
+      artefacts: {
+        orderBy: { createdAt: "asc" },
+        include: { uploadedBy: { select: { name: true, email: true } } },
       },
     },
   });
@@ -134,6 +145,36 @@ export default async function ExerciseOverviewPage({
         <Stat label="Important Business Services" value={exercise.scenario._count.ibsList} />
         <Stat label="Scenario events" value={exercise.scenario._count.events} />
         <Stat label="Injects" value={exercise.scenario._count.injects} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Documents</h2>
+        {exercise.scenario.artefacts.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-wide text-slate-500">From the scenario</p>
+            <ArtefactList
+              artefacts={exercise.scenario.artefacts}
+              canManage={false}
+              empty="No scenario-level documents."
+            />
+            <p className="text-xs text-slate-500">
+              Manage scenario documents on the{" "}
+              <Link href={`/scenarios/${exercise.scenario.id}`} className="underline">
+                scenario page
+              </Link>
+              .
+            </p>
+          </div>
+        )}
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-wide text-slate-500">For this exercise</p>
+          <ArtefactList
+            artefacts={exercise.artefacts}
+            canManage={canManage}
+            empty="No exercise-specific documents yet."
+          />
+          {canManage && <ArtefactUpload target="EXERCISE" targetId={exercise.id} />}
+        </div>
       </section>
 
       <section className="space-y-3">
