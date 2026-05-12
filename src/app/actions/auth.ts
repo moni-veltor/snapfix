@@ -12,6 +12,7 @@ const SignUpSchema = z.object({
   email: z.email().transform((v) => v.toLowerCase()),
   password: z.string().min(8).max(200),
   organizationName: z.string().min(1).max(120),
+  tier: z.enum(["TIER_1", "TIER_2", "TIER_3"]).optional(),
 });
 
 export type AuthFormState = { error?: string } | undefined;
@@ -29,11 +30,12 @@ export async function signUpAction(
     email: formData.get("email"),
     password: formData.get("password"),
     organizationName: formData.get("organizationName"),
+    tier: formData.get("tier") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
-  const { name, email, password, organizationName } = parsed.data;
+  const { name, email, password, organizationName, tier } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "An account with that email already exists." };
@@ -49,7 +51,7 @@ export async function signUpAction(
       slug = `${baseSlug}-${suffix}`;
     }
     const org = await tx.organization.create({
-      data: { name: organizationName, slug },
+      data: { name: organizationName, slug, tier: tier ?? null },
     });
     await tx.user.create({
       data: {

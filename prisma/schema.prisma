@@ -18,12 +18,19 @@ enum OrgRole {
   MEMBER
 }
 
+enum FirmTier {
+  TIER_1 // Global universal / G-SIBs (HSBC, Barclays, JPM)
+  TIER_2 // Digital challenger banks (Starling, Monzo, Revolut)
+  TIER_3 // New banks, neobanks, EMIs, BaaS-dependent fintechs
+}
+
 model Organization {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  slug      String    @unique
+  tier      FirmTier?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   users       User[]
   invitations Invitation[]
@@ -139,6 +146,8 @@ model Scenario {
 
   category              String? // e.g. "Technology & Data (Cyber)", "CNI", "Third Party"
   srrRef                String? // Strategic Risk Register reference (e.g. "3.1, 3.2")
+  tier                  FirmTier? // null = applies to any tier
+  firmProfile           String? // human label e.g. "Global Universal Bank", "Digital Challenger", "BaaS-dependent fintech"
   cause                 String?
   impactNarrative       String?
   characteristics       String[]

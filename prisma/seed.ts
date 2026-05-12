@@ -23,8 +23,8 @@ async function main() {
   // ─── Organisation ─────────────────────────────────────────────────────────
   const org = await prisma.organization.upsert({
     where: { slug: "astro-bank" },
-    create: { name: "Astro Bank", slug: "astro-bank" },
-    update: {},
+    create: { name: "Astro Bank", slug: "astro-bank", tier: "TIER_2" },
+    update: { tier: "TIER_2" },
   });
 
   // ─── Users (all members of Astro Bank) ────────────────────────────────────

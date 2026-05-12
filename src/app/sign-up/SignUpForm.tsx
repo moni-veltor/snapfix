@@ -20,6 +20,22 @@ export default function SignUpForm() {
         required
         placeholder="e.g. Astro Bank"
       />
+      <label className="block text-sm">
+        <span className="text-slate-700">Firm tier</span>
+        <select
+          name="tier"
+          defaultValue=""
+          className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+        >
+          <option value="">Not sure / Other</option>
+          <option value="TIER_1">Tier 1 — Global universal / G-SIB (e.g. HSBC, Barclays)</option>
+          <option value="TIER_2">Tier 2 — Digital challenger (e.g. Starling, Monzo)</option>
+          <option value="TIER_3">Tier 3 — New bank, neobank, EMI, fintech</option>
+        </select>
+        <span className="mt-1 block text-xs text-slate-500">
+          Determines which scenarios are highlighted in the library. You can change it later.
+        </span>
+      </label>
       <p className="text-xs text-slate-500">
         You'll be the owner. Invite teammates after signing in.
       </p>

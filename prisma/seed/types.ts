@@ -64,6 +64,8 @@ export type ScenarioTemplate = {
   title: string;
   category: string;
   srrRef?: string;
+  tier?: "TIER_1" | "TIER_2" | "TIER_3"; // omit/undefined = applies to all tiers
+  firmProfile?: string;
   background: string;
   agenda?: string;
   dDayDate: string; // ISO
@@ -109,6 +111,8 @@ export async function upsertTemplate(
       title: t.title,
       category: t.category,
       srrRef: t.srrRef ?? null,
+      tier: t.tier ?? null,
+      firmProfile: t.firmProfile ?? null,
       background: t.background,
       agenda: t.agenda ?? null,
       dDayDate: new Date(t.dDayDate),
