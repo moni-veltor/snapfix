@@ -1,9 +1,8 @@
-// SnapFix brand mark — a single bold "F" letterform.
+// SnapFix brand mark — a bold geometric "S".
 //
-// Three strokes: vertical spine + top arm + middle arm. Indigo gradient.
-// Bold, geometric, rounded caps. No enclosing tile. Distinctive in a
-// landscape full of "S" marks (Stripe, Starling, etc.) and reads cleanly
-// at favicon size.
+// Built from three horizontals + two short verticals (alternating ends),
+// sharp 90° corner joins, rounded open caps. Bold, architectural — visually
+// distinct from the flowing single-stroke S of Stripe/Starling.
 
 let counter = 0;
 function nextId() {
@@ -49,17 +48,17 @@ export function Logo({
           )}
         </linearGradient>
       </defs>
+      {/* Architectural S:
+            top horizontal → right vertical down → middle horizontal back left
+            → left vertical down → bottom horizontal right.
+            Sharp miter corners; rounded open caps. */}
       <path
-        d="M 4 4
-           V 28
-           M 4 4
-           H 21
-           M 4 16
-           H 18"
+        d="M 4 4 H 20 V 16 H 4 V 28 H 20"
         stroke={`url(#${id})`}
         strokeWidth="4.5"
         strokeLinecap="round"
-        strokeLinejoin="round"
+        strokeLinejoin="miter"
+        strokeMiterlimit="8"
         fill="none"
       />
     </svg>

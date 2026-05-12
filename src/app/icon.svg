@@ -6,16 +6,12 @@
     </linearGradient>
   </defs>
   <path
-    d="M 4 4
-       V 28
-       M 4 4
-       H 21
-       M 4 16
-       H 18"
+    d="M 4 4 H 20 V 16 H 4 V 28 H 20"
     stroke="url(#g)"
     stroke-width="4.5"
     stroke-linecap="round"
-    stroke-linejoin="round"
+    stroke-linejoin="miter"
+    stroke-miterlimit="8"
     fill="none"
   />
 </svg>
