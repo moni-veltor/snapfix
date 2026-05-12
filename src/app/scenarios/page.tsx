@@ -8,7 +8,7 @@ export default async function ScenariosPage() {
     where: { orgId: user.orgId },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { events: true, injects: true, ibsList: true, runs: true } },
+      _count: { select: { events: true, injects: true, ibsList: true, exercises: true } },
       createdBy: { select: { name: true, email: true } },
     },
   });
@@ -46,7 +46,7 @@ export default async function ScenariosPage() {
                 <Pill>{s._count.ibsList} IBS</Pill>
                 <Pill>{s._count.events} events</Pill>
                 <Pill>{s._count.injects} injects</Pill>
-                <Pill>{s._count.runs} runs</Pill>
+                <Pill>{s._count.exercises} runs</Pill>
               </div>
             </li>
           ))}

@@ -2,8 +2,8 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { currentDDay, isDue } from "@/lib/dday";
 
-export async function loadRunWithScenario(id: string, orgId: string) {
-  return prisma.exerciseRun.findFirst({
+export async function loadExerciseWithScenario(id: string, orgId: string) {
+  return prisma.exercise.findFirst({
     where: { id, orgId },
     include: {
       scenario: {
@@ -26,28 +26,28 @@ export async function loadRunWithScenario(id: string, orgId: string) {
   });
 }
 
-export type RunWithScenario = NonNullable<Awaited<ReturnType<typeof loadRunWithScenario>>>;
+export type ExerciseWithScenario = NonNullable<Awaited<ReturnType<typeof loadExerciseWithScenario>>>;
 
 /**
  * Compute, for the current D-Day clock, which events/injects are released to participants.
  * Released = (manually released by facilitator) OR (scheduled and the D-Day time has been reached).
  */
-export function computeVisibility(run: RunWithScenario) {
-  const clock = currentDDay(run.dDayAnchor, run.speedMultiplier);
-  const releasedEventIds = new Set(run.eventReleases.map((r) => r.eventId));
-  const releasedInjectIds = new Set(run.injectReleases.map((r) => r.injectId));
+export function computeVisibility(exercise: ExerciseWithScenario) {
+  const clock = currentDDay(exercise.dDayAnchor, exercise.speedMultiplier);
+  const releasedEventIds = new Set(exercise.eventReleases.map((r) => r.eventId));
+  const releasedInjectIds = new Set(exercise.injectReleases.map((r) => r.injectId));
 
-  const events = run.scenario.events.map((e) => {
+  const events = exercise.scenario.events.map((e) => {
     const released =
       releasedEventIds.has(e.id) ||
-      (run.status === "IN_PROGRESS" && e.isScheduled && isDue(e.scheduledTime, clock));
+      (exercise.status === "IN_PROGRESS" && e.isScheduled && isDue(e.scheduledTime, clock));
     return { ...e, released };
   });
 
-  const injects = run.scenario.injects.map((j) => {
+  const injects = exercise.scenario.injects.map((j) => {
     const released =
       releasedInjectIds.has(j.id) ||
-      (run.status === "IN_PROGRESS" && j.isScheduled && isDue(j.scheduledTime, clock));
+      (exercise.status === "IN_PROGRESS" && j.isScheduled && isDue(j.scheduledTime, clock));
     return { ...j, released };
   });
 

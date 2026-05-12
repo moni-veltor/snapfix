@@ -28,7 +28,7 @@ model Organization {
   users       User[]
   invitations Invitation[]
   scenarios   Scenario[]
-  runs        ExerciseRun[]
+  exercises   Exercise[]
 }
 
 model Invitation {
@@ -66,15 +66,14 @@ model User {
   accounts Account[]
   sessions Session[]
 
-  participantProfile Participant?
-
-  createdScenarios   Scenario[]            @relation("ScenarioCreator")
-  facilitatedRuns    ExerciseRun[]         @relation("RunFacilitator")
-  incidentLogEntries IncidentLogEntry[]
-  responses          ParticipantResponse[]
-  comms              CommunicationDraft[]
-  debriefAnswers     DebriefAnswer[]
-  invitationsSent    Invitation[]          @relation("InvitationInvitedBy")
+  createdScenarios       Scenario[]            @relation("ScenarioCreator")
+  facilitatedExercises   Exercise[]            @relation("ExerciseFacilitator")
+  exerciseParticipations ExerciseParticipant[]
+  incidentLogEntries     IncidentLogEntry[]
+  responses              ParticipantResponse[]
+  comms                  CommunicationDraft[]
+  debriefAnswers         DebriefAnswer[]
+  invitationsSent        Invitation[]          @relation("InvitationInvitedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -134,7 +133,7 @@ model Scenario {
   injects              Inject[]
   facilitatorQuestions FacilitatorQuestion[]
   debriefQuestions     DebriefQuestion[]
-  runs                 ExerciseRun[]
+  exercises            Exercise[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -245,48 +244,47 @@ model DebriefQuestion {
   answers DebriefAnswer[]
 }
 
-// ─── Participants (the role being played in the exercise) ───────────────────
+// ─── Exercise lifecycle (planning → execution → debrief) ────────────────────
 
-model Participant {
-  id        String  @id @default(cuid())
-  userId    String? @unique
-  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  name      String
-  roleTitle String
-  team      String?
-
-  runMemberships ExerciseRunParticipant[]
-
-  createdAt DateTime @default(now())
-}
-
-// ─── Exercise execution (Run mode) ──────────────────────────────────────────
-
-enum RunStatus {
-  DRAFT
+enum ExerciseStatus {
+  PLANNING
+  READY
   IN_PROGRESS
   PAUSED
   COMPLETED
   ABANDONED
 }
 
-model ExerciseRun {
-  id              String       @id @default(cuid())
-  orgId           String
-  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  scenarioId      String
-  scenario        Scenario     @relation(fields: [scenarioId], references: [id])
-  facilitatorId   String?
-  facilitator     User?        @relation("RunFacilitator", fields: [facilitatorId], references: [id])
-  title           String
-  status          RunStatus    @default(DRAFT)
+enum ExerciseRole {
+  FACILITATOR
+  LEAD
+  PARTICIPANT
+  OBSERVER
+}
+
+model Exercise {
+  id            String       @id @default(cuid())
+  orgId         String
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  scenarioId    String
+  scenario      Scenario     @relation(fields: [scenarioId], references: [id])
+  facilitatorId String?
+  facilitator   User?        @relation("ExerciseFacilitator", fields: [facilitatorId], references: [id])
+
+  title       String
+  description String?
+  plannedDate DateTime?
+  location    String?
+  status      ExerciseStatus @default(PLANNING)
+
   startedAt       DateTime?
   pausedAt        DateTime?
   completedAt     DateTime?
   dDayAnchor      DateTime?
-  speedMultiplier Float        @default(1.0)
+  speedMultiplier Float     @default(1.0)
 
-  participants   ExerciseRunParticipant[]
+  teams          ExerciseTeam[]
+  participants   ExerciseParticipant[]
   eventReleases  EventRelease[]
   injectReleases InjectRelease[]
   incidentLog    IncidentLogEntry[]
@@ -301,61 +299,79 @@ model ExerciseRun {
   updatedAt DateTime @updatedAt
 }
 
-model ExerciseRunParticipant {
-  runId         String
-  participantId String
-  run           ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
-  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  joinedAt      DateTime    @default(now())
+model ExerciseTeam {
+  id          String   @id @default(cuid())
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  orderIdx    Int      @default(0)
 
-  @@id([runId, participantId])
+  members ExerciseParticipant[]
+
+  @@unique([exerciseId, name])
+}
+
+model ExerciseParticipant {
+  id           String        @id @default(cuid())
+  exerciseId   String
+  exercise     Exercise      @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId       String?
+  team         ExerciseTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  roleTitle    String // e.g. "CTO", "Sn.TPM", "ISM"
+  exerciseRole ExerciseRole  @default(PARTICIPANT)
+  joinedAt     DateTime      @default(now())
+
+  @@unique([exerciseId, userId])
 }
 
 model EventRelease {
-  id          String      @id @default(cuid())
-  runId       String
-  run         ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   eventId     String
-  event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  releasedAt  DateTime    @default(now())
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  releasedAt  DateTime @default(now())
   triggeredBy String?
 
-  @@unique([runId, eventId])
+  @@unique([exerciseId, eventId])
 }
 
 model InjectRelease {
-  id          String      @id @default(cuid())
-  runId       String
-  run         ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   injectId    String
-  inject      Inject      @relation(fields: [injectId], references: [id], onDelete: Cascade)
-  releasedAt  DateTime    @default(now())
+  inject      Inject   @relation(fields: [injectId], references: [id], onDelete: Cascade)
+  releasedAt  DateTime @default(now())
   triggeredBy String?
 
-  @@unique([runId, injectId])
+  @@unique([exerciseId, injectId])
 }
 
 model IncidentLogEntry {
-  id       String      @id @default(cuid())
-  runId    String
-  run      ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
-  authorId String?
-  author   User?       @relation(fields: [authorId], references: [id])
-  dDayTime String
-  kind     String
-  body     String
+  id         String   @id @default(cuid())
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  authorId   String?
+  author     User?    @relation(fields: [authorId], references: [id])
+  dDayTime   String
+  kind       String
+  body       String
 
   createdAt DateTime @default(now())
 }
 
 model ParticipantResponse {
-  id              String      @id @default(cuid())
-  runId           String
-  run             ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  exerciseId      String
+  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   injectId        String
-  inject          Inject      @relation(fields: [injectId], references: [id], onDelete: Cascade)
+  inject          Inject   @relation(fields: [injectId], references: [id], onDelete: Cascade)
   authorId        String
-  author          User        @relation(fields: [authorId], references: [id])
+  author          User     @relation(fields: [authorId], references: [id])
   assessment      String
   proposedActions String
   stakeholders    String?
@@ -381,24 +397,24 @@ enum CommsStatus {
 }
 
 model CommunicationDraft {
-  id       String        @id @default(cuid())
-  runId    String
-  run      ExerciseRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
-  authorId String?
-  author   User?         @relation(fields: [authorId], references: [id])
-  audience CommsAudience
-  subject  String
-  body     String
-  status   CommsStatus   @default(DRAFT)
+  id         String        @id @default(cuid())
+  exerciseId String
+  exercise   Exercise      @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  authorId   String?
+  author     User?         @relation(fields: [authorId], references: [id])
+  audience   CommsAudience
+  subject    String
+  body       String
+  status     CommsStatus   @default(DRAFT)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model RecoveryPlan {
-  id               String      @id @default(cuid())
-  runId            String
-  run              ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  exerciseId       String
+  exercise         Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   priorityActions  String
   resourceAlloc    String?
   successCriteria  String?
@@ -410,8 +426,8 @@ model RecoveryPlan {
 
 model ImpactBreach {
   id         String                   @id @default(cuid())
-  runId      String
-  run        ExerciseRun              @relation(fields: [runId], references: [id], onDelete: Cascade)
+  exerciseId String
+  exercise   Exercise                 @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   ibsId      String
   ibs        ImportantBusinessService @relation(fields: [ibsId], references: [id], onDelete: Cascade)
   detectedAt DateTime                 @default(now())
@@ -421,8 +437,8 @@ model ImpactBreach {
 
 model DebriefAnswer {
   id         String          @id @default(cuid())
-  runId      String
-  run        ExerciseRun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+  exerciseId String
+  exercise   Exercise        @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   questionId String
   question   DebriefQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   authorId   String?
@@ -433,13 +449,13 @@ model DebriefAnswer {
 }
 
 model AfterActionReport {
-  id        String      @id @default(cuid())
-  runId     String      @unique
-  run       ExerciseRun @relation(fields: [runId], references: [id], onDelete: Cascade)
-  summary   String
-  strengths String?
-  gaps      String?
-  actions   String?
+  id         String   @id @default(cuid())
+  exerciseId String   @unique
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  summary    String
+  strengths  String?
+  gaps       String?
+  actions    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

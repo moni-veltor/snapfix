@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOrgUser } from "@/lib/auth";
-import { computeVisibility, loadRunWithScenario } from "@/lib/run-queries";
-import { createCommsDraftAction, upsertResponseAction } from "@/app/actions/runs";
+import { computeVisibility, loadExerciseWithScenario } from "@/lib/exercise-queries";
+import { createCommsDraftAction, upsertResponseAction } from "@/app/actions/exercises";
 import DDayClockTicker from "@/components/DDayClockTicker";
 import IncidentLogPanel from "@/components/IncidentLogPanel";
 
@@ -13,12 +13,12 @@ export default async function ParticipantPage({
 }) {
   const user = await requireOrgUser();
   const { id } = await params;
-  const run = await loadRunWithScenario(id, user.orgId);
-  if (!run) notFound();
-  const { clock, events, injects } = computeVisibility(run);
+  const exercise = await loadExerciseWithScenario(id, user.orgId);
+  if (!exercise) notFound();
+  const { clock, events, injects } = computeVisibility(exercise);
 
   const myResponses = new Map(
-    run.responses.filter((r) => r.authorId === user.id).map((r) => [r.injectId, r]),
+    exercise.responses.filter((r) => r.authorId === user.id).map((r) => [r.injectId, r]),
   );
 
   const visibleEvents = events.filter((e) => e.released);
@@ -28,20 +28,20 @@ export default async function ParticipantPage({
     <div className="space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{run.title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{exercise.title}</h1>
           <p className="text-sm text-slate-500">
-            {run.scenario.title} · You: {user.name ?? user.email} ({user.orgRole}) ·{" "}
-            <Link href={`/runs/${run.id}/debrief`} className="underline">
+            {exercise.scenario.title} · You: {user.name ?? user.email} ({user.orgRole}) ·{" "}
+            <Link href={`/exercises/${exercise.id}/debrief`} className="underline">
               Debrief
             </Link>
             {" · "}
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{run.status}</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{exercise.status}</span>
           </p>
         </div>
         <DDayClockTicker
-          anchor={run.dDayAnchor?.toISOString() ?? null}
-          speedMultiplier={run.speedMultiplier}
-          status={run.status}
+          anchor={exercise.dDayAnchor?.toISOString() ?? null}
+          speedMultiplier={exercise.speedMultiplier}
+          status={exercise.status}
         />
       </header>
 
@@ -90,7 +90,7 @@ export default async function ParticipantPage({
                   </div>
                   <p className="mt-1 whitespace-pre-wrap text-slate-700">{j.description}</p>
                   <form action={upsertResponseAction} className="mt-3 grid grid-cols-2 gap-2">
-                    <input type="hidden" name="runId" value={run.id} />
+                    <input type="hidden" name="exerciseId" value={exercise.id} />
                     <input type="hidden" name="injectId" value={j.id} />
                     <TextArea label="Initial assessment" name="assessment" required defaultValue={existing?.assessment} />
                     <TextArea label="Proposed actions" name="proposedActions" required defaultValue={existing?.proposedActions} />
@@ -111,9 +111,9 @@ export default async function ParticipantPage({
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Incident log</h2>
         <IncidentLogPanel
-          runId={run.id}
+          exerciseId={exercise.id}
           dDayHHMM={clock.hhmm}
-          entries={run.incidentLog.map((e) => ({
+          entries={exercise.incidentLog.map((e) => ({
             id: e.id,
             dDayTime: e.dDayTime,
             kind: e.kind,
@@ -127,7 +127,7 @@ export default async function ParticipantPage({
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Communication drafts</h2>
         <ul className="space-y-2">
-          {run.comms.map((c) => (
+          {exercise.comms.map((c) => (
             <li key={c.id} className="rounded border border-slate-200 bg-white p-3 text-sm">
               <div className="text-xs text-slate-500">
                 {c.audience} · {c.author?.name ?? c.author?.email} · {c.status}
@@ -138,7 +138,7 @@ export default async function ParticipantPage({
           ))}
         </ul>
         <form action={createCommsDraftAction} className="grid grid-cols-2 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm">
-          <input type="hidden" name="runId" value={run.id} />
+          <input type="hidden" name="exerciseId" value={exercise.id} />
           <select name="audience" required className="rounded border border-slate-300 px-2 py-1">
             <option value="CUSTOMER">Customer</option>
             <option value="REGULATOR">Regulator</option>

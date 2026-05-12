@@ -10,7 +10,6 @@ import {
   deleteIBSAction,
   deleteInjectAction,
 } from "@/app/actions/scenarios";
-import { createRunAction } from "@/app/actions/runs";
 
 export default async function ScenarioDetailPage({
   params,
@@ -25,7 +24,7 @@ export default async function ScenarioDetailPage({
       ibsList: { orderBy: { code: "asc" } },
       events: { orderBy: { eventNo: "asc" } },
       injects: { orderBy: { injectNo: "asc" } },
-      runs: { orderBy: { createdAt: "desc" }, take: 5 },
+      exercises: { orderBy: { createdAt: "desc" }, take: 5 },
     },
   });
   if (!scenario) notFound();
@@ -44,20 +43,14 @@ export default async function ScenarioDetailPage({
       </header>
 
       {canEdit && (
-        <form action={createRunAction} className="flex items-end gap-3 rounded-lg border border-slate-200 bg-white p-4">
-          <input type="hidden" name="scenarioId" value={scenario.id} />
-          <label className="block flex-1 text-sm">
-            <span className="text-slate-700">Start a new exercise run</span>
-            <input
-              name="title"
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
-              placeholder={`${scenario.title} — ${new Date().toISOString().slice(0, 10)}`}
-            />
-          </label>
-          <button className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700">
-            Start run
-          </button>
-        </form>
+        <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <Link
+            href={`/exercises/new?scenarioId=${scenario.id}`}
+            className="inline-block rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
+          >
+            Plan an exercise from this scenario
+          </Link>
+        </div>
       )}
 
       <Section title="Important Business Services">
@@ -188,12 +181,12 @@ export default async function ScenarioDetailPage({
         )}
       </Section>
 
-      {scenario.runs.length > 0 && (
+      {scenario.exercises.length > 0 && (
         <Section title="Recent runs">
           <ul className="space-y-1 text-sm">
-            {scenario.runs.map((r) => (
+            {scenario.exercises.map((r) => (
               <li key={r.id}>
-                <Link className="hover:underline" href={`/runs/${r.id}`}>
+                <Link className="hover:underline" href={`/exercises/${r.id}`}>
                   {r.title}
                 </Link>
                 <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{r.status}</span>

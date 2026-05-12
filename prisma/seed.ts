@@ -337,23 +337,105 @@ async function main() {
     data: debriefQs.map((q, i) => ({ ...q, scenarioId: scenario.id, orderIdx: i })),
   });
 
-  // ─── Sample participants ──────────────────────────────────────────────────
-  await prisma.participant.createMany({
-    data: [
-      { name: "Mohammed Fadaei", roleTitle: "Sn.TPM", team: "Tech" },
-      { name: "Mohammed Najem", roleTitle: "TPM", team: "Tech" },
-      { name: "Emmanuel Sifah", roleTitle: "Sn. DA/E", team: "Data" },
-      { name: "Imran Musawi", roleTitle: "ISM", team: "Security" },
-      { name: "Jason Oakley", roleTitle: "CEO", team: "Exec" },
-      { name: "Patrick Ferguson", roleTitle: "CRO", team: "Risk" },
-      { name: "Rebecca Lewis", roleTitle: "Comms Lead", team: "Comms" },
-      { name: "Nicola Tunney", roleTitle: "Customer Ops Lead", team: "Operations" },
-    ],
+  // ─── Sample exercise cast (additional Astro Bank users) ───────────────────
+  const cast: { email: string; name: string; roleTitle: string }[] = [
+    { email: "fadaei@astrobank.com", name: "Mohammed Fadaei", roleTitle: "Sn.TPM" },
+    { email: "najem@astrobank.com", name: "Mohammed Najem", roleTitle: "TPM" },
+    { email: "sifah@astrobank.com", name: "Emmanuel Sifah", roleTitle: "Sn. DA/E" },
+    { email: "musawi@astrobank.com", name: "Imran Musawi", roleTitle: "ISM" },
+    { email: "oakley@astrobank.com", name: "Jason Oakley", roleTitle: "CEO" },
+    { email: "ferguson@astrobank.com", name: "Patrick Ferguson", roleTitle: "CRO" },
+    { email: "lewis@astrobank.com", name: "Rebecca Lewis", roleTitle: "Comms Lead" },
+    { email: "tunney@astrobank.com", name: "Nicola Tunney", roleTitle: "Customer Ops Lead" },
+  ];
+  const castUsers: Record<string, { id: string; roleTitle: string }> = {};
+  for (const c of cast) {
+    const u = await prisma.user.upsert({
+      where: { email: c.email },
+      create: {
+        email: c.email,
+        name: c.name,
+        passwordHash,
+        orgId: org.id,
+        orgRole: "MEMBER",
+      },
+      update: { orgId: org.id, orgRole: "MEMBER", name: c.name },
+    });
+    castUsers[c.email] = { id: u.id, roleTitle: c.roleTitle };
+  }
+
+  // ─── Sample exercise (PLANNING) using Simulation 2 ────────────────────────
+  const exercise = await prisma.exercise.create({
+    data: {
+      orgId: org.id,
+      scenarioId: scenario.id,
+      facilitatorId: owner.id,
+      title: "Astro Bank — Operational Resilience Functional Exercise (Demo)",
+      description:
+        "Sample exercise to demonstrate the SnapFix planning hub. Drives the Simulation 2 scenario with the standard team layout.",
+      plannedDate: new Date("2026-06-15T10:00:00Z"),
+      location: "Lower Ground Floor, 10 Chiswell Street, London EC1Y 4UQ",
+      status: "PLANNING",
+    },
   });
 
+  // Default team structure (matches the Simulation 2 cast)
+  const teamDefs = [
+    { name: "Incident Management", description: "Coordinates the overall response.", orderIdx: 0 },
+    { name: "Tech Recovery", description: "Restores systems and infrastructure.", orderIdx: 1 },
+    { name: "Communications", description: "Customer, regulator and media comms.", orderIdx: 2 },
+    { name: "Customer Operations", description: "Customer-facing operations and call centre.", orderIdx: 3 },
+    { name: "Executive Observers", description: "CEO, CRO, CCO — observe and authorise.", orderIdx: 4 },
+  ] as const;
+  for (const t of teamDefs) {
+    await prisma.exerciseTeam.create({
+      data: { exerciseId: exercise.id, ...t },
+    });
+  }
+  const teams = await prisma.exerciseTeam.findMany({
+    where: { exerciseId: exercise.id },
+  });
+  const teamByName = Object.fromEntries(teams.map((t) => [t.name, t]));
+
+  // Assign cast members to teams with role titles
+  const assignments: { email: string; team: string; role: "LEAD" | "PARTICIPANT" | "OBSERVER" }[] = [
+    { email: "fadaei@astrobank.com", team: "Tech Recovery", role: "LEAD" },
+    { email: "najem@astrobank.com", team: "Tech Recovery", role: "PARTICIPANT" },
+    { email: "sifah@astrobank.com", team: "Incident Management", role: "PARTICIPANT" },
+    { email: "musawi@astrobank.com", team: "Incident Management", role: "LEAD" },
+    { email: "lewis@astrobank.com", team: "Communications", role: "LEAD" },
+    { email: "tunney@astrobank.com", team: "Customer Operations", role: "LEAD" },
+    { email: "oakley@astrobank.com", team: "Executive Observers", role: "OBSERVER" },
+    { email: "ferguson@astrobank.com", team: "Executive Observers", role: "OBSERVER" },
+  ];
+  // The CTO (Astro Bank Admin) is the facilitator
+  await prisma.exerciseParticipant.create({
+    data: {
+      exerciseId: exercise.id,
+      userId: owner.id,
+      teamId: teamByName["Incident Management"]?.id ?? null,
+      roleTitle: "CTO (Facilitator)",
+      exerciseRole: "FACILITATOR",
+    },
+  });
+  for (const a of assignments) {
+    const u = castUsers[a.email];
+    if (!u || !teamByName[a.team]) continue;
+    await prisma.exerciseParticipant.create({
+      data: {
+        exerciseId: exercise.id,
+        userId: u.id,
+        teamId: teamByName[a.team].id,
+        roleTitle: u.roleTitle,
+        exerciseRole: a.role,
+      },
+    });
+  }
+
   console.log("✓ Seed complete.");
-  console.log("  Sign in as admin@astrobank.com / password123 (OWNER of Astro Bank)");
+  console.log("  Sign in as admin@astrobank.com / password123 (OWNER, exercise facilitator)");
   console.log("  Sign in as participant@astrobank.com / password123 (MEMBER)");
+  console.log(`  Sample exercise: ${exercise.title} (${exercise.id})`);
 
   await prisma.$disconnect();
 }

@@ -45,8 +45,8 @@ export default async function RootLayout({
                   <Link href="/scenarios" className="hover:underline">
                     Scenarios
                   </Link>
-                  <Link href="/runs" className="hover:underline">
-                    Runs
+                  <Link href="/exercises" className="hover:underline">
+                    Exercises
                   </Link>
                   {canManageOrg && (
                     <Link href="/org" className="hover:underline">

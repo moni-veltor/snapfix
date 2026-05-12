@@ -1,4 +1,4 @@
-import { addLogEntryAction } from "@/app/actions/runs";
+import { addLogEntryAction } from "@/app/actions/exercises";
 
 type Entry = {
   id: string;
@@ -10,11 +10,11 @@ type Entry = {
 };
 
 export default function IncidentLogPanel({
-  runId,
+  exerciseId,
   dDayHHMM,
   entries,
 }: {
-  runId: string;
+  exerciseId: string;
   dDayHHMM: string;
   entries: Entry[];
 }) {
@@ -36,7 +36,7 @@ export default function IncidentLogPanel({
         ))}
       </ul>
       <form action={addLogEntryAction} className="grid grid-cols-6 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm">
-        <input type="hidden" name="runId" value={runId} />
+        <input type="hidden" name="exerciseId" value={exerciseId} />
         <input
           name="dDayTime"
           defaultValue={dDayHHMM}

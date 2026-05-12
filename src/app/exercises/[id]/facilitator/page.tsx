@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOrgRole } from "@/lib/auth";
-import { computeVisibility, loadRunWithScenario } from "@/lib/run-queries";
+import { computeVisibility, loadExerciseWithScenario } from "@/lib/exercise-queries";
 import {
-  completeRunAction,
-  pauseRunAction,
+  completeExerciseAction,
+  pauseExerciseAction,
   releaseEventAction,
   releaseInjectAction,
-  startRunAction,
-} from "@/app/actions/runs";
+  startExerciseAction,
+} from "@/app/actions/exercises";
 import DDayClockTicker from "@/components/DDayClockTicker";
 import IncidentLogPanel from "@/components/IncidentLogPanel";
 
@@ -19,46 +19,46 @@ export default async function FacilitatorPage({
 }) {
   const user = await requireOrgRole("OWNER", "ADMIN");
   const { id } = await params;
-  const run = await loadRunWithScenario(id, user.orgId);
-  if (!run) notFound();
-  const { clock, events, injects } = computeVisibility(run);
+  const exercise = await loadExerciseWithScenario(id, user.orgId);
+  if (!exercise) notFound();
+  const { clock, events, injects } = computeVisibility(exercise);
 
   return (
     <div className="space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{run.title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{exercise.title}</h1>
           <p className="text-sm text-slate-500">
-            {run.scenario.title} ·{" "}
-            <Link href={`/runs/${run.id}/debrief`} className="underline">
+            {exercise.scenario.title} ·{" "}
+            <Link href={`/exercises/${exercise.id}/debrief`} className="underline">
               Debrief
             </Link>
             {" · "}
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{run.status}</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{exercise.status}</span>
           </p>
         </div>
         <DDayClockTicker
-          anchor={run.dDayAnchor?.toISOString() ?? null}
-          speedMultiplier={run.speedMultiplier}
-          status={run.status}
+          anchor={exercise.dDayAnchor?.toISOString() ?? null}
+          speedMultiplier={exercise.speedMultiplier}
+          status={exercise.status}
         />
       </header>
 
       <section className="flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white p-3">
-        {run.status === "IN_PROGRESS" ? (
+        {exercise.status === "IN_PROGRESS" ? (
           <>
-            <form action={pauseRunAction}>
-              <input type="hidden" name="id" value={run.id} />
+            <form action={pauseExerciseAction}>
+              <input type="hidden" name="id" value={exercise.id} />
               <button className="rounded-md border border-slate-300 px-3 py-1.5 text-sm">Pause</button>
             </form>
-            <form action={completeRunAction}>
-              <input type="hidden" name="id" value={run.id} />
-              <button className="rounded-md bg-rose-600 px-3 py-1.5 text-sm text-white">Complete run</button>
+            <form action={completeExerciseAction}>
+              <input type="hidden" name="id" value={exercise.id} />
+              <button className="rounded-md bg-rose-600 px-3 py-1.5 text-sm text-white">Complete exercise</button>
             </form>
           </>
         ) : (
-          <form action={startRunAction} className="flex items-center gap-2">
-            <input type="hidden" name="id" value={run.id} />
+          <form action={startExerciseAction} className="flex items-center gap-2">
+            <input type="hidden" name="id" value={exercise.id} />
             <label className="text-sm text-slate-600">
               Speed
               <select name="speed" defaultValue="1" className="ml-2 rounded border border-slate-300 px-2 py-1">
@@ -69,7 +69,7 @@ export default async function FacilitatorPage({
               </select>
             </label>
             <button className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white">
-              {run.status === "PAUSED" ? "Resume" : "Start run"}
+              {exercise.status === "PAUSED" ? "Resume" : "Start exercise"}
             </button>
           </form>
         )}
@@ -92,7 +92,7 @@ export default async function FacilitatorPage({
                     <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">Released</span>
                   ) : (
                     <form action={releaseEventAction}>
-                      <input type="hidden" name="runId" value={run.id} />
+                      <input type="hidden" name="exerciseId" value={exercise.id} />
                       <input type="hidden" name="eventId" value={e.id} />
                       <button className="rounded-md bg-slate-900 px-3 py-1 text-xs text-white">Release now</button>
                     </form>
@@ -119,7 +119,7 @@ export default async function FacilitatorPage({
                     <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">Released</span>
                   ) : (
                     <form action={releaseInjectAction}>
-                      <input type="hidden" name="runId" value={run.id} />
+                      <input type="hidden" name="exerciseId" value={exercise.id} />
                       <input type="hidden" name="injectId" value={j.id} />
                       <button className="rounded-md bg-slate-900 px-3 py-1 text-xs text-white">Release now</button>
                     </form>
@@ -134,9 +134,9 @@ export default async function FacilitatorPage({
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Incident log</h2>
         <IncidentLogPanel
-          runId={run.id}
+          exerciseId={exercise.id}
           dDayHHMM={clock.hhmm}
-          entries={run.incidentLog.map((e) => ({
+          entries={exercise.incidentLog.map((e) => ({
             id: e.id,
             dDayTime: e.dDayTime,
             kind: e.kind,
@@ -147,11 +147,11 @@ export default async function FacilitatorPage({
         />
       </section>
 
-      {run.responses.length > 0 && (
+      {exercise.responses.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Participant responses</h2>
           <ul className="space-y-2">
-            {run.responses.map((r) => (
+            {exercise.responses.map((r) => (
               <li key={r.id} className="rounded-md border border-slate-200 bg-white p-3 text-sm">
                 <div className="text-xs text-slate-500">
                   Inject #{r.inject.injectNo} · {r.author.name ?? r.author.email}

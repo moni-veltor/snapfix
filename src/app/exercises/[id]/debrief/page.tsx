@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOrgUser } from "@/lib/auth";
-import { loadRunWithScenario } from "@/lib/run-queries";
-import { answerDebriefAction, upsertAARAction } from "@/app/actions/runs";
+import { loadExerciseWithScenario } from "@/lib/exercise-queries";
+import { answerDebriefAction, upsertAARAction } from "@/app/actions/exercises";
 
 export default async function DebriefPage({
   params,
@@ -11,11 +11,11 @@ export default async function DebriefPage({
 }) {
   const user = await requireOrgUser();
   const { id } = await params;
-  const run = await loadRunWithScenario(id, user.orgId);
-  if (!run) notFound();
+  const exercise = await loadExerciseWithScenario(id, user.orgId);
+  if (!exercise) notFound();
   const isFacilitator = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
-  const answersByQuestion = new Map<string, typeof run.debriefAnswers>();
-  for (const a of run.debriefAnswers) {
+  const answersByQuestion = new Map<string, typeof exercise.debriefAnswers>();
+  for (const a of exercise.debriefAnswers) {
     const list = answersByQuestion.get(a.questionId) ?? [];
     list.push(a);
     answersByQuestion.set(a.questionId, list);
@@ -24,23 +24,23 @@ export default async function DebriefPage({
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Debrief — {run.title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Debrief — {exercise.title}</h1>
         <p className="text-sm text-slate-500">
-          <Link href={`/runs/${run.id}`} className="underline">Back to run</Link>
+          <Link href={`/exercises/${exercise.id}`} className="underline">Back to exercise</Link>
           {" · "}
-          {run.scenario.title}
+          {exercise.scenario.title}
           {" · "}
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{run.status}</span>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{exercise.status}</span>
         </p>
       </header>
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Debrief questions</h2>
-        {run.scenario.debriefQuestions.length === 0 && (
+        {exercise.scenario.debriefQuestions.length === 0 && (
           <p className="text-sm text-slate-500">No debrief questions defined for this scenario.</p>
         )}
         <ul className="space-y-3">
-          {run.scenario.debriefQuestions.map((q) => {
+          {exercise.scenario.debriefQuestions.map((q) => {
             const answers = answersByQuestion.get(q.id) ?? [];
             return (
               <li key={q.id} className="rounded-md border border-slate-200 bg-white p-4 text-sm">
@@ -55,7 +55,7 @@ export default async function DebriefPage({
                   ))}
                 </ul>
                 <form action={answerDebriefAction} className="mt-2 flex gap-2">
-                  <input type="hidden" name="runId" value={run.id} />
+                  <input type="hidden" name="exerciseId" value={exercise.id} />
                   <input type="hidden" name="questionId" value={q.id} />
                   <textarea name="body" required rows={2} placeholder="Your answer…" className="flex-1 rounded border border-slate-300 px-2 py-1" />
                   <button className="self-start rounded-md bg-slate-900 px-3 py-1.5 text-white">Submit</button>
@@ -70,21 +70,21 @@ export default async function DebriefPage({
         <h2 className="text-lg font-semibold">After-Action Report</h2>
         {isFacilitator ? (
           <form action={upsertAARAction} className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
-            <input type="hidden" name="runId" value={run.id} />
-            <TextArea label="Summary" name="summary" required defaultValue={run.aar?.summary ?? ""} />
-            <TextArea label="Strengths" name="strengths" defaultValue={run.aar?.strengths ?? ""} />
-            <TextArea label="Gaps & weaknesses" name="gaps" defaultValue={run.aar?.gaps ?? ""} />
-            <TextArea label="Actions & next steps" name="actions" defaultValue={run.aar?.actions ?? ""} />
+            <input type="hidden" name="exerciseId" value={exercise.id} />
+            <TextArea label="Summary" name="summary" required defaultValue={exercise.aar?.summary ?? ""} />
+            <TextArea label="Strengths" name="strengths" defaultValue={exercise.aar?.strengths ?? ""} />
+            <TextArea label="Gaps & weaknesses" name="gaps" defaultValue={exercise.aar?.gaps ?? ""} />
+            <TextArea label="Actions & next steps" name="actions" defaultValue={exercise.aar?.actions ?? ""} />
             <button className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white">
-              {run.aar ? "Update AAR" : "Save AAR"}
+              {exercise.aar ? "Update AAR" : "Save AAR"}
             </button>
           </form>
-        ) : run.aar ? (
+        ) : exercise.aar ? (
           <div className="space-y-2 rounded-md border border-slate-200 bg-white p-4 text-sm">
-            <ReadOnlyBlock label="Summary" body={run.aar.summary} />
-            {run.aar.strengths && <ReadOnlyBlock label="Strengths" body={run.aar.strengths} />}
-            {run.aar.gaps && <ReadOnlyBlock label="Gaps & weaknesses" body={run.aar.gaps} />}
-            {run.aar.actions && <ReadOnlyBlock label="Actions & next steps" body={run.aar.actions} />}
+            <ReadOnlyBlock label="Summary" body={exercise.aar.summary} />
+            {exercise.aar.strengths && <ReadOnlyBlock label="Strengths" body={exercise.aar.strengths} />}
+            {exercise.aar.gaps && <ReadOnlyBlock label="Gaps & weaknesses" body={exercise.aar.gaps} />}
+            {exercise.aar.actions && <ReadOnlyBlock label="Actions & next steps" body={exercise.aar.actions} />}
           </div>
         ) : (
           <p className="text-sm text-slate-500">No AAR has been published yet.</p>

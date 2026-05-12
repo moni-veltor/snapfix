@@ -13,7 +13,7 @@ export default async function Home() {
   if (session?.user?.orgId) {
     const [scenarioCount, runCount, memberCount] = await Promise.all([
       prisma.scenario.count({ where: { orgId: session.user.orgId } }),
-      prisma.exerciseRun.count({ where: { orgId: session.user.orgId } }),
+      prisma.exercise.count({ where: { orgId: session.user.orgId } }),
       prisma.user.count({ where: { orgId: session.user.orgId } }),
     ]);
     const canManageOrg = session.user.orgRole === "OWNER" || session.user.orgRole === "ADMIN";
@@ -24,12 +24,12 @@ export default async function Home() {
             Welcome, {session.user.name ?? session.user.email}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Plan, run and learn from operational resilience exercises.
+            Plan, run, and learn from operational resilience exercises.
           </p>
         </section>
         <section className="grid gap-4 sm:grid-cols-3">
           <Stat href="/scenarios" label="Scenarios" value={scenarioCount} />
-          <Stat href="/runs" label="Exercise runs" value={runCount} />
+          <Stat href="/exercises" label="Exercises" value={runCount} />
           <Stat href={canManageOrg ? "/org" : undefined} label="Members" value={memberCount} />
         </section>
         <section className="grid gap-4 md:grid-cols-3">
@@ -39,7 +39,7 @@ export default async function Home() {
           />
           <Card
             title="2. Run"
-            body="Start a live run on a D-Day clock. Multiple participants capture responses and decisions."
+            body="Start a live exercise on a D-Day clock. Multiple participants capture responses and decisions."
           />
           <Card
             title="3. Debrief"
@@ -58,7 +58,7 @@ export default async function Home() {
         </h1>
         <p className="max-w-2xl text-slate-600">
           Plan, run, and learn from operational resilience exercises. Design CMORG-aligned scenarios,
-          run live functional exercises with your incident management team, capture decisions and
+           run live functional exercises with your incident management team, capture decisions and
           communications against a D-Day clock, and produce after-action reports that feed back into
           your operational resilience programme.
         </p>
