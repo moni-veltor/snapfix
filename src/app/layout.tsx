@@ -42,6 +42,9 @@ export default async function RootLayout({
             <nav className="flex items-center gap-6 text-sm">
               {session?.user?.orgId && (
                 <>
+                  <Link href="/templates" className="hover:underline">
+                    Library
+                  </Link>
                   <Link href="/scenarios" className="hover:underline">
                     Scenarios
                   </Link>

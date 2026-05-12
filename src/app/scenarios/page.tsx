@@ -5,11 +5,12 @@ import { prisma } from "@/lib/prisma";
 export default async function ScenariosPage() {
   const user = await requireOrgUser();
   const scenarios = await prisma.scenario.findMany({
-    where: { orgId: user.orgId },
+    where: { orgId: user.orgId, isTemplate: false },
     orderBy: { createdAt: "desc" },
     include: {
       _count: { select: { events: true, injects: true, ibsList: true, exercises: true } },
       createdBy: { select: { name: true, email: true } },
+      templateOrigin: { select: { id: true, title: true } },
     },
   });
   const isFacilitator = user.orgRole === "OWNER" || user.orgRole === "ADMIN";

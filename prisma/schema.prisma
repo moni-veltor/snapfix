@@ -118,16 +118,43 @@ model VerificationToken {
 // ─── Scenario design ────────────────────────────────────────────────────────
 
 model Scenario {
-  id          String       @id @default(cuid())
-  orgId       String
-  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id          String        @id @default(cuid())
+  // Nullable when this is a system-level CMORG template (org-agnostic). When a
+  // user clones a template into their org, orgId is set.
+  orgId       String?
+  org         Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
   title       String
   background  String
   agenda      String?
   dDayDate    DateTime
-  durationMin Int          @default(120)
+  durationMin Int           @default(120)
   createdById String?
-  createdBy   User?        @relation("ScenarioCreator", fields: [createdById], references: [id])
+  createdBy   User?         @relation("ScenarioCreator", fields: [createdById], references: [id])
+
+  // ─── CMORG Dynamic Scenario Library metadata ─────────────────────────────
+  isTemplate       Boolean    @default(false)
+  templateOriginId String?
+  templateOrigin   Scenario?  @relation("ScenarioTemplate", fields: [templateOriginId], references: [id], onDelete: SetNull)
+  clones           Scenario[] @relation("ScenarioTemplate")
+
+  category              String? // e.g. "Technology & Data (Cyber)", "CNI", "Third Party"
+  srrRef                String? // Strategic Risk Register reference (e.g. "3.1, 3.2")
+  cause                 String?
+  impactNarrative       String?
+  characteristics       String[]
+  assumptions           String[]
+  compoundScenarioNotes String?
+  takeaways             String?
+  stressVariables       Json?
+  caseStudy             Json? // { title, causation, impactScale, duration, sourceUrl? }
+
+  // 6-box Risk Coverage matrix from the DSL
+  coversPeople           Boolean @default(false)
+  coversProperty         Boolean @default(false)
+  coversTechnology       Boolean @default(false)
+  coversDataAvailability Boolean @default(false)
+  coversDataIntegrity    Boolean @default(false)
+  coversThirdParty       Boolean @default(false)
 
   ibsList              ImportantBusinessService[]
   events               Event[]

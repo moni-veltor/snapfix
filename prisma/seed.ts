@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { seedSystemTemplates } from "./seed/templates-index";
 
 if (typeof WebSocket !== "undefined") {
   neonConfig.webSocketConstructor = WebSocket as unknown as typeof neonConfig.webSocketConstructor;
@@ -13,6 +14,9 @@ async function main() {
   if (!connectionString) throw new Error("DATABASE_URL or DIRECT_URL must be set");
   const adapter = new PrismaNeon({ connectionString });
   const prisma = new PrismaClient({ adapter });
+
+  // System-level CMORG templates (org-agnostic, available to every org).
+  await seedSystemTemplates(prisma);
 
   console.log("Seeding Astro Bank organisation + Simulation 2…");
 
