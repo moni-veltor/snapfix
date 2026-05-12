@@ -277,8 +277,7 @@ export async function releaseEventAction(formData: FormData) {
     );
   }
   revalidatePath(`/exercises/${exerciseId}/facilitator`);
-  revalidatePath(`/exercises/${exerciseId}/participant`);
-  revalidatePath(`/exercises/${exerciseId}/inbox`);
+  revalidatePath(`/exercises/${exerciseId}/live`);
 }
 
 export async function releaseInjectAction(formData: FormData) {
@@ -299,8 +298,7 @@ export async function releaseInjectAction(formData: FormData) {
     );
   }
   revalidatePath(`/exercises/${exerciseId}/facilitator`);
-  revalidatePath(`/exercises/${exerciseId}/participant`);
-  revalidatePath(`/exercises/${exerciseId}/inbox`);
+  revalidatePath(`/exercises/${exerciseId}/live`);
 }
 
 /**
@@ -360,7 +358,7 @@ async function notifyAddressedParticipants(
   const ccSet = new Set(payload.ccRoleTitles.map((s) => s.toLowerCase()));
 
   const origin = process.env.NEXTAUTH_URL?.replace(/\/+$/, "") ?? "";
-  const link = `${origin}/exercises/${exerciseId}/inbox`;
+  const link = `${origin}/exercises/${exerciseId}/live`;
 
   await Promise.all(
     exercise.participants
@@ -378,11 +376,11 @@ async function notifyAddressedParticipants(
             <h1 style="font-size:18px;margin:8px 0 4px">${escapeHtml(payload.title)}</h1>
             <div style="font-size:12px;color:#64748b">D-Day ${escapeHtml(payload.scheduledTime)} · From: ${escapeHtml(payload.senderRoleTitle ?? "—")} · You are <strong>${addressing}</strong></div>
             <div style="margin-top:16px;color:#334155;white-space:pre-wrap;line-height:1.5">${escapeHtml(payload.body)}</div>
-            <p style="margin-top:24px"><a href="${link}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600">Open your inbox</a></p>
+            <p style="margin-top:24px"><a href="${link}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600">Open live workspace</a></p>
             <p style="margin-top:16px;font-size:11px;color:#94a3b8">You're receiving this because you are on the ${addressing} list of this exercise message as <strong>${escapeHtml(p.roleTitle)}</strong>.</p>
           </div>
         </body></html>`;
-        const text = `${payload.title}\n\nD-Day ${payload.scheduledTime} · From: ${payload.senderRoleTitle ?? "—"} · You are ${addressing}\n\n${payload.body}\n\nOpen your inbox: ${link}`;
+        const text = `${payload.title}\n\nD-Day ${payload.scheduledTime} · From: ${payload.senderRoleTitle ?? "—"} · You are ${addressing}\n\n${payload.body}\n\nOpen the live workspace: ${link}`;
         return sendEmail({
           to: p.user.email,
           subject,
@@ -416,7 +414,7 @@ export async function addLogEntryAction(formData: FormData) {
     data: { ...data, authorId: user.id },
   });
   revalidatePath(`/exercises/${data.exerciseId}/facilitator`);
-  revalidatePath(`/exercises/${data.exerciseId}/participant`);
+  revalidatePath(`/exercises/${data.exerciseId}/live`);
 }
 
 const ResponseInput = z.object({
@@ -452,7 +450,7 @@ export async function upsertResponseAction(formData: FormData) {
       data: { ...data, authorId: user.id },
     });
   }
-  revalidatePath(`/exercises/${data.exerciseId}/participant`);
+  revalidatePath(`/exercises/${data.exerciseId}/live`);
   revalidatePath(`/exercises/${data.exerciseId}/facilitator`);
 }
 
@@ -469,7 +467,7 @@ export async function createCommsDraftAction(formData: FormData) {
   await prisma.communicationDraft.create({
     data: { ...data, authorId: user.id },
   });
-  revalidatePath(`/exercises/${data.exerciseId}/participant`);
+  revalidatePath(`/exercises/${data.exerciseId}/live`);
   revalidatePath(`/exercises/${data.exerciseId}/facilitator`);
 }
 

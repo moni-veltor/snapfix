@@ -55,7 +55,7 @@ export default async function ExerciseOverviewPage({
     if (me.orgRole === "OWNER" || me.orgRole === "ADMIN") {
       redirect(`/exercises/${exercise.id}/facilitator`);
     }
-    redirect(`/exercises/${exercise.id}/inbox`);
+    redirect(`/exercises/${exercise.id}/live`);
   }
   if (exercise.status === "COMPLETED" || exercise.status === "ABANDONED") {
     redirect(`/exercises/${exercise.id}/debrief`);

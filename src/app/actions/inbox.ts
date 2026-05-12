@@ -27,7 +27,7 @@ export async function markEventReadAction(formData: FormData) {
     create: { eventId, participantId: me.id },
     update: {},
   });
-  revalidatePath(`/exercises/${exerciseId}/inbox`);
+  revalidatePath(`/exercises/${exerciseId}/live`);
 }
 
 export async function markInjectReadAction(formData: FormData) {
@@ -40,5 +40,5 @@ export async function markInjectReadAction(formData: FormData) {
     create: { injectId, participantId: me.id },
     update: {},
   });
-  revalidatePath(`/exercises/${exerciseId}/inbox`);
+  revalidatePath(`/exercises/${exerciseId}/live`);
 }

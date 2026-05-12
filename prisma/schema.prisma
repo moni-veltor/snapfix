@@ -395,6 +395,7 @@ model ExerciseParticipant {
   roleTitle    String // e.g. "CTO", "Sn.TPM", "ISM"
   exerciseRole ExerciseRole  @default(PARTICIPANT)
   joinedAt     DateTime      @default(now())
+  lastSeenAt   DateTime?
 
   eventReceipts  EventReceipt[]
   injectReceipts InjectReceipt[]
