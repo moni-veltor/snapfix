@@ -8,32 +8,31 @@ export const metadata = {
 
 export default function SimulatorProductPage() {
   return (
-    <div className="bg-white">
+    <div className="text-slate-200">
       {/* Hero */}
-      <section className="bg-brand-gradient">
+      <section className="bg-night-hero">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <span className="text-sm uppercase tracking-wider text-indigo-700">
+          <span className="text-sm uppercase tracking-wider text-indigo-300">
             Product · SnapFix Simulator
           </span>
-          <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+          <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             The operational-resilience exercise platform, built around CMORG.
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-slate-600">
+          <p className="mt-5 max-w-2xl text-lg text-slate-300">
             Design CMORG-aligned scenarios with full Master Scenario Events Lists and addressed
-            injects. Run exercises on a D-Day clock. Capture decisions, communications, and
-            action items in one place. Close every exercise with a regulator-grade After-Action
-            Report.
+            injects. Run exercises on a D-Day clock. Capture decisions, communications, and action
+            items in one place. Close every exercise with a regulator-grade After-Action Report.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/sign-up"
-              className="rounded-md bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700"
+              className="rounded-md bg-indigo-500 px-5 py-3 text-sm font-medium text-white shadow-[0_0_32px_-4px_rgba(99,102,241,0.6)] hover:bg-indigo-400"
             >
               Get started free
             </Link>
             <Link
               href="/pricing"
-              className="rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 hover:border-slate-400"
+              className="rounded-md border border-white/15 bg-white/[0.04] px-5 py-3 text-sm font-medium text-white hover:bg-white/[0.08]"
             >
               See pricing
             </Link>
@@ -42,19 +41,17 @@ export default function SimulatorProductPage() {
       </section>
 
       {/* Capabilities */}
-      <section className="bg-dots">
+      <section className="bg-night-dots">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <h2 className="text-3xl font-semibold tracking-tight text-slate-900">
-            Capabilities
-          </h2>
-          <div className="mt-12 grid gap-10 md:grid-cols-2">
+          <h2 className="text-3xl font-semibold tracking-tight text-white">Capabilities</h2>
+          <div className="mt-12 grid gap-5 md:grid-cols-2">
             <Capability
               title="Scenario Library"
-              body="The full CMORG Dynamic Scenario Library (March 2025) — 14 sector-standard scenarios across Cyber, Non-Cyber, Physical, Geopolitical, Natural Hazards, CNI and Third Party. Plus 12 tier-specific scenarios calibrated for Tier 1 (HSBC-scale), Tier 2 (Starling-scale), and Tier 3 (BaaS-dependent fintechs)."
+              body="The full CMORG Dynamic Scenario Library (March 2025) — 14 sector-standard scenarios across Cyber, Non-Cyber, Physical, Geopolitical, Natural Hazards, CNI and Third Party. Plus 12 tier-specific scenarios calibrated for Tier 1, Tier 2 and Tier 3 firms."
               bullets={[
                 "26 ready-made scenarios on day one",
                 "Six-box risk-coverage matrix per scenario",
-                "Real-world case studies (Maersk NotPetya, AWS us-east-1, SVB, Synapse, etc.)",
+                "Real-world case studies (Maersk NotPetya, AWS us-east-1, SVB, Synapse, …)",
                 "Stress variables to dial up severity",
               ]}
             />
@@ -64,13 +61,13 @@ export default function SimulatorProductPage() {
               bullets={[
                 "Clone any CMORG template into your org",
                 "Edit MSEL events and injects with full addressing",
-                "Attach artefacts (alerts, emails, runbooks) via Vercel Blob",
+                "Attach artefacts via Vercel Blob",
                 "Question banks for facilitator and debrief",
               ]}
             />
             <Capability
               title="Exercise Planning"
-              body="Plan exercises from any scenario. Pre-build teams (Incident Mgmt, Tech Recovery, Comms, Customer Ops, Exec Observers). Assemble your roster from existing members with role titles and exercise roles. Readiness checklist before you go live."
+              body="Plan exercises from any scenario. Pre-build teams (Incident Mgmt, Tech Recovery, Comms, Customer Ops, Exec Observers). Assemble your roster with role titles. Readiness checklist before you go live."
               bullets={[
                 "Five default teams, customisable",
                 "Per-exercise role titles (CTO, Sn.TPM, ISM…)",
@@ -80,7 +77,7 @@ export default function SimulatorProductPage() {
             />
             <Capability
               title="Live Exercise"
-              body="Run the exercise on a real D-Day clock or compressed (×5, ×15, ×60 — fit a 9-hour scenario into a 90-minute workshop). Events and injects auto-release on schedule, or the facilitator triggers them live."
+              body="Run the exercise on a real D-Day clock or compressed (×5, ×15, ×60). Events and injects auto-release on schedule, or the facilitator triggers them live."
               bullets={[
                 "D-Day clock with speed multiplier",
                 "Auto and manual event/inject release",
@@ -90,7 +87,7 @@ export default function SimulatorProductPage() {
             />
             <Capability
               title="Addressed Inbox"
-              body="Every event and inject flows like a real email. Each participant only sees what their role would receive in real life — TO or CC. Read/unread tracking. Mirrors the workflow your IBS document already describes."
+              body="Every event and inject flows like a real email. Each participant only sees what their role would receive in real life — TO or CC. Read/unread tracking."
               bullets={[
                 "From / To / Cc resolves to participant role titles",
                 "TO vs CC visually distinguished",
@@ -100,7 +97,7 @@ export default function SimulatorProductPage() {
             />
             <Capability
               title="IBS Register"
-              body="Capture your formal Important Business Service register inside the platform. Mirrors the methodology document: governance, customer journeys, FCA and PRA tolerances, full resource map (tech, people, 3rd parties, info, processes), six-dimension importance assessment, vulnerabilities and testing notes. Lifecycle: Draft → Approved → Deprecated."
+              body="Capture your formal Important Business Service register inside the platform. Mirrors the methodology document: governance, customer journeys, FCA and PRA tolerances, full resource map, six-dimension importance assessment."
               bullets={[
                 "Process owner + 2nd-line reviewer",
                 "FCA + PRA impact tolerances",
@@ -110,7 +107,7 @@ export default function SimulatorProductPage() {
             />
             <Capability
               title="Reporting"
-              body="After-Action Report with summary, strengths, gaps and actions. Action-item tracker keeps follow-ups visible long after the exercise. Audit log captures every meaningful action for regulator-ready accountability."
+              body="After-Action Report with summary, strengths, gaps and actions. Action-item tracker keeps follow-ups visible long after the exercise. Audit log captures every meaningful action."
               bullets={[
                 "AAR fields + auto-aggregated artefacts",
                 "Action-item tracker with owner / due date / status",
@@ -123,7 +120,7 @@ export default function SimulatorProductPage() {
               body="Multi-tenant by design. Email-based invitations via Resend. Three roles: OWNER, ADMIN, MEMBER. Per-exercise role assignments for facilitators, leads, participants and observers."
               bullets={[
                 "Email invitations with branded templates",
-                "Per-org tier (Tier 1 / 2 / 3) drives library filtering",
+                "Per-org tier drives library filtering",
                 "Member directory and pending invitations",
                 "Settings + audit log for admins",
               ]}
@@ -133,24 +130,24 @@ export default function SimulatorProductPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-indigo-700">
-        <div className="mx-auto max-w-4xl px-6 py-16 text-center">
+      <section className="bg-night-hero">
+        <div className="mx-auto max-w-4xl px-6 py-20 text-center">
           <h2 className="text-3xl font-semibold tracking-tight text-white">
             See the Simulator in action.
           </h2>
-          <p className="mt-3 text-indigo-100">
+          <p className="mt-3 text-slate-300">
             Free to try with up to 5 members. The full Library is included.
           </p>
           <div className="mt-8 flex justify-center gap-3">
             <Link
               href="/sign-up"
-              className="rounded-md bg-white px-5 py-3 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+              className="rounded-md bg-indigo-500 px-5 py-3 text-sm font-medium text-white shadow-[0_0_32px_-4px_rgba(99,102,241,0.6)] hover:bg-indigo-400"
             >
               Get started free
             </Link>
             <Link
               href="/contact"
-              className="rounded-md border border-white/30 px-5 py-3 text-sm font-medium text-white hover:bg-white/10"
+              className="rounded-md border border-white/15 px-5 py-3 text-sm font-medium text-white hover:bg-white/[0.08]"
             >
               Book a demo
             </Link>
@@ -171,20 +168,24 @@ function Capability({
   bullets: string[];
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6">
-      <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
-      <p className="mt-2 text-sm text-slate-600">{body}</p>
+    <div className="card-night p-6">
+      <h3 className="text-lg font-semibold text-white">{title}</h3>
+      <p className="mt-2 text-sm text-slate-400">{body}</p>
       <ul className="mt-4 space-y-2 text-sm">
         {bullets.map((b) => (
           <li key={b} className="flex items-start gap-2">
-            <svg className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+            <svg
+              className="mt-0.5 h-4 w-4 shrink-0 text-indigo-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
               <path
                 fillRule="evenodd"
                 d="M16.704 5.296a1 1 0 010 1.408l-7.5 7.5a1 1 0 01-1.408 0l-3.5-3.5a1 1 0 011.408-1.408L8.5 12.092l6.796-6.796a1 1 0 011.408 0z"
                 clipRule="evenodd"
               />
             </svg>
-            <span className="text-slate-700">{b}</span>
+            <span className="text-slate-300">{b}</span>
           </li>
         ))}
       </ul>

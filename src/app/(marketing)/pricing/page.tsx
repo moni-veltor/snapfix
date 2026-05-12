@@ -87,91 +87,105 @@ const PLANS: Plan[] = [
 
 export default function PricingPage() {
   return (
-    <div className="bg-white">
-      <div className="mx-auto max-w-6xl px-6 py-20">
-        <header className="mx-auto max-w-2xl text-center">
-          <h1 className="text-4xl font-semibold tracking-tight text-slate-900">Pricing</h1>
-          <p className="mt-4 text-slate-600">
+    <div className="text-slate-200">
+      <section className="bg-night-hero">
+        <div className="mx-auto max-w-3xl px-6 py-20 text-center">
+          <h1 className="text-4xl font-semibold tracking-tight text-white">Pricing</h1>
+          <p className="mt-4 text-slate-300">
             Free to start. Scales as your operational-resilience programme matures.
           </p>
-        </header>
+        </div>
+      </section>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {PLANS.map((p) => (
-            <div
-              key={p.name}
-              className={`relative flex flex-col rounded-xl border bg-white p-6 ${
-                p.highlight ? "border-indigo-600 shadow-lg ring-1 ring-indigo-600" : "border-slate-200"
-              }`}
-            >
-              {p.highlight && (
-                <span className="absolute -top-3 left-6 rounded-full bg-indigo-600 px-2 py-0.5 text-xs font-medium text-white">
-                  Most popular
-                </span>
-              )}
-              <div>
-                <h2 className="text-base font-semibold text-slate-900">{p.name}</h2>
-                <p className="mt-1 min-h-[2.5rem] text-sm text-slate-600">{p.description}</p>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-3xl font-semibold text-slate-900">{p.price}</span>
-                  {p.cadence && <span className="text-sm text-slate-500">/ {p.cadence}</span>}
-                </div>
-              </div>
-              <ul className="mt-6 flex-1 space-y-2 text-sm">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2">
-                    <svg className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.704 5.296a1 1 0 010 1.408l-7.5 7.5a1 1 0 01-1.408 0l-3.5-3.5a1 1 0 011.408-1.408L8.5 12.092l6.796-6.796a1 1 0 011.408 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-slate-700">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={p.href}
-                className={`mt-6 block rounded-md px-4 py-2 text-center text-sm font-medium ${
+      <section className="bg-night-dots">
+        <div className="mx-auto max-w-6xl px-6 py-16">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {PLANS.map((p) => (
+              <div
+                key={p.name}
+                className={`relative flex flex-col rounded-xl border p-6 ${
                   p.highlight
-                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                    : "border border-slate-300 bg-white text-slate-900 hover:border-slate-400"
+                    ? "border-indigo-400/60 bg-[color:var(--night-surface-elev)] shadow-[0_0_48px_-12px_rgba(99,102,241,0.4)]"
+                    : "border-white/[0.08] bg-[color:var(--night-surface)]"
                 }`}
               >
-                {p.cta}
-              </Link>
-            </div>
-          ))}
-        </div>
-
-        <section className="mx-auto mt-20 max-w-3xl space-y-6 text-center">
-          <h2 className="text-2xl font-semibold tracking-tight">Common questions</h2>
-          <div className="space-y-4 text-left">
-            <FAQ
-              q="Can I trial paid plans without a card?"
-              a="Yes. Get in touch and we'll provision a 14-day trial with no card on file. Paid plans are billed monthly with no minimum term."
-            />
-            <FAQ
-              q="Do you support SSO / SAML?"
-              a="SSO via SAML and OIDC is available on Enterprise. We also support credential authentication out of the box on every plan."
-            />
-            <FAQ
-              q="Is my data hosted in the UK?"
-              a="Yes. Production data is hosted in eu-west-2 (London) by default. EU and US hosting available for Enterprise on request."
-            />
-            <FAQ
-              q="Do you provide consulting?"
-              a="Yes. SnapFix is operational-resilience consulting in technology — the platform is one part of what we do. Annual programme reviews, bespoke scenario design and exercise facilitation are available."
-            />
+                {p.highlight && (
+                  <span className="absolute -top-3 left-6 rounded-full bg-indigo-500 px-2 py-0.5 text-xs font-medium text-white">
+                    Most popular
+                  </span>
+                )}
+                <div>
+                  <h2 className="text-base font-semibold text-white">{p.name}</h2>
+                  <p className="mt-1 min-h-[2.5rem] text-sm text-slate-400">{p.description}</p>
+                  <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-3xl font-semibold text-white">{p.price}</span>
+                    {p.cadence && <span className="text-sm text-slate-500">/ {p.cadence}</span>}
+                  </div>
+                </div>
+                <ul className="mt-6 flex-1 space-y-2 text-sm">
+                  {p.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2">
+                      <svg
+                        className="mt-0.5 h-4 w-4 shrink-0 text-indigo-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.704 5.296a1 1 0 010 1.408l-7.5 7.5a1 1 0 01-1.408 0l-3.5-3.5a1 1 0 011.408-1.408L8.5 12.092l6.796-6.796a1 1 0 011.408 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-slate-300">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={p.href}
+                  className={`mt-6 block rounded-md px-4 py-2 text-center text-sm font-medium ${
+                    p.highlight
+                      ? "bg-indigo-500 text-white hover:bg-indigo-400"
+                      : "border border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.08]"
+                  }`}
+                >
+                  {p.cta}
+                </Link>
+              </div>
+            ))}
           </div>
-        </section>
-      </div>
+
+          <section className="mx-auto mt-20 max-w-3xl space-y-6 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight text-white">Common questions</h2>
+            <div className="space-y-3 text-left">
+              <FAQ
+                q="Can I trial paid plans without a card?"
+                a="Yes. Get in touch and we'll provision a 14-day trial with no card on file. Paid plans are billed monthly with no minimum term."
+              />
+              <FAQ
+                q="Do you support SSO / SAML?"
+                a="SSO via SAML and OIDC is available on Enterprise. We also support credential authentication out of the box on every plan."
+              />
+              <FAQ
+                q="Is my data hosted in the UK?"
+                a="Yes. Production data is hosted in eu-west-2 (London) by default. EU and US hosting available for Enterprise on request."
+              />
+              <FAQ
+                q="Do you provide consulting?"
+                a="Yes. SnapFix is operational-resilience consulting in technology — the platform is one part of what we do. Annual programme reviews, bespoke scenario design and exercise facilitation are available."
+              />
+            </div>
+          </section>
+        </div>
+      </section>
     </div>
   );
 }
 
 function FAQ({ q, a }: { q: string; a: string }) {
   return (
-    <details className="rounded-md border border-slate-200 bg-white p-4 text-sm">
-      <summary className="cursor-pointer font-medium text-slate-900">{q}</summary>
-      <p className="mt-2 text-slate-600">{a}</p>
+    <details className="rounded-md border border-white/[0.08] bg-[color:var(--night-surface)] p-4 text-sm">
+      <summary className="cursor-pointer font-medium text-white">{q}</summary>
+      <p className="mt-2 text-slate-400">{a}</p>
     </details>
   );
 }

@@ -9,7 +9,10 @@ export default function ContactForm() {
     undefined,
   );
   return (
-    <form action={action} className="space-y-4 rounded-lg border border-slate-200 bg-white p-6">
+    <form
+      action={action}
+      className="space-y-4 rounded-xl border border-white/[0.08] bg-[color:var(--night-surface)] p-6"
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Your name" name="name" required maxLength={120} />
         <Field label="Work email" name="email" type="email" required maxLength={200} />
@@ -44,16 +47,16 @@ export default function ContactForm() {
         rows={5}
         placeholder="What's on your mind? Any specific scenarios, deadlines or regulator context we should know about."
       />
-      {state?.error && <p className="text-sm text-rose-700">{state.error}</p>}
+      {state?.error && <p className="text-sm text-rose-400">{state.error}</p>}
       {state?.ok && (
-        <p className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-800">
+        <p className="rounded-md border border-emerald-400/30 bg-emerald-500/[0.08] p-3 text-sm text-emerald-300">
           Thanks — we've received your message and will be in touch shortly.
         </p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+        className="rounded-md bg-indigo-500 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-400 disabled:opacity-50"
       >
         {pending ? "Sending…" : "Send message"}
       </button>
@@ -67,10 +70,10 @@ function Field({
 }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <label className="block text-sm">
-      <span className="text-slate-700">{label}</span>
+      <span className="text-slate-300">{label}</span>
       <input
         {...props}
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+        className="mt-1 w-full rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/40"
       />
     </label>
   );
@@ -82,10 +85,10 @@ function Textarea({
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }) {
   return (
     <label className="block text-sm">
-      <span className="text-slate-700">{label}</span>
+      <span className="text-slate-300">{label}</span>
       <textarea
         {...props}
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+        className="mt-1 w-full rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/40"
       />
     </label>
   );
@@ -101,13 +104,13 @@ function Select({
 }) {
   return (
     <label className="block text-sm">
-      <span className="text-slate-700">{label}</span>
+      <span className="text-slate-300">{label}</span>
       <select
         {...props}
-        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+        className="mt-1 w-full rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/40"
       >
         {options.map((o) => (
-          <option key={o.v} value={o.v}>
+          <option key={o.v} value={o.v} className="bg-[color:var(--night-surface)]">
             {o.l}
           </option>
         ))}

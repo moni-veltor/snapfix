@@ -4,18 +4,33 @@
    SnapFix brand tokens — "Trust Indigo"
    ──────────────────────────────────────────────────────────────────────────── */
 :root {
+  /* Brand */
   --brand-primary: #4f46e5; /* indigo-600 */
   --brand-primary-hover: #4338ca; /* indigo-700 */
-  --brand-deep: #1e1b4b; /* indigo-950 — headlines / footer */
+  --brand-light: #818cf8; /* indigo-400 — used on dark backgrounds */
+  --brand-deep: #1e1b4b; /* indigo-950 */
+  --brand-accent: #06b6d4; /* cyan-500 */
+
+  /* Light surfaces (used by the app) */
   --brand-base: #f8fafc; /* slate-50 */
   --brand-surface: #ffffff;
   --brand-ink: #0f172a; /* slate-900 */
-  --brand-ink-muted: #475569; /* slate-600 */
-  --brand-line: #e2e8f0; /* slate-200 */
-  --brand-accent: #06b6d4; /* cyan-500 */
-  --brand-success: #059669;
-  --brand-warning: #d97706;
-  --brand-danger: #dc2626;
+  --brand-ink-muted: #475569;
+  --brand-line: #e2e8f0;
+
+  /* Dark surfaces (used by the marketing site) */
+  --night-base: #06061b; /* deep indigo-black */
+  --night-surface: #0f0f24;
+  --night-surface-elev: #15152e;
+  --night-line: #1f2042;
+  --night-line-strong: #2c2d5a;
+  --night-ink: #e2e8f0;
+  --night-ink-muted: #94a3b8;
+  --night-ink-soft: #64748b;
+
+  --brand-success: #10b981;
+  --brand-warning: #f59e0b;
+  --brand-danger: #ef4444;
 
   --background: var(--brand-base);
   --foreground: var(--brand-ink);
@@ -30,6 +45,10 @@
   --color-brand-accent: var(--brand-accent);
   --color-ink: var(--brand-ink);
   --color-ink-muted: var(--brand-ink-muted);
+  --color-night: var(--night-base);
+  --color-night-surface: var(--night-surface);
+  --color-night-line: var(--night-line);
+  --color-night-ink: var(--night-ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -42,15 +61,46 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Marketing-page hero gradient */
-.bg-brand-gradient {
-  background-image:
-    radial-gradient(60% 80% at 10% 0%, rgba(79, 70, 229, 0.10) 0%, transparent 60%),
-    radial-gradient(50% 70% at 90% 10%, rgba(6, 182, 212, 0.08) 0%, transparent 60%);
+/* Marketing dark theme — applied to the (marketing) layout's root */
+.theme-night {
+  background: var(--night-base);
+  color: var(--night-ink);
 }
 
-/* Subtle dotted background for marketing sections */
-.bg-dots {
-  background-image: radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.06) 1px, transparent 0);
-  background-size: 24px 24px;
+/* Marketing-page hero glow — luminous, on dark */
+.bg-night-hero {
+  background:
+    radial-gradient(60% 80% at 50% 0%, rgba(79, 70, 229, 0.22) 0%, transparent 65%),
+    radial-gradient(50% 60% at 90% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
+    radial-gradient(40% 60% at 10% 30%, rgba(99, 102, 241, 0.10) 0%, transparent 60%),
+    var(--night-base);
+}
+
+.bg-night {
+  background: var(--night-base);
+}
+
+.bg-night-surface {
+  background: var(--night-surface);
+}
+
+.bg-night-surface-elev {
+  background: var(--night-surface-elev);
+}
+
+/* Subtle dot-grid background for night sections */
+.bg-night-dots {
+  background-color: var(--night-base);
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+  background-size: 28px 28px;
+}
+
+/* Card on dark — soft border + tiny inner glow */
+.card-night {
+  background: var(--night-surface);
+  border: 1px solid var(--night-line);
+  border-radius: 12px;
+}
+.card-night:hover {
+  border-color: var(--night-line-strong);
 }
