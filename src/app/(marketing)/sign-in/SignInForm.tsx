@@ -26,7 +26,7 @@ export default function SignInForm() {
             setError("Invalid email or password.");
             return;
           }
-          router.push("/scenarios");
+          router.push("/dashboard");
           router.refresh();
         });
       }}

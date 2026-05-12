@@ -9,7 +9,7 @@ export default async function SignInPage({
   searchParams: Promise<{ registered?: string; error?: string }>;
 }) {
   const session = await auth();
-  if (session?.user) redirect("/scenarios");
+  if (session?.user) redirect("/dashboard");
   const sp = await searchParams;
   return (
     <div className="mx-auto max-w-sm space-y-6">

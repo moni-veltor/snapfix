@@ -5,7 +5,7 @@ import SignUpForm from "./SignUpForm";
 
 export default async function SignUpPage() {
   const session = await auth();
-  if (session?.user) redirect("/scenarios");
+  if (session?.user) redirect("/dashboard");
   return (
     <div className="mx-auto max-w-sm space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Create account</h1>

@@ -65,7 +65,7 @@ export async function acceptInvitationAction(
         data: { acceptedAt: new Date() },
       }),
     ]);
-    redirect("/");
+    redirect("/dashboard");
   }
 
   // Not signed in. Either create a brand-new user (with supplied password) or send to sign-in.

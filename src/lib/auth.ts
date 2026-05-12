@@ -108,6 +108,6 @@ export async function requireOrgUser() {
 
 export async function requireOrgRole(...allowed: OrgRole[]) {
   const user = await requireOrgUser();
-  if (!user.orgRole || !allowed.includes(user.orgRole)) redirect("/");
+  if (!user.orgRole || !allowed.includes(user.orgRole)) redirect("/dashboard");
   return user;
 }
