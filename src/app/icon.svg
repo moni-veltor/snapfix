@@ -1,24 +1,39 @@
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="36" height="32" viewBox="0 0 36 32" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="sfx-icon" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+    <linearGradient id="g" x1="0" y1="0" x2="36" y2="32" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#a5b4fc" />
       <stop offset="100%" stop-color="#4338ca" />
     </linearGradient>
   </defs>
-  <rect x="0" y="0" width="32" height="32" rx="7" fill="#0f0f24" />
+  <rect x="0" y="0" width="36" height="32" rx="7" fill="#0f0f24" />
   <path
-    d="M 23 10.5
-       C 23 8.5, 21 7, 19 7
-       H 12.5
-       C 9.5 7, 7.5 9, 7.5 11.5
-       C 7.5 14, 9.5 15.5, 12.5 15.5
-       H 19.5
-       C 22.5 15.5, 24.5 17, 24.5 19.5
-       C 24.5 22, 22.5 24, 19.5 24
-       H 12
-       C 10 24, 8 22.5, 8 20.5"
-    stroke="url(#sfx-icon)"
-    stroke-width="3"
+    d="M 14 9.5
+       C 14 8 12.7 7 11 7
+       H 7
+       C 5.3 7 4 8 4 9.5
+       C 4 11 5.3 12 7 12
+       H 11
+       C 12.7 12 14 13 14 14.5
+       C 14 16 12.7 17 11 17
+       H 7
+       C 5.3 17 4 18 4 19.5
+       C 4 21 5.3 22 7 22
+       H 13"
+    stroke="url(#g)"
+    stroke-width="2.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <path
+    d="M 20 7
+       V 25
+       M 20 7
+       H 32
+       M 20 14.5
+       H 29"
+    stroke="url(#g)"
+    stroke-width="2.6"
     stroke-linecap="round"
     stroke-linejoin="round"
     fill="none"
