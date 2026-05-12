@@ -1,14 +1,9 @@
-// SnapFix brand mark — tight SF ligature.
+// SnapFix brand mark — a single bold "F" letterform.
 //
-// Both letters share their vertical axis: the S's rightmost edge sits
-// flush against the F's spine, so the eye reads them as one mark. No
-// enclosing tile; bold continuous strokes; single indigo gradient.
-//
-// Variants:
-//   <Logo />          mark only
-//   <Wordmark />      mark + "SnapFix" wordmark
-//   tone="light"      light foreground for dark backgrounds (marketing)
-//   tone="brand"      brand foreground for light backgrounds (app)
+// Three strokes: vertical spine + top arm + middle arm. Indigo gradient.
+// Bold, geometric, rounded caps. No enclosing tile. Distinctive in a
+// landscape full of "S" marks (Stripe, Starling, etc.) and reads cleanly
+// at favicon size.
 
 let counter = 0;
 function nextId() {
@@ -26,21 +21,21 @@ export function Logo({
   tone?: "brand" | "light";
 }) {
   const id = nextId();
-  // Native viewBox 32×24 — slightly wide to fit "SF" as a ligature.
+  // Native 24×32 — taller than wide, classic letterform proportions.
+  const w = Math.round((size * 24) / 32);
   const h = size;
-  const w = Math.round((size * 32) / 24);
   return (
     <svg
       width={w}
       height={h}
-      viewBox="0 0 32 24"
+      viewBox="0 0 24 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
       className={className}
     >
       <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="32" y2="24" gradientUnits="userSpaceOnUse">
+        <linearGradient id={id} x1="0" y1="0" x2="24" y2="32" gradientUnits="userSpaceOnUse">
           {tone === "light" ? (
             <>
               <stop offset="0%" stopColor="#e0e7ff" />
@@ -54,39 +49,15 @@ export function Logo({
           )}
         </linearGradient>
       </defs>
-
-      {/* "S" — three short horizontals connected by snug semicircular ends.
-          Drawn as ONE continuous path, terminating exactly at x=15 so the
-          F's spine at x=15.5 visually butts against it. */}
       <path
-        d="M 12 3
-           H 5.5
-           C 3 3 2 4.3 2 5.7
-           C 2 7.1 3 8.5 5.5 8.5
-           H 10.5
-           C 13 8.5 14 9.9 14 11.3
-           C 14 12.7 13 14 10.5 14
-           H 5.5
-           C 3 14 2 15.3 2 16.7
-           C 2 18.1 3 19.5 5.5 19.5
-           H 13"
+        d="M 4 4
+           V 28
+           M 4 4
+           H 21
+           M 4 16
+           H 18"
         stroke={`url(#${id})`}
-        strokeWidth="3.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-
-      {/* "F" — spine + top arm + middle arm. Starts flush against S. */}
-      <path
-        d="M 16 3
-           V 21
-           M 16 3
-           H 30
-           M 16 11.3
-           H 27"
-        stroke={`url(#${id})`}
-        strokeWidth="3.2"
+        strokeWidth="4.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
