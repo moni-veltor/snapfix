@@ -10,55 +10,318 @@ export default async function Home() {
     redirect("/onboarding");
   }
 
-  if (session?.user?.orgId) {
-    const [scenarioCount, runCount, memberCount] = await Promise.all([
-      prisma.scenario.count({ where: { orgId: session.user.orgId } }),
-      prisma.exercise.count({ where: { orgId: session.user.orgId } }),
-      prisma.user.count({ where: { orgId: session.user.orgId } }),
-    ]);
-    const canManageOrg = session.user.orgRole === "OWNER" || session.user.orgRole === "ADMIN";
-    return (
-      <div className="space-y-10">
-        <section>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome, {session.user.name ?? session.user.email}
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Plan, run, and learn from operational resilience exercises.
-          </p>
-        </section>
-        <section className="grid gap-4 sm:grid-cols-3">
-          <Stat href="/scenarios" label="Scenarios" value={scenarioCount} />
-          <Stat href="/exercises" label="Exercises" value={runCount} />
-          <Stat href={canManageOrg ? "/org" : undefined} label="Members" value={memberCount} />
-        </section>
-        <section className="grid gap-4 md:grid-cols-3">
-          <Card
-            title="1. Design"
-            body="Author scenarios — Important Business Services, MSEL events, injects, and question banks."
-          />
-          <Card
-            title="2. Run"
-            body="Start a live exercise on a D-Day clock. Multiple participants capture responses and decisions."
-          />
-          <Card
-            title="3. Debrief"
-            body="Capture debrief answers, assemble an After-Action Report, and feed lessons back into your programme."
-          />
-        </section>
-      </div>
-    );
+  if (!session?.user?.orgId) {
+    return <LandingPage />;
   }
 
+  const canManage = session.user.orgRole === "OWNER" || session.user.orgRole === "ADMIN";
+  return (
+    <Dashboard
+      userName={session.user.name ?? session.user.email}
+      orgId={session.user.orgId}
+      canManage={canManage}
+    />
+  );
+}
+
+async function Dashboard({
+  userName,
+  orgId,
+  canManage,
+}: {
+  userName: string;
+  orgId: string;
+  canManage: boolean;
+}) {
+  const now = new Date();
+  const in90Days = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+  const [
+    upcoming,
+    inProgress,
+    pendingInvites,
+    openActionItems,
+    overdueActionItems,
+    ibsCount,
+    untestedIBS,
+    recentAudit,
+    coverage,
+  ] = await Promise.all([
+    prisma.exercise.findMany({
+      where: {
+        orgId,
+        status: { in: ["PLANNING", "READY"] },
+        plannedDate: { gte: now, lte: in90Days },
+      },
+      orderBy: { plannedDate: "asc" },
+      take: 5,
+      include: { scenario: { select: { title: true } } },
+    }),
+    prisma.exercise.findMany({
+      where: { orgId, status: { in: ["IN_PROGRESS", "PAUSED"] } },
+      orderBy: { startedAt: "desc" },
+      include: { scenario: { select: { title: true } } },
+    }),
+    canManage
+      ? prisma.invitation.count({
+          where: { orgId, acceptedAt: null, revokedAt: null, expiresAt: { gt: now } },
+        })
+      : Promise.resolve(0),
+    prisma.exerciseActionItem.count({
+      where: { orgId, status: { in: ["OPEN", "IN_PROGRESS", "BLOCKED"] } },
+    }),
+    prisma.exerciseActionItem.count({
+      where: {
+        orgId,
+        status: { in: ["OPEN", "IN_PROGRESS", "BLOCKED"] },
+        dueAt: { lt: now },
+      },
+    }),
+    prisma.organizationIBS.count({ where: { orgId } }),
+    prisma.organizationIBS.count({
+      where: { orgId, exerciseLinks: { none: {} } },
+    }),
+    canManage
+      ? prisma.auditLogEntry.findMany({
+          where: { orgId },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+          include: { actor: { select: { name: true, email: true } } },
+        })
+      : Promise.resolve([] as { id: string; createdAt: Date; summary: string; actor: { name: string | null; email: string } | null }[]),
+    prisma.exercise.findMany({
+      where: { orgId, status: { in: ["IN_PROGRESS", "PAUSED", "COMPLETED"] } },
+      include: {
+        scenario: {
+          select: {
+            coversPeople: true,
+            coversProperty: true,
+            coversTechnology: true,
+            coversDataAvailability: true,
+            coversDataIntegrity: true,
+            coversThirdParty: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  const tested = {
+    people: coverage.filter((e) => e.scenario.coversPeople).length,
+    property: coverage.filter((e) => e.scenario.coversProperty).length,
+    technology: coverage.filter((e) => e.scenario.coversTechnology).length,
+    dataAvailability: coverage.filter((e) => e.scenario.coversDataAvailability).length,
+    dataIntegrity: coverage.filter((e) => e.scenario.coversDataIntegrity).length,
+    thirdParty: coverage.filter((e) => e.scenario.coversThirdParty).length,
+  };
+
+  return (
+    <div className="space-y-8">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight">Welcome back, {userName}</h1>
+        <p className="mt-1 text-sm text-slate-500">Operational resilience dashboard.</p>
+      </header>
+
+      {inProgress.length > 0 && (
+        <section className="rounded-md border border-amber-200 bg-amber-50 p-4">
+          <h2 className="text-sm font-semibold text-amber-900">
+            {inProgress.length} exercise{inProgress.length === 1 ? "" : "s"} live now
+          </h2>
+          <ul className="mt-2 space-y-1 text-sm">
+            {inProgress.map((e) => (
+              <li key={e.id}>
+                <Link href={`/exercises/${e.id}`} className="font-medium underline">
+                  {e.title}
+                </Link>{" "}
+                <span className="text-amber-800">· {e.status}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard href="/calendar" label="Upcoming (90d)" value={upcoming.length} />
+        <StatCard
+          href="/action-items"
+          label="Open action items"
+          value={openActionItems}
+          accent={overdueActionItems > 0 ? `${overdueActionItems} overdue` : undefined}
+          accentTone={overdueActionItems > 0 ? "danger" : undefined}
+        />
+        <StatCard
+          href="/ibs"
+          label="IBS register"
+          value={ibsCount}
+          accent={untestedIBS > 0 ? `${untestedIBS} untested` : ibsCount > 0 ? "all tested" : undefined}
+          accentTone={untestedIBS > 0 ? "warn" : ibsCount > 0 ? "ok" : undefined}
+        />
+        <StatCard
+          href={canManage ? "/org" : undefined}
+          label="Pending invites"
+          value={pendingInvites}
+        />
+      </section>
+
+      <section className="grid gap-6 md:grid-cols-2">
+        <Panel title="Upcoming exercises" href="/calendar">
+          {upcoming.length === 0 ? (
+            <Empty body="No upcoming exercises in the next 90 days." />
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {upcoming.map((e) => (
+                <li
+                  key={e.id}
+                  className="flex items-center justify-between rounded border border-slate-200 px-3 py-2"
+                >
+                  <div>
+                    <Link href={`/exercises/${e.id}`} className="font-medium hover:underline">
+                      {e.title}
+                    </Link>
+                    <div className="text-xs text-slate-500">
+                      {e.scenario.title}
+                      {e.plannedDate && (
+                        <> ·{" "}
+                          {e.plannedDate.toLocaleString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{e.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel title="Risk-coverage tested (exercises)" href="/analytics">
+          <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+            {[
+              ["People", tested.people],
+              ["Property", tested.property],
+              ["Technology", tested.technology],
+              ["Data avail.", tested.dataAvailability],
+              ["Data integ.", tested.dataIntegrity],
+              ["3rd party", tested.thirdParty],
+            ].map(([label, n]) => (
+              <div
+                key={label as string}
+                className={`rounded-md border p-3 text-center ${
+                  (n as number) > 0
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-rose-200 bg-rose-50 text-rose-800"
+                }`}
+              >
+                <div className="font-medium">{label}</div>
+                <div className="mt-1">{n as number} exercises</div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </section>
+
+      {canManage && recentAudit.length > 0 && (
+        <Panel title="Recent activity" href="/audit">
+          <ul className="space-y-1 text-xs">
+            {recentAudit.map((e) => (
+              <li key={e.id} className="rounded border border-slate-200 px-3 py-2">
+                <span className="font-mono text-slate-500">
+                  {e.createdAt.toISOString().slice(0, 16).replace("T", " ")}
+                </span>{" "}
+                <span className="text-slate-800">{e.summary}</span>{" "}
+                <span className="text-slate-500">
+                  · {e.actor?.name ?? e.actor?.email ?? "system"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+    </div>
+  );
+}
+
+function StatCard({
+  href,
+  label,
+  value,
+  accent,
+  accentTone,
+}: {
+  href?: string;
+  label: string;
+  value: number | string;
+  accent?: string;
+  accentTone?: "ok" | "warn" | "danger";
+}) {
+  const inner = (
+    <div className="rounded-md border border-slate-200 bg-white p-4 hover:border-slate-300">
+      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mt-1 text-2xl font-semibold">{value}</div>
+      {accent && (
+        <div
+          className={`mt-1 text-xs ${
+            accentTone === "danger"
+              ? "text-rose-700"
+              : accentTone === "warn"
+                ? "text-amber-700"
+                : accentTone === "ok"
+                  ? "text-emerald-700"
+                  : "text-slate-500"
+          }`}
+        >
+          {accent}
+        </div>
+      )}
+    </div>
+  );
+  return href ? <Link href={href}>{inner}</Link> : inner;
+}
+
+function Panel({
+  title,
+  href,
+  children,
+}: {
+  title: string;
+  href?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3 rounded-md border border-slate-200 bg-white p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">{title}</h2>
+        {href && (
+          <Link href={href} className="text-xs text-slate-500 hover:underline">
+            View all →
+          </Link>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Empty({ body }: { body: string }) {
+  return (
+    <p className="rounded border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-xs text-slate-500">
+      {body}
+    </p>
+  );
+}
+
+function LandingPage() {
   return (
     <div className="space-y-12">
       <section className="space-y-4">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          SnapFix — Operational Resilience
-        </h1>
+        <h1 className="text-3xl font-semibold tracking-tight">SnapFix — Operational Resilience</h1>
         <p className="max-w-2xl text-slate-600">
           Plan, run, and learn from operational resilience exercises. Design CMORG-aligned scenarios,
-           run live functional exercises with your incident management team, capture decisions and
+          run live functional exercises with your incident management team, capture decisions and
           communications against a D-Day clock, and produce after-action reports that feed back into
           your operational resilience programme.
         </p>
@@ -71,33 +334,6 @@ export default async function Home() {
           </Link>
         </div>
       </section>
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  href,
-}: {
-  label: string;
-  value: number | string;
-  href?: string;
-}) {
-  const inner = (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 hover:border-slate-300">
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-3xl font-semibold">{value}</div>
-    </div>
-  );
-  return href ? <Link href={href}>{inner}</Link> : inner;
-}
-
-function Card({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5">
-      <h2 className="font-semibold">{title}</h2>
-      <p className="mt-2 text-sm text-slate-600">{body}</p>
     </div>
   );
 }

@@ -39,22 +39,22 @@ export default async function RootLayout({
               <span>SnapFix</span>
               {orgName && <span className="text-xs font-normal text-slate-500">· {orgName}</span>}
             </Link>
-            <nav className="flex items-center gap-6 text-sm">
+            <nav className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
               {session?.user?.orgId && (
                 <>
-                  <Link href="/templates" className="hover:underline">
-                    Library
-                  </Link>
-                  <Link href="/scenarios" className="hover:underline">
-                    Scenarios
-                  </Link>
-                  <Link href="/exercises" className="hover:underline">
-                    Exercises
-                  </Link>
+                  <Link href="/templates" className="hover:underline">Library</Link>
+                  <Link href="/scenarios" className="hover:underline">Scenarios</Link>
+                  <Link href="/exercises" className="hover:underline">Exercises</Link>
+                  <Link href="/calendar" className="hover:underline">Calendar</Link>
+                  <Link href="/ibs" className="hover:underline">IBS</Link>
+                  <Link href="/action-items" className="hover:underline">Action items</Link>
+                  <Link href="/analytics" className="hover:underline">Analytics</Link>
                   {canManageOrg && (
-                    <Link href="/org" className="hover:underline">
-                      Organisation
-                    </Link>
+                    <>
+                      <Link href="/org" className="hover:underline">Organisation</Link>
+                      <Link href="/audit" className="text-slate-500 hover:underline">Audit</Link>
+                      <Link href="/settings" className="text-slate-500 hover:underline">Settings</Link>
+                    </>
                   )}
                 </>
               )}

@@ -3,6 +3,12 @@ import { notFound } from "next/navigation";
 import { requireOrgUser } from "@/lib/auth";
 import { loadExerciseWithScenario } from "@/lib/exercise-queries";
 import { answerDebriefAction, upsertAARAction } from "@/app/actions/exercises";
+import {
+  createActionItemAction,
+  deleteActionItemAction,
+  updateActionItemStatusAction,
+} from "@/app/actions/action-items";
+import { prisma } from "@/lib/prisma";
 
 export default async function DebriefPage({
   params,
@@ -14,6 +20,12 @@ export default async function DebriefPage({
   const exercise = await loadExerciseWithScenario(id, user.orgId);
   if (!exercise) notFound();
   const isFacilitator = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
+
+  const actionItems = await prisma.exerciseActionItem.findMany({
+    where: { exerciseId: exercise.id },
+    orderBy: [{ priority: "desc" }, { dueAt: "asc" }, { createdAt: "desc" }],
+    include: { ownerUser: { select: { name: true, email: true } } },
+  });
   const answersByQuestion = new Map<string, typeof exercise.debriefAnswers>();
   for (const a of exercise.debriefAnswers) {
     const list = answersByQuestion.get(a.questionId) ?? [];
@@ -89,6 +101,108 @@ export default async function DebriefPage({
         ) : (
           <p className="text-sm text-slate-500">No AAR has been published yet.</p>
         )}
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Action items</h2>
+        {actionItems.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            No action items yet. Capture follow-up actions below so they don't get lost.
+          </p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {actionItems.map((a) => (
+              <li
+                key={a.id}
+                className="flex items-start justify-between gap-3 rounded-md border border-slate-200 bg-white p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{a.title}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                      {a.priority}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                      {a.status}
+                    </span>
+                  </div>
+                  {a.description && <p className="mt-1 text-slate-600">{a.description}</p>}
+                  <div className="mt-1 text-xs text-slate-500">
+                    {a.ownerUser?.name ?? a.ownerUser?.email ?? a.ownerText ?? "Unassigned"}
+                    {a.dueAt && <> · Due {a.dueAt.toISOString().slice(0, 10)}</>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <form action={updateActionItemStatusAction}>
+                    <input type="hidden" name="id" value={a.id} />
+                    <select
+                      name="status"
+                      defaultValue={a.status}
+                      className="rounded border border-slate-300 px-2 py-1 text-xs"
+                    >
+                      <option value="OPEN">OPEN</option>
+                      <option value="IN_PROGRESS">IN_PROGRESS</option>
+                      <option value="BLOCKED">BLOCKED</option>
+                      <option value="DONE">DONE</option>
+                      <option value="WONT_FIX">WONT_FIX</option>
+                    </select>
+                    <button className="ml-1 rounded border border-slate-300 px-2 py-1 text-xs">
+                      Save
+                    </button>
+                  </form>
+                  {isFacilitator && (
+                    <form action={deleteActionItemAction}>
+                      <input type="hidden" name="id" value={a.id} />
+                      <button className="text-xs text-rose-600 hover:underline">Delete</button>
+                    </form>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        <form
+          action={createActionItemAction}
+          className="grid grid-cols-1 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm sm:grid-cols-2"
+        >
+          <input type="hidden" name="exerciseId" value={exercise.id} />
+          <input
+            name="title"
+            required
+            maxLength={200}
+            placeholder="Action item title (e.g. 'Update Sumsub fallback runbook')"
+            className="rounded border border-slate-300 px-2 py-1 sm:col-span-2"
+          />
+          <textarea
+            name="description"
+            rows={2}
+            placeholder="Description (optional)"
+            className="rounded border border-slate-300 px-2 py-1 sm:col-span-2"
+          />
+          <input
+            name="ownerText"
+            placeholder="Owner (free text)"
+            className="rounded border border-slate-300 px-2 py-1"
+          />
+          <input
+            name="dueAt"
+            type="date"
+            className="rounded border border-slate-300 px-2 py-1"
+          />
+          <select
+            name="priority"
+            defaultValue="MEDIUM"
+            className="rounded border border-slate-300 px-2 py-1"
+          >
+            <option value="LOW">LOW</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="HIGH">HIGH</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+          <button className="rounded-md bg-slate-900 px-3 py-1.5 text-white">
+            Add action item
+          </button>
+        </form>
       </section>
     </div>
   );

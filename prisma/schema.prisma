@@ -32,10 +32,14 @@ model Organization {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  users       User[]
-  invitations Invitation[]
-  scenarios   Scenario[]
-  exercises   Exercise[]
+  users         User[]
+  invitations   Invitation[]
+  scenarios     Scenario[]
+  exercises     Exercise[]
+  ibsRegister   OrganizationIBS[]
+  actionItems   ExerciseActionItem[]
+  auditLog      AuditLogEntry[]
+  teamTemplates OrganizationTeamTemplate[]
 }
 
 model Invitation {
@@ -82,6 +86,11 @@ model User {
   debriefAnswers         DebriefAnswer[]
   invitationsSent        Invitation[]          @relation("InvitationInvitedBy")
   uploadedArtefacts      Artefact[]            @relation("ArtefactUploader")
+  ownedIBS               OrganizationIBS[]     @relation("IBSProcessOwner")
+  createdIBS             OrganizationIBS[]     @relation("IBSCreatedBy")
+  ownedActionItems       ExerciseActionItem[]  @relation("ActionItemOwner")
+  createdActionItems     ExerciseActionItem[]  @relation("ActionItemCreatedBy")
+  auditActions           AuditLogEntry[]       @relation("AuditActor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -353,6 +362,8 @@ model Exercise {
   impactBreaches ImpactBreach[]
   aar            AfterActionReport?
   artefacts      Artefact[]
+  ibsLinks       ExerciseIBSLink[]
+  actionItems    ExerciseActionItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -545,4 +556,185 @@ model InjectReceipt {
   readAt        DateTime            @default(now())
 
   @@unique([injectId, participantId])
+}
+
+// ─── Org-level IBS library, action items, audit log ────────────────────────
+
+enum IBSStatus {
+  DRAFT
+  APPROVED
+  DEPRECATED
+}
+
+enum ImpactLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+/// Organisation-level Important Business Service register. Maps to the
+/// firm's formal IBS register (cf. CMORG / FCA / PRA operational-resilience
+/// methodology). Per-scenario IBSs (model ImportantBusinessService) remain
+/// as template fixtures; OrganizationIBS is the firm's canonical register
+/// that exercises and reports refer to.
+model OrganizationIBS {
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  code        String // e.g. "IBS_01"
+  name        String
+  outcome     String? // e.g. "New and existing customers can open deposit accounts"
+  description String?
+  status      IBSStatus @default(DRAFT)
+
+  // Governance
+  processType        String? // e.g. "A", "B"
+  processOwner       String? // free text role title
+  processOwnerUserId String?
+  processOwnerUser   User?     @relation("IBSProcessOwner", fields: [processOwnerUserId], references: [id], onDelete: SetNull)
+  secondLineReviewer String?
+  approvedAt         DateTime?
+  reviewDueAt        DateTime?
+
+  // Methodology
+  customerJourneys String[]
+  productsCovered  String[]
+
+  // Impact tolerance
+  impactToleranceMin Int // Primary tolerance (minutes)
+  fcaToleranceMin    Int?
+  praToleranceMin    Int?
+  toleranceRationale String?
+  criticality        ImpactLevel @default(HIGH)
+
+  // Mapping (the IBS "resource map")
+  technology   String[]
+  peopleNotes  String?
+  facilities   String?
+  thirdParties String[]
+  information  String[]
+  processes    String[]
+
+  // Importance assessment (six standard dimensions)
+  impactCustomerFinancial  ImpactLevel?
+  impactVulnerableCustomer ImpactLevel?
+  impactLossOfLicense      ImpactLevel?
+  impactRegulatoryFine     ImpactLevel?
+  impactReputational       ImpactLevel?
+  impactLossOfCapital      ImpactLevel?
+
+  // 6-box risk coverage (parallel to Scenario)
+  coversPeople           Boolean @default(false)
+  coversProperty         Boolean @default(false)
+  coversTechnology       Boolean @default(false)
+  coversDataAvailability Boolean @default(false)
+  coversDataIntegrity    Boolean @default(false)
+  coversThirdParty       Boolean @default(false)
+
+  // Free-text long-form sections (markdown)
+  importanceAssessmentNotes String?
+  vulnerabilitiesNotes      String?
+  testingNotes              String?
+
+  createdById String?
+  createdBy   User?    @relation("IBSCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  exerciseLinks ExerciseIBSLink[]
+
+  @@unique([orgId, code])
+}
+
+/// Which org-level IBSs an exercise is testing.
+model ExerciseIBSLink {
+  exerciseId String
+  exercise   Exercise        @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  ibsId      String
+  ibs        OrganizationIBS @relation(fields: [ibsId], references: [id], onDelete: Cascade)
+  notes      String?
+
+  @@id([exerciseId, ibsId])
+}
+
+/// Action items captured during/after an exercise. Surfaced in AAR and on
+/// the org-wide /action-items tracker. Real OR programmes generate ~5–15
+/// of these per exercise.
+enum ActionItemStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  WONT_FIX
+  BLOCKED
+}
+
+enum ActionItemPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model ExerciseActionItem {
+  id         String       @id @default(cuid())
+  exerciseId String
+  exercise   Exercise     @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  orgId      String // denormalised for cross-exercise queries
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  ownerUserId String?
+  ownerUser   User?              @relation("ActionItemOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  ownerText   String? // when owner isn't an in-system user (yet)
+  dueAt       DateTime?
+  priority    ActionItemPriority @default(MEDIUM)
+  status      ActionItemStatus   @default(OPEN)
+  evidenceUrl String?
+
+  createdById String?
+  createdBy   User?     @relation("ActionItemCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  closedAt    DateTime?
+}
+
+/// Lightweight audit log for regulator-facing accountability. Recorded at
+/// the boundary of major actions (CRUD on scenarios / exercises / members /
+/// IBS, role changes, invitation actions).
+model AuditLogEntry {
+  id      String       @id @default(cuid())
+  orgId   String
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  actorId String?
+  actor   User?        @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  action     String // e.g. "scenario.created", "exercise.started", "ibs.approved", "member.removed"
+  targetType String // "scenario" | "exercise" | "ibs" | "user" | "invitation" | …
+  targetId   String?
+  summary    String
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([orgId, createdAt])
+}
+
+/// Reusable team templates for exercises (e.g. "Incident Management",
+/// "Tech Recovery"). When admins plan an exercise, they can pick from these
+/// instead of re-creating teams each time.
+model OrganizationTeamTemplate {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  orderIdx    Int          @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, name])
 }

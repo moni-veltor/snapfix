@@ -463,10 +463,176 @@ async function main() {
     });
   }
 
+  // ─── Astro Bank IBS register (mirrors the IBS reference doc) ──────────────
+  await prisma.organizationIBS.deleteMany({ where: { orgId: org.id } });
+  const ibsData: {
+    code: string;
+    name: string;
+    outcome: string;
+    description: string;
+    impactToleranceMin: number;
+    fcaToleranceMin: number;
+    praToleranceMin: number;
+    customerJourneys: string[];
+    technology: string[];
+    thirdParties: string[];
+    information: string[];
+    processes: string[];
+    criticality: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    coversTechnology: boolean;
+    coversThirdParty: boolean;
+    coversDataAvailability: boolean;
+    coversDataIntegrity: boolean;
+    impactCustomerFinancial: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    impactRegulatoryFine: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    impactReputational: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    toleranceRationale: string;
+  }[] = [
+    {
+      code: "IBS_01",
+      name: "Deposit Account Opening",
+      outcome: "New and existing customers can open deposit accounts and fund them",
+      description:
+        "Customers can apply for and open savings (fixed-term and notice) accounts. End-to-end journey from registration through funding.",
+      impactToleranceMin: 5760, // 4 days
+      fcaToleranceMin: 5760,
+      praToleranceMin: 2880,
+      customerJourneys: ["Customer mobile registration", "Customer ID/V check", "Customer AML checks", "Customer account opening", "Customer account funding"],
+      technology: ["Core Banking Platform", "Payment Gateway", "Account Service", "Customer Service", "Payment Service", "KYC/AML Platform"],
+      thirdParties: ["Thought Machine", "ClearBank", "Sumsub", "ComplyAdvantage", "Vacuum Labs", "Veripark", "Amazon Web Services"],
+      information: ["Customer identification data", "KYC documentation", "Account opening forms", "Initial deposit details", "Product terms acceptance"],
+      processes: ["Digital application submission", "Identity verification", "AML/KYC checks", "Account creation", "Initial deposit processing"],
+      criticality: "HIGH",
+      coversTechnology: true,
+      coversThirdParty: true,
+      coversDataAvailability: true,
+      coversDataIntegrity: true,
+      impactCustomerFinancial: "MEDIUM",
+      impactRegulatoryFine: "HIGH",
+      impactReputational: "HIGH",
+      toleranceRationale:
+        "Cascading event across third parties calculated at 31h. FCA tolerance set at 4 days; PRA tolerance at 2 days. Re-assessed annually.",
+    },
+    {
+      code: "IBS_02",
+      name: "Deposit Access Service",
+      outcome: "Customers can access their existing deposit balances and execute withdrawals",
+      description: "Real-time customer access to balances and ability to move funds out, including via Faster Payments.",
+      impactToleranceMin: 60,
+      fcaToleranceMin: 360,
+      praToleranceMin: 180,
+      customerJourneys: ["Customer login", "Balance enquiry", "Faster Payments outbound"],
+      technology: ["Core Banking Platform", "Mobile App", "Open Banking APIs", "Faster Payments connectivity"],
+      thirdParties: ["Thought Machine", "ClearBank", "Amazon Web Services"],
+      information: ["Customer account data", "Transaction records"],
+      processes: ["Authentication", "Authorisation", "Payment initiation", "Settlement"],
+      criticality: "CRITICAL",
+      coversTechnology: true,
+      coversThirdParty: true,
+      coversDataAvailability: true,
+      coversDataIntegrity: false,
+      impactCustomerFinancial: "HIGH",
+      impactRegulatoryFine: "HIGH",
+      impactReputational: "CRITICAL",
+      toleranceRationale: "Critical customer-facing service; FCA 6h tolerance, PRA 3h.",
+    },
+    {
+      code: "IBS_03",
+      name: "Issuing and Completion of a Secured Loan (mortgage)",
+      outcome: "Customers can submit and progress mortgage applications through to completion",
+      description: "End-to-end mortgage application, underwriting, valuation and completion process.",
+      impactToleranceMin: 11520, // 8 days
+      fcaToleranceMin: 11520,
+      praToleranceMin: 4320,
+      customerJourneys: ["Application", "Document upload", "Underwriting", "Valuation", "Offer", "Completion"],
+      technology: ["Loan Origination System", "Document Management", "Decisioning Engine"],
+      thirdParties: ["Thought Machine", "Vacuum Labs", "External valuers", "Conveyancing partners"],
+      information: ["Mortgage application data", "Property valuation", "Affordability data"],
+      processes: ["Initial assessment", "Underwriting", "Valuation", "Offer issuance"],
+      criticality: "HIGH",
+      coversTechnology: true,
+      coversThirdParty: true,
+      coversDataAvailability: false,
+      coversDataIntegrity: true,
+      impactCustomerFinancial: "HIGH",
+      impactRegulatoryFine: "MEDIUM",
+      impactReputational: "MEDIUM",
+      toleranceRationale: "Mortgage process is multi-day inherently; tolerance set with consideration of customer harm windows.",
+    },
+    {
+      code: "IBS_04",
+      name: "Providing Access to Balances",
+      outcome: "Customers can view their account balances and recent activity across digital channels",
+      description: "Mobile app and online banking surfacing of current and historical balance information.",
+      impactToleranceMin: 60,
+      fcaToleranceMin: 360,
+      praToleranceMin: 240,
+      customerJourneys: ["Login", "Balance enquiry", "Statement download"],
+      technology: ["Mobile App", "Web App", "Open Banking APIs"],
+      thirdParties: ["Thought Machine", "Amazon Web Services"],
+      information: ["Account balance data", "Transaction history"],
+      processes: ["Balance retrieval", "Statement generation"],
+      criticality: "CRITICAL",
+      coversTechnology: true,
+      coversThirdParty: true,
+      coversDataAvailability: true,
+      coversDataIntegrity: true,
+      impactCustomerFinancial: "MEDIUM",
+      impactRegulatoryFine: "MEDIUM",
+      impactReputational: "HIGH",
+      toleranceRationale: "Read-only service; tolerance set 1h primary, FCA 6h, PRA 4h.",
+    },
+    {
+      code: "IBS_05",
+      name: "Provision of a Channel for Urgent Communications to Customers",
+      outcome: "The Bank can communicate authoritatively and at speed with customers during a major event",
+      description: "Outbound urgent-communications capability via push, in-app banner, SMS, email and (where applicable) IVR.",
+      impactToleranceMin: 120,
+      fcaToleranceMin: 240,
+      praToleranceMin: 240,
+      customerJourneys: ["Outbound push", "In-app banner", "SMS", "Email", "IVR message"],
+      technology: ["Push provider", "SMS gateway", "Email service", "IVR"],
+      thirdParties: ["Twilio", "SendGrid", "Amazon Web Services"],
+      information: ["Customer contact data", "Message templates"],
+      processes: ["Message authorisation", "Channel send"],
+      criticality: "HIGH",
+      coversTechnology: true,
+      coversThirdParty: true,
+      coversDataAvailability: true,
+      coversDataIntegrity: true,
+      impactCustomerFinancial: "MEDIUM",
+      impactRegulatoryFine: "HIGH",
+      impactReputational: "HIGH",
+      toleranceRationale: "Critical during any major event; primary 2h, FCA/PRA 4h.",
+    },
+  ];
+
+  for (const i of ibsData) {
+    await prisma.organizationIBS.create({
+      data: {
+        orgId: org.id,
+        createdById: owner.id,
+        status: "APPROVED",
+        approvedAt: new Date("2025-03-11T00:00:00Z"),
+        reviewDueAt: new Date("2026-03-11T00:00:00Z"),
+        processOwner: "Chief Technology Officer",
+        secondLineReviewer: "Chief Risk Officer",
+        ...i,
+      },
+    });
+  }
+
+  // Link IBS to the demo exercise for analytics
+  const allIBS = await prisma.organizationIBS.findMany({ where: { orgId: org.id } });
+  await prisma.exerciseIBSLink.createMany({
+    data: allIBS.map((i) => ({ exerciseId: exercise.id, ibsId: i.id })),
+  });
+
   console.log("✓ Seed complete.");
   console.log("  Sign in as admin@astrobank.com / password123 (OWNER, exercise facilitator)");
   console.log("  Sign in as participant@astrobank.com / password123 (MEMBER)");
   console.log(`  Sample exercise: ${exercise.title} (${exercise.id})`);
+  console.log(`  Seeded ${allIBS.length} IBSs in the Astro Bank register.`);
 
   await prisma.$disconnect();
 }
