@@ -171,12 +171,98 @@ async function Dashboard({
     );
   }
 
+  // What needs attention right now — three buckets the CTO scans first.
+  const attention = {
+    overdue:
+      overdueActionItems +
+      (pendingInvites > 5 ? 1 : 0),
+    upcoming: upcoming.length + inProgress.length,
+    risk:
+      untestedIBS +
+      (ibsCount === 0 ? 1 : 0),
+  };
+  const attentionTotal = attention.overdue + attention.risk;
+
   return (
     <div className="space-y-8">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Welcome back, {userName}</h1>
         <p className="mt-1 text-sm text-muted">Operational resilience dashboard.</p>
       </header>
+
+      {attentionTotal > 0 && (
+        <section className="grid gap-3 md:grid-cols-3">
+          <AttentionCard
+            tone="critical"
+            label="Overdue"
+            value={attention.overdue}
+            items={[
+              ...(overdueActionItems > 0
+                ? [
+                    {
+                      text: `${overdueActionItems} action item${overdueActionItems === 1 ? "" : "s"} past due`,
+                      href: "/action-items?status=overdue",
+                    },
+                  ]
+                : []),
+              ...(pendingInvites > 5
+                ? [
+                    {
+                      text: `${pendingInvites} unaccepted invitations`,
+                      href: "/org",
+                    },
+                  ]
+                : []),
+            ]}
+          />
+          <AttentionCard
+            tone="info"
+            label="Upcoming"
+            value={attention.upcoming}
+            items={[
+              ...(inProgress.length > 0
+                ? [
+                    {
+                      text: `${inProgress.length} exercise${inProgress.length === 1 ? "" : "s"} live now`,
+                      href: `/exercises/${inProgress[0].id}/facilitator`,
+                    },
+                  ]
+                : []),
+              ...(upcoming.length > 0
+                ? [
+                    {
+                      text: `${upcoming.length} planned exercise${upcoming.length === 1 ? "" : "s"} in the next 90 days`,
+                      href: "/exercises",
+                    },
+                  ]
+                : []),
+            ]}
+          />
+          <AttentionCard
+            tone="warn"
+            label="Risk"
+            value={attention.risk}
+            items={[
+              ...(ibsCount === 0
+                ? [
+                    {
+                      text: "No IBS register — supervisor would ask for this first",
+                      href: "/ibs/new",
+                    },
+                  ]
+                : []),
+              ...(untestedIBS > 0
+                ? [
+                    {
+                      text: `${untestedIBS} IBS${untestedIBS === 1 ? "" : "s"} never tested in an exercise`,
+                      href: "/ibs",
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        </section>
+      )}
 
       {inProgress.length > 0 && (
         <section className="rounded-md border border-amber-200 bg-amber-50 p-4">
@@ -436,6 +522,54 @@ function OnboardingChecklist({
         ))}
       </ul>
     </section>
+  );
+}
+
+function AttentionCard({
+  tone,
+  label,
+  value,
+  items,
+}: {
+  tone: "critical" | "warn" | "info";
+  label: string;
+  value: number;
+  items: { text: string; href: string }[];
+}) {
+  const cls =
+    tone === "critical"
+      ? "border-rose-300 bg-rose-50 dark:border-rose-700 dark:bg-rose-950/40"
+      : tone === "warn"
+        ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/40"
+        : "border-indigo-300 bg-indigo-50 dark:border-indigo-700 dark:bg-indigo-950/40";
+  const badge =
+    tone === "critical"
+      ? "bg-rose-600 text-white"
+      : tone === "warn"
+        ? "bg-amber-600 text-white"
+        : "bg-indigo-600 text-white";
+  return (
+    <div className={`rounded-lg border p-4 ${cls}`}>
+      <div className="flex items-center gap-2">
+        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${badge}`}>
+          {label}
+        </span>
+        <span className="text-2xl font-bold text-ink">{value}</span>
+      </div>
+      {items.length === 0 ? (
+        <p className="mt-2 text-xs text-muted">All clear.</p>
+      ) : (
+        <ul className="mt-2 space-y-1 text-xs">
+          {items.map((it, i) => (
+            <li key={i}>
+              <Link href={it.href} className="text-ink hover:underline">
+                {it.text} →
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

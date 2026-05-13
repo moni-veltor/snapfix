@@ -11,6 +11,11 @@ import {
 } from "@/app/actions/exercises";
 import DDayClockTicker from "@/components/DDayClockTicker";
 import IncidentLogPanel from "@/components/IncidentLogPanel";
+import FacilitatorControls from "@/components/facilitator/FacilitatorControls";
+import ReadReceiptGrid from "@/components/facilitator/ReadReceiptGrid";
+import RecallButton from "@/components/facilitator/RecallButton";
+import Section from "@/components/ui/Section";
+import { loadReadReceipts } from "@/lib/read-receipts";
 
 export default async function FacilitatorPage({
   params,
@@ -22,6 +27,7 @@ export default async function FacilitatorPage({
   const exercise = await loadExerciseWithScenario(id, user.orgId);
   if (!exercise) notFound();
   const { clock, events, injects } = computeVisibility(exercise);
+  const receipts = await loadReadReceipts(exercise.id);
 
   return (
     <div className="space-y-8">
@@ -83,6 +89,24 @@ export default async function FacilitatorPage({
         )}
       </section>
 
+      {exercise.status === "IN_PROGRESS" || exercise.status === "PAUSED" ? (
+        <FacilitatorControls
+          exerciseId={exercise.id}
+          status={exercise.status}
+          dDayHHMM={clock.hhmm}
+        />
+      ) : null}
+
+      {receipts && receipts.messages.length > 0 && (
+        <Section title="Read receipts" subtitle="Who's seen what — refreshes when the live page polls">
+          <ReadReceiptGrid
+            messages={receipts.messages}
+            participants={receipts.participants}
+            cells={receipts.cells}
+          />
+        </Section>
+      )}
+
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Master Scenario Events List</h2>
@@ -97,12 +121,19 @@ export default async function FacilitatorPage({
                     <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-slate-700">{e.description}</p>
                   </div>
                   {e.released ? (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">Released</span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+                        Released
+                      </span>
+                      <RecallButton exerciseId={exercise.id} kind="EVENT" id={e.id} />
+                    </div>
                   ) : (
                     <form action={releaseEventAction}>
                       <input type="hidden" name="exerciseId" value={exercise.id} />
                       <input type="hidden" name="eventId" value={e.id} />
-                      <button className="rounded-md bg-slate-900 px-3 py-1 text-xs text-white">Release now</button>
+                      <button className="rounded-md bg-slate-900 px-3 py-1 text-xs text-white dark:bg-indigo-500">
+                        Release now
+                      </button>
                     </form>
                   )}
                 </div>
@@ -124,12 +155,19 @@ export default async function FacilitatorPage({
                     <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-slate-700">{j.description}</p>
                   </div>
                   {j.released ? (
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">Released</span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+                        Released
+                      </span>
+                      <RecallButton exerciseId={exercise.id} kind="INJECT" id={j.id} />
+                    </div>
                   ) : (
                     <form action={releaseInjectAction}>
                       <input type="hidden" name="exerciseId" value={exercise.id} />
                       <input type="hidden" name="injectId" value={j.id} />
-                      <button className="rounded-md bg-slate-900 px-3 py-1 text-xs text-white">Release now</button>
+                      <button className="rounded-md bg-slate-900 px-3 py-1 text-xs text-white dark:bg-indigo-500">
+                        Release now
+                      </button>
                     </form>
                   )}
                 </div>

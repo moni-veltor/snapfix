@@ -12,6 +12,8 @@ import {
 } from "@/app/actions/scenarios";
 import ArtefactList from "@/components/ArtefactList";
 import ArtefactUpload from "@/components/ArtefactUpload";
+import MSELTimeline from "@/components/scenario/MSELTimeline";
+import InjectComposer from "@/components/scenario/InjectComposer";
 
 const ARTEFACT_INCLUDE = {
   orderBy: { createdAt: "asc" as const },
@@ -37,12 +39,24 @@ export default async function ScenarioDetailPage({
         orderBy: { injectNo: "asc" },
         include: { artefacts: ARTEFACT_INCLUDE },
       },
-      exercises: { orderBy: { createdAt: "desc" }, take: 5 },
+      exercises: {
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: { participants: { select: { roleTitle: true } } },
+      },
       artefacts: ARTEFACT_INCLUDE,
     },
   });
   if (!scenario) notFound();
   const canEdit = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
+
+  // Union of role titles used on exercises of this scenario — used by the
+  // addressing validator on the inject composer + timeline preview.
+  const knownRoles = Array.from(
+    new Set(scenario.exercises.flatMap((e) => e.participants.map((p) => p.roleTitle))),
+  );
+  const nextInjectNo =
+    Math.max(0, ...scenario.injects.map((j) => j.injectNo)) + 1;
 
   return (
     <div className="space-y-8">
@@ -116,6 +130,35 @@ export default async function ScenarioDetailPage({
             <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700">Add IBS</button>
           </form>
         )}
+      </Section>
+
+      <Section title="Timeline">
+        <MSELTimeline
+          durationMin={scenario.durationMin}
+          events={scenario.events.map((e) => ({
+            id: e.id,
+            kind: "EVENT" as const,
+            no: e.eventNo,
+            time: e.scheduledTime,
+            title: e.title,
+            description: e.description,
+            senderRoleTitle: e.senderRoleTitle,
+            toRoleTitles: e.toRoleTitles,
+            ccRoleTitles: e.ccRoleTitles,
+          }))}
+          injects={scenario.injects.map((j) => ({
+            id: j.id,
+            kind: "INJECT" as const,
+            no: j.injectNo,
+            time: j.scheduledTime,
+            title: j.summary,
+            description: j.description,
+            senderRoleTitle: j.senderRoleTitle,
+            toRoleTitles: j.toRoleTitles,
+            ccRoleTitles: j.ccRoleTitles,
+          }))}
+          knownRoles={knownRoles}
+        />
       </Section>
 
       <Section title="Master Scenario Events List (MSEL)">
@@ -223,18 +266,13 @@ export default async function ScenarioDetailPage({
           ))}
         </ul>
         {canEdit && (
-          <form action={addInjectAction} className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-3 text-sm">
-            <input type="hidden" name="scenarioId" value={scenario.id} />
-            <input name="injectNo" type="number" min={1} required placeholder="Inject #" className="rounded border border-line-strong px-2 py-1" />
-            <input name="scheduledTime" required pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" className="rounded border border-line-strong px-2 py-1" />
-            <input name="summary" required placeholder="Summary" className="col-span-2 rounded border border-line-strong px-2 py-1" />
-            <textarea name="description" required placeholder="Description" className="col-span-2 rounded border border-line-strong px-2 py-1" rows={3} />
-            <input name="senderRoleTitle" placeholder='From (role title)' className="col-span-2 rounded border border-line-strong px-2 py-1" />
-            <input name="toRoleTitles" placeholder='To (comma-separated role titles)' className="col-span-2 rounded border border-line-strong px-2 py-1" />
-            <input name="ccRoleTitles" placeholder='Cc (comma-separated role titles)' className="col-span-2 rounded border border-line-strong px-2 py-1" />
-            <textarea name="relation" placeholder="How this relates to the scenario" className="col-span-2 rounded border border-line-strong px-2 py-1" rows={2} />
-            <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700">Add inject</button>
-          </form>
+          <div className="mt-4">
+            <InjectComposer
+              scenarioId={scenario.id}
+              nextInjectNo={nextInjectNo}
+              knownRoles={knownRoles}
+            />
+          </div>
         )}
       </Section>
 
