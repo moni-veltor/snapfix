@@ -27,7 +27,7 @@ export default async function NewExercisePage({
     <div className="mx-auto max-w-2xl space-y-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Plan a new exercise</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           Pick a scenario, set a planned date, and we'll spin up default teams (Incident Mgmt, Tech
           Recovery, Comms, Customer Ops, Exec Observers). You can adjust everything after creating.
         </p>
@@ -35,7 +35,7 @@ export default async function NewExercisePage({
 
       <form
         action={createExerciseAction}
-        className="space-y-4 rounded-md border border-slate-200 bg-white p-5"
+        className="space-y-4 rounded-md border border-line bg-surface-1 p-5"
       >
         <label className="block text-sm">
           <span className="text-slate-700">Scenario</span>
@@ -43,7 +43,7 @@ export default async function NewExercisePage({
             name="scenarioId"
             required
             defaultValue={preselectedScenarioId}
-            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+            className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2"
           >
             {scenarios.map((s) => (
               <option key={s.id} value={s.id}>
@@ -51,7 +51,7 @@ export default async function NewExercisePage({
               </option>
             ))}
           </select>
-          <span className="mt-1 block text-xs text-slate-500">
+          <span className="mt-1 block text-xs text-muted">
             Don't see the right scenario?{" "}
             <Link href="/scenarios/new" className="underline">
               Create one
@@ -81,7 +81,7 @@ export default async function NewExercisePage({
         <div className="flex justify-end gap-3 pt-2">
           <Link
             href="/exercises"
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-white"
+            className="rounded-md border border-line-strong px-4 py-2 text-sm hover:bg-surface-1"
           >
             Cancel
           </Link>
@@ -106,7 +106,7 @@ function Field({
       <span className="text-slate-700">{label}</span>
       <input
         {...props}
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400"
+        className="mt-1 w-full rounded-md border border-line-strong px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400"
       />
     </label>
   );
@@ -121,7 +121,7 @@ function TextArea({
       <span className="text-slate-700">{label}</span>
       <textarea
         {...props}
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400"
+        className="mt-1 w-full rounded-md border border-line-strong px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400"
       />
     </label>
   );

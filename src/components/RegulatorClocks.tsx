@@ -53,7 +53,7 @@ export default function RegulatorClocks({ exerciseId, incidentId, clocks }: Prop
       }
     >
       {clocks.length === 0 ? (
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-muted dark:text-soft">
           No regulator notifications required yet. FCA + PRA clocks start automatically on a
           High-severity invocation.
         </p>
@@ -72,19 +72,19 @@ function ClockRow({ exerciseId, c }: { exerciseId: string; c: Clock }) {
   const isSent = c.status === "SENT";
   const isWaived = c.status === "WAIVED";
   return (
-    <li className="rounded-md border border-slate-200 bg-white p-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+    <li className="rounded-md border border-line bg-surface-1 p-2 text-sm dark:border-slate-700 dark:bg-slate-900">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <Pill variant="critical" tone="solid">{c.regulator}</Pill>
             <span className="text-slate-700 dark:text-slate-200">{c.trigger}</span>
-            <span className="text-slate-400">·</span>
-            <span className="text-slate-500 dark:text-slate-400">SLA {c.slaHours}h</span>
+            <span className="text-soft">·</span>
+            <span className="text-muted dark:text-soft">SLA {c.slaHours}h</span>
             {c.ownerRoleTitle && (
-              <span className="text-slate-500 dark:text-slate-400">· owner {c.ownerRoleTitle}</span>
+              <span className="text-muted dark:text-soft">· owner {c.ownerRoleTitle}</span>
             )}
             {c.approverRoleTitle && (
-              <span className="text-slate-500 dark:text-slate-400">
+              <span className="text-muted dark:text-soft">
                 · approver {c.approverRoleTitle}
               </span>
             )}
@@ -100,7 +100,7 @@ function ClockRow({ exerciseId, c }: { exerciseId: string; c: Clock }) {
                 name="status"
                 defaultValue={c.status}
                 onChange={(e) => (e.target.form as HTMLFormElement).requestSubmit()}
-                className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="rounded border border-line-strong bg-surface-1 px-1.5 py-0.5 text-[11px] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               >
                 <option value="PENDING">Pending</option>
                 <option value="IN_DRAFT">In draft</option>
@@ -113,7 +113,7 @@ function ClockRow({ exerciseId, c }: { exerciseId: string; c: Clock }) {
         </div>
       </div>
       {c.waiverRationale && (
-        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-[11px] text-muted dark:text-soft">
           <strong>Waiver:</strong> {c.waiverRationale}
         </p>
       )}

@@ -45,7 +45,7 @@ export default function ConfirmButton({
 
   const triggerCls =
     variant === "button"
-      ? `rounded-md px-3 py-1.5 text-sm ${destructive ? "border border-rose-300 text-rose-700 hover:bg-rose-50" : "border border-slate-300"}`
+      ? `rounded-md px-3 py-1.5 text-sm ${destructive ? "border border-rose-300 text-rose-700 hover:bg-rose-50" : "border border-line-strong"}`
       : destructive
         ? "text-xs text-rose-600 hover:underline"
         : "text-xs text-slate-600 hover:underline";
@@ -57,13 +57,13 @@ export default function ConfirmButton({
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-          <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
+          <div className="w-full max-w-sm rounded-lg border border-line bg-surface-1 p-5 shadow-xl">
             <h2 className="text-base font-semibold text-slate-900">{title}</h2>
             {body && <p className="mt-2 text-sm text-slate-600">{body}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+                className="rounded-md border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-0"
                 onClick={() => setOpen(false)}
               >
                 {cancelLabel}

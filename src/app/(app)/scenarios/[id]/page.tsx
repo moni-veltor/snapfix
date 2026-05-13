@@ -48,7 +48,7 @@ export default async function ScenarioDetailPage({
     <div className="space-y-8">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">{scenario.title}</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           D-Day {scenario.dDayDate.toISOString().slice(0, 10)} · {scenario.durationMin} min
         </p>
         <div className="mt-4 prose prose-sm max-w-none whitespace-pre-wrap text-slate-700">
@@ -57,7 +57,7 @@ export default async function ScenarioDetailPage({
       </header>
 
       {canEdit && (
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="rounded-lg border border-line bg-surface-1 p-4">
           <Link
             href={`/exercises/new?scenarioId=${scenario.id}`}
             className="inline-block rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
@@ -75,15 +75,15 @@ export default async function ScenarioDetailPage({
       <Section title="Important Business Services">
         <ul className="space-y-2">
           {scenario.ibsList.map((ibs) => (
-            <li key={ibs.id} className="flex items-start justify-between rounded-md border border-slate-200 bg-white p-3 text-sm">
+            <li key={ibs.id} className="flex items-start justify-between rounded-md border border-line bg-surface-1 p-3 text-sm">
               <div>
                 <div className="font-medium">
                   {ibs.code} — {ibs.name}{" "}
-                  <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                  <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs">
                     {ibs.criticality}
                   </span>
                 </div>
-                <div className="text-slate-500">
+                <div className="text-muted">
                   Impact tolerance: {ibs.impactToleranceMin} min
                   {ibs.impactMetrics ? ` · ${ibs.impactMetrics}` : ""}
                 </div>
@@ -100,19 +100,19 @@ export default async function ScenarioDetailPage({
           ))}
         </ul>
         {canEdit && (
-          <form action={addIBSAction} className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm">
+          <form action={addIBSAction} className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-3 text-sm">
             <input type="hidden" name="scenarioId" value={scenario.id} />
-            <input name="code" required placeholder="IBS_06" className="rounded border border-slate-300 px-2 py-1" />
-            <input name="name" required placeholder="Name" className="rounded border border-slate-300 px-2 py-1" />
-            <input name="impactToleranceMin" type="number" min={0} required placeholder="Impact tolerance (min)" className="rounded border border-slate-300 px-2 py-1" />
-            <select name="criticality" required defaultValue="HIGH" className="rounded border border-slate-300 px-2 py-1">
+            <input name="code" required placeholder="IBS_06" className="rounded border border-line-strong px-2 py-1" />
+            <input name="name" required placeholder="Name" className="rounded border border-line-strong px-2 py-1" />
+            <input name="impactToleranceMin" type="number" min={0} required placeholder="Impact tolerance (min)" className="rounded border border-line-strong px-2 py-1" />
+            <select name="criticality" required defaultValue="HIGH" className="rounded border border-line-strong px-2 py-1">
               <option>LOW</option>
               <option>MEDIUM</option>
               <option>HIGH</option>
               <option>CRITICAL</option>
             </select>
-            <input name="impactMetrics" placeholder="Impact metrics (optional)" className="col-span-2 rounded border border-slate-300 px-2 py-1" />
-            <textarea name="description" placeholder="Description (optional)" className="col-span-2 rounded border border-slate-300 px-2 py-1" rows={2} />
+            <input name="impactMetrics" placeholder="Impact metrics (optional)" className="col-span-2 rounded border border-line-strong px-2 py-1" />
+            <textarea name="description" placeholder="Description (optional)" className="col-span-2 rounded border border-line-strong px-2 py-1" rows={2} />
             <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700">Add IBS</button>
           </form>
         )}
@@ -121,7 +121,7 @@ export default async function ScenarioDetailPage({
       <Section title="Master Scenario Events List (MSEL)">
         <ol className="space-y-2">
           {scenario.events.map((e) => (
-            <li key={e.id} className="rounded-md border border-slate-200 bg-white p-3 text-sm">
+            <li key={e.id} className="rounded-md border border-line bg-surface-1 p-3 text-sm">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-medium">
@@ -135,7 +135,7 @@ export default async function ScenarioDetailPage({
                   />
                   {e.expectedActions.length > 0 && (
                     <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-slate-500">Expected actions</summary>
+                      <summary className="cursor-pointer text-xs text-muted">Expected actions</summary>
                       <ul className="mt-1 list-disc pl-5 text-slate-700">
                         {e.expectedActions.map((a, i) => <li key={i}>{a}</li>)}
                       </ul>
@@ -143,7 +143,7 @@ export default async function ScenarioDetailPage({
                   )}
                   {(e.artefacts.length > 0 || canEdit) && (
                     <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-slate-500">
+                      <summary className="cursor-pointer text-xs text-muted">
                         Attachments ({e.artefacts.length})
                       </summary>
                       <div className="mt-2 space-y-2">
@@ -165,17 +165,17 @@ export default async function ScenarioDetailPage({
           ))}
         </ol>
         {canEdit && (
-          <form action={addEventAction} className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm">
+          <form action={addEventAction} className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-3 text-sm">
             <input type="hidden" name="scenarioId" value={scenario.id} />
-            <input name="eventNo" type="number" min={1} required placeholder="Event #" className="rounded border border-slate-300 px-2 py-1" />
-            <input name="scheduledTime" required pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM (D-Day)" className="rounded border border-slate-300 px-2 py-1" />
-            <input name="title" required placeholder="Title" className="col-span-2 rounded border border-slate-300 px-2 py-1" />
-            <textarea name="description" required placeholder="Description" className="col-span-2 rounded border border-slate-300 px-2 py-1" rows={3} />
-            <input name="senderRoleTitle" placeholder='From (role title — e.g. "CTO")' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
-            <input name="toRoleTitles" placeholder='To (comma-separated role titles — e.g. "Sn.TPM, TPM, ISM")' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
-            <input name="ccRoleTitles" placeholder='Cc (comma-separated role titles — e.g. "CEO, CRO")' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
-            <textarea name="expectedActions" placeholder="Expected actions (one per line)" className="rounded border border-slate-300 px-2 py-1" rows={3} />
-            <textarea name="objectives" placeholder="Objectives (one per line)" className="rounded border border-slate-300 px-2 py-1" rows={3} />
+            <input name="eventNo" type="number" min={1} required placeholder="Event #" className="rounded border border-line-strong px-2 py-1" />
+            <input name="scheduledTime" required pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM (D-Day)" className="rounded border border-line-strong px-2 py-1" />
+            <input name="title" required placeholder="Title" className="col-span-2 rounded border border-line-strong px-2 py-1" />
+            <textarea name="description" required placeholder="Description" className="col-span-2 rounded border border-line-strong px-2 py-1" rows={3} />
+            <input name="senderRoleTitle" placeholder='From (role title — e.g. "CTO")' className="col-span-2 rounded border border-line-strong px-2 py-1" />
+            <input name="toRoleTitles" placeholder='To (comma-separated role titles — e.g. "Sn.TPM, TPM, ISM")' className="col-span-2 rounded border border-line-strong px-2 py-1" />
+            <input name="ccRoleTitles" placeholder='Cc (comma-separated role titles — e.g. "CEO, CRO")' className="col-span-2 rounded border border-line-strong px-2 py-1" />
+            <textarea name="expectedActions" placeholder="Expected actions (one per line)" className="rounded border border-line-strong px-2 py-1" rows={3} />
+            <textarea name="objectives" placeholder="Objectives (one per line)" className="rounded border border-line-strong px-2 py-1" rows={3} />
             <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700">Add event</button>
           </form>
         )}
@@ -184,7 +184,7 @@ export default async function ScenarioDetailPage({
       <Section title="Injects">
         <ul className="space-y-2">
           {scenario.injects.map((j) => (
-            <li key={j.id} className="rounded-md border border-slate-200 bg-white p-3 text-sm">
+            <li key={j.id} className="rounded-md border border-line bg-surface-1 p-3 text-sm">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-medium">
@@ -197,11 +197,11 @@ export default async function ScenarioDetailPage({
                     cc={j.ccRoleTitles}
                   />
                   {j.relation && (
-                    <p className="mt-2 text-xs text-slate-500"><span className="font-semibold">Relation:</span> {j.relation}</p>
+                    <p className="mt-2 text-xs text-muted"><span className="font-semibold">Relation:</span> {j.relation}</p>
                   )}
                   {(j.artefacts.length > 0 || canEdit) && (
                     <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-slate-500">
+                      <summary className="cursor-pointer text-xs text-muted">
                         Attachments ({j.artefacts.length})
                       </summary>
                       <div className="mt-2 space-y-2">
@@ -223,16 +223,16 @@ export default async function ScenarioDetailPage({
           ))}
         </ul>
         {canEdit && (
-          <form action={addInjectAction} className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm">
+          <form action={addInjectAction} className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-3 text-sm">
             <input type="hidden" name="scenarioId" value={scenario.id} />
-            <input name="injectNo" type="number" min={1} required placeholder="Inject #" className="rounded border border-slate-300 px-2 py-1" />
-            <input name="scheduledTime" required pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" className="rounded border border-slate-300 px-2 py-1" />
-            <input name="summary" required placeholder="Summary" className="col-span-2 rounded border border-slate-300 px-2 py-1" />
-            <textarea name="description" required placeholder="Description" className="col-span-2 rounded border border-slate-300 px-2 py-1" rows={3} />
-            <input name="senderRoleTitle" placeholder='From (role title)' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
-            <input name="toRoleTitles" placeholder='To (comma-separated role titles)' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
-            <input name="ccRoleTitles" placeholder='Cc (comma-separated role titles)' className="col-span-2 rounded border border-slate-300 px-2 py-1" />
-            <textarea name="relation" placeholder="How this relates to the scenario" className="col-span-2 rounded border border-slate-300 px-2 py-1" rows={2} />
+            <input name="injectNo" type="number" min={1} required placeholder="Inject #" className="rounded border border-line-strong px-2 py-1" />
+            <input name="scheduledTime" required pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM" className="rounded border border-line-strong px-2 py-1" />
+            <input name="summary" required placeholder="Summary" className="col-span-2 rounded border border-line-strong px-2 py-1" />
+            <textarea name="description" required placeholder="Description" className="col-span-2 rounded border border-line-strong px-2 py-1" rows={3} />
+            <input name="senderRoleTitle" placeholder='From (role title)' className="col-span-2 rounded border border-line-strong px-2 py-1" />
+            <input name="toRoleTitles" placeholder='To (comma-separated role titles)' className="col-span-2 rounded border border-line-strong px-2 py-1" />
+            <input name="ccRoleTitles" placeholder='Cc (comma-separated role titles)' className="col-span-2 rounded border border-line-strong px-2 py-1" />
+            <textarea name="relation" placeholder="How this relates to the scenario" className="col-span-2 rounded border border-line-strong px-2 py-1" rows={2} />
             <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700">Add inject</button>
           </form>
         )}
@@ -246,7 +246,7 @@ export default async function ScenarioDetailPage({
                 <Link className="hover:underline" href={`/exercises/${r.id}`}>
                   {r.title}
                 </Link>
-                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{r.status}</span>
+                <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-slate-600">{r.status}</span>
               </li>
             ))}
           </ul>
@@ -279,17 +279,17 @@ function AddressingBlock({
     <div className="mt-2 space-y-0.5 text-xs text-slate-600">
       {from && (
         <div>
-          <span className="font-semibold text-slate-500">From:</span> {from}
+          <span className="font-semibold text-muted">From:</span> {from}
         </div>
       )}
       {to.length > 0 && (
         <div>
-          <span className="font-semibold text-slate-500">To:</span> {to.join(", ")}
+          <span className="font-semibold text-muted">To:</span> {to.join(", ")}
         </div>
       )}
       {cc.length > 0 && (
         <div>
-          <span className="font-semibold text-slate-500">Cc:</span> {cc.join(", ")}
+          <span className="font-semibold text-muted">Cc:</span> {cc.join(", ")}
         </div>
       )}
     </div>

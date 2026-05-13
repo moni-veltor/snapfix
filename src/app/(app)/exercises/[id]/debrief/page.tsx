@@ -46,31 +46,31 @@ export default async function DebriefPage({
     <div className="space-y-8">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Debrief — {exercise.title}</h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted">
           <Link href={`/exercises/${exercise.id}`} className="underline">Back to exercise</Link>
           {" · "}
           {exercise.scenario.title}
           {" · "}
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{exercise.status}</span>
+          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{exercise.status}</span>
         </p>
       </header>
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Debrief questions</h2>
         {exercise.scenario.debriefQuestions.length === 0 && (
-          <p className="text-sm text-slate-500">No debrief questions defined for this scenario.</p>
+          <p className="text-sm text-muted">No debrief questions defined for this scenario.</p>
         )}
         <ul className="space-y-3">
           {exercise.scenario.debriefQuestions.map((q) => {
             const answers = answersByQuestion.get(q.id) ?? [];
             return (
-              <li key={q.id} className="rounded-md border border-slate-200 bg-white p-4 text-sm">
-                <div className="text-xs uppercase tracking-wide text-slate-500">{q.category}</div>
+              <li key={q.id} className="rounded-md border border-line bg-surface-1 p-4 text-sm">
+                <div className="text-xs uppercase tracking-wide text-muted">{q.category}</div>
                 <div className="mt-1 font-medium">{q.text}</div>
                 <ul className="mt-2 space-y-1">
                   {answers.map((a) => (
-                    <li key={a.id} className="rounded bg-slate-50 px-3 py-2">
-                      <div className="text-xs text-slate-500">{a.author?.name ?? a.author?.email ?? "—"}</div>
+                    <li key={a.id} className="rounded bg-surface-0 px-3 py-2">
+                      <div className="text-xs text-muted">{a.author?.name ?? a.author?.email ?? "—"}</div>
                       <p className="whitespace-pre-wrap text-slate-700">{a.body}</p>
                     </li>
                   ))}
@@ -78,7 +78,7 @@ export default async function DebriefPage({
                 <form action={answerDebriefAction} className="mt-2 flex gap-2">
                   <input type="hidden" name="exerciseId" value={exercise.id} />
                   <input type="hidden" name="questionId" value={q.id} />
-                  <textarea name="body" required rows={2} placeholder="Your answer…" className="flex-1 rounded border border-slate-300 px-2 py-1" />
+                  <textarea name="body" required rows={2} placeholder="Your answer…" className="flex-1 rounded border border-line-strong px-2 py-1" />
                   <button className="self-start rounded-md bg-slate-900 px-3 py-1.5 text-white">Submit</button>
                 </form>
               </li>
@@ -90,7 +90,7 @@ export default async function DebriefPage({
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">After-Action Report</h2>
         {isFacilitator ? (
-          <form action={upsertAARAction} className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
+          <form action={upsertAARAction} className="space-y-3 rounded-md border border-line bg-surface-1 p-4">
             <input type="hidden" name="exerciseId" value={exercise.id} />
             <TextArea label="Summary" name="summary" required defaultValue={exercise.aar?.summary ?? ""} />
             <TextArea label="Strengths" name="strengths" defaultValue={exercise.aar?.strengths ?? ""} />
@@ -101,21 +101,21 @@ export default async function DebriefPage({
             </button>
           </form>
         ) : exercise.aar ? (
-          <div className="space-y-2 rounded-md border border-slate-200 bg-white p-4 text-sm">
+          <div className="space-y-2 rounded-md border border-line bg-surface-1 p-4 text-sm">
             <ReadOnlyBlock label="Summary" body={exercise.aar.summary} />
             {exercise.aar.strengths && <ReadOnlyBlock label="Strengths" body={exercise.aar.strengths} />}
             {exercise.aar.gaps && <ReadOnlyBlock label="Gaps & weaknesses" body={exercise.aar.gaps} />}
             {exercise.aar.actions && <ReadOnlyBlock label="Actions & next steps" body={exercise.aar.actions} />}
           </div>
         ) : (
-          <p className="text-sm text-slate-500">No AAR has been published yet.</p>
+          <p className="text-sm text-muted">No AAR has been published yet.</p>
         )}
       </section>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Action items</h2>
         {actionItems.length === 0 ? (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             No action items yet. Capture follow-up actions below so they don't get lost.
           </p>
         ) : (
@@ -123,20 +123,20 @@ export default async function DebriefPage({
             {actionItems.map((a) => (
               <li
                 key={a.id}
-                className="flex items-start justify-between gap-3 rounded-md border border-slate-200 bg-white p-3"
+                className="flex items-start justify-between gap-3 rounded-md border border-line bg-surface-1 p-3"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{a.title}</span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">
                       {a.priority}
                     </span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">
                       {a.status}
                     </span>
                   </div>
                   {a.description && <p className="mt-1 text-slate-600">{a.description}</p>}
-                  <div className="mt-1 text-xs text-slate-500">
+                  <div className="mt-1 text-xs text-muted">
                     {a.ownerUser?.name ?? a.ownerUser?.email ?? a.ownerText ?? "Unassigned"}
                     {a.dueAt && <> · Due {a.dueAt.toISOString().slice(0, 10)}</>}
                   </div>
@@ -147,7 +147,7 @@ export default async function DebriefPage({
                     <select
                       name="status"
                       defaultValue={a.status}
-                      className="rounded border border-slate-300 px-2 py-1 text-xs"
+                      className="rounded border border-line-strong px-2 py-1 text-xs"
                     >
                       <option value="OPEN">OPEN</option>
                       <option value="IN_PROGRESS">IN_PROGRESS</option>
@@ -155,7 +155,7 @@ export default async function DebriefPage({
                       <option value="DONE">DONE</option>
                       <option value="WONT_FIX">WONT_FIX</option>
                     </select>
-                    <button className="ml-1 rounded border border-slate-300 px-2 py-1 text-xs">
+                    <button className="ml-1 rounded border border-line-strong px-2 py-1 text-xs">
                       Save
                     </button>
                   </form>
@@ -172,7 +172,7 @@ export default async function DebriefPage({
         )}
         <form
           action={createActionItemAction}
-          className="grid grid-cols-1 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm sm:grid-cols-2"
+          className="grid grid-cols-1 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-3 text-sm sm:grid-cols-2"
         >
           <input type="hidden" name="exerciseId" value={exercise.id} />
           <input
@@ -180,28 +180,28 @@ export default async function DebriefPage({
             required
             maxLength={200}
             placeholder="Action item title (e.g. 'Update Sumsub fallback runbook')"
-            className="rounded border border-slate-300 px-2 py-1 sm:col-span-2"
+            className="rounded border border-line-strong px-2 py-1 sm:col-span-2"
           />
           <textarea
             name="description"
             rows={2}
             placeholder="Description (optional)"
-            className="rounded border border-slate-300 px-2 py-1 sm:col-span-2"
+            className="rounded border border-line-strong px-2 py-1 sm:col-span-2"
           />
           <input
             name="ownerText"
             placeholder="Owner (free text)"
-            className="rounded border border-slate-300 px-2 py-1"
+            className="rounded border border-line-strong px-2 py-1"
           />
           <input
             name="dueAt"
             type="date"
-            className="rounded border border-slate-300 px-2 py-1"
+            className="rounded border border-line-strong px-2 py-1"
           />
           <select
             name="priority"
             defaultValue="MEDIUM"
-            className="rounded border border-slate-300 px-2 py-1"
+            className="rounded border border-line-strong px-2 py-1"
           >
             <option value="LOW">LOW</option>
             <option value="MEDIUM">MEDIUM</option>
@@ -218,7 +218,7 @@ export default async function DebriefPage({
         <section className="space-y-3">
           <div className="flex items-baseline justify-between">
             <h2 className="text-lg font-semibold">Post-Incident Report</h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               {closedIncident.postIncidentReport.submittedAt
                 ? `Submitted ${closedIncident.postIncidentReport.submittedAt.toISOString().slice(0, 10)}`
                 : `Due ${closedIncident.postIncidentReport.dueAt.toISOString().slice(0, 10)} · IMP §6.5.3 (10 business days)`}
@@ -226,7 +226,7 @@ export default async function DebriefPage({
           </div>
           <form
             action={savePIRAction}
-            className="space-y-3 rounded-md border border-slate-200 bg-white p-4"
+            className="space-y-3 rounded-md border border-line bg-surface-1 p-4"
           >
             <input type="hidden" name="exerciseId" value={exercise.id} />
             <input type="hidden" name="incidentId" value={closedIncident.id} />
@@ -251,7 +251,7 @@ export default async function DebriefPage({
         <section className="space-y-3">
           <div className="flex items-baseline justify-between">
             <h2 className="text-lg font-semibold">Team retrospective</h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               {retrospective.heldAt
                 ? `Held ${retrospective.heldAt.toISOString().slice(0, 10)}`
                 : `Due ${retrospective.dueAt.toISOString().slice(0, 10)} · BCPlans §6.6.1 R-5 (5 business days)`}
@@ -259,7 +259,7 @@ export default async function DebriefPage({
           </div>
           <form
             action={saveRetrospectiveAction}
-            className="space-y-3 rounded-md border border-slate-200 bg-white p-4"
+            className="space-y-3 rounded-md border border-line bg-surface-1 p-4"
           >
             <input type="hidden" name="exerciseId" value={exercise.id} />
             <TextArea label="What went well" name="wentWell" defaultValue={retrospective.wentWell ?? ""} />
@@ -281,7 +281,7 @@ function TextArea({ label, ...props }: React.TextareaHTMLAttributes<HTMLTextArea
   return (
     <label className="block text-sm">
       <span className="text-slate-700">{label}</span>
-      <textarea {...props} rows={4} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
+      <textarea {...props} rows={4} className="mt-1 w-full rounded-md border border-line-strong px-3 py-2" />
     </label>
   );
 }
@@ -289,7 +289,7 @@ function TextArea({ label, ...props }: React.TextareaHTMLAttributes<HTMLTextArea
 function ReadOnlyBlock({ label, body }: { label: string; body: string }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</div>
       <p className="mt-1 whitespace-pre-wrap text-slate-700">{body}</p>
     </div>
   );

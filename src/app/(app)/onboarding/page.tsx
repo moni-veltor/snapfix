@@ -14,7 +14,7 @@ export default async function OnboardingPage() {
       </p>
       <div className="flex gap-3">
         <form action={signOutAction}>
-          <button className="rounded-md border border-slate-300 px-4 py-2 text-sm">Sign out</button>
+          <button className="rounded-md border border-line-strong px-4 py-2 text-sm">Sign out</button>
         </form>
         <Link
           href="/sign-up"

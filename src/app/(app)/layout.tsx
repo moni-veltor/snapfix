@@ -19,7 +19,7 @@ export default async function AppLayout({
     session?.user?.orgRole === "OWNER" || session?.user?.orgRole === "ADMIN";
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="flex min-h-screen bg-surface-0 text-ink">
       {session?.user && (
         <AppSidebar
           user={{ name: session.user.name, email: session.user.email }}
@@ -30,7 +30,7 @@ export default async function AppLayout({
       )}
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
-        <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-500">
+        <footer className="border-t border-line bg-surface-1 py-4 text-center text-xs text-soft">
           SnapFix Simulator · part of the SnapFix platform
         </footer>
       </div>

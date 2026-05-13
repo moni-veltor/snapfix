@@ -88,15 +88,15 @@ export default async function ExerciseOverviewPage({
     <div className="space-y-10">
       <header className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-muted">
             {exercise.scenario.title}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">{exercise.title}</h1>
           {exercise.description && (
             <p className="mt-2 max-w-2xl text-sm text-slate-600">{exercise.description}</p>
           )}
-          <p className="mt-3 text-xs text-slate-500">
-            <span className="rounded-full bg-slate-100 px-2 py-0.5">{exercise.status}</span>
+          <p className="mt-3 text-xs text-muted">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5">{exercise.status}</span>
             {exercise.plannedDate && (
               <> · Planned {exercise.plannedDate.toISOString().slice(0, 16).replace("T", " ")}</>
             )}
@@ -108,7 +108,7 @@ export default async function ExerciseOverviewPage({
           <div className="flex flex-col items-end gap-2">
             <Link
               href={`/exercises/${exercise.id}/team`}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-white"
+              className="rounded-md border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-1"
             >
               Manage teams & people
             </Link>
@@ -126,7 +126,7 @@ export default async function ExerciseOverviewPage({
             {exercise.status === "READY" && (
               <form action={startExerciseAction} className="flex items-center gap-2">
                 <input type="hidden" name="id" value={exercise.id} />
-                <select name="speed" defaultValue="1" className="rounded border border-slate-300 px-2 py-1 text-sm">
+                <select name="speed" defaultValue="1" className="rounded border border-line-strong px-2 py-1 text-sm">
                   <option value="1">×1 real-time</option>
                   <option value="5">×5</option>
                   <option value="15">×15</option>
@@ -151,13 +151,13 @@ export default async function ExerciseOverviewPage({
         <h2 className="text-lg font-semibold">Documents</h2>
         {exercise.scenario.artefacts.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-wide text-slate-500">From the scenario</p>
+            <p className="text-xs uppercase tracking-wide text-muted">From the scenario</p>
             <ArtefactList
               artefacts={exercise.scenario.artefacts}
               canManage={false}
               empty="No scenario-level documents."
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               Manage scenario documents on the{" "}
               <Link href={`/scenarios/${exercise.scenario.id}`} className="underline">
                 scenario page
@@ -167,7 +167,7 @@ export default async function ExerciseOverviewPage({
           </div>
         )}
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wide text-slate-500">For this exercise</p>
+          <p className="text-xs uppercase tracking-wide text-muted">For this exercise</p>
           <ArtefactList
             artefacts={exercise.artefacts}
             canManage={canManage}
@@ -183,7 +183,7 @@ export default async function ExerciseOverviewPage({
           {readyChecks.map((c) => (
             <li
               key={c.label}
-              className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+              className="flex items-center gap-2 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm"
             >
               <span
                 className={`inline-block h-3 w-3 rounded-full ${c.ok ? "bg-emerald-500" : "bg-slate-300"}`}
@@ -198,20 +198,20 @@ export default async function ExerciseOverviewPage({
         <h2 className="text-lg font-semibold">Teams</h2>
         <div className="grid gap-3 md:grid-cols-2">
           {exercise.teams.map((t) => (
-            <div key={t.id} className="rounded-md border border-slate-200 bg-white p-4">
+            <div key={t.id} className="rounded-md border border-line bg-surface-1 p-4">
               <div className="font-medium">{t.name}</div>
-              {t.description && <p className="mt-1 text-xs text-slate-500">{t.description}</p>}
+              {t.description && <p className="mt-1 text-xs text-muted">{t.description}</p>}
               <ul className="mt-3 space-y-1 text-sm">
                 {t.members.length === 0 && (
-                  <li className="text-xs text-slate-400">No members yet.</li>
+                  <li className="text-xs text-soft">No members yet.</li>
                 )}
                 {t.members.map((m) => (
                   <li key={m.id} className="flex items-center justify-between">
                     <span>
                       <span className="font-medium">{m.user.name ?? m.user.email}</span>
-                      <span className="ml-2 text-xs text-slate-500">{m.roleTitle}</span>
+                      <span className="ml-2 text-xs text-muted">{m.roleTitle}</span>
                     </span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">
                       {m.exerciseRole}
                     </span>
                   </li>
@@ -233,8 +233,8 @@ export default async function ExerciseOverviewPage({
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
+    <div className="rounded-md border border-line bg-surface-1 p-4">
+      <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
       <div className="mt-1 text-2xl font-semibold">{value}</div>
     </div>
   );

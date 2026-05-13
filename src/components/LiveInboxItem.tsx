@@ -28,7 +28,7 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
   return (
     <li
       className={`rounded-md border ${
-        item.unread ? "border-rose-300 bg-rose-50/50" : "border-slate-200 bg-white"
+        item.unread ? "border-rose-300 bg-rose-50/50" : "border-line bg-surface-1"
       }`}
     >
       <button
@@ -37,9 +37,9 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
         className="flex w-full items-start justify-between gap-3 p-3 text-left"
       >
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
-            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 font-mono">{item.scheduledTime}</span>
-            <span className="rounded-full bg-slate-100 px-1.5 py-0.5">{item.kind}</span>
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted">
+            <span className="rounded-full bg-surface-2 px-1.5 py-0.5 font-mono">{item.scheduledTime}</span>
+            <span className="rounded-full bg-surface-2 px-1.5 py-0.5">{item.kind}</span>
             <span
               className={`rounded-full px-1.5 py-0.5 ${
                 item.addressing === "TO" ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-700"
@@ -55,11 +55,11 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
           <div className="mt-1 truncate font-medium text-slate-900">{item.title}</div>
           {!open && <p className="mt-1 line-clamp-1 text-xs text-slate-600">{item.summary}</p>}
         </div>
-        <span className="text-xs text-slate-400">{open ? "−" : "+"}</span>
+        <span className="text-xs text-soft">{open ? "−" : "+"}</span>
       </button>
 
       {open && (
-        <div className="space-y-3 border-t border-slate-200 px-3 pb-3 pt-2">
+        <div className="space-y-3 border-t border-line px-3 pb-3 pt-2">
           <p className="whitespace-pre-wrap text-sm text-slate-700">{item.summary}</p>
 
           {item.attachments.length > 0 && (
@@ -67,7 +67,7 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
               {item.attachments.map((a) => (
                 <li
                   key={a.id}
-                  className="flex items-center gap-2 rounded border border-slate-200 bg-slate-50 px-2 py-1"
+                  className="flex items-center gap-2 rounded border border-line bg-surface-0 px-2 py-1"
                 >
                   <span className="rounded-full bg-slate-200 px-1.5 py-0.5 font-mono">{a.kind}</span>
                   <a
@@ -92,7 +92,7 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
                   name={isInject ? "injectId" : "eventId"}
                   value={item.id}
                 />
-                <button className="rounded-md border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50">
+                <button className="rounded-md border border-line-strong px-3 py-1 text-xs hover:bg-surface-0">
                   Mark read
                 </button>
               </form>
@@ -111,7 +111,7 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
           {isInject && showResponse && (
             <form
               action={upsertResponseAction}
-              className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3"
+              className="space-y-2 rounded-md border border-line bg-surface-0 p-3"
             >
               <input type="hidden" name="exerciseId" value={exerciseId} />
               <input type="hidden" name="injectId" value={item.id} />
@@ -175,7 +175,7 @@ function Field({
         defaultValue={defaultValue}
         required={required}
         rows={2}
-        className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+        className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 text-sm"
       />
     </label>
   );

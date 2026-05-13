@@ -121,7 +121,7 @@ export default async function TemplatesPage({
                 return (
                   <li
                     key={t.id}
-                    className="flex items-start justify-between gap-3 rounded-md border border-slate-200 bg-white p-4 text-sm"
+                    className="flex items-start justify-between gap-3 rounded-md border border-line bg-surface-1 p-4 text-sm"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -137,21 +137,21 @@ export default async function TemplatesPage({
                           </span>
                         )}
                         {!t.tier && (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">
                             All tiers
                           </span>
                         )}
                         {t.srrRef && (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-xs">
+                          <span className="rounded-full bg-surface-2 px-2 py-0.5 font-mono text-xs">
                             SRR {t.srrRef}
                           </span>
                         )}
                       </div>
                       <p className="mt-1 line-clamp-2 text-slate-600">{t.background}</p>
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5">{t._count.ibsList} IBS</span>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5">{t._count.events} events</span>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5">{t._count.injects} injects</span>
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
+                        <span className="rounded-full bg-surface-2 px-2 py-0.5">{t._count.ibsList} IBS</span>
+                        <span className="rounded-full bg-surface-2 px-2 py-0.5">{t._count.events} events</span>
+                        <span className="rounded-full bg-surface-2 px-2 py-0.5">{t._count.injects} injects</span>
                         <RiskCoverageBadges scenario={t} />
                       </div>
                       {existing && existing.length > 0 && (
@@ -219,7 +219,7 @@ function FilterBar({
           className={`rounded-full px-3 py-1 text-xs ${
             l.active
               ? "bg-slate-900 text-white"
-              : "border border-slate-300 text-slate-700 hover:bg-white"
+              : "border border-line-strong text-slate-700 hover:bg-surface-1"
           }`}
         >
           {l.label}

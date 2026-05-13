@@ -22,29 +22,29 @@ export default function IncidentLogPanel({
     <div className="space-y-3">
       <ul className="space-y-1 text-sm">
         {entries.length === 0 && (
-          <li className="rounded border border-dashed border-slate-300 bg-white p-3 text-center text-slate-500">
+          <li className="rounded border border-dashed border-line-strong bg-surface-1 p-3 text-center text-muted">
             No log entries yet.
           </li>
         )}
         {entries.map((e) => (
-          <li key={e.id} className="rounded border border-slate-200 bg-white px-3 py-2">
-            <span className="font-mono text-xs text-slate-500">{e.dDayTime}</span>
-            <span className="mx-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs">{e.kind}</span>
+          <li key={e.id} className="rounded border border-line bg-surface-1 px-3 py-2">
+            <span className="font-mono text-xs text-muted">{e.dDayTime}</span>
+            <span className="mx-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs">{e.kind}</span>
             <span className="text-slate-800">{e.body}</span>
-            <div className="text-xs text-slate-400">— {e.author}</div>
+            <div className="text-xs text-soft">— {e.author}</div>
           </li>
         ))}
       </ul>
-      <form action={addLogEntryAction} className="grid grid-cols-6 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm">
+      <form action={addLogEntryAction} className="grid grid-cols-6 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-3 text-sm">
         <input type="hidden" name="exerciseId" value={exerciseId} />
         <input
           name="dDayTime"
           defaultValue={dDayHHMM}
           required
           pattern="[0-9]{2}:[0-9]{2}"
-          className="col-span-1 rounded border border-slate-300 px-2 py-1"
+          className="col-span-1 rounded border border-line-strong px-2 py-1"
         />
-        <select name="kind" required className="col-span-1 rounded border border-slate-300 px-2 py-1">
+        <select name="kind" required className="col-span-1 rounded border border-line-strong px-2 py-1">
           <option>DECISION</option>
           <option>ACTION</option>
           <option>CHALLENGE</option>
@@ -55,7 +55,7 @@ export default function IncidentLogPanel({
           name="body"
           required
           placeholder="What happened / decision made / action taken"
-          className="col-span-3 rounded border border-slate-300 px-2 py-1"
+          className="col-span-3 rounded border border-line-strong px-2 py-1"
         />
         <button className="col-span-1 rounded-md bg-slate-900 px-2 py-1 text-white">Log</button>
       </form>

@@ -18,11 +18,11 @@ export default function SessionWidget({ session }: { session: Session | null }) 
       <span className="text-slate-600">
         {session.user.name ?? session.user.email}
         {session.user.orgRole && (
-          <span className="ml-1 text-xs text-slate-400">({session.user.orgRole})</span>
+          <span className="ml-1 text-xs text-soft">({session.user.orgRole})</span>
         )}
       </span>
       <form action={signOutAction}>
-        <button className="text-slate-500 hover:text-slate-900" type="submit">
+        <button className="text-muted hover:text-slate-900" type="submit">
           Sign out
         </button>
       </form>

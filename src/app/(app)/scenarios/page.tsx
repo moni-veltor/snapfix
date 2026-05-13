@@ -46,16 +46,16 @@ export default async function ScenariosPage() {
       ) : (
         <ul className="grid gap-4 md:grid-cols-2">
           {scenarios.map((s) => (
-            <li key={s.id} className="rounded-lg border border-slate-200 bg-white p-5">
+            <li key={s.id} className="rounded-lg border border-line bg-surface-1 p-5">
               <Link href={`/scenarios/${s.id}`} className="text-lg font-semibold hover:underline">
                 {s.title}
               </Link>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-muted">
                 D-Day {s.dDayDate.toISOString().slice(0, 10)} · {s.durationMin} min ·
                 {" "}created by {s.createdBy?.name ?? s.createdBy?.email ?? "system"}
               </p>
               <p className="mt-3 line-clamp-3 text-sm text-slate-600">{s.background}</p>
-              <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-500">
+              <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted">
                 <Pill>{s._count.ibsList} IBS</Pill>
                 <Pill>{s._count.events} events</Pill>
                 <Pill>{s._count.injects} injects</Pill>
@@ -71,6 +71,6 @@ export default async function ScenariosPage() {
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full bg-slate-100 px-2 py-0.5">{children}</span>
+    <span className="rounded-full bg-surface-2 px-2 py-0.5">{children}</span>
   );
 }

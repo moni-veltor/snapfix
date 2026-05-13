@@ -61,7 +61,7 @@ export default function LivePresenceBar({ exerciseId, members, status, pollMs = 
 
   const online = members.filter((m) => m.online);
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+    <div className="rounded-md border border-line bg-surface-1 p-3 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-center justify-between gap-3">
         <div className="text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
           In the room · {online.length}/{members.length}
@@ -81,7 +81,7 @@ export default function LivePresenceBar({ exerciseId, members, status, pollMs = 
           <li
             key={m.participantId}
             title={`${m.name ?? m.email} · ${m.roleTitle} · seen ${relativeTime(m.lastSeenAt)}`}
-            className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3 text-xs dark:border-slate-700 dark:bg-slate-800"
+            className="flex items-center gap-2 rounded-full border border-line bg-surface-0 py-1 pl-1 pr-3 text-xs dark:border-slate-700 dark:bg-slate-800"
           >
             <span
               className={`relative flex h-7 w-7 items-center justify-center rounded-full font-semibold text-white ${
@@ -97,7 +97,7 @@ export default function LivePresenceBar({ exerciseId, members, status, pollMs = 
             </span>
             <span className="flex flex-col leading-tight">
               <span className="font-medium text-slate-800 dark:text-slate-100">{m.name ?? m.email}</span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400">
+              <span className="text-[10px] text-muted dark:text-soft">
                 {m.roleTitle}
                 {m.exerciseRole === "FACILITATOR" && " · facilitator"}
                 {!m.online && ` · ${relativeTime(m.lastSeenAt)}`}

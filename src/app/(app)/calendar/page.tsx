@@ -35,14 +35,14 @@ export default async function CalendarPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Exercise calendar</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           {exercises.length} {exercises.length === 1 ? "exercise" : "exercises"} with planned or
           started dates.
         </p>
       </header>
 
       {sortedYMs.length === 0 ? (
-        <p className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+        <p className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-center text-sm text-muted">
           No exercises scheduled yet.
         </p>
       ) : (
@@ -68,11 +68,11 @@ export default async function CalendarPage() {
                     return (
                       <li
                         key={ex.id}
-                        className="flex items-center justify-between rounded-md border border-slate-200 bg-white p-3 text-sm"
+                        className="flex items-center justify-between rounded-md border border-line bg-surface-1 p-3 text-sm"
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-20 shrink-0 text-center">
-                            <div className="text-xs uppercase tracking-wide text-slate-500">
+                            <div className="text-xs uppercase tracking-wide text-muted">
                               {d?.toLocaleString("en-GB", { weekday: "short" })}
                             </div>
                             <div className="text-2xl font-semibold text-slate-800">
@@ -86,13 +86,13 @@ export default async function CalendarPage() {
                             >
                               {ex.title}
                             </Link>
-                            <div className="text-xs text-slate-500">
+                            <div className="text-xs text-muted">
                               {ex.scenario.title} ·{" "}
                               {ex.facilitator?.name ?? ex.facilitator?.email ?? "—"}
                             </div>
                           </div>
                         </div>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                        <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">
                           {ex.status}
                         </span>
                       </li>

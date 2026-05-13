@@ -130,12 +130,12 @@ export default async function LiveWorkspacePage({
       {/* Top stripe — incident state is always at the top */}
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <p className="text-xs uppercase tracking-wide text-muted dark:text-soft">
             {exercise.scenario.title} · Playing as{" "}
             <span className="font-semibold text-slate-700 dark:text-slate-200">{participant.roleTitle}</span>
           </p>
           <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight">{exercise.title}</h1>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-muted dark:text-soft">
             <span className={`rounded-full px-2 py-0.5 ${statusBadge(exercise.status)}`}>
               {exercise.status}
             </span>
@@ -244,7 +244,7 @@ export default async function LiveWorkspacePage({
             dDayHHMM={clock.hhmm}
           />
 
-          <details className="rounded-md border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" open={commsDrafts.length > 0}>
+          <details className="rounded-md border border-line bg-surface-1 p-3 dark:border-slate-700 dark:bg-slate-900" open={commsDrafts.length > 0}>
             <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
               Comms cascade · {commsDrafts.length} draft{commsDrafts.length === 1 ? "" : "s"}
             </summary>
@@ -275,7 +275,7 @@ export default async function LiveWorkspacePage({
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
                   My inbox
                 </h2>
-                <span className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="text-xs text-muted dark:text-soft">
                   {inbox.length} message{inbox.length === 1 ? "" : "s"}
                   {unreadCount > 0 && (
                     <span className="ml-2 rounded-full bg-rose-600 px-2 py-0.5 text-white">
@@ -285,7 +285,7 @@ export default async function LiveWorkspacePage({
                 </span>
               </div>
               {inbox.length === 0 ? (
-                <p className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                <p className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-center text-xs text-muted dark:border-slate-700 dark:bg-slate-900 dark:text-soft">
                   No messages addressed to{" "}
                   <span className="font-medium">{participant.roleTitle}</span> yet.
                   {exercise.status !== "IN_PROGRESS" && (
@@ -328,10 +328,10 @@ export default async function LiveWorkspacePage({
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
                   Live team feed
                 </h2>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{feed.length} entries</span>
+                <span className="text-xs text-muted dark:text-soft">{feed.length} entries</span>
               </div>
               {feed.length === 0 ? (
-                <p className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                <p className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-center text-xs text-muted dark:border-slate-700 dark:bg-slate-900 dark:text-soft">
                   No activity yet. Anything anyone logs, releases or responds to will appear here in
                   real-time.
                 </p>
@@ -361,7 +361,7 @@ function statusBadge(status: string): string {
     case "READY":
       return "bg-indigo-100 text-indigo-800";
     default:
-      return "bg-slate-100 text-slate-700";
+      return "bg-surface-2 text-slate-700";
   }
 }
 
@@ -372,7 +372,7 @@ function timeOnly(d: Date): string {
 function FeedRow({ item }: { item: LiveFeedItem }) {
   const time = timeOnly(item.at);
   // All feed rows share the same neutral card; the tag pill carries the meaning.
-  const neutralCard = "rounded-md border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-900";
+  const neutralCard = "rounded-md border border-line bg-surface-1 p-3 text-sm dark:border-slate-700 dark:bg-slate-900";
   // Incident-state transitions are the only "stop-and-read" rows — they get a
   // tinted background to stand out from the noise.
   const criticalCard = "rounded-md border border-rose-300 bg-rose-50 p-3 text-sm dark:border-rose-700 dark:bg-rose-950/40";
@@ -382,7 +382,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
         <li className={neutralCard}>
           <FeedLine time={time} tag="EVENT" tagVariant="info">
             <span className="font-medium">#{item.eventNo} {item.title}</span>
-            <span className="text-xs text-slate-600 dark:text-slate-400">
+            <span className="text-xs text-slate-600 dark:text-soft">
               {" "}· released · D-Day {item.scheduledTime}
               {item.toRoleTitles.length > 0 && ` · to ${item.toRoleTitles.join(", ")}`}
             </span>
@@ -394,7 +394,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
         <li className={neutralCard}>
           <FeedLine time={time} tag="INJECT" tagVariant="info">
             <span className="font-medium">#{item.injectNo} {item.title}</span>
-            <span className="text-xs text-slate-600 dark:text-slate-400">
+            <span className="text-xs text-slate-600 dark:text-soft">
               {" "}· released · D-Day {item.scheduledTime}
               {item.toRoleTitles.length > 0 && ` · to ${item.toRoleTitles.join(", ")}`}
             </span>
@@ -405,7 +405,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
       return (
         <li className={neutralCard}>
           <FeedLine time={time} tag={item.logKind} tagVariant="neutral">
-            <span className="text-xs text-slate-500 dark:text-slate-400">{item.author} · D-Day {item.dDayTime}</span>
+            <span className="text-xs text-muted dark:text-soft">{item.author} · D-Day {item.dDayTime}</span>
           </FeedLine>
           <p className="mt-1 whitespace-pre-wrap text-slate-700 dark:text-slate-200">{item.body}</p>
         </li>
@@ -414,7 +414,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
       return (
         <li className={neutralCard}>
           <FeedLine time={time} tag="RESPONSE" tagVariant="ok">
-            <span className="text-xs text-slate-600 dark:text-slate-400">
+            <span className="text-xs text-slate-600 dark:text-soft">
               {item.author} responded to <span className="font-medium">{item.injectSummary}</span>
             </span>
           </FeedLine>
@@ -425,7 +425,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
       return (
         <li className={neutralCard}>
           <FeedLine time={time} tag="COMMS" tagVariant="warn">
-            <span className="text-xs text-slate-600 dark:text-slate-400">
+            <span className="text-xs text-slate-600 dark:text-soft">
               {item.author} drafted comms to <span className="font-medium">{item.audience}</span>
             </span>
           </FeedLine>
@@ -436,7 +436,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
       return (
         <li className={criticalCard}>
           <FeedLine time={time} tag="DECISION" tagVariant="critical">
-            <span className="font-mono text-[10px] uppercase text-slate-500 dark:text-slate-400">
+            <span className="font-mono text-[10px] uppercase text-muted dark:text-soft">
               {item.decisionType}
             </span>
             <span className="text-xs text-slate-600 dark:text-slate-300">· {item.author}</span>
@@ -446,7 +446,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
             <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{item.rationale}</p>
           )}
           {item.approverRoles.length > 0 && (
-            <p className="mt-1 text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-[10px] uppercase tracking-wide text-muted dark:text-soft">
               Approval required: {item.approverRoles.join(" + ")}
             </p>
           )}
@@ -456,7 +456,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
       return (
         <li className={neutralCard}>
           <FeedLine time={time} tag={`SITREP · ${item.status}`} tagVariant={SITREP_VARIANT[item.status] ?? "neutral"}>
-            <span className="text-xs text-slate-600 dark:text-slate-400">
+            <span className="text-xs text-slate-600 dark:text-soft">
               {item.businessUnit} · {item.author}
             </span>
           </FeedLine>
@@ -468,7 +468,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
         <li className={neutralCard}>
           <FeedLine time={time} tag={`IMT MEETING #${item.meetingNumber}`} tagVariant="info">
             {item.nextMeetingDDay && (
-              <span className="text-xs text-slate-600 dark:text-slate-400">Next meeting D-Day {item.nextMeetingDDay}</span>
+              <span className="text-xs text-slate-600 dark:text-soft">Next meeting D-Day {item.nextMeetingDDay}</span>
             )}
           </FeedLine>
         </li>
@@ -514,7 +514,7 @@ function FeedLine({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{time}</span>
+      <span className="font-mono text-[11px] text-muted dark:text-soft">{time}</span>
       <Pill variant={tagVariant} tone="solid" size="sm" className="uppercase tracking-wide">
         {tag}
       </Pill>

@@ -13,7 +13,8 @@ type Props = {
 
 /**
  * The single panel primitive. Provides consistent border/background/padding/
- * header treatment across the live workspace so every panel reads the same.
+ * header treatment across the app. Backgrounds use semantic tokens so they
+ * swap automatically in dark mode.
  */
 export default function Section({
   title,
@@ -29,12 +30,8 @@ export default function Section({
         <header className="mb-2 flex flex-wrap items-center justify-between gap-2">
           {title && (
             <div className="min-w-0">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
-                {title}
-              </h3>
-              {subtitle && (
-                <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{subtitle}</p>
-              )}
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-ink">{title}</h3>
+              {subtitle && <p className="mt-0.5 text-[11px] text-muted">{subtitle}</p>}
             </div>
           )}
           {right && <div className="shrink-0">{right}</div>}
@@ -46,7 +43,7 @@ export default function Section({
 }
 
 const VARIANT: Record<Variant, string> = {
-  neutral: "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900",
+  neutral: "border-line bg-surface-1",
   critical: "border-rose-300 bg-rose-50 dark:border-rose-700 dark:bg-rose-950/40",
   warn: "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/40",
   ok: "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40",

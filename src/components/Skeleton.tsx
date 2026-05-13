@@ -10,7 +10,7 @@ export function Skeleton({
 
 export function CardSkeleton({ lines = 3 }: { lines?: number }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="rounded-md border border-line bg-surface-1 p-4">
       <Skeleton className="h-4 w-2/3" />
       {Array.from({ length: lines - 1 }).map((_, i) => (
         <Skeleton key={i} className="mt-2 h-3 w-full" />
@@ -21,7 +21,7 @@ export function CardSkeleton({ lines = 3 }: { lines?: number }) {
 
 export function StatCardSkeleton() {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="rounded-md border border-line bg-surface-1 p-4">
       <Skeleton className="h-3 w-20" />
       <Skeleton className="mt-2 h-8 w-14" />
     </div>
@@ -30,7 +30,7 @@ export function StatCardSkeleton() {
 
 export function ListRowSkeleton() {
   return (
-    <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white p-3">
+    <div className="flex items-center justify-between rounded-md border border-line bg-surface-1 p-3">
       <div className="flex-1 space-y-2">
         <Skeleton className="h-3 w-1/3" />
         <Skeleton className="h-2 w-1/2" />

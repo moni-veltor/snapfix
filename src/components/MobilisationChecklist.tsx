@@ -51,7 +51,7 @@ export default function MobilisationChecklist({ exerciseId, members, myParticipa
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            className="text-xs text-soft hover:text-slate-700 dark:hover:text-slate-200"
           >
             {open ? "−" : "+"}
           </button>
@@ -62,10 +62,10 @@ export default function MobilisationChecklist({ exerciseId, members, myParticipa
         <div className="space-y-3">
           {teamsInOrder.map((teamKey) => (
             <div key={teamKey}>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted dark:text-soft">
                 {teamKey}
               </div>
-              <ul className="mt-1 divide-y divide-slate-100 dark:divide-slate-800">
+              <ul className="mt-1 divide-y divide-line dark:divide-slate-800">
                 {byTeam.get(teamKey)!.map((m) => (
                   <li
                     key={m.participantId}
@@ -75,9 +75,9 @@ export default function MobilisationChecklist({ exerciseId, members, myParticipa
                       <span className="font-medium text-slate-800 dark:text-slate-100">
                         {m.name ?? m.email}
                       </span>
-                      <span className="ml-2 text-slate-500 dark:text-slate-400">{m.roleTitle}</span>
+                      <span className="ml-2 text-muted dark:text-soft">{m.roleTitle}</span>
                       {m.deputyName && (
-                        <span className="ml-2 text-[10px] text-slate-400 dark:text-slate-500">
+                        <span className="ml-2 text-[10px] text-soft dark:text-muted">
                           deputy: {m.deputyName}
                         </span>
                       )}
@@ -92,7 +92,7 @@ export default function MobilisationChecklist({ exerciseId, members, myParticipa
                             name="status"
                             defaultValue={m.mobilisationStatus}
                             onChange={(e) => (e.target.form as HTMLFormElement).requestSubmit()}
-                            className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                            className="rounded border border-line-strong bg-surface-1 px-1.5 py-0.5 text-[11px] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                           >
                             <option value="UNCALLED">Uncalled</option>
                             <option value="MOBILISED">Mobilised</option>

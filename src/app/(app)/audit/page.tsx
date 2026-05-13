@@ -16,31 +16,31 @@ export default async function AuditPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Audit log</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           Last {entries.length} events. Surfaced for regulator / internal-audit traceability.
         </p>
       </header>
 
       <ul className="space-y-1 text-sm">
         {entries.length === 0 && (
-          <li className="rounded border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500">
+          <li className="rounded border border-dashed border-line-strong bg-surface-1 p-6 text-center text-muted">
             No audit events yet.
           </li>
         )}
         {entries.map((e) => (
           <li
             key={e.id}
-            className="rounded border border-slate-200 bg-white px-3 py-2"
+            className="rounded border border-line bg-surface-1 px-3 py-2"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
-                <span className="font-mono text-xs text-slate-500">
+                <span className="font-mono text-xs text-muted">
                   {e.createdAt.toISOString().slice(0, 19).replace("T", " ")}
                 </span>{" "}
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{e.action}</span>{" "}
+                <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{e.action}</span>{" "}
                 <span className="text-slate-800">{e.summary}</span>
               </div>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted">
                 {e.actor?.name ?? e.actor?.email ?? "system"}
               </span>
             </div>

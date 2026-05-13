@@ -28,7 +28,7 @@ export default async function IBSListPage() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Important Business Services</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted">
             Your organisation's IBS register. {items.length}{" "}
             {items.length === 1 ? "service" : "services"} captured.
           </p>
@@ -44,7 +44,7 @@ export default async function IBSListPage() {
       </header>
 
       {items.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+        <p className="rounded-lg border border-dashed border-line-strong bg-surface-1 p-8 text-center text-sm text-muted">
           No IBS yet.{" "}
           {canManage ? (
             <>
@@ -63,7 +63,7 @@ export default async function IBSListPage() {
           {items.map((i) => (
             <li
               key={i.id}
-              className="rounded-md border border-slate-200 bg-white p-4 text-sm"
+              className="rounded-md border border-line bg-surface-1 p-4 text-sm"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -74,33 +74,33 @@ export default async function IBSListPage() {
                     <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_STYLES[i.status] ?? ""}`}>
                       {i.status}
                     </span>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">
                       {i.criticality}
                     </span>
                   </div>
                   {i.outcome && (
                     <p className="mt-1 line-clamp-2 text-slate-600">{i.outcome}</p>
                   )}
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
+                    <span className="rounded-full bg-surface-2 px-2 py-0.5">
                       Tolerance {Math.round(i.impactToleranceMin / 60)}h
                     </span>
                     {i.fcaToleranceMin && (
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                      <span className="rounded-full bg-surface-2 px-2 py-0.5">
                         FCA {Math.round(i.fcaToleranceMin / 60 / 24)}d
                       </span>
                     )}
                     {i.praToleranceMin && (
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                      <span className="rounded-full bg-surface-2 px-2 py-0.5">
                         PRA {Math.round(i.praToleranceMin / 60 / 24)}d
                       </span>
                     )}
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                    <span className="rounded-full bg-surface-2 px-2 py-0.5">
                       Tested in {i._count.exerciseLinks}{" "}
                       {i._count.exerciseLinks === 1 ? "exercise" : "exercises"}
                     </span>
                     {i.processOwner && (
-                      <span className="text-slate-500">Owner: {i.processOwner}</span>
+                      <span className="text-muted">Owner: {i.processOwner}</span>
                     )}
                   </div>
                 </div>

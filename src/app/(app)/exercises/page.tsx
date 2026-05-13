@@ -47,13 +47,13 @@ export default async function ExercisesPage() {
           {exercises.map((e) => (
             <li
               key={e.id}
-              className="flex items-center justify-between rounded-md border border-slate-200 bg-white p-4 text-sm"
+              className="flex items-center justify-between rounded-md border border-line bg-surface-1 p-4 text-sm"
             >
               <div>
                 <Link href={`/exercises/${e.id}`} className="font-medium hover:underline">
                   {e.title}
                 </Link>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-muted">
                   {e.scenario.title}
                   {e.plannedDate && (
                     <> · {e.plannedDate.toISOString().slice(0, 16).replace("T", " ")}</>
@@ -64,7 +64,7 @@ export default async function ExercisesPage() {
                   {e._count.participants} on roster
                 </div>
               </div>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{e.status}</span>
+              <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{e.status}</span>
             </li>
           ))}
         </ul>

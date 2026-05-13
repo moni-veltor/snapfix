@@ -85,14 +85,14 @@ export default function ClosureGate({ exerciseId, incidentId, checks }: Props) {
                 <div className={v ? "text-slate-700 dark:text-slate-200" : "text-slate-600 dark:text-slate-300"}>
                   {item.label}
                 </div>
-                <div className="text-[10px] text-slate-400 dark:text-slate-500">{item.clause}</div>
+                <div className="text-[10px] text-soft dark:text-muted">{item.clause}</div>
               </div>
             </li>
           );
         })}
       </ul>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+        <span className="text-[11px] text-muted dark:text-soft">
           {passed ? "All criteria satisfied." : "Closure blocked until all five ✓."}
         </span>
         <Button onClick={close} disabled={!passed || pending} size="sm" type="button">

@@ -47,7 +47,7 @@ export default async function ExerciseTeamPage({
     <div className="space-y-10">
       <header className="flex items-baseline justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">{exercise.title}</p>
+          <p className="text-xs uppercase tracking-wide text-muted">{exercise.title}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Teams & people</h1>
         </div>
         <Link href={`/exercises/${exercise.id}`} className="text-sm underline">
@@ -59,26 +59,26 @@ export default async function ExerciseTeamPage({
         <h2 className="text-lg font-semibold">Teams</h2>
         <ul className="grid gap-3 md:grid-cols-2">
           {exercise.teams.map((t) => (
-            <li key={t.id} className="rounded-md border border-slate-200 bg-white p-4">
+            <li key={t.id} className="rounded-md border border-line bg-surface-1 p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="font-medium">{t.name}</div>
                   {t.description && (
-                    <p className="mt-1 text-xs text-slate-500">{t.description}</p>
+                    <p className="mt-1 text-xs text-muted">{t.description}</p>
                   )}
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-muted">
                     {t.members.length} {t.members.length === 1 ? "member" : "members"}
                   </p>
                   <form action={classifyTeamAction} className="mt-2 flex items-center gap-2">
                     <input type="hidden" name="exerciseId" value={exercise.id} />
                     <input type="hidden" name="teamId" value={t.id} />
-                    <label className="text-[10px] uppercase tracking-wide text-slate-500">
+                    <label className="text-[10px] uppercase tracking-wide text-muted">
                       Policy team
                     </label>
                     <select
                       name="kind"
                       defaultValue={t.kind ?? "OTHER"}
-                      className="rounded border border-slate-300 px-1.5 py-0.5 text-xs"
+                      className="rounded border border-line-strong px-1.5 py-0.5 text-xs"
                     >
                       <option value="IMT">IMT (strategic)</option>
                       <option value="IRT_TECH">IRT — Technology</option>
@@ -92,7 +92,7 @@ export default async function ExerciseTeamPage({
                       <option value="ACTION_COMMITTEE">Board Action Committee</option>
                       <option value="OTHER">Other</option>
                     </select>
-                    <button className="rounded border border-slate-300 px-2 py-0.5 text-[11px] hover:bg-slate-50">
+                    <button className="rounded border border-line-strong px-2 py-0.5 text-[11px] hover:bg-surface-0">
                       Save
                     </button>
                   </form>
@@ -108,19 +108,19 @@ export default async function ExerciseTeamPage({
         </ul>
         <form
           action={addTeamAction}
-          className="grid grid-cols-1 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 sm:grid-cols-[1fr_2fr_auto]"
+          className="grid grid-cols-1 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-3 sm:grid-cols-[1fr_2fr_auto]"
         >
           <input type="hidden" name="exerciseId" value={exercise.id} />
           <input
             name="name"
             required
             placeholder="Team name"
-            className="rounded border border-slate-300 px-2 py-1 text-sm"
+            className="rounded border border-line-strong px-2 py-1 text-sm"
           />
           <input
             name="description"
             placeholder="Description (optional)"
-            className="rounded border border-slate-300 px-2 py-1 text-sm"
+            className="rounded border border-line-strong px-2 py-1 text-sm"
           />
           <button className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white">
             Add team
@@ -132,7 +132,7 @@ export default async function ExerciseTeamPage({
         <h2 className="text-lg font-semibold">Assign / update someone on the exercise</h2>
         <form
           action={assignMemberAction}
-          className="grid grid-cols-1 gap-2 rounded-md border border-slate-200 bg-white p-4 sm:grid-cols-2"
+          className="grid grid-cols-1 gap-2 rounded-md border border-line bg-surface-1 p-4 sm:grid-cols-2"
         >
           <input type="hidden" name="exerciseId" value={exercise.id} />
           <label className="block text-sm">
@@ -141,7 +141,7 @@ export default async function ExerciseTeamPage({
               name="userId"
               required
               defaultValue=""
-              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+              className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2"
             >
               <option value="" disabled>Select a person…</option>
               {orgUsers.map((u) => {
@@ -160,7 +160,7 @@ export default async function ExerciseTeamPage({
             <select
               name="teamId"
               defaultValue=""
-              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+              className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2"
             >
               <option value="">— No team —</option>
               {exercise.teams.map((t) => (
@@ -175,7 +175,7 @@ export default async function ExerciseTeamPage({
               required
               maxLength={100}
               placeholder="e.g. CTO, Sn.TPM, ISM"
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-line-strong px-3 py-2"
             />
           </label>
           <label className="block text-sm">
@@ -184,7 +184,7 @@ export default async function ExerciseTeamPage({
               name="exerciseRole"
               required
               defaultValue="PARTICIPANT"
-              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+              className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2"
             >
               <option value="FACILITATOR">Facilitator</option>
               <option value="LEAD">Lead</option>
@@ -200,9 +200,9 @@ export default async function ExerciseTeamPage({
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Current roster ({exercise.participants.length})</h2>
-        <ul className="divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200 bg-white">
+        <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface-1">
           {exercise.participants.length === 0 && (
-            <li className="p-4 text-sm text-slate-500">No one assigned yet.</li>
+            <li className="p-4 text-sm text-muted">No one assigned yet.</li>
           )}
           {exercise.participants.map((p) => {
             const team = exercise.teams.find((t) => t.id === p.teamId);
@@ -210,7 +210,7 @@ export default async function ExerciseTeamPage({
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
                 <div className="min-w-0 flex-1">
                   <div className="font-medium">{p.user.name ?? p.user.email}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-muted">
                     {p.roleTitle} · {p.exerciseRole}
                     {team ? ` · ${team.name}` : " · (no team)"}
                   </div>
@@ -218,14 +218,14 @@ export default async function ExerciseTeamPage({
                 <form action={setDeputyAction} className="flex items-center gap-2">
                   <input type="hidden" name="exerciseId" value={exercise.id} />
                   <input type="hidden" name="participantId" value={p.id} />
-                  <label className="text-[10px] uppercase tracking-wide text-slate-500">
+                  <label className="text-[10px] uppercase tracking-wide text-muted">
                     Deputy
                   </label>
                   <select
                     name="deputyParticipantId"
                     defaultValue={p.deputyParticipantId ?? ""}
                     onChange={(e) => (e.target.form as HTMLFormElement).requestSubmit()}
-                    className="rounded border border-slate-300 px-1.5 py-0.5 text-xs"
+                    className="rounded border border-line-strong px-1.5 py-0.5 text-xs"
                   >
                     <option value="">— None —</option>
                     {exercise.participants

@@ -38,7 +38,7 @@ export default async function IBSDetailPage({
     return (
       <div className="mx-auto max-w-4xl space-y-6">
         <header>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-muted">
             <Link href={`/ibs/${ibs.id}`} className="underline">
               ← Back
             </Link>
@@ -55,7 +55,7 @@ export default async function IBSDetailPage({
   return (
     <div className="space-y-8">
       <header className="space-y-2">
-        <div className="text-xs uppercase tracking-wide text-slate-500">
+        <div className="text-xs uppercase tracking-wide text-muted">
           <Link href="/ibs" className="underline">
             ← IBS register
           </Link>
@@ -64,7 +64,7 @@ export default async function IBSDetailPage({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-semibold tracking-tight">
-                <span className="font-mono text-slate-500">{ibs.code}</span> · {ibs.name}
+                <span className="font-mono text-muted">{ibs.code}</span> · {ibs.name}
               </h1>
               <Pill kind={statusKind(ibs.status)}>{ibs.status}</Pill>
               <Pill>{ibs.criticality}</Pill>
@@ -75,7 +75,7 @@ export default async function IBSDetailPage({
             <div className="flex gap-2">
               <Link
                 href={`/ibs/${ibs.id}?edit=1`}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-white"
+                className="rounded-md border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-1"
               >
                 Edit
               </Link>
@@ -90,7 +90,7 @@ export default async function IBSDetailPage({
               {ibs.status !== "DEPRECATED" && (
                 <form action={deprecateIBSAction}>
                   <input type="hidden" name="id" value={ibs.id} />
-                  <button className="rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+                  <button className="rounded-md border border-line-strong px-3 py-1.5 text-sm">
                     Deprecate
                   </button>
                 </form>
@@ -172,7 +172,7 @@ export default async function IBSDetailPage({
                   {l.exercise.title}
                 </Link>
                 {" · "}
-                <span className="text-xs text-slate-500">{l.exercise.status}</span>
+                <span className="text-xs text-muted">{l.exercise.status}</span>
               </li>
             ))}
           </ul>
@@ -208,13 +208,13 @@ function Pill({
         ? "bg-amber-100 text-amber-800"
         : kind === "muted"
           ? "bg-slate-200 text-slate-700"
-          : "bg-slate-100 text-slate-700";
+          : "bg-surface-2 text-slate-700";
   return <span className={`rounded-full px-2 py-0.5 text-xs ${cls}`}>{children}</span>;
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3 rounded-md border border-slate-200 bg-white p-5">
+    <section className="space-y-3 rounded-md border border-line bg-surface-1 p-5">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">{title}</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
     </section>
@@ -224,7 +224,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 function KV({ k, v }: { k: string; v: string }) {
   return (
     <div className="text-sm">
-      <div className="text-xs uppercase tracking-wide text-slate-500">{k}</div>
+      <div className="text-xs uppercase tracking-wide text-muted">{k}</div>
       <div className="mt-1 text-slate-800">{v}</div>
     </div>
   );
@@ -242,7 +242,7 @@ function Block({
   if (!body && (!list || list.length === 0)) return null;
   return (
     <div className="sm:col-span-2">
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</div>
       {list ? (
         <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
           {list.map((x, i) => (
@@ -281,7 +281,7 @@ function ImpactGrid({
       {items.map((i) => (
         <div
           key={i.label}
-          className="rounded-md border border-slate-200 bg-slate-50 p-2 text-xs"
+          className="rounded-md border border-line bg-surface-0 p-2 text-xs"
         >
           <div className="font-medium text-slate-600">{i.label}</div>
           <div className="mt-1">{i.v ? <Pill kind={impactKind(i.v)}>{i.v}</Pill> : "—"}</div>
@@ -325,7 +325,7 @@ function CoverageMatrix({
           className={`rounded-md border p-2 text-center text-xs ${
             b.on
               ? "border-slate-900 bg-slate-900 text-white"
-              : "border-slate-200 bg-white text-slate-400"
+              : "border-line bg-surface-1 text-soft"
           }`}
         >
           {b.label}

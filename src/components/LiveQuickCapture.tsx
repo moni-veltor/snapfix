@@ -16,15 +16,15 @@ export default function LiveQuickCapture({ exerciseId, dDayHHMM }: Props) {
   const commsRef = useRef<HTMLFormElement>(null);
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white">
-      <div className="flex border-b border-slate-200">
+    <div className="rounded-md border border-line bg-surface-1">
+      <div className="flex border-b border-line">
         <TabButton active={tab === "LOG"} onClick={() => setTab("LOG")}>
           Log entry
         </TabButton>
         <TabButton active={tab === "COMMS"} onClick={() => setTab("COMMS")}>
           Comms draft
         </TabButton>
-        <span className="ml-auto self-center pr-3 font-mono text-xs text-slate-500">
+        <span className="ml-auto self-center pr-3 font-mono text-xs text-muted">
           D-Day {dDayHHMM}
         </span>
       </div>
@@ -40,7 +40,7 @@ export default function LiveQuickCapture({ exerciseId, dDayHHMM }: Props) {
         >
           <input type="hidden" name="exerciseId" value={exerciseId} />
           <input type="hidden" name="dDayTime" value={dDayHHMM} />
-          <select name="kind" required className="rounded border border-slate-300 px-2 py-1.5 text-sm">
+          <select name="kind" required className="rounded border border-line-strong px-2 py-1.5 text-sm">
             <option value="DECISION">Decision</option>
             <option value="ACTION">Action</option>
             <option value="CHALLENGE">Challenge</option>
@@ -51,7 +51,7 @@ export default function LiveQuickCapture({ exerciseId, dDayHHMM }: Props) {
             name="body"
             required
             placeholder="What happened? (e.g. 'CTO authorised public statement')"
-            className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+            className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
           />
           <button className="col-span-3 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
             Add to log
@@ -72,7 +72,7 @@ export default function LiveQuickCapture({ exerciseId, dDayHHMM }: Props) {
           <select
             name="audience"
             required
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded border border-line-strong px-2 py-1.5 text-sm"
           >
             <option value="CUSTOMER">Customer</option>
             <option value="REGULATOR">Regulator</option>
@@ -84,14 +84,14 @@ export default function LiveQuickCapture({ exerciseId, dDayHHMM }: Props) {
             name="subject"
             required
             placeholder="Subject"
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded border border-line-strong px-2 py-1.5 text-sm"
           />
           <textarea
             name="body"
             required
             rows={3}
             placeholder="Draft message body…"
-            className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+            className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
           />
           <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
             Save draft
@@ -116,7 +116,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={`px-4 py-2 text-xs font-medium ${
-        active ? "border-b-2 border-indigo-600 text-slate-900" : "text-slate-500 hover:text-slate-700"
+        active ? "border-b-2 border-indigo-600 text-slate-900" : "text-muted hover:text-slate-700"
       }`}
     >
       {children}

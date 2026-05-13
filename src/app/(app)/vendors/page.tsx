@@ -31,7 +31,7 @@ export default async function VendorsPage() {
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Critical third parties</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           Vendors that support your IBSs (Afin BCPlans §6.3.6). Link each to the services it
           underpins so a vendor outage instantly surfaces the affected IBSs.
         </p>
@@ -39,19 +39,19 @@ export default async function VendorsPage() {
 
       <ul className="space-y-3">
         {vendors.length === 0 && (
-          <li className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+          <li className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-center text-sm text-muted">
             No vendors yet. {canManage ? "Add one below — start with your Tier 1 core providers." : "Ask an admin to add the firm's critical third parties."}
           </li>
         )}
         {vendors.map((v) => (
-          <li key={v.id} className="rounded-md border border-slate-200 bg-white p-4">
+          <li key={v.id} className="rounded-md border border-line bg-surface-1 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-semibold text-slate-900">{v.name}</h2>
                   <TierPill tier={v.tier} />
                   {v.serviceKind && (
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-700">
+                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-slate-700">
                       {v.serviceKind}
                     </span>
                   )}
@@ -59,7 +59,7 @@ export default async function VendorsPage() {
                 {v.description && (
                   <p className="mt-1 text-sm text-slate-600">{v.description}</p>
                 )}
-                <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+                <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted">
                   {v.contactName && <span>👤 {v.contactName}</span>}
                   {v.contactEmail && <span>✉️ {v.contactEmail}</span>}
                   {v.contactPhone && <span>📞 {v.contactPhone}</span>}
@@ -70,17 +70,17 @@ export default async function VendorsPage() {
                   )}
                 </div>
                 <div className="mt-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
                     Supports IBSs
                   </p>
                   {v.ibsLinks.length === 0 ? (
-                    <p className="text-xs text-slate-400">No IBS links yet.</p>
+                    <p className="text-xs text-soft">No IBS links yet.</p>
                   ) : (
                     <ul className="mt-1 flex flex-wrap gap-1">
                       {v.ibsLinks.map((l) => (
                         <li
                           key={l.ibsId}
-                          className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs"
+                          className="flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs"
                         >
                           <span className="font-mono">{l.ibs.code}</span>
                           <span className="text-slate-600">{l.ibs.name}</span>
@@ -88,7 +88,7 @@ export default async function VendorsPage() {
                             <form action={unlinkVendorFromIBSAction} className="inline">
                               <input type="hidden" name="vendorId" value={v.id} />
                               <input type="hidden" name="ibsId" value={l.ibsId} />
-                              <button className="ml-1 text-slate-400 hover:text-rose-600">×</button>
+                              <button className="ml-1 text-soft hover:text-rose-600">×</button>
                             </form>
                           )}
                         </li>
@@ -101,7 +101,7 @@ export default async function VendorsPage() {
                       <select
                         name="ibsId"
                         defaultValue=""
-                        className="rounded border border-slate-300 px-2 py-0.5 text-xs"
+                        className="rounded border border-line-strong px-2 py-0.5 text-xs"
                       >
                         <option value="" disabled>+ link IBS…</option>
                         {ibsList
@@ -112,7 +112,7 @@ export default async function VendorsPage() {
                             </option>
                           ))}
                       </select>
-                      <button className="rounded border border-slate-300 px-2 py-0.5 text-[11px]">
+                      <button className="rounded border border-line-strong px-2 py-0.5 text-[11px]">
                         Link
                       </button>
                     </form>
@@ -149,7 +149,7 @@ export default async function VendorsPage() {
 }
 
 function TierPill({ tier }: { tier: string }) {
-  const cls = TIER_CLASS[tier] ?? "bg-slate-100 text-slate-700";
+  const cls = TIER_CLASS[tier] ?? "bg-surface-2 text-slate-700";
   return (
     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>
       {TIER_LABEL[tier] ?? tier}
@@ -165,12 +165,12 @@ const TIER_LABEL: Record<string, string> = {
 const TIER_CLASS: Record<string, string> = {
   TIER_1: "bg-rose-100 text-rose-800",
   TIER_2: "bg-amber-100 text-amber-800",
-  TIER_3: "bg-slate-100 text-slate-700",
+  TIER_3: "bg-surface-2 text-slate-700",
 };
 
 function VendorForm() {
   return (
-    <details className="rounded-md border border-slate-200 bg-white p-4">
+    <details className="rounded-md border border-line bg-surface-1 p-4">
       <summary className="cursor-pointer text-sm font-semibold">Add a vendor</summary>
       <form
         action={upsertVendorAction}
@@ -180,13 +180,13 @@ function VendorForm() {
           name="name"
           required
           placeholder="Vendor name (e.g. Thought Machine)"
-          className="rounded border border-slate-300 px-3 py-2"
+          className="rounded border border-line-strong px-3 py-2"
         />
         <select
           name="tier"
           required
           defaultValue="TIER_2"
-          className="rounded border border-slate-300 bg-white px-3 py-2"
+          className="rounded border border-line-strong bg-surface-1 px-3 py-2"
         >
           <option value="TIER_1">Tier 1 — mission-critical</option>
           <option value="TIER_2">Tier 2 — business-critical</option>
@@ -195,33 +195,33 @@ function VendorForm() {
         <input
           name="serviceKind"
           placeholder="Service (e.g. Core banking)"
-          className="rounded border border-slate-300 px-3 py-2"
+          className="rounded border border-line-strong px-3 py-2"
         />
         <input
           name="statusUrl"
           placeholder="Status URL (e.g. status.thoughtmachine.io)"
-          className="rounded border border-slate-300 px-3 py-2"
+          className="rounded border border-line-strong px-3 py-2"
         />
         <input
           name="contactName"
           placeholder="Contact name"
-          className="rounded border border-slate-300 px-3 py-2"
+          className="rounded border border-line-strong px-3 py-2"
         />
         <input
           name="contactEmail"
           placeholder="Contact email"
-          className="rounded border border-slate-300 px-3 py-2"
+          className="rounded border border-line-strong px-3 py-2"
         />
         <input
           name="contactPhone"
           placeholder="Contact phone"
-          className="rounded border border-slate-300 px-3 py-2"
+          className="rounded border border-line-strong px-3 py-2"
         />
         <textarea
           name="description"
           rows={2}
           placeholder="Short description"
-          className="col-span-1 rounded border border-slate-300 px-3 py-2 sm:col-span-2"
+          className="col-span-1 rounded border border-line-strong px-3 py-2 sm:col-span-2"
         />
         <button className="col-span-1 rounded-md bg-slate-900 px-3 py-2 text-white sm:col-span-2">
           Save vendor

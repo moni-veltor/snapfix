@@ -66,12 +66,12 @@ export default function CommandPalette() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 left-5 z-30 hidden items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-2 text-xs text-slate-600 shadow-sm hover:bg-slate-50 md:flex"
+        className="fixed bottom-5 left-5 z-30 hidden items-center gap-2 rounded-full border border-line-strong bg-surface-1 px-3 py-2 text-xs text-slate-600 shadow-sm hover:bg-surface-0 md:flex"
         aria-label="Open search"
       >
         <Search size={14} />
         Search
-        <kbd className="ml-2 rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+        <kbd className="ml-2 rounded border border-line-strong bg-surface-0 px-1.5 py-0.5 font-mono text-[10px] text-muted">
           ⌘K
         </kbd>
       </button>
@@ -84,7 +84,7 @@ export default function CommandPalette() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl"
+        className="w-full max-w-xl overflow-hidden rounded-lg border border-line bg-surface-1 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <Command
@@ -93,29 +93,29 @@ export default function CommandPalette() {
           loop
           label="Search SnapFix"
         >
-          <div className="flex items-center gap-2 border-b border-slate-200 px-4">
-            <Search size={16} className="text-slate-400" />
+          <div className="flex items-center gap-2 border-b border-line px-4">
+            <Search size={16} className="text-soft" />
             <Command.Input
               autoFocus
               value={query}
               onValueChange={setQuery}
               placeholder="Search scenarios, exercises, IBS, action items, people…"
-              className="flex-1 bg-transparent py-4 text-sm outline-none placeholder:text-slate-400"
+              className="flex-1 bg-transparent py-4 text-sm outline-none placeholder:text-soft"
             />
-            <kbd className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
+            <kbd className="rounded border border-line-strong bg-surface-0 px-1.5 py-0.5 font-mono text-[10px] text-muted">
               esc
             </kbd>
           </div>
           <Command.List className="max-h-[60vh] overflow-y-auto px-1 py-2">
             {loading && (
-              <div className="px-3 py-2 text-xs text-slate-500">Searching…</div>
+              <div className="px-3 py-2 text-xs text-muted">Searching…</div>
             )}
             {data && !loading && (
               <>
                 <Group label="Scenarios" Icon={FileText}>
                   {data.scenarios.map((s) => (
                     <Item key={s.id} onSelect={() => go(`/scenarios/${s.id}`)}>
-                      <FileText size={14} className="text-slate-400" />
+                      <FileText size={14} className="text-soft" />
                       <span className="truncate">{s.title}</span>
                     </Item>
                   ))}
@@ -123,9 +123,9 @@ export default function CommandPalette() {
                 <Group label="Exercises" Icon={Target}>
                   {data.exercises.map((e) => (
                     <Item key={e.id} onSelect={() => go(`/exercises/${e.id}`)}>
-                      <Target size={14} className="text-slate-400" />
+                      <Target size={14} className="text-soft" />
                       <span className="truncate">{e.title}</span>
-                      <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">
+                      <span className="ml-auto rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-muted">
                         {e.status}
                       </span>
                     </Item>
@@ -134,8 +134,8 @@ export default function CommandPalette() {
                 <Group label="IBS register" Icon={Building2}>
                   {data.ibsList.map((i) => (
                     <Item key={i.id} onSelect={() => go(`/ibs/${i.id}`)}>
-                      <Building2 size={14} className="text-slate-400" />
-                      <span className="font-mono text-xs text-slate-500">{i.code}</span>
+                      <Building2 size={14} className="text-soft" />
+                      <span className="font-mono text-xs text-muted">{i.code}</span>
                       <span className="truncate">{i.name}</span>
                     </Item>
                   ))}
@@ -143,9 +143,9 @@ export default function CommandPalette() {
                 <Group label="Action items" Icon={CheckSquare}>
                   {data.actionItems.map((a) => (
                     <Item key={a.id} onSelect={() => go(`/exercises/${a.exerciseId}/debrief`)}>
-                      <CheckSquare size={14} className="text-slate-400" />
+                      <CheckSquare size={14} className="text-soft" />
                       <span className="truncate">{a.title}</span>
-                      <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">
+                      <span className="ml-auto rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-muted">
                         {a.status}
                       </span>
                     </Item>
@@ -154,17 +154,17 @@ export default function CommandPalette() {
                 <Group label="People" Icon={Users}>
                   {data.members.map((m) => (
                     <Item key={m.id} onSelect={() => go("/org")}>
-                      <Users size={14} className="text-slate-400" />
+                      <Users size={14} className="text-soft" />
                       <span className="truncate">{m.name ?? m.email}</span>
                       {m.name && (
-                        <span className="text-xs text-slate-400">{m.email}</span>
+                        <span className="text-xs text-soft">{m.email}</span>
                       )}
                     </Item>
                   ))}
                 </Group>
               </>
             )}
-            <Command.Empty className="px-3 py-6 text-center text-xs text-slate-500">
+            <Command.Empty className="px-3 py-6 text-center text-xs text-muted">
               {loading ? "" : query ? "No matches" : "Type to search the platform"}
             </Command.Empty>
           </Command.List>
@@ -190,7 +190,7 @@ function Group({
   return (
     <Command.Group
       heading={
-        <span className="flex items-center gap-2 px-2 pt-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+        <span className="flex items-center gap-2 px-2 pt-3 text-[10px] font-semibold uppercase tracking-wider text-soft">
           <Icon size={12} />
           {label}
         </span>

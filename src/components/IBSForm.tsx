@@ -140,7 +140,7 @@ export default function IBSForm({ existing }: { existing?: IBS }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
+    <section className="space-y-3 rounded-md border border-line bg-surface-1 p-4">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">{title}</h2>
       {children}
     </section>
@@ -161,7 +161,7 @@ function Field({
       <span className="text-slate-700">{label}</span>
       <input
         {...props}
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400"
+        className="mt-1 w-full rounded-md border border-line-strong px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400"
       />
     </label>
   );
@@ -177,7 +177,7 @@ function TextArea({
       <span className="text-slate-700">{label}</span>
       <textarea
         {...props}
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400"
+        className="mt-1 w-full rounded-md border border-line-strong px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400"
       />
     </label>
   );
@@ -193,7 +193,7 @@ function Select({
       <span className="text-slate-700">{label}</span>
       <select
         {...props}
-        className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2"
+        className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2"
       >
         {options.map((o) => (
           <option key={o} value={o}>
@@ -215,7 +215,7 @@ function Toggle({
   defaultChecked: boolean;
 }) {
   return (
-    <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm">
+    <label className="flex items-center gap-2 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm">
       <input type="checkbox" name={name} defaultChecked={defaultChecked} />
       <span>{label}</span>
     </label>

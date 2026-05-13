@@ -49,8 +49,8 @@ export default function ArtefactUpload({
       encType="multipart/form-data"
       className={
         compact
-          ? "grid grid-cols-1 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-3 text-sm sm:grid-cols-[1fr_auto_auto]"
-          : "grid grid-cols-1 gap-2 rounded-md border border-dashed border-slate-300 bg-white p-4 text-sm sm:grid-cols-2"
+          ? "grid grid-cols-1 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-3 text-sm sm:grid-cols-[1fr_auto_auto]"
+          : "grid grid-cols-1 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-4 text-sm sm:grid-cols-2"
       }
     >
       <input type="hidden" name="target" value={target} />
@@ -63,7 +63,7 @@ export default function ArtefactUpload({
             required
             maxLength={200}
             placeholder="e.g. AWS CloudWatch Alert — 08:00"
-            className="mt-1 w-full rounded border border-slate-300 px-2 py-1"
+            className="mt-1 w-full rounded border border-line-strong px-2 py-1"
           />
         </label>
       )}
@@ -73,14 +73,14 @@ export default function ArtefactUpload({
           required
           maxLength={200}
           placeholder="Title"
-          className="rounded border border-slate-300 px-2 py-1"
+          className="rounded border border-line-strong px-2 py-1"
         />
       )}
       <select
         name="kind"
         required
         defaultValue={DEFAULT_KINDS[target][0]}
-        className="rounded border border-slate-300 bg-white px-2 py-1"
+        className="rounded border border-line-strong bg-surface-1 px-2 py-1"
       >
         {DEFAULT_KINDS[target].map((k) => (
           <option key={k} value={k}>
@@ -92,14 +92,14 @@ export default function ArtefactUpload({
         name="file"
         type="file"
         required
-        className="rounded border border-slate-300 px-2 py-1"
+        className="rounded border border-line-strong px-2 py-1"
       />
       {!compact && (
         <textarea
           name="description"
           placeholder="Description (optional)"
           rows={2}
-          className="rounded border border-slate-300 px-2 py-1 sm:col-span-2"
+          className="rounded border border-line-strong px-2 py-1 sm:col-span-2"
         />
       )}
       <button

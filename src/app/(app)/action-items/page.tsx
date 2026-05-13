@@ -6,7 +6,7 @@ import { updateActionItemStatusAction } from "@/app/actions/action-items";
 export const metadata = { title: "Action Items — SnapFix" };
 
 const PRIORITY_STYLES: Record<string, string> = {
-  LOW: "bg-slate-100 text-slate-700",
+  LOW: "bg-surface-2 text-slate-700",
   MEDIUM: "bg-slate-200 text-slate-800",
   HIGH: "bg-amber-100 text-amber-800",
   CRITICAL: "bg-rose-100 text-rose-800",
@@ -54,7 +54,7 @@ export default async function ActionItemsPage({
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Action items</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           {items.length} {filter === "open" ? "open" : filter === "closed" ? "closed" : "total"}
           {overdueCount > 0 && filter !== "closed" && (
             <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">
@@ -70,7 +70,7 @@ export default async function ActionItemsPage({
               className={`rounded-full px-3 py-1 ${
                 filter === f
                   ? "bg-slate-900 text-white"
-                  : "border border-slate-300 text-slate-700 hover:bg-white"
+                  : "border border-line-strong text-slate-700 hover:bg-surface-1"
               }`}
             >
               {f.toUpperCase()}
@@ -81,7 +81,7 @@ export default async function ActionItemsPage({
 
       <ul className="space-y-2">
         {items.length === 0 && (
-          <li className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
+          <li className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-center text-sm text-muted">
             No action items in this view.
           </li>
         )}
@@ -95,7 +95,7 @@ export default async function ActionItemsPage({
             <li
               key={i.id}
               className={`rounded-md border p-4 text-sm ${
-                overdue ? "border-rose-200 bg-rose-50/30" : "border-slate-200 bg-white"
+                overdue ? "border-rose-200 bg-rose-50/30" : "border-line bg-surface-1"
               }`}
             >
               <div className="flex items-start justify-between gap-3">
@@ -115,7 +115,7 @@ export default async function ActionItemsPage({
                     )}
                   </div>
                   {i.description && <p className="mt-1 text-slate-600">{i.description}</p>}
-                  <div className="mt-2 text-xs text-slate-500">
+                  <div className="mt-2 text-xs text-muted">
                     From{" "}
                     <Link href={`/exercises/${i.exercise.id}`} className="underline">
                       {i.exercise.title}
@@ -133,7 +133,7 @@ export default async function ActionItemsPage({
                   <select
                     name="status"
                     defaultValue={i.status}
-                    className="rounded border border-slate-300 px-2 py-1 text-xs"
+                    className="rounded border border-line-strong px-2 py-1 text-xs"
                   >
                     <option value="OPEN">OPEN</option>
                     <option value="IN_PROGRESS">IN_PROGRESS</option>
@@ -141,7 +141,7 @@ export default async function ActionItemsPage({
                     <option value="DONE">DONE</option>
                     <option value="WONT_FIX">WONT_FIX</option>
                   </select>
-                  <button className="rounded border border-slate-300 px-2 py-1 text-xs">
+                  <button className="rounded border border-line-strong px-2 py-1 text-xs">
                     Save
                   </button>
                 </form>

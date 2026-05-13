@@ -6,7 +6,7 @@ export default async function NewScenarioPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">New scenario</h1>
-      <form action={createScenarioAction} className="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
+      <form action={createScenarioAction} className="space-y-4 rounded-lg border border-line bg-surface-1 p-5">
         <Field label="Title" name="title" required maxLength={200} />
         <TextArea label="Background" name="background" required rows={5} />
         <TextArea label="Agenda (optional)" name="agenda" rows={4} />
@@ -29,7 +29,7 @@ function Field({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> 
   return (
     <label className="block text-sm">
       <span className="text-slate-700">{label}</span>
-      <input {...props} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
+      <input {...props} className="mt-1 w-full rounded-md border border-line-strong px-3 py-2" />
     </label>
   );
 }
@@ -38,7 +38,7 @@ function TextArea({ label, ...props }: React.TextareaHTMLAttributes<HTMLTextArea
   return (
     <label className="block text-sm">
       <span className="text-slate-700">{label}</span>
-      <textarea {...props} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" />
+      <textarea {...props} className="mt-1 w-full rounded-md border border-line-strong px-3 py-2" />
     </label>
   );
 }

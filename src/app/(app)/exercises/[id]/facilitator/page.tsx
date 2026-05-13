@@ -28,7 +28,7 @@ export default async function FacilitatorPage({
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{exercise.title}</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             {exercise.scenario.title} ·{" "}
             <Link href={`/exercises/${exercise.id}/live`} className="underline">
               Live workspace
@@ -42,7 +42,7 @@ export default async function FacilitatorPage({
               Debrief
             </Link>
             {" · "}
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{exercise.status}</span>
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{exercise.status}</span>
           </p>
         </div>
         <DDayClockTicker
@@ -52,12 +52,12 @@ export default async function FacilitatorPage({
         />
       </header>
 
-      <section className="flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white p-3">
+      <section className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface-1 p-3">
         {exercise.status === "IN_PROGRESS" ? (
           <>
             <form action={pauseExerciseAction}>
               <input type="hidden" name="id" value={exercise.id} />
-              <button className="rounded-md border border-slate-300 px-3 py-1.5 text-sm">Pause</button>
+              <button className="rounded-md border border-line-strong px-3 py-1.5 text-sm">Pause</button>
             </form>
             <form action={completeExerciseAction}>
               <input type="hidden" name="id" value={exercise.id} />
@@ -69,7 +69,7 @@ export default async function FacilitatorPage({
             <input type="hidden" name="id" value={exercise.id} />
             <label className="text-sm text-slate-600">
               Speed
-              <select name="speed" defaultValue="1" className="ml-2 rounded border border-slate-300 px-2 py-1">
+              <select name="speed" defaultValue="1" className="ml-2 rounded border border-line-strong px-2 py-1">
                 <option value="1">×1 real-time</option>
                 <option value="5">×5</option>
                 <option value="15">×15</option>
@@ -88,7 +88,7 @@ export default async function FacilitatorPage({
           <h2 className="text-lg font-semibold">Master Scenario Events List</h2>
           <ul className="space-y-2">
             {events.map((e) => (
-              <li key={e.id} className="rounded-md border border-slate-200 bg-white p-3 text-sm">
+              <li key={e.id} className="rounded-md border border-line bg-surface-1 p-3 text-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-medium">
@@ -115,7 +115,7 @@ export default async function FacilitatorPage({
           <h2 className="text-lg font-semibold">Injects</h2>
           <ul className="space-y-2">
             {injects.map((j) => (
-              <li key={j.id} className="rounded-md border border-slate-200 bg-white p-3 text-sm">
+              <li key={j.id} className="rounded-md border border-line bg-surface-1 p-3 text-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-medium">
@@ -160,8 +160,8 @@ export default async function FacilitatorPage({
           <h2 className="text-lg font-semibold">Participant responses</h2>
           <ul className="space-y-2">
             {exercise.responses.map((r) => (
-              <li key={r.id} className="rounded-md border border-slate-200 bg-white p-3 text-sm">
-                <div className="text-xs text-slate-500">
+              <li key={r.id} className="rounded-md border border-line bg-surface-1 p-3 text-sm">
+                <div className="text-xs text-muted">
                   Inject #{r.inject.injectNo} · {r.author.name ?? r.author.email}
                 </div>
                 <div className="mt-1 font-medium">{r.inject.summary}</div>

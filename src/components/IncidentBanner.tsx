@@ -42,7 +42,7 @@ export default function IncidentBanner({ exerciseId, incident }: Props) {
             <span className="rounded-full bg-rose-600 px-2 py-0.5 text-white">IMT INVOKED</span>
             <span className="font-mono">{incident.shortCode}</span>
             {incident.invokedByName && (
-              <span className="font-normal text-slate-500">
+              <span className="font-normal text-muted">
                 · invoked by {incident.invokedByName}
                 {incident.invokedAt && ` at ${incident.invokedAt.toISOString().slice(11, 16)}`}
               </span>
@@ -72,7 +72,7 @@ export default function IncidentBanner({ exerciseId, incident }: Props) {
           <button
             type="button"
             onClick={() => setShowSeverity((s) => !s)}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50"
+            className="rounded-md border border-line-strong bg-surface-1 px-3 py-1.5 text-xs font-medium hover:bg-surface-0"
           >
             {sev ? "Reassess severity" : "Classify severity"}
           </button>
@@ -111,7 +111,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
       </div>
 
       {open && (
-        <form action={invokeIncidentAction} className="mt-3 space-y-2 rounded-md bg-white p-3 text-sm">
+        <form action={invokeIncidentAction} className="mt-3 space-y-2 rounded-md bg-surface-1 p-3 text-sm">
           <input type="hidden" name="exerciseId" value={exerciseId} />
           <label className="block text-xs">
             <span className="font-medium text-slate-700">Incident title *</span>
@@ -119,7 +119,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
               name="title"
               required
               placeholder="e.g. Core banking outage"
-              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 text-sm"
             />
           </label>
           <label className="block text-xs">
@@ -127,7 +127,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
             <textarea
               name="summary"
               rows={2}
-              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 text-sm"
             />
           </label>
           <label className="block text-xs">
@@ -135,7 +135,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
             <input
               name="rationale"
               placeholder="e.g. customer-facing impact, regulator notification window"
-              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+              className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 text-sm"
             />
           </label>
           <button className="w-full rounded-md bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-rose-500">
@@ -155,13 +155,13 @@ function StandDownButton({ exerciseId, incidentId }: { exerciseId: string; incid
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium hover:bg-slate-50"
+        className="rounded-md border border-line-strong bg-surface-1 px-3 py-1.5 text-xs font-medium hover:bg-surface-0"
       >
         Stand down
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm space-y-3 rounded-lg bg-white p-4">
+          <div className="w-full max-w-sm space-y-3 rounded-lg bg-surface-1 p-4">
             <h3 className="text-sm font-semibold">Stand down the IMT?</h3>
             <p className="text-xs text-slate-600">
               The "back down" reflex is legitimate — captures rationale for the audit log.
@@ -182,13 +182,13 @@ function StandDownButton({ exerciseId, incidentId }: { exerciseId: string; incid
                 rows={2}
                 required
                 placeholder="Why are you standing down?"
-                className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm"
+                className="w-full rounded-md border border-line-strong px-2 py-1.5 text-sm"
               />
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+                  className="flex-1 rounded-md border border-line-strong px-3 py-1.5 text-sm"
                 >
                   Cancel
                 </button>
@@ -222,11 +222,11 @@ function SeverityWizard({
         await assessSeverityAction(fd);
         onDone();
       }}
-      className="mt-4 space-y-3 rounded-md bg-white p-3"
+      className="mt-4 space-y-3 rounded-md bg-surface-1 p-3"
     >
       <input type="hidden" name="exerciseId" value={exerciseId} />
       <input type="hidden" name="incidentId" value={incident.id} />
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-muted">
         Classify across five dimensions (Afin IMP §6.2.1 + ORP App.1). Overall severity = the
         highest of the five. Aggravating factors promote to High.
       </p>
@@ -269,7 +269,7 @@ function SeverityWizard({
         <button
           type="button"
           onClick={onDone}
-          className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+          className="flex-1 rounded-md border border-line-strong px-3 py-1.5 text-sm"
         >
           Cancel
         </button>
@@ -293,13 +293,13 @@ function DimensionRow({
   thresholds: { HIGH: string; MEDIUM: string; LOW: string };
 }) {
   return (
-    <fieldset className="rounded-md border border-slate-200 p-2">
+    <fieldset className="rounded-md border border-line p-2">
       <legend className="px-1 text-xs font-semibold text-slate-700">{label}</legend>
       <div className="grid grid-cols-3 gap-2 text-[11px]">
         {(["HIGH", "MEDIUM", "LOW"] as const).map((level) => (
           <label
             key={level}
-            className="flex cursor-pointer items-start gap-1.5 rounded border border-slate-200 px-2 py-1 hover:bg-slate-50"
+            className="flex cursor-pointer items-start gap-1.5 rounded border border-line px-2 py-1 hover:bg-surface-0"
           >
             <input
               type="radio"
@@ -310,7 +310,7 @@ function DimensionRow({
             />
             <span>
               <span className={`font-semibold ${LEVEL_COLOR[level]}`}>{level}</span>
-              <span className="block text-slate-500">{thresholds[level]}</span>
+              <span className="block text-muted">{thresholds[level]}</span>
             </span>
           </label>
         ))}
@@ -328,13 +328,13 @@ const LEVEL_COLOR = {
 function SeverityPill({ level, label }: { level: string | null; label: string }) {
   if (!level) {
     return (
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">
+      <span className="rounded-full bg-surface-2 px-2 py-0.5 text-muted">
         {label} —
       </span>
     );
   }
   return (
-    <span className={`rounded-full px-2 py-0.5 font-medium ${PILL_COLOR[level] ?? "bg-slate-100"}`}>
+    <span className={`rounded-full px-2 py-0.5 font-medium ${PILL_COLOR[level] ?? "bg-surface-2"}`}>
       {label} {level}
     </span>
   );
@@ -355,6 +355,6 @@ function severityClass(sev: string | null): string {
     case "LOW":
       return "border-emerald-300 bg-emerald-50";
     default:
-      return "border-slate-300 bg-slate-50";
+      return "border-line-strong bg-surface-0";
   }
 }

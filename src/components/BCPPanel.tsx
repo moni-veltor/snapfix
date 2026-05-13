@@ -50,7 +50,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
           <input
             name="notes"
             placeholder="Standdown notes"
-            className="flex-1 rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-900"
+            className="flex-1 rounded border border-line-strong px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-900"
           />
           <Button variant="outline" size="sm" type="submit">
             Stand down BCP
@@ -86,7 +86,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
               name="ceoUserId"
               required
               defaultValue=""
-              className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+              className="mt-1 w-full rounded border border-line-strong px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
             >
               <option value="" disabled>Select…</option>
               {orgUsers.map((u) => (
@@ -102,7 +102,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
               name="croUserId"
               required
               defaultValue=""
-              className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+              className="mt-1 w-full rounded border border-line-strong px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
             >
               <option value="" disabled>Select…</option>
               {orgUsers.map((u) => (
@@ -116,7 +116,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
             name="rationale"
             rows={2}
             placeholder="Rationale (e.g. Tier 1 system down, RTO exceeded)"
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+            className="rounded border border-line-strong px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
           />
           <Button variant="primary" size="sm" type="submit">
             Confirm — activate BCP

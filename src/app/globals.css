@@ -36,8 +36,43 @@
   --brand-warning: #f59e0b;
   --brand-danger: #ef4444;
 
-  --background: var(--brand-base);
-  --foreground: var(--brand-ink);
+  /* ──────────────────────────────────────────────────────────────────────
+     Semantic surface/ink tokens — swap on `.dark`. Use these in app code
+     instead of bg-white / text-slate-900 so the dark theme is real.
+     ────────────────────────────────────────────────────────────────────── */
+  --surface-0: var(--brand-base);       /* page background */
+  --surface-1: var(--brand-surface);    /* card / panel */
+  --surface-2: #f1f5f9;                 /* secondary panel (slate-100) */
+  --surface-elev: var(--brand-surface); /* elevated card */
+  --border: var(--brand-line);
+  --border-strong: #cbd5e1;             /* slate-300 */
+  --ink: var(--brand-ink);
+  --ink-muted: var(--brand-ink-muted);
+  --ink-soft: #94a3b8;                  /* slate-400 */
+  --accent: var(--brand-primary);
+  --accent-soft: #eef2ff;               /* indigo-50 */
+
+  --background: var(--surface-0);
+  --foreground: var(--ink);
+}
+
+/* War-room dark theme — applied when `.dark` is on <html> (set by ThemeToggle).
+   Indigo-tinted near-black base, hairline borders, brighter body text. */
+.dark {
+  --surface-0: #07071a;          /* page — slightly warmer than slate-950 */
+  --surface-1: #11122a;          /* primary card */
+  --surface-2: #181a36;          /* nested / secondary surface */
+  --surface-elev: #1c1e40;       /* elevated (banners, modals) */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --ink: #e2e8f0;                /* body */
+  --ink-muted: #a5b1c8;          /* secondary */
+  --ink-soft: #6b7691;           /* tertiary */
+  --accent: #818cf8;             /* indigo-400 */
+  --accent-soft: rgba(99, 102, 241, 0.12);
+
+  --background: var(--surface-0);
+  --foreground: var(--ink);
 }
 
 @theme inline {
@@ -53,6 +88,18 @@
   --color-night-surface: var(--night-surface);
   --color-night-line: var(--night-line);
   --color-night-ink: var(--night-ink);
+
+  /* Semantic token utilities — bg-surface-1, border-line, text-muted, etc. */
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-elev: var(--surface-elev);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-muted: var(--ink-muted);
+  --color-soft: var(--ink-soft);
+  --color-accent-soft: var(--accent-soft);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

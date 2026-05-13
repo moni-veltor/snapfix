@@ -45,12 +45,12 @@ const SIZE: Record<Size, string> = {
 
 const TONE: Record<Tone, Record<Variant, string>> = {
   soft: {
-    neutral: "bg-slate-100 text-slate-700",
-    critical: "bg-rose-100 text-rose-800",
-    warn: "bg-amber-100 text-amber-800",
-    ok: "bg-emerald-100 text-emerald-800",
-    info: "bg-indigo-100 text-indigo-800",
-    mono: "bg-slate-100 text-slate-700",
+    neutral: "bg-surface-2 text-ink",
+    critical: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200",
+    warn: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+    ok: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200",
+    info: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200",
+    mono: "bg-surface-2 text-ink",
   },
   solid: {
     neutral: "bg-slate-800 text-white",

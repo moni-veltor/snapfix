@@ -29,8 +29,8 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
   ];
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex flex-wrap border-b border-slate-200 dark:border-slate-700">
+    <div className="rounded-md border border-line bg-surface-1 dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex flex-wrap border-b border-line dark:border-slate-700">
         {tabs.map((t) => {
           const isDisabled = t.disabledWhenNoIncident && !incidentId;
           return (
@@ -44,7 +44,7 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
                   ? "border-b-2 border-indigo-600 text-slate-900"
                   : isDisabled
                     ? "text-slate-300"
-                    : "text-slate-500 hover:text-slate-700"
+                    : "text-muted hover:text-slate-700"
               }`}
               title={isDisabled ? "Invoke the IMT first" : undefined}
             >
@@ -52,7 +52,7 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
             </button>
           );
         })}
-        <span className="ml-auto self-center pr-3 font-mono text-xs text-slate-500">
+        <span className="ml-auto self-center pr-3 font-mono text-xs text-muted">
           D-Day {dDayHHMM}
         </span>
       </div>
@@ -68,7 +68,7 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
         >
           <input type="hidden" name="exerciseId" value={exerciseId} />
           <input type="hidden" name="dDayTime" value={dDayHHMM} />
-          <select name="kind" required className="rounded border border-slate-300 px-2 py-1.5 text-sm">
+          <select name="kind" required className="rounded border border-line-strong px-2 py-1.5 text-sm">
             <option value="OBSERVATION">Observation</option>
             <option value="ACTION">Action</option>
             <option value="RISK">Risk</option>
@@ -82,7 +82,7 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
             name="body"
             required
             placeholder="What happened? (use Decision tab for formal decisions)"
-            className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+            className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
           />
           <button className="col-span-3 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
             Add to log
@@ -111,7 +111,7 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
           <select
             name="audience"
             required
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="rounded border border-line-strong px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           >
             <option value="CUSTOMER">Customer</option>
             <option value="REGULATOR">Regulator</option>
@@ -122,7 +122,7 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
           <select
             name="stakeholder"
             defaultValue=""
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="rounded border border-line-strong px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           >
             <option value="">— Policy stakeholder —</option>
             <option value="EMPLOYEES">Employees (must come BEFORE customers)</option>
@@ -139,14 +139,14 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
             name="subject"
             required
             placeholder="Subject"
-            className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+            className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
           />
           <textarea
             name="body"
             required
             rows={3}
             placeholder="Draft body…"
-            className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+            className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
           />
           <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
             Save draft
@@ -155,7 +155,7 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
       )}
 
       {(tab === "DECISION" || tab === "SITREP" || tab === "MEETING") && !incidentId && (
-        <p className="p-4 text-xs text-slate-500">
+        <p className="p-4 text-xs text-muted">
           Invoke the IMT first to record decisions, sitreps, and meeting minutes.
         </p>
       )}
@@ -180,7 +180,7 @@ function DecisionForm({ exerciseId, incidentId }: { exerciseId: string; incident
         name="decisionType"
         required
         defaultValue="OTHER"
-        className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="rounded border border-line-strong px-2 py-1.5 text-sm"
       >
         <option value="ACTIVATE_BCP">Activate BCP (CEO + CRO joint)</option>
         <option value="DEACTIVATE_BCP">Deactivate BCP</option>
@@ -201,13 +201,13 @@ function DecisionForm({ exerciseId, incidentId }: { exerciseId: string; incident
         name="title"
         required
         placeholder="One-line decision (e.g. 'Activate BCP — Tier 1 outage')"
-        className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <textarea
         name="rationale"
         rows={2}
         placeholder="Why this decision? (rationale for the audit trail)"
-        className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <button className="col-span-2 rounded-md bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-500">
         Record decision
@@ -233,13 +233,13 @@ function SitrepForm({ exerciseId, incidentId }: { exerciseId: string; incidentId
         name="businessUnit"
         required
         placeholder="Business unit (e.g. Tech Recovery)"
-        className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <select
         name="status"
         required
         defaultValue="AMBER"
-        className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="rounded border border-line-strong px-2 py-1.5 text-sm"
       >
         <option value="GREEN">🟢 Green</option>
         <option value="AMBER">🟡 Amber</option>
@@ -250,24 +250,24 @@ function SitrepForm({ exerciseId, incidentId }: { exerciseId: string; incidentId
         required
         rows={2}
         placeholder="Situation summary"
-        className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <textarea
         name="issues"
         rows={2}
         placeholder="Issues / blockers"
-        className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <textarea
         name="asks"
         rows={2}
         placeholder="Asks of the IMT"
-        className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <input
         name="nextUpdateDDayTime"
         placeholder="Next update at D-Day HH:MM"
-        className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
         File sitrep
@@ -297,7 +297,7 @@ function MeetingForm({
     >
       <input type="hidden" name="exerciseId" value={exerciseId} />
       <input type="hidden" name="incidentId" value={incidentId} />
-      <p className="col-span-2 text-[11px] text-slate-500">
+      <p className="col-span-2 text-[11px] text-muted">
         Standing agenda per Afin IMP §6.2.5. "Next meeting" time is required as the meeting's
         formal output.
       </p>
@@ -305,31 +305,31 @@ function MeetingForm({
         name="situation"
         rows={2}
         placeholder="Current situation"
-        className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <textarea
         name="decisions"
         rows={2}
         placeholder="Decisions taken in this meeting"
-        className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <textarea
         name="actions"
         rows={2}
         placeholder="Actions assigned (owner, due time)"
-        className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <textarea
         name="risks"
         rows={2}
         placeholder="Risks flagged"
-        className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <input
         name="nextMeetingDDay"
         required
         placeholder={`Next meeting at D-Day HH:MM (started at ${dDayHHMM})`}
-        className="col-span-2 rounded border border-slate-300 px-2 py-1.5 text-sm"
+        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
       />
       <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
         Record IMT meeting

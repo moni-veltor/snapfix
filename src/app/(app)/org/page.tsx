@@ -47,7 +47,7 @@ export default async function OrgPage() {
     <div className="space-y-10">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">{org.name}</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           {members.length} {members.length === 1 ? "member" : "members"} · You are{" "}
           <span className="font-medium text-slate-700">{me.orgRole}</span>
         </p>
@@ -62,7 +62,7 @@ export default async function OrgPage() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Members</h2>
-        <ul className="divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200 bg-white">
+        <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface-1">
           {members.map((m) => (
             <li key={m.id} className="flex items-center justify-between p-3 text-sm">
               <div className="flex items-center gap-3">
@@ -71,7 +71,7 @@ export default async function OrgPage() {
                 </div>
                 <div>
                   <div className="font-medium">{m.name ?? m.email}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-muted">
                     {m.email} · {m._count.exerciseParticipations}{" "}
                     {m._count.exerciseParticipations === 1 ? "exercise" : "exercises"}
                   </div>
@@ -84,18 +84,18 @@ export default async function OrgPage() {
                     <select
                       name="role"
                       defaultValue={m.orgRole ?? "MEMBER"}
-                      className="rounded border border-slate-300 px-2 py-1 text-xs"
+                      className="rounded border border-line-strong px-2 py-1 text-xs"
                     >
                       {me.orgRole === "OWNER" && <option value="OWNER">OWNER</option>}
                       <option value="ADMIN">ADMIN</option>
                       <option value="MEMBER">MEMBER</option>
                     </select>
-                    <button className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">
+                    <button className="rounded border border-line-strong px-2 py-1 text-xs hover:bg-surface-0">
                       Save
                     </button>
                   </form>
                 ) : (
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{m.orgRole}</span>
+                  <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{m.orgRole}</span>
                 )}
                 {canManage && m.id !== me.id && (
                   <ConfirmButton
@@ -118,16 +118,16 @@ export default async function OrgPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Pending invitations</h2>
           {pendingInvitations.length === 0 ? (
-            <p className="rounded border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+            <p className="rounded border border-dashed border-line-strong bg-surface-1 p-4 text-sm text-muted">
               No pending invitations.
             </p>
           ) : (
-            <ul className="divide-y divide-slate-200 overflow-hidden rounded-md border border-slate-200 bg-white">
+            <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface-1">
               {pendingInvitations.map((inv) => (
                 <li key={inv.id} className="flex items-center justify-between p-3 text-sm">
                   <div>
                     <div className="font-medium">{inv.email}</div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-muted">
                       {inv.role} · invited by{" "}
                       {inv.invitedBy?.name ?? inv.invitedBy?.email ?? "—"} ·
                       {" expires "}

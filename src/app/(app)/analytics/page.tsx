@@ -102,15 +102,15 @@ export default async function AnalyticsPage() {
     <div className="space-y-10">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Coverage analytics</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-muted">
           What your scenario library can test vs. what you've actually exercised.
         </p>
       </header>
 
       <Section title="6-box risk coverage" subtitle="Library = scenarios you've added · Tested = exercises with that risk-box covered (in progress / paused / completed)">
-        <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-md border border-line bg-surface-1">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600">
+            <thead className="bg-surface-0 text-left text-xs uppercase tracking-wide text-slate-600">
               <tr>
                 <th className="p-3">Risk box</th>
                 <th className="p-3">In library</th>
@@ -129,7 +129,7 @@ export default async function AnalyticsPage() {
               ].map(([label, l, e]) => {
                 const gap = (l as number) > 0 && (e as number) === 0;
                 return (
-                  <tr key={label as string} className="border-t border-slate-200">
+                  <tr key={label as string} className="border-t border-line">
                     <td className="p-3 font-medium">{label}</td>
                     <td className="p-3">{l}</td>
                     <td className="p-3">{e}</td>
@@ -143,7 +143,7 @@ export default async function AnalyticsPage() {
                           Covered
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-400">N/A</span>
+                        <span className="text-xs text-soft">N/A</span>
                       )}
                     </td>
                   </tr>
@@ -155,9 +155,9 @@ export default async function AnalyticsPage() {
       </Section>
 
       <Section title="CMORG category coverage" subtitle="Scenarios per CMORG taxonomy category, vs. exercises run">
-        <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-md border border-line bg-surface-1">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-600">
+            <thead className="bg-surface-0 text-left text-xs uppercase tracking-wide text-slate-600">
               <tr>
                 <th className="p-3">Category</th>
                 <th className="p-3">Scenarios</th>
@@ -166,7 +166,7 @@ export default async function AnalyticsPage() {
             </thead>
             <tbody>
               {sortedCats.map(([c, v]) => (
-                <tr key={c} className="border-t border-slate-200">
+                <tr key={c} className="border-t border-line">
                   <td className="p-3 font-medium">{c}</td>
                   <td className="p-3">{v.lib}</td>
                   <td className="p-3">
@@ -189,7 +189,7 @@ export default async function AnalyticsPage() {
         subtitle="Which IBSs in your register have been exercised?"
       >
         {ibsRegister.length === 0 ? (
-          <p className="rounded-md border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
+          <p className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-sm text-muted">
             No IBSs in your register.{" "}
             <Link href="/ibs/new" className="underline">
               Add your first one
@@ -198,18 +198,18 @@ export default async function AnalyticsPage() {
           </p>
         ) : (
           <div className="space-y-3">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               {untestedIBS.length} of {ibsRegister.length} IBS have never been exercise-tested.
             </p>
             <ul className="space-y-1 text-sm">
               {ibsRegister.map((i) => (
                 <li
                   key={i.id}
-                  className="flex items-center justify-between rounded border border-slate-200 bg-white px-3 py-2"
+                  className="flex items-center justify-between rounded border border-line bg-surface-1 px-3 py-2"
                 >
                   <div>
                     <Link className="font-medium hover:underline" href={`/ibs/${i.id}`}>
-                      <span className="font-mono text-xs text-slate-500">{i.code}</span> · {i.name}
+                      <span className="font-mono text-xs text-muted">{i.code}</span> · {i.name}
                     </Link>
                   </div>
                   <span
@@ -243,7 +243,7 @@ function Section({
   return (
     <section className="space-y-2">
       <h2 className="text-lg font-semibold">{title}</h2>
-      {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+      {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
       <div className="mt-2">{children}</div>
     </section>
   );
