@@ -1,6 +1,7 @@
 "use client";
 
 import { createIBSAction, updateIBSAction } from "@/app/actions/ibs";
+import ImportanceWizard from "@/components/ibs/ImportanceWizard";
 
 type IBS = {
   id?: string;
@@ -97,14 +98,21 @@ export default function IBSForm({ existing }: { existing?: IBS }) {
       </Section>
 
       <Section title="Importance assessment">
-        <Grid>
-          <Select label="Customer financial loss" name="impactCustomerFinancial" defaultValue={existing?.impactCustomerFinancial ?? ""} options={["","LOW","MEDIUM","HIGH","CRITICAL"]} />
-          <Select label="Vulnerable customer impact" name="impactVulnerableCustomer" defaultValue={existing?.impactVulnerableCustomer ?? ""} options={["","LOW","MEDIUM","HIGH","CRITICAL"]} />
-          <Select label="Loss of licence risk" name="impactLossOfLicense" defaultValue={existing?.impactLossOfLicense ?? ""} options={["","LOW","MEDIUM","HIGH","CRITICAL"]} />
-          <Select label="Regulatory fine" name="impactRegulatoryFine" defaultValue={existing?.impactRegulatoryFine ?? ""} options={["","LOW","MEDIUM","HIGH","CRITICAL"]} />
-          <Select label="Reputational" name="impactReputational" defaultValue={existing?.impactReputational ?? ""} options={["","LOW","MEDIUM","HIGH","CRITICAL"]} />
-          <Select label="Loss of capital" name="impactLossOfCapital" defaultValue={existing?.impactLossOfCapital ?? ""} options={["","LOW","MEDIUM","HIGH","CRITICAL"]} />
-        </Grid>
+        <p className="mb-3 text-xs text-muted">
+          Score across six dimensions. Overall importance is the highest of the six. Each dimension
+          carries threshold guidance from the Afin ORP — pick the band that best describes the
+          worst-plausible impact.
+        </p>
+        <ImportanceWizard
+          existing={{
+            impactCustomerFinancial: (existing?.impactCustomerFinancial as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null) ?? "",
+            impactVulnerableCustomer: (existing?.impactVulnerableCustomer as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null) ?? "",
+            impactLossOfLicense: (existing?.impactLossOfLicense as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null) ?? "",
+            impactRegulatoryFine: (existing?.impactRegulatoryFine as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null) ?? "",
+            impactReputational: (existing?.impactReputational as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null) ?? "",
+            impactLossOfCapital: (existing?.impactLossOfCapital as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | null) ?? "",
+          }}
+        />
       </Section>
 
       <Section title="Risk coverage (6-box)">

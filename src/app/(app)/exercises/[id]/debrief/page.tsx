@@ -10,6 +10,8 @@ import {
 } from "@/app/actions/action-items";
 import { savePIRAction, saveRetrospectiveAction } from "@/app/actions/closure";
 import { prisma } from "@/lib/prisma";
+import { scoreIncident } from "@/lib/scoring";
+import PerformanceCard from "@/components/scoring/PerformanceCard";
 
 export default async function DebriefPage({
   params,
@@ -35,6 +37,14 @@ export default async function DebriefPage({
   const retrospective = await prisma.retrospective.findFirst({
     where: { exerciseId: exercise.id },
   });
+
+  // Score any invoked incident (closed or in-flight) for the performance card.
+  const scoredIncident = await prisma.incident.findFirst({
+    where: { exerciseId: exercise.id, invokedAt: { not: null } },
+    orderBy: { invokedAt: "desc" },
+    select: { id: true },
+  });
+  const score = scoredIncident ? await scoreIncident(scoredIncident.id) : null;
   const answersByQuestion = new Map<string, typeof exercise.debriefAnswers>();
   for (const a of exercise.debriefAnswers) {
     const list = answersByQuestion.get(a.questionId) ?? [];
@@ -54,6 +64,8 @@ export default async function DebriefPage({
           <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{exercise.status}</span>
         </p>
       </header>
+
+      {score && <PerformanceCard score={score} />}
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Debrief questions</h2>

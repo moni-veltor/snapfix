@@ -2,6 +2,7 @@ import type { PrismaClient } from "../../src/generated/prisma/client";
 import { upsertTemplate } from "./types";
 // CMORG (tier-agnostic)
 import { cyberRansomware } from "./templates/cyber-ransomware";
+import { insiderDataExfil } from "./templates/insider-data-exfil";
 import { lossOfCsp } from "./templates/loss-of-csp";
 import { nationalPowerOutage } from "./templates/national-power-outage";
 import { severeWeather } from "./templates/severe-weather";
@@ -26,6 +27,7 @@ export async function seedSystemTemplates(prisma: PrismaClient): Promise<void> {
   const templates = [
     // CMORG library (applies to all tiers)
     cyberRansomware,
+    insiderDataExfil,
     lossOfCsp,
     nationalPowerOutage,
     severeWeather,

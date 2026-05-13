@@ -16,6 +16,8 @@ import CommsCascadePanel from "@/components/CommsCascadePanel";
 import BCPPanel from "@/components/BCPPanel";
 import ClosureGate from "@/components/ClosureGate";
 import Pill from "@/components/ui/Pill";
+import LiveScoreBadge from "@/components/scoring/LiveScoreBadge";
+import { scoreIncident } from "@/lib/scoring";
 
 export default async function LiveWorkspacePage({
   params,
@@ -125,6 +127,9 @@ export default async function LiveWorkspacePage({
   const unreadCount = inbox.filter((i) => i.unread).length;
   const clock = currentDDay(exercise.dDayAnchor, exercise.speedMultiplier);
 
+  // Live performance score — only meaningful once an incident has been invoked.
+  const liveScore = activeIncident ? await scoreIncident(activeIncident.id) : null;
+
   return (
     <div className="space-y-4">
       {/* Top stripe — incident state is always at the top */}
@@ -149,12 +154,22 @@ export default async function LiveWorkspacePage({
             </Link>
           </p>
         </div>
-        <DDayClockTicker
-          anchor={exercise.dDayAnchor?.toISOString() ?? null}
-          speedMultiplier={exercise.speedMultiplier}
-          status={exercise.status}
-          pollMs={3000}
-        />
+        <div className="flex items-center gap-2">
+          {liveScore && (
+            <LiveScoreBadge
+              exerciseId={exercise.id}
+              score={liveScore.overall}
+              criticalCount={liveScore.coaching.filter((c) => c.level === "critical").length}
+              warnCount={liveScore.coaching.filter((c) => c.level === "warn").length}
+            />
+          )}
+          <DDayClockTicker
+            anchor={exercise.dDayAnchor?.toISOString() ?? null}
+            speedMultiplier={exercise.speedMultiplier}
+            status={exercise.status}
+            pollMs={3000}
+          />
+        </div>
       </header>
 
       <IncidentBanner exerciseId={exercise.id} incident={incidentForBanner} />

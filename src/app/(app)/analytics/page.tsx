@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import IBSCoverageHeatmap from "@/components/analytics/IBSCoverageHeatmap";
 
 export const metadata = { title: "Coverage Analytics — SnapFix" };
 
@@ -41,9 +42,58 @@ export default async function AnalyticsPage() {
     }),
     prisma.organizationIBS.findMany({
       where: { orgId: me.orgId },
-      include: { _count: { select: { exerciseLinks: true } } },
+      include: {
+        _count: { select: { exerciseLinks: true } },
+        exerciseLinks: {
+          include: {
+            exercise: {
+              select: {
+                scenario: {
+                  select: {
+                    coversPeople: true,
+                    coversProperty: true,
+                    coversTechnology: true,
+                    coversDataAvailability: true,
+                    coversDataIntegrity: true,
+                    coversThirdParty: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     }),
   ]);
+
+  // Per-IBS 6-box counts — for the heatmap. For each IBS, count how many of
+  // its linked exercises tested each of the six risk dimensions.
+  const heatmapRows = ibsRegister.map((ibs) => {
+    const counts = {
+      people: 0,
+      property: 0,
+      technology: 0,
+      dataAvailability: 0,
+      dataIntegrity: 0,
+      thirdParty: 0,
+    };
+    for (const link of ibs.exerciseLinks) {
+      const s = link.exercise.scenario;
+      if (s.coversPeople) counts.people++;
+      if (s.coversProperty) counts.property++;
+      if (s.coversTechnology) counts.technology++;
+      if (s.coversDataAvailability) counts.dataAvailability++;
+      if (s.coversDataIntegrity) counts.dataIntegrity++;
+      if (s.coversThirdParty) counts.thirdParty++;
+    }
+    return {
+      id: ibs.id,
+      code: ibs.code,
+      name: ibs.name,
+      criticality: ibs.criticality,
+      ...counts,
+    };
+  });
 
   // Aggregate 6-box coverage across executed exercises
   const exec = {
@@ -106,6 +156,13 @@ export default async function AnalyticsPage() {
           What your scenario library can test vs. what you've actually exercised.
         </p>
       </header>
+
+      <Section
+        title="IBS × risk-dimension coverage"
+        subtitle="For each Important Business Service, how many exercises have tested it against each of the six risk dimensions. Empty cells are gaps a regulator will ask about."
+      >
+        <IBSCoverageHeatmap rows={heatmapRows} />
+      </Section>
 
       <Section title="6-box risk coverage" subtitle="Library = scenarios you've added · Tested = exercises with that risk-box covered (in progress / paused / completed)">
         <div className="overflow-hidden rounded-md border border-line bg-surface-1">
