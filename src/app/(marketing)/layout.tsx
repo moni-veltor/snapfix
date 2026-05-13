@@ -22,14 +22,20 @@ export default async function MarketingLayout({
             <Link href="/product/simulator" className="text-slate-300 hover:text-white">
               Product
             </Link>
+            <Link href="/use-cases" className="text-slate-300 hover:text-white">
+              Use cases
+            </Link>
+            <Link href="/resources" className="text-slate-300 hover:text-white">
+              Resources
+            </Link>
             <Link href="/pricing" className="text-slate-300 hover:text-white">
               Pricing
             </Link>
+            <Link href="/services" className="text-slate-300 hover:text-white">
+              Services
+            </Link>
             <Link href="/about" className="text-slate-300 hover:text-white">
               About
-            </Link>
-            <Link href="/contact" className="text-slate-300 hover:text-white">
-              Contact
             </Link>
           </nav>
           <div className="flex items-center gap-3 text-sm">
@@ -58,8 +64,8 @@ export default async function MarketingLayout({
       </header>
       <main className="flex-1">{children}</main>
       <footer className="border-t border-white/[0.06] bg-[color:var(--night-base)]">
-        <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 md:grid-cols-4 md:gap-4">
-          <div className="space-y-3 md:col-span-2">
+        <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 md:grid-cols-12 md:gap-6">
+          <div className="space-y-3 md:col-span-4">
             <div className="flex items-center gap-2">
               <Logo size={26} tone="light" />
               <span className="font-semibold tracking-tight text-white">SnapFix</span>
@@ -68,42 +74,75 @@ export default async function MarketingLayout({
               Operational resilience consulting in technology, with a growing platform of practical
               apps for banks, fintechs, and financial market infrastructures.
             </p>
+            <form action="/contact" method="get" className="pt-2">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                Get monthly briefings on operational resilience
+              </label>
+              <div className="mt-1 flex gap-2">
+                <input
+                  name="newsletter"
+                  type="email"
+                  required
+                  placeholder="you@firm.com"
+                  className="flex-1 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none"
+                />
+                <button className="rounded-md bg-indigo-500 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-400">
+                  Subscribe
+                </button>
+              </div>
+            </form>
           </div>
-          <div className="text-sm">
-            <div className="font-semibold text-white">Platform</div>
-            <ul className="mt-2 space-y-1 text-slate-400">
-              <li>
-                <Link href="/product/simulator" className="hover:text-white">
-                  SnapFix Simulator
-                </Link>
-              </li>
-              <li>
-                <Link href="/pricing" className="hover:text-white">
-                  Pricing
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div className="text-sm">
-            <div className="font-semibold text-white">Company</div>
-            <ul className="mt-2 space-y-1 text-slate-400">
-              <li>
-                <Link href="/about" className="hover:text-white">
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-white">
-                  Contact
-                </Link>
-              </li>
-            </ul>
-          </div>
+          <FooterCol title="Platform" links={[
+            { href: "/product/simulator", label: "SnapFix Simulator" },
+            { href: "/pricing", label: "Pricing" },
+            { href: "/use-cases", label: "Use cases" },
+          ]} />
+          <FooterCol title="Resources" links={[
+            { href: "/resources", label: "Resources hub" },
+            { href: "/resources/glossary", label: "Glossary" },
+            { href: "/resources/regulators", label: "Regulator reference" },
+            { href: "/resources/templates", label: "Templates" },
+            { href: "/resources/changelog", label: "Changelog" },
+          ]} />
+          <FooterCol title="Company" links={[
+            { href: "/about", label: "About" },
+            { href: "/services", label: "Consulting" },
+            { href: "/contact", label: "Contact" },
+            { href: "/security", label: "Security" },
+          ]} />
+          <FooterCol title="Legal" links={[
+            { href: "/legal/privacy", label: "Privacy" },
+            { href: "/legal/terms", label: "Terms" },
+            { href: "/legal/dpa", label: "DPA" },
+          ]} />
         </div>
         <div className="border-t border-white/[0.06] py-4 text-center text-xs text-slate-500">
           © {new Date().getFullYear()} SnapFix. Operational resilience consulting in technology.
         </div>
       </footer>
+    </div>
+  );
+}
+
+function FooterCol({
+  title,
+  links,
+}: {
+  title: string;
+  links: { href: string; label: string }[];
+}) {
+  return (
+    <div className="text-sm md:col-span-2">
+      <div className="font-semibold text-white">{title}</div>
+      <ul className="mt-2 space-y-1 text-slate-400">
+        {links.map((l) => (
+          <li key={l.href}>
+            <Link href={l.href} className="hover:text-white">
+              {l.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

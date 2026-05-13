@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import AnimatedHero from "@/components/marketing/AnimatedHero";
 
 export const metadata = {
   title: "SnapFix — Practise the disruptions that matter, before they happen",
@@ -56,7 +57,7 @@ export default async function MarketingHome() {
                 No card. Free for up to 5 members. CMORG library + 26 ready-made scenarios.
               </p>
             </div>
-            <HeroVisual />
+            <AnimatedHero />
           </div>
         </div>
       </section>
@@ -68,17 +69,25 @@ export default async function MarketingHome() {
             Built around the standards your regulator already expects
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3 text-center text-sm text-slate-400 sm:grid-cols-5">
-            {["CMORG DSL", "PRA / FCA SS1/21", "Bank of England", "ORCG", "Cross-market OR"].map(
-              (s) => (
-                <div
-                  key={s}
-                  className="rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-3 font-medium"
-                >
-                  {s}
-                </div>
-              ),
-            )}
+            {[
+              { label: "CMORG DSL", href: "/resources/guides/cmorg" },
+              { label: "PRA SS1/21", href: "/resources/guides/ss121" },
+              { label: "FCA SYSC 15A", href: "/resources/regulators#fca" },
+              { label: "Bank of England", href: "/resources/regulators#boe" },
+              { label: "UK GDPR / ICO", href: "/resources/regulators#ico" },
+            ].map((s) => (
+              <Link
+                key={s.label}
+                href={s.href}
+                className="rounded-md border border-white/[0.08] bg-white/[0.02] px-3 py-3 font-medium transition hover:border-indigo-400/40 hover:bg-white/[0.05] hover:text-white"
+              >
+                {s.label}
+              </Link>
+            ))}
           </div>
+          <p className="mt-3 text-center text-[11px] text-slate-500">
+            Click any standard to read how SnapFix maps to it →
+          </p>
         </div>
       </section>
 
