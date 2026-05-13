@@ -2,6 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { closeIncidentAction, updateClosureChecksAction } from "@/app/actions/closure";
+import Section from "@/components/ui/Section";
+import Button from "@/components/ui/Button";
+import PolicyHint from "@/components/ui/PolicyHint";
 
 type Checks = {
   closureImpactCeased: boolean;
@@ -29,6 +32,7 @@ export default function ClosureGate({ exerciseId, incidentId, checks }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const passed = Object.values(checks).every(Boolean);
+  const passedCount = Object.values(checks).filter(Boolean).length;
 
   const toggle = (key: keyof Checks, value: boolean) => {
     start(async () => {
@@ -53,11 +57,19 @@ export default function ClosureGate({ exerciseId, incidentId, checks }: Props) {
     });
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-3 text-sm">
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-        Closure gate — five mandatory criteria (IMP §6.4.1)
-      </div>
-      <ul className="mt-2 space-y-1.5">
+    <Section
+      title={
+        <>
+          Closure gate
+          <PolicyHint clause="IMP §6.4.1">
+            All five criteria must be ✓ before an incident can be closed.
+          </PolicyHint>
+        </>
+      }
+      subtitle={`${passedCount} of 5 satisfied`}
+      variant={passed ? "ok" : "neutral"}
+    >
+      <ul className="space-y-1.5">
         {CHECK_LABELS.map((item) => {
           const v = checks[item.key];
           return (
@@ -69,28 +81,25 @@ export default function ClosureGate({ exerciseId, incidentId, checks }: Props) {
                 disabled={pending}
                 className="mt-0.5"
               />
-              <div>
-                <div className={v ? "text-slate-700" : "text-slate-600"}>{item.label}</div>
-                <div className="text-[10px] text-slate-400">{item.clause}</div>
+              <div className="min-w-0 text-xs">
+                <div className={v ? "text-slate-700 dark:text-slate-200" : "text-slate-600 dark:text-slate-300"}>
+                  {item.label}
+                </div>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500">{item.clause}</div>
               </div>
             </li>
           );
         })}
       </ul>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs text-slate-500">
-          {passed ? "All five criteria satisfied." : "Closure blocked until all five ✓."}
+        <span className="text-[11px] text-slate-500 dark:text-slate-400">
+          {passed ? "All criteria satisfied." : "Closure blocked until all five ✓."}
         </span>
-        <button
-          type="button"
-          onClick={close}
-          disabled={!passed || pending}
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white disabled:bg-slate-300"
-        >
+        <Button onClick={close} disabled={!passed || pending} size="sm" type="button">
           {pending ? "Closing…" : "Close incident"}
-        </button>
+        </Button>
       </div>
-      {error && <p className="mt-2 text-xs text-rose-700">{error}</p>}
-    </div>
+      {error && <p className="mt-2 text-xs text-rose-700 dark:text-rose-400">{error}</p>}
+    </Section>
   );
 }

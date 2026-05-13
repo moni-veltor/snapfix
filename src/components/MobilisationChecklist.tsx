@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { mobiliseParticipantAction } from "@/app/actions/teams";
+import Section from "@/components/ui/Section";
+import Pill from "@/components/ui/Pill";
 
 type Member = {
   participantId: string;
@@ -22,7 +24,6 @@ type Props = {
   myParticipantId: string;
 };
 
-/** Compact mobilisation status board grouped by policy team. */
 export default function MobilisationChecklist({ exerciseId, members, myParticipantId }: Props) {
   const [open, setOpen] = useState(true);
 
@@ -32,44 +33,53 @@ export default function MobilisationChecklist({ exerciseId, members, myParticipa
     if (!byTeam.has(key)) byTeam.set(key, []);
     byTeam.get(key)!.push(m);
   }
-
   const teamsInOrder = Array.from(byTeam.keys()).sort(teamOrder);
 
-  const mobilisedCount = members.filter((m) => m.mobilisationStatus === "MOBILISED" || m.mobilisationStatus === "DEPUTY_STEPPED_UP").length;
+  const mobilisedCount = members.filter(
+    (m) => m.mobilisationStatus === "MOBILISED" || m.mobilisationStatus === "DEPUTY_STEPPED_UP",
+  ).length;
   const unreachableCount = members.filter((m) => m.mobilisationStatus === "UNREACHABLE").length;
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between p-3 text-left"
-      >
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-          Mobilisation · {mobilisedCount}/{members.length} mobilised
+    <Section
+      title={`Mobilisation · ${mobilisedCount}/${members.length}`}
+      right={
+        <div className="flex items-center gap-2">
           {unreachableCount > 0 && (
-            <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-rose-700">
-              {unreachableCount} unreachable
-            </span>
+            <Pill variant="critical" tone="soft">{unreachableCount} unreachable</Pill>
           )}
-        </span>
-        <span className="text-xs text-slate-400">{open ? "−" : "+"}</span>
-      </button>
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+          >
+            {open ? "−" : "+"}
+          </button>
+        </div>
+      }
+    >
       {open && (
-        <div className="space-y-3 border-t border-slate-200 p-3">
+        <div className="space-y-3">
           {teamsInOrder.map((teamKey) => (
             <div key={teamKey}>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {teamKey}
               </div>
-              <ul className="mt-1 divide-y divide-slate-100">
+              <ul className="mt-1 divide-y divide-slate-100 dark:divide-slate-800">
                 {byTeam.get(teamKey)!.map((m) => (
-                  <li key={m.participantId} className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs">
+                  <li
+                    key={m.participantId}
+                    className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs"
+                  >
                     <div className="min-w-0 flex-1">
-                      <span className="font-medium text-slate-800">{m.name ?? m.email}</span>
-                      <span className="ml-2 text-slate-500">{m.roleTitle}</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-100">
+                        {m.name ?? m.email}
+                      </span>
+                      <span className="ml-2 text-slate-500 dark:text-slate-400">{m.roleTitle}</span>
                       {m.deputyName && (
-                        <span className="ml-2 text-[10px] text-slate-400">deputy: {m.deputyName}</span>
+                        <span className="ml-2 text-[10px] text-slate-400 dark:text-slate-500">
+                          deputy: {m.deputyName}
+                        </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -82,7 +92,7 @@ export default function MobilisationChecklist({ exerciseId, members, myParticipa
                             name="status"
                             defaultValue={m.mobilisationStatus}
                             onChange={(e) => (e.target.form as HTMLFormElement).requestSubmit()}
-                            className="rounded border border-slate-300 px-1.5 py-0.5 text-[11px]"
+                            className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                           >
                             <option value="UNCALLED">Uncalled</option>
                             <option value="MOBILISED">Mobilised</option>
@@ -100,7 +110,7 @@ export default function MobilisationChecklist({ exerciseId, members, myParticipa
           ))}
         </div>
       )}
-    </div>
+    </Section>
   );
 }
 
@@ -142,20 +152,20 @@ function teamOrder(a: string, b: string): number {
 }
 
 function StatusPill({ status }: { status: string }) {
-  const cls = STATUS_CLASS[status] ?? "bg-slate-100 text-slate-700";
+  const variant = STATUS_VARIANT[status] ?? "neutral";
   return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${cls}`}>
+    <Pill variant={variant} size="sm" tone="soft">
       {STATUS_LABEL[status] ?? status}
-    </span>
+    </Pill>
   );
 }
 
-const STATUS_CLASS: Record<string, string> = {
-  UNCALLED: "bg-slate-100 text-slate-600",
-  MOBILISED: "bg-emerald-100 text-emerald-800",
-  UNREACHABLE: "bg-rose-100 text-rose-800",
-  DEPUTY_STEPPED_UP: "bg-violet-100 text-violet-800",
-  STOOD_DOWN: "bg-slate-200 text-slate-600",
+const STATUS_VARIANT: Record<string, "neutral" | "ok" | "warn" | "critical" | "info"> = {
+  UNCALLED: "neutral",
+  MOBILISED: "ok",
+  UNREACHABLE: "critical",
+  DEPUTY_STEPPED_UP: "info",
+  STOOD_DOWN: "neutral",
 };
 
 const STATUS_LABEL: Record<string, string> = {

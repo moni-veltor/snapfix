@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode (Tailwind v4 syntax) — `.dark` on <html> or
+   any ancestor switches the `dark:` variant on. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ────────────────────────────────────────────────────────────────────────────
    SnapFix brand tokens — "Trust Indigo"
    ──────────────────────────────────────────────────────────────────────────── */

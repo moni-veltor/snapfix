@@ -29,8 +29,8 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
   ];
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white">
-      <div className="flex flex-wrap border-b border-slate-200">
+    <div className="rounded-md border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+      <div className="flex flex-wrap border-b border-slate-200 dark:border-slate-700">
         {tabs.map((t) => {
           const isDisabled = t.disabledWhenNoIncident && !incidentId;
           return (
@@ -111,7 +111,7 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
           <select
             name="audience"
             required
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           >
             <option value="CUSTOMER">Customer</option>
             <option value="REGULATOR">Regulator</option>
@@ -122,7 +122,7 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
           <select
             name="stakeholder"
             defaultValue=""
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           >
             <option value="">— Policy stakeholder —</option>
             <option value="EMPLOYEES">Employees (must come BEFORE customers)</option>

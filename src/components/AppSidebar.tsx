@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { signOutAction } from "@/app/actions/auth";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type NavItem = {
   href: string;
@@ -121,7 +122,7 @@ export default function AppSidebar({
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-200 bg-white transition-[width,transform] duration-200 ease-out md:sticky md:top-0 md:h-screen ${
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-200 bg-white transition-[width,transform] duration-200 ease-out dark:border-slate-800 dark:bg-slate-950 md:sticky md:top-0 md:h-screen ${
           collapsed ? "w-[68px]" : "w-[240px]"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
@@ -144,10 +145,10 @@ export default function AppSidebar({
             )}
             {!collapsed && (
               <div className="overflow-hidden">
-                <div className="truncate text-sm font-semibold tracking-tight text-slate-900">
+                <div className="truncate text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-100">
                   {orgName ?? "SnapFix"}
                 </div>
-                <div className="truncate text-[11px] text-slate-500">
+                <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                   {orgName ? "SnapFix" : "Operational resilience"}
                 </div>
               </div>
@@ -155,7 +156,7 @@ export default function AppSidebar({
           </Link>
           <button
             onClick={toggle}
-            className="hidden h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 md:flex"
+            className="hidden h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 md:flex"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -177,28 +178,31 @@ export default function AppSidebar({
         </nav>
 
         {/* Bottom: user */}
-        <div className="border-t border-slate-200 p-2">
+        <div className="border-t border-slate-200 p-2 dark:border-slate-800">
           <div
             className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm ${
               collapsed ? "justify-center" : ""
             }`}
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
               {initials(user.name ?? user.email)}
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-medium text-slate-900">
+                <div className="truncate text-xs font-medium text-slate-900 dark:text-slate-100">
                   {user.name ?? user.email}
                 </div>
-                <div className="truncate text-[11px] text-slate-500">{user.email}</div>
+                <div className="truncate text-[11px] text-slate-500 dark:text-slate-400">{user.email}</div>
               </div>
             )}
+          </div>
+          <div className="mt-1">
+            <ThemeToggle collapsed={collapsed} />
           </div>
           <form action={signOutAction}>
             <button
               type="submit"
-              className={`mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700 ${
+              className={`mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100 ${
                 collapsed ? "justify-center" : ""
               }`}
               title="Sign out"
@@ -236,8 +240,8 @@ function NavSection({
             onClick={onNavigate}
             className={`group flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors ${
               active
-                ? "bg-indigo-50 text-indigo-700"
-                : "text-slate-700 hover:bg-slate-100"
+                ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
+                : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
             } ${collapsed ? "justify-center px-2" : ""}`}
             title={collapsed ? item.label : undefined}
           >
@@ -254,9 +258,9 @@ function NavSection({
 }
 
 function SectionDivider({ collapsed, label }: { collapsed: boolean; label: string }) {
-  if (collapsed) return <div className="my-1 h-px bg-slate-200" />;
+  if (collapsed) return <div className="my-1 h-px bg-slate-200 dark:bg-slate-800" />;
   return (
-    <div className="mt-3 px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+    <div className="mt-3 px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
       {label}
     </div>
   );
