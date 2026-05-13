@@ -8,6 +8,7 @@ import {
   removeExerciseMemberAction,
   removeTeamAction,
 } from "@/app/actions/exercises";
+import { classifyTeamAction, setDeputyAction } from "@/app/actions/teams";
 
 export default async function ExerciseTeamPage({
   params,
@@ -60,7 +61,7 @@ export default async function ExerciseTeamPage({
           {exercise.teams.map((t) => (
             <li key={t.id} className="rounded-md border border-slate-200 bg-white p-4">
               <div className="flex items-start justify-between gap-2">
-                <div>
+                <div className="flex-1">
                   <div className="font-medium">{t.name}</div>
                   {t.description && (
                     <p className="mt-1 text-xs text-slate-500">{t.description}</p>
@@ -68,6 +69,33 @@ export default async function ExerciseTeamPage({
                   <p className="mt-2 text-xs text-slate-500">
                     {t.members.length} {t.members.length === 1 ? "member" : "members"}
                   </p>
+                  <form action={classifyTeamAction} className="mt-2 flex items-center gap-2">
+                    <input type="hidden" name="exerciseId" value={exercise.id} />
+                    <input type="hidden" name="teamId" value={t.id} />
+                    <label className="text-[10px] uppercase tracking-wide text-slate-500">
+                      Policy team
+                    </label>
+                    <select
+                      name="kind"
+                      defaultValue={t.kind ?? "OTHER"}
+                      className="rounded border border-slate-300 px-1.5 py-0.5 text-xs"
+                    >
+                      <option value="IMT">IMT (strategic)</option>
+                      <option value="IRT_TECH">IRT — Technology</option>
+                      <option value="IRT_CUSTOMER">IRT — Customer</option>
+                      <option value="COMMS">Communications</option>
+                      <option value="BRT_FINANCE">BRT — Finance</option>
+                      <option value="BRT_BUILDINGS">BRT — Buildings</option>
+                      <option value="BRT_TECH">BRT — Technology</option>
+                      <option value="BRT_COMMS">BRT — Communications</option>
+                      <option value="EXECUTIVE_OBSERVERS">Executive Observers</option>
+                      <option value="ACTION_COMMITTEE">Board Action Committee</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                    <button className="rounded border border-slate-300 px-2 py-0.5 text-[11px] hover:bg-slate-50">
+                      Save
+                    </button>
+                  </form>
                 </div>
                 <form action={removeTeamAction}>
                   <input type="hidden" name="teamId" value={t.id} />
@@ -179,14 +207,36 @@ export default async function ExerciseTeamPage({
           {exercise.participants.map((p) => {
             const team = exercise.teams.find((t) => t.id === p.teamId);
             return (
-              <li key={p.id} className="flex items-center justify-between p-3 text-sm">
-                <div>
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+                <div className="min-w-0 flex-1">
                   <div className="font-medium">{p.user.name ?? p.user.email}</div>
                   <div className="text-xs text-slate-500">
                     {p.roleTitle} · {p.exerciseRole}
                     {team ? ` · ${team.name}` : " · (no team)"}
                   </div>
                 </div>
+                <form action={setDeputyAction} className="flex items-center gap-2">
+                  <input type="hidden" name="exerciseId" value={exercise.id} />
+                  <input type="hidden" name="participantId" value={p.id} />
+                  <label className="text-[10px] uppercase tracking-wide text-slate-500">
+                    Deputy
+                  </label>
+                  <select
+                    name="deputyParticipantId"
+                    defaultValue={p.deputyParticipantId ?? ""}
+                    onChange={(e) => (e.target.form as HTMLFormElement).requestSubmit()}
+                    className="rounded border border-slate-300 px-1.5 py-0.5 text-xs"
+                  >
+                    <option value="">— None —</option>
+                    {exercise.participants
+                      .filter((q) => q.id !== p.id)
+                      .map((q) => (
+                        <option key={q.id} value={q.id}>
+                          {q.user.name ?? q.user.email} ({q.roleTitle})
+                        </option>
+                      ))}
+                  </select>
+                </form>
                 <form action={removeExerciseMemberAction}>
                   <input type="hidden" name="participantId" value={p.id} />
                   <input type="hidden" name="exerciseId" value={exercise.id} />

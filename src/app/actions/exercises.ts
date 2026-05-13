@@ -457,6 +457,20 @@ export async function upsertResponseAction(formData: FormData) {
 const CommsInput = z.object({
   exerciseId: z.string(),
   audience: z.enum(["CUSTOMER", "REGULATOR", "INTERNAL", "SENIOR_MGMT", "MEDIA"]),
+  stakeholder: z
+    .enum([
+      "EMPLOYEES",
+      "CUSTOMERS",
+      "REGULATORS",
+      "SHAREHOLDERS",
+      "MEDIA",
+      "THIRD_PARTY_VENDORS",
+      "INTERMEDIARIES",
+      "ICO",
+      "INSURERS",
+      "OTHER",
+    ])
+    .optional(),
   subject: z.string().min(1),
   body: z.string().min(1),
 });
@@ -465,7 +479,14 @@ export async function createCommsDraftAction(formData: FormData) {
   const user = await requireUser();
   const data = CommsInput.parse(Object.fromEntries(formData));
   await prisma.communicationDraft.create({
-    data: { ...data, authorId: user.id },
+    data: {
+      exerciseId: data.exerciseId,
+      audience: data.audience,
+      stakeholder: data.stakeholder ?? null,
+      subject: data.subject,
+      body: data.body,
+      authorId: user.id,
+    },
   });
   revalidatePath(`/exercises/${data.exerciseId}/live`);
   revalidatePath(`/exercises/${data.exerciseId}/facilitator`);

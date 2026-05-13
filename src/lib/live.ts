@@ -37,6 +37,32 @@ export type LiveFeedItem =
       body: string;
     }
   | {
+      kind: "DECISION";
+      id: string;
+      at: Date;
+      decisionType: string;
+      title: string;
+      rationale: string | null;
+      author: string;
+      approverRoles: string[];
+    }
+  | {
+      kind: "SITREP";
+      id: string;
+      at: Date;
+      author: string;
+      businessUnit: string;
+      status: string;
+      summary: string;
+    }
+  | {
+      kind: "MEETING";
+      id: string;
+      at: Date;
+      meetingNumber: number;
+      nextMeetingDDay: string | null;
+    }
+  | {
       kind: "RESPONSE";
       id: string;
       at: Date;
@@ -52,6 +78,14 @@ export type LiveFeedItem =
       author: string;
       audience: string;
       subject: string;
+    }
+  | {
+      kind: "INCIDENT";
+      id: string;
+      at: Date;
+      shortCode: string;
+      transition: string;
+      severity: string | null;
     }
   | {
       kind: "STATUS";
@@ -71,6 +105,43 @@ export type PresenceMember = {
   lastSeenAt: Date | null;
   online: boolean;
 };
+
+export type MobilisationMember = {
+  participantId: string;
+  userId: string;
+  name: string | null;
+  email: string;
+  roleTitle: string;
+  exerciseRole: string;
+  teamKind: string | null;
+  teamName: string | null;
+  mobilisationStatus: string;
+  deputyName: string | null;
+};
+
+export async function loadMobilisation(exerciseId: string): Promise<MobilisationMember[]> {
+  const rows = await prisma.exerciseParticipant.findMany({
+    where: { exerciseId },
+    include: {
+      user: { select: { name: true, email: true } },
+      team: { select: { name: true, kind: true } },
+      deputy: { include: { user: { select: { name: true, email: true } } } },
+    },
+    orderBy: [{ exerciseRole: "asc" }, { roleTitle: "asc" }],
+  });
+  return rows.map((r) => ({
+    participantId: r.id,
+    userId: r.userId,
+    name: r.user.name,
+    email: r.user.email,
+    roleTitle: r.roleTitle,
+    exerciseRole: r.exerciseRole,
+    teamKind: r.team?.kind ?? null,
+    teamName: r.team?.name ?? null,
+    mobilisationStatus: r.mobilisationStatus,
+    deputyName: r.deputy?.user?.name ?? r.deputy?.user?.email ?? null,
+  }));
+}
 
 const ONLINE_WINDOW_MS = 30_000; // last 30s counts as "live in the room"
 
@@ -98,7 +169,18 @@ export async function loadPresence(exerciseId: string): Promise<PresenceMember[]
 }
 
 export async function loadLiveFeed(exerciseId: string, limit = 80): Promise<LiveFeedItem[]> {
-  const [exercise, eventReleases, injectReleases, log, responses, comms] = await Promise.all([
+  const [
+    exercise,
+    eventReleases,
+    injectReleases,
+    log,
+    responses,
+    comms,
+    decisions,
+    sitreps,
+    meetings,
+    incidents,
+  ] = await Promise.all([
     prisma.exercise.findUnique({
       where: { id: exerciseId },
       select: {
@@ -139,7 +221,9 @@ export async function loadLiveFeed(exerciseId: string, limit = 80): Promise<Live
       },
     }),
     prisma.incidentLogEntry.findMany({
-      where: { exerciseId },
+      // Hide log entries that are the back-reference of a structured DecisionRecord —
+      // the live feed shows decisions via the DecisionRecord query instead.
+      where: { exerciseId, decisionRecord: null },
       include: { author: { select: { name: true, email: true } } },
     }),
     prisma.participantResponse.findMany({
@@ -152,6 +236,33 @@ export async function loadLiveFeed(exerciseId: string, limit = 80): Promise<Live
     prisma.communicationDraft.findMany({
       where: { exerciseId },
       include: { author: { select: { name: true, email: true } } },
+    }),
+    prisma.decisionRecord.findMany({
+      where: { incident: { exerciseId } },
+      include: {
+        authorUser: { select: { name: true, email: true } },
+      },
+    }),
+    prisma.sitrep.findMany({
+      where: { incident: { exerciseId } },
+      include: {
+        authorParticipant: { include: { user: { select: { name: true, email: true } } } },
+      },
+    }),
+    prisma.iMTMeeting.findMany({
+      where: { incident: { exerciseId } },
+    }),
+    prisma.incident.findMany({
+      where: { exerciseId },
+      select: {
+        id: true,
+        shortCode: true,
+        invokedAt: true,
+        stoodDownAt: true,
+        closedAt: true,
+        severity: true,
+        severityAssessedAt: true,
+      },
     }),
   ]);
 
@@ -212,6 +323,80 @@ export async function loadLiveFeed(exerciseId: string, limit = 80): Promise<Live
       audience: c.audience,
       subject: c.subject,
     });
+  }
+  for (const d of decisions) {
+    items.push({
+      kind: "DECISION",
+      id: `decision:${d.id}`,
+      at: d.createdAt,
+      decisionType: d.decisionType,
+      title: d.title,
+      rationale: d.rationale,
+      author: d.authorUser?.name ?? d.authorUser?.email ?? "—",
+      approverRoles: d.approverRolesRequired,
+    });
+  }
+  for (const s of sitreps) {
+    items.push({
+      kind: "SITREP",
+      id: `sitrep:${s.id}`,
+      at: s.createdAt,
+      author: s.authorParticipant?.user?.name ?? s.authorParticipant?.user?.email ?? "—",
+      businessUnit: s.businessUnit,
+      status: s.status,
+      summary: s.summary,
+    });
+  }
+  for (const m of meetings) {
+    items.push({
+      kind: "MEETING",
+      id: `meeting:${m.id}`,
+      at: m.createdAt,
+      meetingNumber: m.meetingNumber,
+      nextMeetingDDay: m.nextMeetingDDay,
+    });
+  }
+  for (const inc of incidents) {
+    if (inc.invokedAt) {
+      items.push({
+        kind: "INCIDENT",
+        id: `incident:${inc.id}:invoked`,
+        at: inc.invokedAt,
+        shortCode: inc.shortCode,
+        transition: "IMT invoked",
+        severity: inc.severity,
+      });
+    }
+    if (inc.severityAssessedAt && inc.severity) {
+      items.push({
+        kind: "INCIDENT",
+        id: `incident:${inc.id}:severity`,
+        at: inc.severityAssessedAt,
+        shortCode: inc.shortCode,
+        transition: `Severity ${inc.severity}`,
+        severity: inc.severity,
+      });
+    }
+    if (inc.stoodDownAt) {
+      items.push({
+        kind: "INCIDENT",
+        id: `incident:${inc.id}:stood-down`,
+        at: inc.stoodDownAt,
+        shortCode: inc.shortCode,
+        transition: "Stood down",
+        severity: inc.severity,
+      });
+    }
+    if (inc.closedAt) {
+      items.push({
+        kind: "INCIDENT",
+        id: `incident:${inc.id}:closed`,
+        at: inc.closedAt,
+        shortCode: inc.shortCode,
+        transition: "Closed",
+        severity: inc.severity,
+      });
+    }
   }
   if (exercise?.startedAt) {
     items.push({

@@ -11,6 +11,7 @@ import {
   Calendar,
   CheckSquare,
   Building2,
+  Boxes,
   BarChart3,
   Users,
   ScrollText,
@@ -40,6 +41,7 @@ const PRIMARY: NavItem[] = [
 
 const REGISTRY: NavItem[] = [
   { href: "/ibs", label: "IBS register", icon: Building2 },
+  { href: "/vendors", label: "Vendors", icon: Boxes },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 

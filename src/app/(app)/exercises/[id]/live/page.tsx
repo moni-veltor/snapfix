@@ -3,12 +3,18 @@ import { notFound } from "next/navigation";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { loadInbox } from "@/lib/inbox";
-import { loadLiveFeed, loadPresence, type LiveFeedItem } from "@/lib/live";
+import { loadLiveFeed, loadPresence, loadMobilisation, type LiveFeedItem } from "@/lib/live";
 import { currentDDay } from "@/lib/dday";
 import DDayClockTicker from "@/components/DDayClockTicker";
 import LivePresenceBar from "@/components/LivePresenceBar";
 import LiveInboxItem from "@/components/LiveInboxItem";
-import LiveQuickCapture from "@/components/LiveQuickCapture";
+import IncidentBanner from "@/components/IncidentBanner";
+import MobilisationChecklist from "@/components/MobilisationChecklist";
+import IncidentCapturePanel from "@/components/IncidentCapturePanel";
+import RegulatorClocks from "@/components/RegulatorClocks";
+import CommsCascadePanel from "@/components/CommsCascadePanel";
+import BCPPanel from "@/components/BCPPanel";
+import ClosureGate from "@/components/ClosureGate";
 
 export default async function LiveWorkspacePage({
   params,
@@ -43,14 +49,76 @@ export default async function LiveWorkspacePage({
     );
   }
 
-  const [inbox, feed, presence, myResponses] = await Promise.all([
+  const [
+    inbox,
+    feed,
+    presence,
+    mobilisation,
+    myResponses,
+    activeIncident,
+    regulatorClocks,
+    commsDrafts,
+    bcpActivation,
+    orgUsers,
+  ] = await Promise.all([
     loadInbox(exercise.id, { roleTitle: participant.roleTitle, participantId: participant.id }),
     loadLiveFeed(exercise.id),
     loadPresence(exercise.id),
+    loadMobilisation(exercise.id),
     prisma.participantResponse.findMany({
       where: { exerciseId: exercise.id, authorId: me.id },
     }),
+    prisma.incident.findFirst({
+      where: { exerciseId: exercise.id, status: { in: ["INVOKED", "CONTAINED", "RESOLVED"] } },
+      orderBy: { invokedAt: "desc" },
+      include: { invokedBy: { select: { name: true, email: true } } },
+    }),
+    prisma.regulatorNotification.findMany({
+      where: { incident: { exerciseId: exercise.id } },
+      orderBy: { dueAt: "asc" },
+    }),
+    prisma.communicationDraft.findMany({
+      where: { exerciseId: exercise.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: { select: { name: true, email: true } },
+        approver: { select: { name: true, email: true } },
+      },
+    }),
+    prisma.bCPActivation.findFirst({
+      where: { incident: { exerciseId: exercise.id }, deactivatedAt: null },
+      orderBy: { activatedAt: "desc" },
+      include: {
+        activatedByCEO: { select: { name: true, email: true } },
+        activatedByCRO: { select: { name: true, email: true } },
+      },
+    }),
+    prisma.user.findMany({
+      where: { orgId: me.orgId },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true },
+    }),
   ]);
+
+  const incidentForBanner = activeIncident
+    ? {
+        id: activeIncident.id,
+        shortCode: activeIncident.shortCode,
+        title: activeIncident.title,
+        status: activeIncident.status,
+        severity: activeIncident.severity,
+        severityFinancial: activeIncident.severityFinancial,
+        severityCustomer: activeIncident.severityCustomer,
+        severityData: activeIncident.severityData,
+        severitySystems: activeIncident.severitySystems,
+        severityReputational: activeIncident.severityReputational,
+        consumerDutyTrigger: activeIncident.consumerDutyTrigger,
+        cyberDefaultHigh: activeIncident.cyberDefaultHigh,
+        invokedAt: activeIncident.invokedAt,
+        invokedByName:
+          activeIncident.invokedBy?.name ?? activeIncident.invokedBy?.email ?? null,
+      }
+    : null;
 
   const responseByInject = new Map(myResponses.map((r) => [r.injectId, r]));
   const unreadCount = inbox.filter((i) => i.unread).length;
@@ -89,6 +157,8 @@ export default async function LiveWorkspacePage({
         />
       </header>
 
+      <IncidentBanner exerciseId={exercise.id} incident={incidentForBanner} />
+
       <LivePresenceBar
         exerciseId={exercise.id}
         members={presence}
@@ -96,7 +166,101 @@ export default async function LiveWorkspacePage({
         pollMs={3000}
       />
 
-      <LiveQuickCapture exerciseId={exercise.id} dDayHHMM={clock.hhmm} />
+      {activeIncident && (
+        <MobilisationChecklist
+          exerciseId={exercise.id}
+          members={mobilisation}
+          myParticipantId={participant.id}
+        />
+      )}
+
+      <IncidentCapturePanel
+        exerciseId={exercise.id}
+        incidentId={activeIncident?.id ?? null}
+        dDayHHMM={clock.hhmm}
+      />
+
+      {activeIncident && (
+        <ClosureGate
+          exerciseId={exercise.id}
+          incidentId={activeIncident.id}
+          checks={{
+            closureImpactCeased: activeIncident.closureImpactCeased,
+            closureRegsNotified: activeIncident.closureRegsNotified,
+            closureLogComplete: activeIncident.closureLogComplete,
+            closurePreliminaryRCA: activeIncident.closurePreliminaryRCA,
+            closureCRO_SignOff: activeIncident.closureCRO_SignOff,
+          }}
+        />
+      )}
+
+      {activeIncident && (
+        <BCPPanel
+          exerciseId={exercise.id}
+          incidentId={activeIncident.id}
+          activation={
+            bcpActivation
+              ? {
+                  id: bcpActivation.id,
+                  activatedAt: bcpActivation.activatedAt,
+                  ceoName:
+                    bcpActivation.activatedByCEO?.name ??
+                    bcpActivation.activatedByCEO?.email ??
+                    null,
+                  croName:
+                    bcpActivation.activatedByCRO?.name ??
+                    bcpActivation.activatedByCRO?.email ??
+                    null,
+                  rationale: bcpActivation.rationale,
+                  deactivatedAt: bcpActivation.deactivatedAt,
+                }
+              : null
+          }
+          orgUsers={orgUsers}
+        />
+      )}
+
+      <RegulatorClocks
+        exerciseId={exercise.id}
+        incidentId={activeIncident?.id ?? null}
+        clocks={regulatorClocks.map((c) => ({
+          id: c.id,
+          regulator: c.regulator,
+          trigger: c.trigger,
+          slaHours: c.slaHours,
+          dueAt: c.dueAt,
+          status: c.status,
+          sentAt: c.sentAt,
+          ownerRoleTitle: c.ownerRoleTitle,
+          approverRoleTitle: c.approverRoleTitle,
+          waiverRationale: c.waiverRationale,
+        }))}
+      />
+
+      <details className="rounded-md border border-slate-200 bg-white p-3">
+        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-700">
+          Comms cascade · {commsDrafts.length} draft{commsDrafts.length === 1 ? "" : "s"}
+        </summary>
+        <div className="mt-3">
+          <CommsCascadePanel
+            exerciseId={exercise.id}
+            drafts={commsDrafts.map((d) => ({
+              id: d.id,
+              stakeholder: d.stakeholder,
+              audience: d.audience,
+              subject: d.subject,
+              body: d.body,
+              status: d.status,
+              author: d.author?.name ?? d.author?.email ?? "—",
+              approver: d.approver?.name ?? d.approver?.email ?? null,
+              approvedAt: d.approvedAt,
+              sentAt: d.sentAt,
+              rejectionReason: d.rejectionReason,
+              createdAt: d.createdAt,
+            }))}
+          />
+        </div>
+      </details>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="space-y-2">
@@ -254,6 +418,58 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
           <p className="mt-1 font-medium text-slate-800">{item.subject}</p>
         </li>
       );
+    case "DECISION":
+      return (
+        <li className="rounded-md border border-rose-300 bg-rose-50/70 p-3 text-sm">
+          <FeedLine time={time} tag="DECISION" tagClass="bg-rose-700 text-white">
+            <span className="font-mono text-[10px] uppercase text-slate-500">
+              {item.decisionType}
+            </span>
+            <span className="text-xs text-slate-600">· {item.author}</span>
+          </FeedLine>
+          <p className="mt-1 font-medium text-slate-800">{item.title}</p>
+          {item.rationale && (
+            <p className="mt-0.5 text-xs text-slate-600">{item.rationale}</p>
+          )}
+          {item.approverRoles.length > 0 && (
+            <p className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">
+              Approval required: {item.approverRoles.join(" + ")}
+            </p>
+          )}
+        </li>
+      );
+    case "SITREP":
+      return (
+        <li className={`rounded-md border p-3 text-sm ${SITREP_CLASS[item.status] ?? "border-slate-200 bg-white"}`}>
+          <FeedLine time={time} tag={`SITREP · ${item.status}`} tagClass={SITREP_TAG[item.status] ?? "bg-slate-700 text-white"}>
+            <span className="text-xs text-slate-600">
+              {item.businessUnit} · {item.author}
+            </span>
+          </FeedLine>
+          <p className="mt-1 text-slate-700">{item.summary}</p>
+        </li>
+      );
+    case "MEETING":
+      return (
+        <li className="rounded-md border border-indigo-200 bg-indigo-50/60 p-3 text-sm">
+          <FeedLine time={time} tag={`IMT MEETING #${item.meetingNumber}`} tagClass="bg-indigo-700 text-white">
+            {item.nextMeetingDDay && (
+              <span className="text-xs text-slate-600">Next meeting D-Day {item.nextMeetingDDay}</span>
+            )}
+          </FeedLine>
+        </li>
+      );
+    case "INCIDENT":
+      return (
+        <li className="rounded-md border border-rose-400 bg-rose-100 p-3 text-sm">
+          <FeedLine time={time} tag={item.shortCode} tagClass="bg-rose-700 text-white">
+            <span className="font-medium text-slate-800">{item.transition}</span>
+            {item.severity && (
+              <span className="text-xs text-slate-600">· severity {item.severity}</span>
+            )}
+          </FeedLine>
+        </li>
+      );
     case "STATUS":
       return (
         <li className="rounded-md border border-slate-300 bg-slate-100 p-3 text-sm">
@@ -264,6 +480,17 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
       );
   }
 }
+
+const SITREP_CLASS: Record<string, string> = {
+  GREEN: "border-emerald-200 bg-emerald-50/60",
+  AMBER: "border-amber-200 bg-amber-50/60",
+  RED: "border-rose-300 bg-rose-50/70",
+};
+const SITREP_TAG: Record<string, string> = {
+  GREEN: "bg-emerald-700 text-white",
+  AMBER: "bg-amber-600 text-white",
+  RED: "bg-rose-700 text-white",
+};
 
 function FeedLine({
   time,

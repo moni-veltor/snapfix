@@ -42,6 +42,7 @@ model Organization {
   actionItems   ExerciseActionItem[]
   auditLog      AuditLogEntry[]
   teamTemplates OrganizationTeamTemplate[]
+  vendors       Vendor[]
 }
 
 model Invitation {
@@ -79,20 +80,30 @@ model User {
   accounts Account[]
   sessions Session[]
 
-  createdScenarios       Scenario[]            @relation("ScenarioCreator")
-  facilitatedExercises   Exercise[]            @relation("ExerciseFacilitator")
-  exerciseParticipations ExerciseParticipant[]
-  incidentLogEntries     IncidentLogEntry[]
-  responses              ParticipantResponse[]
-  comms                  CommunicationDraft[]
-  debriefAnswers         DebriefAnswer[]
-  invitationsSent        Invitation[]          @relation("InvitationInvitedBy")
-  uploadedArtefacts      Artefact[]            @relation("ArtefactUploader")
-  ownedIBS               OrganizationIBS[]     @relation("IBSProcessOwner")
-  createdIBS             OrganizationIBS[]     @relation("IBSCreatedBy")
-  ownedActionItems       ExerciseActionItem[]  @relation("ActionItemOwner")
-  createdActionItems     ExerciseActionItem[]  @relation("ActionItemCreatedBy")
-  auditActions           AuditLogEntry[]       @relation("AuditActor")
+  createdScenarios        Scenario[]              @relation("ScenarioCreator")
+  facilitatedExercises    Exercise[]              @relation("ExerciseFacilitator")
+  exerciseParticipations  ExerciseParticipant[]
+  incidentLogEntries      IncidentLogEntry[]
+  responses               ParticipantResponse[]
+  commsAuthored           CommunicationDraft[]    @relation("CommsAuthor")
+  commsApproved           CommunicationDraft[]    @relation("CommsApprover")
+  debriefAnswers          DebriefAnswer[]
+  invitationsSent         Invitation[]            @relation("InvitationInvitedBy")
+  uploadedArtefacts       Artefact[]              @relation("ArtefactUploader")
+  ownedIBS                OrganizationIBS[]       @relation("IBSProcessOwner")
+  createdIBS              OrganizationIBS[]       @relation("IBSCreatedBy")
+  ownedActionItems        ExerciseActionItem[]    @relation("ActionItemOwner")
+  createdActionItems      ExerciseActionItem[]    @relation("ActionItemCreatedBy")
+  auditActions            AuditLogEntry[]         @relation("AuditActor")
+  incidentsInvoked        Incident[]              @relation("IncidentInvoker")
+  incidentsClosed         Incident[]              @relation("IncidentCloser")
+  decisionsAuthoredByUser DecisionRecord[]        @relation("DecisionAuthorUser")
+  decisionsApprovedByUser DecisionRecord[]        @relation("DecisionApproverUser")
+  regulatorNotifications  RegulatorNotification[] @relation("RegulatorNotificationOwner")
+  postIncidentReports     PostIncidentReport[]    @relation("PIRAuthor")
+  imtMeetingsRecorded     IMTMeeting[]            @relation("IMTMeetingScribe")
+  bcpActivations          BCPActivation[]         @relation("BCPActivator")
+  bcpDeactivations        BCPActivation[]         @relation("BCPDeactivator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -366,22 +377,43 @@ model Exercise {
   artefacts      Artefact[]
   ibsLinks       ExerciseIBSLink[]
   actionItems    ExerciseActionItem[]
+  incidents      Incident[]
+  retrospective  Retrospective?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model ExerciseTeam {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   exerciseId  String
-  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exercise    Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   name        String
   description String?
-  orderIdx    Int      @default(0)
+  orderIdx    Int       @default(0)
+  /// Policy-aligned team type. IMT = strategic oversight; IRT_TECH/IRT_CUSTOMER
+  /// = tactical response (per Afin IMP §4.1.1); COMMS = communications team;
+  /// BRT_* = Business Recovery Teams (BCP §6.6); EXECUTIVE_OBSERVERS / ACTION_COMMITTEE
+  /// = governance. OTHER = legacy / unclassified.
+  kind        TeamKind? @default(OTHER)
 
   members ExerciseParticipant[]
 
   @@unique([exerciseId, name])
+}
+
+enum TeamKind {
+  IMT
+  IRT_TECH
+  IRT_CUSTOMER
+  COMMS
+  BRT_FINANCE
+  BRT_BUILDINGS
+  BRT_TECH
+  BRT_COMMS
+  EXECUTIVE_OBSERVERS
+  ACTION_COMMITTEE
+  OTHER
 }
 
 model ExerciseParticipant {
@@ -397,10 +429,32 @@ model ExerciseParticipant {
   joinedAt     DateTime      @default(now())
   lastSeenAt   DateTime?
 
+  /// Deputy chain (Afin IMP §6.2.3). When a participant is unreachable, the
+  /// deputy steps up. Pointer to another participant in the same exercise.
+  deputyParticipantId String?
+  deputy              ExerciseParticipant?  @relation("ParticipantDeputy", fields: [deputyParticipantId], references: [id], onDelete: SetNull)
+  deputyFor           ExerciseParticipant[] @relation("ParticipantDeputy")
+  /// Mobilisation status (B). Set when an IMT seat is "stood up" or marked unreachable.
+  mobilisationStatus  MobilisationStatus    @default(UNCALLED)
+  mobilisedAt         DateTime?
+
   eventReceipts  EventReceipt[]
   injectReceipts InjectReceipt[]
 
+  decisionsAuthored  DecisionRecord[] @relation("DecisionAuthor")
+  decisionsApproved  DecisionRecord[] @relation("DecisionApprover")
+  sitrepsAuthored    Sitrep[]
+  imtMeetingsChaired IMTMeeting[]     @relation("IMTMeetingChair")
+
   @@unique([exerciseId, userId])
+}
+
+enum MobilisationStatus {
+  UNCALLED
+  MOBILISED
+  UNREACHABLE
+  DEPUTY_STEPPED_UP
+  STOOD_DOWN
 }
 
 model EventRelease {
@@ -427,17 +481,38 @@ model InjectRelease {
   @@unique([exerciseId, injectId])
 }
 
+/// War-room log. Per Afin IMP §6.4.1 the incident log is the master timeline
+/// of observations, decisions, actions, risks, asks and evidence. Decisions
+/// have additional structure in DecisionRecord (linked via decisionRecordId).
 model IncidentLogEntry {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   exerciseId String
-  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exercise   Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  incidentId String?
+  incident   Incident? @relation(fields: [incidentId], references: [id], onDelete: Cascade)
   authorId   String?
-  author     User?    @relation(fields: [authorId], references: [id])
+  author     User?     @relation(fields: [authorId], references: [id])
   dDayTime   String
-  kind       String
+  kind       LogKind   @default(NOTE)
   body       String
 
+  decisionRecord DecisionRecord?
+
   createdAt DateTime @default(now())
+
+  @@index([exerciseId, createdAt])
+}
+
+enum LogKind {
+  OBSERVATION
+  DECISION
+  ACTION
+  RISK
+  ASK
+  EVIDENCE
+  CHALLENGE
+  RESOURCE
+  NOTE
 }
 
 model ParticipantResponse {
@@ -468,23 +543,55 @@ enum CommsAudience {
 
 enum CommsStatus {
   DRAFT
+  AWAITING_APPROVAL
+  APPROVED
   SUBMITTED
   SENT
+  REJECTED
+}
+
+/// Stakeholder mapping per Afin IMP §6.3.1. Each stakeholder has an
+/// execution owner (drafts) and an approver (signs off). Ordering rule:
+/// Employees BEFORE Customers/Third-Parties; Customers WITH Third-Parties;
+/// Media WITH Customers (IMP §6.3.0).
+enum CommsStakeholder {
+  EMPLOYEES
+  CUSTOMERS
+  REGULATORS
+  SHAREHOLDERS
+  MEDIA
+  THIRD_PARTY_VENDORS
+  INTERMEDIARIES
+  ICO
+  INSURERS
+  OTHER
 }
 
 model CommunicationDraft {
-  id         String        @id @default(cuid())
-  exerciseId String
-  exercise   Exercise      @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  authorId   String?
-  author     User?         @relation(fields: [authorId], references: [id])
-  audience   CommsAudience
-  subject    String
-  body       String
-  status     CommsStatus   @default(DRAFT)
+  id              String            @id @default(cuid())
+  exerciseId      String
+  exercise        Exercise          @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  incidentId      String?
+  incident        Incident?         @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  authorId        String?
+  author          User?             @relation("CommsAuthor", fields: [authorId], references: [id])
+  audience        CommsAudience
+  /// Policy stakeholder (cf. IMP §6.3.1 stakeholder table). The legacy `audience`
+  /// is kept for back-compat; new code should set `stakeholder` for ordering rules.
+  stakeholder     CommsStakeholder?
+  subject         String
+  body            String
+  status          CommsStatus       @default(DRAFT)
+  approverId      String?
+  approver        User?             @relation("CommsApprover", fields: [approverId], references: [id])
+  approvedAt      DateTime?
+  sentAt          DateTime?
+  rejectionReason String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([exerciseId, stakeholder])
 }
 
 model RecoveryPlan {
@@ -524,6 +631,9 @@ model DebriefAnswer {
   createdAt DateTime @default(now())
 }
 
+/// Legacy free-form After-Action Report. Retained for back-compat; new
+/// reports should use PostIncidentReport (IMP §6.5.3) which has the eight
+/// mandatory sections.
 model AfterActionReport {
   id         String   @id @default(cuid())
   exerciseId String   @unique
@@ -647,6 +757,7 @@ model OrganizationIBS {
   updatedAt   DateTime @updatedAt
 
   exerciseLinks ExerciseIBSLink[]
+  vendorLinks   VendorIBSLink[]
 
   @@unique([orgId, code])
 }
@@ -740,4 +851,350 @@ model OrganizationTeamTemplate {
   updatedAt DateTime @updatedAt
 
   @@unique([orgId, name])
+}
+
+// ─── Policy-aligned incident management (Afin IMP / ORP / BCP) ──────────────
+
+/// An Incident is a live response episode inside an Exercise. An exercise can
+/// have ≥0 incidents — most have exactly one, but escalating scenarios may
+/// stand up a second. State machine mirrors Afin IMP §6.2–6.4.
+model Incident {
+  id         String   @id @default(cuid())
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  shortCode  String // e.g. "INC-2026-05-12-A" — used in MS Teams channel naming
+  title      String
+  summary    String?
+
+  status IncidentStatus @default(DECLARED)
+
+  // Invocation (IMP §6.2.2–3)
+  invokedAt           DateTime?
+  invokedById         String?
+  invokedBy           User?     @relation("IncidentInvoker", fields: [invokedById], references: [id], onDelete: SetNull)
+  invocationRationale String?
+
+  // Stand-down (the "back down" half of "stand it up and back down")
+  stoodDownAt     DateTime?
+  stoodDownReason String?
+
+  // Severity (IMP §6.2.1 + ORP App.1)
+  severity             SeverityLevel?
+  severityFinancial    SeverityLevel?
+  severityCustomer     SeverityLevel?
+  severityData         SeverityLevel?
+  severitySystems      SeverityLevel?
+  severityReputational SeverityLevel?
+  /// Aggravating factor — Consumer Duty PS22/3 (IMP §6.2.4). When true, severity
+  /// is promoted regardless of the financial threshold.
+  consumerDutyTrigger  Boolean        @default(false)
+  /// Aggravating factor — cyber/ransomware/data exfiltration default to High
+  /// severity (BCPlans §6.3.8).
+  cyberDefaultHigh     Boolean        @default(false)
+  severityAssessedAt   DateTime?
+
+  // Closure (IMP §6.4.1 — five mandatory criteria)
+  closedAt              DateTime?
+  closedById            String?
+  closedBy              User?     @relation("IncidentCloser", fields: [closedById], references: [id], onDelete: SetNull)
+  closureImpactCeased   Boolean   @default(false)
+  closureRegsNotified   Boolean   @default(false)
+  closureLogComplete    Boolean   @default(false)
+  closurePreliminaryRCA Boolean   @default(false)
+  closureCRO_SignOff    Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  logEntries             IncidentLogEntry[]
+  decisions              DecisionRecord[]
+  sitreps                Sitrep[]
+  imtMeetings            IMTMeeting[]
+  regulatorNotifications RegulatorNotification[]
+  comms                  CommunicationDraft[]
+  bcpActivations         BCPActivation[]
+  postIncidentReport     PostIncidentReport?
+
+  @@index([exerciseId, status])
+}
+
+enum IncidentStatus {
+  DECLARED // Observed, not yet invoked
+  INVOKED // CEO has stood up the IMT
+  CONTAINED // Tactical containment in place
+  RESOLVED // Service restored; cleanup ongoing
+  STOOD_DOWN // Invoked then stood down without escalation
+  CLOSED // Five closure criteria met
+}
+
+enum SeverityLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+// ─── Decisions (Afin IMP §6.4.1 — structured incident log) ──────────────────
+
+/// A structured Decision recorded against an Incident. Distinct from a free-text
+/// IncidentLogEntry — captures authority, rationale, approver. Each
+/// DecisionRecord has a corresponding IncidentLogEntry of kind DECISION which
+/// is what appears in the chronological log.
+model DecisionRecord {
+  id         String           @id @default(cuid())
+  incidentId String
+  incident   Incident         @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  logEntryId String           @unique
+  logEntry   IncidentLogEntry @relation(fields: [logEntryId], references: [id], onDelete: Cascade)
+
+  decisionType DecisionType
+  title        String
+  rationale    String?
+
+  authorParticipantId String?
+  authorParticipant   ExerciseParticipant? @relation("DecisionAuthor", fields: [authorParticipantId], references: [id], onDelete: SetNull)
+  authorUserId        String?
+  authorUser          User?                @relation("DecisionAuthorUser", fields: [authorUserId], references: [id], onDelete: SetNull)
+
+  /// Roles whose approval is required by policy for this decision type.
+  /// e.g. "Activate BCP" requires CEO + CRO joint.
+  approverRolesRequired String[]
+  approverParticipantId String?
+  approverParticipant   ExerciseParticipant? @relation("DecisionApprover", fields: [approverParticipantId], references: [id], onDelete: SetNull)
+  approverUserId        String?
+  approverUser          User?                @relation("DecisionApproverUser", fields: [approverUserId], references: [id], onDelete: SetNull)
+  approvedAt            DateTime?
+
+  dDayTime  String
+  createdAt DateTime @default(now())
+}
+
+/// Canonical decision templates from Afin IMP / BCP. UI offers these as a
+/// pick-list when a participant records a decision so we capture authority &
+/// approver consistently.
+enum DecisionType {
+  INVOKE_IMT
+  STAND_DOWN_IMT
+  CLASSIFY_SEVERITY
+  ACTIVATE_BCP
+  DEACTIVATE_BCP
+  NOTIFY_FCA
+  NOTIFY_PRA
+  NOTIFY_ICO
+  CONVENE_ACTION_COMMITTEE
+  APPROVE_CRISIS_COMMS
+  APPROVE_REGULATOR_COMMS
+  CFO_EMERGENCY_SPEND
+  DRAW_CONTINGENT_LIQUIDITY
+  DO_NOT_PAY_RANSOM
+  INSURANCE_INVOCATION
+  RECOVERY_OPTION_CHOSEN
+  OTHER
+}
+
+// ─── Sitreps (BCP §6.4.3.1 — IMT requires initial sitrep from each BU) ──────
+
+model Sitrep {
+  id                 String       @id @default(cuid())
+  incidentId         String
+  incident           Incident     @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  businessUnit       String // e.g. "Tech Recovery", "Customer Operations"
+  status             SitrepStatus
+  summary            String
+  issues             String?
+  asks               String?
+  nextUpdateDDayTime String? // when the next sitrep is expected (HH:MM)
+  dDayTime           String
+
+  authorParticipantId String?
+  authorParticipant   ExerciseParticipant? @relation(fields: [authorParticipantId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([incidentId, createdAt])
+}
+
+enum SitrepStatus {
+  GREEN
+  AMBER
+  RED
+}
+
+// ─── IMT meetings (IMP §6.2.5 standing agenda) ──────────────────────────────
+
+model IMTMeeting {
+  id              String   @id @default(cuid())
+  incidentId      String
+  incident        Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  meetingNumber   Int // 1, 2, 3…
+  startedAtDDay   String // HH:MM on the D-Day clock
+  /// Required output of every meeting per IMP §6.2.5.
+  nextMeetingDDay String?
+
+  // Standing agenda fields
+  situation String?
+  decisions String? // free-text minute of decisions (linked DecisionRecords also available)
+  actions   String? // free-text minute of actions
+  risks     String?
+
+  chairParticipantId String?
+  chairParticipant   ExerciseParticipant? @relation("IMTMeetingChair", fields: [chairParticipantId], references: [id], onDelete: SetNull)
+  scribeUserId       String?
+  scribeUser         User?                @relation("IMTMeetingScribe", fields: [scribeUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+}
+
+// ─── Regulator notifications (IMP §6.3.1.2 — countdown clocks) ──────────────
+
+enum Regulator {
+  FCA
+  PRA
+  ICO
+  BANK_OF_ENGLAND
+  OTHER
+}
+
+enum RegulatorNotificationStatus {
+  PENDING
+  IN_DRAFT
+  AWAITING_APPROVAL
+  SENT
+  BREACHED // dueAt passed without being sent
+  WAIVED // documented determination that notification not required
+}
+
+model RegulatorNotification {
+  id                String    @id @default(cuid())
+  incidentId        String
+  incident          Incident  @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  regulator         Regulator
+  trigger           String // e.g. "High-severity incident invoked", "Personal data breach suspected"
+  /// SLA in hours from the triggering event. FCA/PRA = 4h post-invocation;
+  /// ICO = 72h post-awareness; closure notification = 2 business days.
+  slaHours          Int
+  dueAt             DateTime
+  ownerUserId       String?
+  ownerUser         User?     @relation("RegulatorNotificationOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  ownerRoleTitle    String? // canonical owner role per IMP table (e.g. "CRO")
+  approverRoleTitle String? // canonical approver per IMP table (e.g. "CEO")
+
+  status          RegulatorNotificationStatus @default(PENDING)
+  sentAt          DateTime?
+  waiverRationale String?
+  notes           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([incidentId, dueAt])
+}
+
+// ─── Business Continuity activation (BCP §6.4.2.2) ──────────────────────────
+
+model BCPActivation {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  activatedAt      DateTime
+  activatedByCEOId String?
+  activatedByCEO   User?    @relation("BCPActivator", fields: [activatedByCEOId], references: [id], onDelete: SetNull)
+  activatedByCROId String?
+  activatedByCRO   User?    @relation("BCPDeactivator", fields: [activatedByCROId], references: [id], onDelete: SetNull)
+  rationale        String?
+
+  deactivatedAt     DateTime?
+  deactivationNotes String?
+
+  createdAt DateTime @default(now())
+}
+
+// ─── Critical third parties (BCPlans §6.3.6) ────────────────────────────────
+
+model Vendor {
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  name         String
+  description  String?
+  /// Service the vendor provides — short label, e.g. "Core banking", "Payments".
+  serviceKind  String?
+  tier         VendorTier @default(TIER_2)
+  /// Primary technical / commercial contact.
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  /// Where to look for status (e.g. "status.thoughtmachine.io").
+  statusUrl    String?
+  notes        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ibsLinks VendorIBSLink[]
+
+  @@unique([orgId, name])
+}
+
+enum VendorTier {
+  TIER_1 // Mission-critical (Thought Machine, ClearBank, AWS)
+  TIER_2 // Business-critical
+  TIER_3 // Business-operational
+}
+
+/// Links a Vendor to the IBSs it supports — so on a vendor outage we can show
+/// "These IBSs are at risk".
+model VendorIBSLink {
+  vendorId String
+  vendor   Vendor          @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  ibsId    String
+  ibs      OrganizationIBS @relation(fields: [ibsId], references: [id], onDelete: Cascade)
+  notes    String?
+
+  @@id([vendorId, ibsId])
+}
+
+// ─── Post-Incident Report (IMP §6.5.3 — 10 business days) ───────────────────
+
+model PostIncidentReport {
+  id         String   @id @default(cuid())
+  incidentId String   @unique
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  dueAt       DateTime
+  submittedAt DateTime?
+
+  // Eight mandatory sections (IMP §6.5.3)
+  incidentSummary        String?
+  timeline               String?
+  rootCause              String?
+  customerImpact         String?
+  regulatoryImpact       String?
+  controlFailures        String?
+  whatWorkedWell         String?
+  remediationCommitments String?
+
+  authorUserId String?
+  authorUser   User?   @relation("PIRAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Retrospective (BCPlans §6.6.1 R-5 — 5 business days post-closure) ──────
+
+model Retrospective {
+  id         String    @id @default(cuid())
+  exerciseId String    @unique
+  exercise   Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  dueAt      DateTime
+  heldAt     DateTime?
+
+  wentWell     String?
+  didntGoWell  String?
+  improvements String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

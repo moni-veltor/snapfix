@@ -8,6 +8,7 @@ import {
   deleteActionItemAction,
   updateActionItemStatusAction,
 } from "@/app/actions/action-items";
+import { savePIRAction, saveRetrospectiveAction } from "@/app/actions/closure";
 import { prisma } from "@/lib/prisma";
 
 export default async function DebriefPage({
@@ -25,6 +26,14 @@ export default async function DebriefPage({
     where: { exerciseId: exercise.id },
     orderBy: [{ priority: "desc" }, { dueAt: "asc" }, { createdAt: "desc" }],
     include: { ownerUser: { select: { name: true, email: true } } },
+  });
+  const closedIncident = await prisma.incident.findFirst({
+    where: { exerciseId: exercise.id, status: "CLOSED" },
+    orderBy: { closedAt: "desc" },
+    include: { postIncidentReport: true },
+  });
+  const retrospective = await prisma.retrospective.findFirst({
+    where: { exerciseId: exercise.id },
   });
   const answersByQuestion = new Map<string, typeof exercise.debriefAnswers>();
   for (const a of exercise.debriefAnswers) {
@@ -204,6 +213,66 @@ export default async function DebriefPage({
           </button>
         </form>
       </section>
+
+      {closedIncident?.postIncidentReport && (
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold">Post-Incident Report</h2>
+            <p className="text-xs text-slate-500">
+              {closedIncident.postIncidentReport.submittedAt
+                ? `Submitted ${closedIncident.postIncidentReport.submittedAt.toISOString().slice(0, 10)}`
+                : `Due ${closedIncident.postIncidentReport.dueAt.toISOString().slice(0, 10)} · IMP §6.5.3 (10 business days)`}
+            </p>
+          </div>
+          <form
+            action={savePIRAction}
+            className="space-y-3 rounded-md border border-slate-200 bg-white p-4"
+          >
+            <input type="hidden" name="exerciseId" value={exercise.id} />
+            <input type="hidden" name="incidentId" value={closedIncident.id} />
+            <TextArea label="Incident summary" name="incidentSummary" defaultValue={closedIncident.postIncidentReport.incidentSummary ?? ""} />
+            <TextArea label="Timeline" name="timeline" defaultValue={closedIncident.postIncidentReport.timeline ?? ""} />
+            <TextArea label="Root cause" name="rootCause" defaultValue={closedIncident.postIncidentReport.rootCause ?? ""} />
+            <TextArea label="Customer impact" name="customerImpact" defaultValue={closedIncident.postIncidentReport.customerImpact ?? ""} />
+            <TextArea label="Regulatory impact" name="regulatoryImpact" defaultValue={closedIncident.postIncidentReport.regulatoryImpact ?? ""} />
+            <TextArea label="Control failures" name="controlFailures" defaultValue={closedIncident.postIncidentReport.controlFailures ?? ""} />
+            <TextArea label="What worked well" name="whatWorkedWell" defaultValue={closedIncident.postIncidentReport.whatWorkedWell ?? ""} />
+            <TextArea label="Remediation commitments" name="remediationCommitments" defaultValue={closedIncident.postIncidentReport.remediationCommitments ?? ""} />
+            <label className="flex items-center gap-2 text-xs">
+              <input type="checkbox" name="submit" />
+              Mark as submitted (tables into the next ERCC then BRCC)
+            </label>
+            <button className="rounded-md bg-slate-900 px-3 py-1.5 text-white">Save PIR</button>
+          </form>
+        </section>
+      )}
+
+      {retrospective && (
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold">Team retrospective</h2>
+            <p className="text-xs text-slate-500">
+              {retrospective.heldAt
+                ? `Held ${retrospective.heldAt.toISOString().slice(0, 10)}`
+                : `Due ${retrospective.dueAt.toISOString().slice(0, 10)} · BCPlans §6.6.1 R-5 (5 business days)`}
+            </p>
+          </div>
+          <form
+            action={saveRetrospectiveAction}
+            className="space-y-3 rounded-md border border-slate-200 bg-white p-4"
+          >
+            <input type="hidden" name="exerciseId" value={exercise.id} />
+            <TextArea label="What went well" name="wentWell" defaultValue={retrospective.wentWell ?? ""} />
+            <TextArea label="What didn't go well" name="didntGoWell" defaultValue={retrospective.didntGoWell ?? ""} />
+            <TextArea label="Improvements" name="improvements" defaultValue={retrospective.improvements ?? ""} />
+            <label className="flex items-center gap-2 text-xs">
+              <input type="checkbox" name="held" />
+              Mark retrospective as held
+            </label>
+            <button className="rounded-md bg-slate-900 px-3 py-1.5 text-white">Save retrospective</button>
+          </form>
+        </section>
+      )}
     </div>
   );
 }
