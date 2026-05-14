@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Layers } from "lucide-react";
 import { requireOrgRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -17,7 +19,7 @@ export default async function SettingsPage() {
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Organisation settings</h1>
         <p className="mt-1 text-sm text-muted">
-          Manage your organisation's name, tier and branding.
+          Manage your organisation&apos;s name, tier and branding.
         </p>
       </header>
 
@@ -64,12 +66,30 @@ export default async function SettingsPage() {
         </div>
       </form>
 
+      <Link
+        href="/settings/presets"
+        className="flex items-center justify-between gap-3 rounded-md border border-line bg-surface-1 p-5 transition-all hover:-translate-y-px hover:border-line-strong hover:shadow-[var(--shadow-card-md)]"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-soft text-indigo-600 dark:text-indigo-300">
+            <Layers size={16} />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold text-ink">Industry presets</h2>
+            <p className="text-xs text-muted">
+              Apply a tier-1 bank / tier-2 fintech / tier-3 insurer starter pack — roles, IBSs, vendors, tech systems in one click.
+            </p>
+          </div>
+        </div>
+        <span className="text-xs text-muted">Open →</span>
+      </Link>
+
       <section className="space-y-4 rounded-md border border-line bg-surface-1 p-5">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
           Branding
         </h2>
         <p className="text-xs text-muted">
-          Upload your organisation's logo. PNG, JPG, SVG or WebP up to 1 MB.
+          Upload your organisation&apos;s logo. PNG, JPG, SVG or WebP up to 1 MB.
           Square images work best — your logo appears in the sidebar.
         </p>
         {org.logoBlobUrl ? (
