@@ -33,7 +33,7 @@ export default async function VendorsPage() {
       <PageHero
         eyebrow="Dependencies"
         title="Critical third parties"
-        pitch="Vendors that support your IBSs (Afin BCPlans §6.3.6). Link each to the services it underpins so a vendor outage instantly surfaces the affected IBSs."
+        pitch="Vendors that support your IBSs (best practice Link each to the services it underpins so a vendor outage instantly surfaces the affected IBSs."
       />
 
       <ul className="space-y-3">

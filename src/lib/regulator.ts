@@ -1,4 +1,4 @@
-// Regulator notification scheduling (Afin IMP §6.3.1.2).
+// Regulator notification scheduling (best practice
 // FCA/PRA: within 4h of IMT invocation for High-severity incidents (CRO owns,
 // CEO approves). ICO: within 72h of awareness for personal data breach.
 // Closure FCA/PRA: within 2 business days of closure.

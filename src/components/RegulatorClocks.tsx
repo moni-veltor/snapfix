@@ -36,7 +36,7 @@ export default function RegulatorClocks({ exerciseId, incidentId, clocks }: Prop
       title={
         <>
           Regulator clocks
-          <PolicyHint clause="IMP §6.3.1.2">
+          <PolicyHint>
             FCA + PRA: 4h post-invocation for High severity. ICO: 72h. Closure FCA/PRA: 2 business
             days.
           </PolicyHint>

@@ -54,7 +54,7 @@ export default function SeverityGuide() {
         <strong>High</strong> regardless of the financial threshold.
       </p>
       <blockquote>
-        Afin IMP §6.2.4: "This [Consumer Duty trigger] applies regardless of the financial
+        best practice: "This [Consumer Duty trigger] applies regardless of the financial
         threshold reached."
       </blockquote>
 
@@ -93,10 +93,10 @@ export default function SeverityGuide() {
         next supervisory visit.
       </p>
       <p>
-        The Afin doctrine's coaching tip is direct:
+        The the doctrine's coaching tip is direct:
       </p>
       <blockquote>
-        "It is better to stand it up and back down than to fail to stand it up." — Afin IMP §6.2.2
+        "It is better to stand it up and back down than to fail to stand it up." — best practice
       </blockquote>
       <p>
         Severity classification works the same way. Erring on the High side costs you a regulator

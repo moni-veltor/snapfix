@@ -52,7 +52,7 @@ export default function CyberUseCase() {
     >
       <h2>The defaults that catch people out</h2>
       <p>
-        <strong>Cyber default-to-High severity.</strong> Per Afin BCPlans §6.3.8, ransomware and
+        <strong>Cyber default-to-High severity.</strong> Per industry best practice, ransomware and
         data exfiltration default to High unless explicitly assessed otherwise by the IMT. Most
         firms learn this the hard way — they assess down to Medium because financial threshold
         isn't met, then breach the FCA notification window.
@@ -65,7 +65,7 @@ export default function CyberUseCase() {
       </p>
       <p>
         <strong>Ransom payment is a Board + Legal decision.</strong> Not a CRO call, not a CEO
-        call. Per Afin's playbook, the gate is Board approval AND Legal sign-off, in writing.
+        call. Per the playbook, the gate is Board approval AND Legal sign-off, in writing.
         Most firms have an "absolutely never" policy in normal times that quietly becomes
         "maybe in extremis" under pressure — the exercise reveals that tension.
       </p>

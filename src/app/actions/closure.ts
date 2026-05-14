@@ -42,10 +42,10 @@ const CloseSchema = z.object({
 
 /**
  * Close the incident. Enforces the five mandatory closure criteria from
- * Afin IMP §6.4.1 — all must be ✓ before closure succeeds. Also schedules:
+ * best practice — all must be ✓ before closure succeeds. Also schedules:
  *   - FCA/PRA closure notifications (2 business days) for High-severity incidents
- *   - The Post-Incident Report (10 business days from closure, IMP §6.5.3)
- *   - The Retrospective (5 business days, BCPlans §6.6.1 R-5)
+ *   - The Post-Incident Report (10 business days from closure, best practice
+ *   - The Retrospective (5 business days, best practice R-5)
  */
 export async function closeIncidentAction(formData: FormData): Promise<{ error?: string } | void> {
   const me = await requireOrgUser();

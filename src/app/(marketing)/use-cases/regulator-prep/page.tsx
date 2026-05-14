@@ -79,7 +79,7 @@ export default function RegulatorPrepUseCase() {
           Exercise history queryable by IBS — "show me the last 5 exercises that tested IBS_02"
         </li>
         <li>Decision log per incident with approver and rationale</li>
-        <li>Post-Incident Reports in the 8-section IMP §6.5.3 format</li>
+        <li>Post-Incident Reports in the 8-section best practice format</li>
         <li>Audit log of every material action with actor, target, summary, metadata</li>
         <li>Action-item tracker with owner, due date, status, evidence URL</li>
       </ul>

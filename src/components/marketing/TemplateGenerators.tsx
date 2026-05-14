@@ -335,7 +335,7 @@ ${data.remediation || "_(action items with owner, due date, evidence-of-completi
   return (
     <div className="space-y-3">
       <p className="text-xs text-slate-400">
-        Generates the eight-section Post-Incident Report structure from Afin IMP §6.5.3. Fill
+        Generates the eight-section Post-Incident Report structure from best practice Fill
         the sections, download, paste into Confluence / SharePoint / your ERM platform.
       </p>
       <div className="grid gap-3 md:grid-cols-2">

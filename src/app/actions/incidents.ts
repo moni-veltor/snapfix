@@ -165,7 +165,7 @@ const SeverityInput = z.object({
 /**
  * Record the IMT's severity classification across the five policy dimensions.
  * Consumer Duty + cyber-default-High overrides promote the derived overall
- * severity per IMP §6.2.4 / BCPlans §6.3.8. On High severity, auto-instantiate
+ * severity . On High severity, auto-instantiate
  * the FCA/PRA notification clocks (Epic D).
  */
 export async function assessSeverityAction(formData: FormData) {

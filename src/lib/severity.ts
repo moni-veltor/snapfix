@@ -1,4 +1,4 @@
-// Severity helpers — Afin IMP §6.2.1 + ORP App.1.
+// Severity helpers — best practice + best practice.
 // Five-dimension matrix → overall severity, with Consumer Duty (PS22/3) and
 // cyber-default-High overrides.
 
@@ -18,7 +18,7 @@ export type FiveDim = {
 /**
  * Overall severity = the highest of the five dimensions, with Consumer Duty
  * acting as an aggravating factor that promotes to High regardless of the
- * underlying financial threshold (IMP §6.2.4).
+ * underlying financial threshold (best practice
  */
 export function deriveOverallSeverity(input: FiveDim): SeverityLevel | null {
   const dims = [
@@ -39,7 +39,7 @@ export function deriveOverallSeverity(input: FiveDim): SeverityLevel | null {
 }
 
 /**
- * Cyber default rule (BCPlans §6.3.8): ransomware / data exfiltration default
+ * Cyber default rule (best practice: ransomware / data exfiltration default
  * to High unless explicitly assessed otherwise.
  */
 export function autoPromoteSeverityForCyber(
@@ -61,7 +61,7 @@ export const SEVERITY_DIMENSION_LABELS: Record<keyof FiveDim, string> = {
 
 /**
  * Per-dimension threshold guidance the UI shows alongside each H/M/L radio.
- * Sourced from ORP Appendix 1 (Afin policy).
+ * Sourced from ORP Appendix 1 (the policy).
  */
 export const SEVERITY_THRESHOLDS = {
   financial: {

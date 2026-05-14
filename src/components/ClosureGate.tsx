@@ -22,11 +22,11 @@ type Props = {
 };
 
 const CHECK_LABELS: { key: keyof Checks; label: string; clause: string }[] = [
-  { key: "closureImpactCeased", label: "Customer impact has ceased — service restored", clause: "IMP §6.4.1 (i) — not a temporary workaround" },
-  { key: "closureRegsNotified", label: "Regulator notifications complete (or waived with rationale)", clause: "IMP §6.4.1 (ii)" },
-  { key: "closureLogComplete", label: "Incident log complete in the ERM platform", clause: "IMP §6.4.1 (iii)" },
-  { key: "closurePreliminaryRCA", label: "Root cause identified (at least preliminary)", clause: "IMP §6.4.1 (iv)" },
-  { key: "closureCRO_SignOff", label: "CRO confirms no material residual risk", clause: "IMP §6.4.1 (v)" },
+  { key: "closureImpactCeased", label: "Customer impact has ceased — service restored", clause: "criterion 1 — not a temporary workaround" },
+  { key: "closureRegsNotified", label: "Regulator notifications complete (or waived with rationale)", clause: "criterion 2" },
+  { key: "closureLogComplete", label: "Incident log complete in the ERM platform", clause: "criterion 3" },
+  { key: "closurePreliminaryRCA", label: "Root cause identified (at least preliminary)", clause: "criterion 4" },
+  { key: "closureCRO_SignOff", label: "CRO confirms no material residual risk", clause: "criterion 5" },
 ];
 
 export default function ClosureGate({ exerciseId, incidentId, checks }: Props) {
@@ -63,7 +63,7 @@ export default function ClosureGate({ exerciseId, incidentId, checks }: Props) {
       title={
         <>
           Closure gate
-          <PolicyHint clause="IMP §6.4.1">
+          <PolicyHint>
             All five criteria must be ✓ before an incident can be closed.
           </PolicyHint>
         </>

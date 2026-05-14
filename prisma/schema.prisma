@@ -401,7 +401,7 @@ model ExerciseTeam {
   description String?
   orderIdx    Int       @default(0)
   /// Policy-aligned team type. IMT = strategic oversight; IRT_TECH/IRT_CUSTOMER
-  /// = tactical response (per Afin IMP §4.1.1); COMMS = communications team;
+  /// = tactical response ; COMMS = communications team;
   /// BRT_* = Business Recovery Teams (BCP §6.6); EXECUTIVE_OBSERVERS / ACTION_COMMITTEE
   /// = governance. OTHER = legacy / unclassified.
   kind        TeamKind? @default(OTHER)
@@ -442,7 +442,7 @@ model ExerciseParticipant {
   onCallStatus String?
   onCallSince  DateTime?
 
-  /// Deputy chain (Afin IMP §6.2.3). When a participant is unreachable, the
+  /// Deputy chain . When a participant is unreachable, the
   /// deputy steps up. Pointer to another participant in the same exercise.
   deputyParticipantId String?
   deputy              ExerciseParticipant?  @relation("ParticipantDeputy", fields: [deputyParticipantId], references: [id], onDelete: SetNull)
@@ -494,7 +494,7 @@ model InjectRelease {
   @@unique([exerciseId, injectId])
 }
 
-/// War-room log. Per Afin IMP §6.4.1 the incident log is the master timeline
+/// War-room log. Per best practice the incident log is the master timeline
 /// of observations, decisions, actions, risks, asks and evidence. Decisions
 /// have additional structure in DecisionRecord (linked via decisionRecordId).
 model IncidentLogEntry {
@@ -563,7 +563,7 @@ enum CommsStatus {
   REJECTED
 }
 
-/// Stakeholder mapping per Afin IMP §6.3.1. Each stakeholder has an
+/// Stakeholder mapping per best practice Each stakeholder has an
 /// execution owner (drafts) and an approver (signs off). Ordering rule:
 /// Employees BEFORE Customers/Third-Parties; Customers WITH Third-Parties;
 /// Media WITH Customers (IMP §6.3.0).
@@ -866,11 +866,11 @@ model OrganizationTeamTemplate {
   @@unique([orgId, name])
 }
 
-// ─── Policy-aligned incident management (Afin IMP / ORP / BCP) ──────────────
+// ─── Policy-aligned incident management (incident-management doctrine) ──────────────
 
 /// An Incident is a live response episode inside an Exercise. An exercise can
 /// have ≥0 incidents — most have exactly one, but escalating scenarios may
-/// stand up a second. State machine mirrors Afin IMP §6.2–6.4.
+/// stand up a second. State machine mirrors best practice
 model Incident {
   id         String   @id @default(cuid())
   exerciseId String
@@ -946,7 +946,7 @@ enum SeverityLevel {
   LOW
 }
 
-// ─── Decisions (Afin IMP §6.4.1 — structured incident log) ──────────────────
+// ─── Decisions (best practice — structured incident log) ──────────────────
 
 /// A structured Decision recorded against an Incident. Distinct from a free-text
 /// IncidentLogEntry — captures authority, rationale, approver. Each
@@ -981,7 +981,7 @@ model DecisionRecord {
   createdAt DateTime @default(now())
 }
 
-/// Canonical decision templates from Afin IMP / BCP. UI offers these as a
+/// Canonical decision templates from incident-management doctrine. UI offers these as a
 /// pick-list when a participant records a decision so we capture authority &
 /// approver consistently.
 enum DecisionType {

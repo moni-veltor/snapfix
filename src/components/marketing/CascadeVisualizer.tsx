@@ -49,7 +49,7 @@ export default function CascadeVisualizer() {
         .join(" and ");
       setAttempt({
         key: s.key,
-        reason: `Per Afin IMP §6.3.0, communications to ${s.label} must come AFTER ${names}. Send ${names} first.`,
+        reason: `Per industry best practice, communications to ${s.label} must come AFTER ${names}. Send ${names} first.`,
       });
       return;
     }

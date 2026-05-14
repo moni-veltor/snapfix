@@ -245,7 +245,7 @@ export default async function DebriefPage({
             <p className="text-xs text-muted">
               {closedIncident.postIncidentReport.submittedAt
                 ? `Submitted ${closedIncident.postIncidentReport.submittedAt.toISOString().slice(0, 10)}`
-                : `Due ${closedIncident.postIncidentReport.dueAt.toISOString().slice(0, 10)} · IMP §6.5.3 (10 business days)`}
+                : `Due ${closedIncident.postIncidentReport.dueAt.toISOString().slice(0, 10)} · best practice (10 business days)`}
             </p>
           </div>
           <form
@@ -278,7 +278,7 @@ export default async function DebriefPage({
             <p className="text-xs text-muted">
               {retrospective.heldAt
                 ? `Held ${retrospective.heldAt.toISOString().slice(0, 10)}`
-                : `Due ${retrospective.dueAt.toISOString().slice(0, 10)} · BCPlans §6.6.1 R-5 (5 business days)`}
+                : `Due ${retrospective.dueAt.toISOString().slice(0, 10)} · best practice R-5 (5 business days)`}
             </p>
           </div>
           <form

@@ -41,7 +41,7 @@ export default function PerformanceCard({ score }: Props) {
             Incident {score.shortCode}
           </h2>
           <p className="mt-1 text-xs text-muted">
-            Scored against the Afin IMP / ORP / BCP doctrine. Each finding cites the policy clause.
+            Scored against the the IMP / ORP / BCP doctrine. Each finding cites the policy clause.
           </p>
         </div>
         <div className="flex items-center gap-3">

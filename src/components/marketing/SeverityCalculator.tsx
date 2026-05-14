@@ -126,7 +126,7 @@ export default function SeverityCalculator() {
           <span className="text-slate-200">
             <strong>Consumer Duty trigger</strong> — incident affects customers' access to funds,
             ability to complete transactions, or rights. Promotes to <strong>High</strong>{" "}
-            regardless of financial threshold (IMP §6.2.4).
+            regardless of financial threshold (best practice
           </span>
         </label>
         <label className="flex items-start gap-2">
@@ -138,7 +138,7 @@ export default function SeverityCalculator() {
           />
           <span className="text-slate-200">
             <strong>Cyber default rule</strong> — ransomware or data exfiltration defaults to{" "}
-            <strong>High</strong> unless explicitly assessed otherwise (BCPlans §6.3.8).
+            <strong>High</strong> unless explicitly assessed otherwise (best practice
           </span>
         </label>
       </div>

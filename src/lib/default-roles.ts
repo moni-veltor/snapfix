@@ -1,4 +1,4 @@
-// The canonical Afin-IMP-aligned IMT seat catalogue. Used to seed an org's
+// The canonical the-IMP-aligned IMT seat catalogue. Used to seed an org's
 // OrganizationRole table with sensible defaults. Each entry's `deputyOf`
 // references another role's abbreviation, building the deputy chain.
 
@@ -63,7 +63,7 @@ export const DEFAULT_ROLES: DefaultRole[] = [
   {
     abbreviation: "CFO",
     title: "Chief Financial Officer",
-    responsibility: "Financial impact, liquidity, regulatory capital. Approves emergency spend up to £100k cap (BCP §6.5.1.1).",
+    responsibility: "Financial impact, liquidity, regulatory capital. Approves emergency spend up to £100k cap (best practice",
     isSMF: true,
     isExecutive: true,
     orderIdx: 6,

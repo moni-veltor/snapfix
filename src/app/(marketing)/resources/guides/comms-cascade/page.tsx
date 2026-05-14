@@ -13,11 +13,11 @@ export default function CommsCascadeGuide() {
       badge="Interactive guide"
       readingTime="3 min"
       title="The communications cascade, visualised"
-      pitch="During an incident, the order you communicate in is as important as what you say. Most operational-resilience policies — including Afin's — codify a strict cascade. Try sending out of order below; the rule will stop you."
+      pitch="During an incident, the order you communicate in is as important as what you say. Most operational-resilience policies — including the — codify a strict cascade. Try sending out of order below; the rule will stop you."
     >
       <h2>The rule</h2>
       <p>
-        Three constraints, repeated verbatim across stakeholder cards in Afin's IMP §6.3.0:
+        Three constraints, repeated verbatim across stakeholder cards in the doctrine:
       </p>
       <ul>
         <li>
@@ -63,7 +63,7 @@ export default function CommsCascadeGuide() {
 
       <h2>Who owns each step</h2>
       <p>
-        Per Afin's stakeholder matrix (IMP §6.3.1), every comms has an execution owner and an
+        Per the stakeholder matrix (best practice, every comms has an execution owner and an
         approver — usually the CEO. The simulator's <a href="/resources/regulators">regulator
         reference</a> lays out the owner/approver pairs in detail.
       </p>

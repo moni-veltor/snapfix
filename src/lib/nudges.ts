@@ -128,7 +128,7 @@ export async function computeNudges(input: {
       id: "imt-not-invoked",
       severity: "critical",
       text: "🚨 Stand up the IMT?",
-      detail: "Events have been released but no incident has been invoked. Per IMP §6.2.2, better to stand it up and back down than to fail to.",
+      detail: "Events have been released but no incident has been invoked. Per industry best practice, better to stand it up and back down than to fail to.",
     });
   }
 
@@ -146,7 +146,7 @@ export async function computeNudges(input: {
       id: "no-sitreps",
       severity: "warn",
       text: "File the first sitrep",
-      detail: "Afin BCP §6.4.3.1 — IMT requires an initial sitrep from each business unit on invocation.",
+      detail: "best practice — IMT requires an initial sitrep from each business unit on invocation.",
     });
   }
 

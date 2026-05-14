@@ -16,7 +16,7 @@ const ActivateSchema = z.object({
 
 /**
  * Activate the Business Continuity Plan. Joint CEO + CRO decision per
- * Afin BCP §6.4.2.2 / IMP §6.2.3. Records both approvers as separate user
+ * best practice / best practice Records both approvers as separate user
  * references and writes a DECISION log entry of type ACTIVATE_BCP.
  *
  * The platform doesn't verify whether the CEO/CRO users are actually CEO/CRO —

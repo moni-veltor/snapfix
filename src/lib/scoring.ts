@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
  * Performance scoring derived from the data captured during an exercise.
  *
  * The framing: this is a *simulator* — the score isn't a punishment, it's
- * feedback. Each metric maps to a specific Afin policy clause (IMP §6.2.2,
+ * feedback. Each metric maps to a specific the policy clause (best practice,
  * §6.3.0, §6.3.1.2, §6.4.1) so coaching is concrete, not vibes.
  *
  * Scoring is per-incident and aggregates at the exercise level.
@@ -139,7 +139,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "invocation-missing",
       level: "critical",
       finding: "Incident not yet invoked.",
-      clause: "Afin IMP §6.2.2",
+      clause: "best practice",
       recommendation:
         "If a signal addressed to a senior role is in the inbox, the IMT should be stood up. 'Better to stand it up and back down than to fail to stand it up.'",
     });
@@ -156,7 +156,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "invocation-latency",
       level,
       finding: `IMT invoked ${invocationLatencyMin} minute${invocationLatencyMin === 1 ? "" : "s"} after first signal.`,
-      clause: "Afin IMP §6.2.2",
+      clause: "best practice",
       recommendation:
         level === "good"
           ? "Fast call — the regulator timeline will read cleanly."
@@ -177,7 +177,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "severity-latency",
       level,
       finding: `Severity classified ${severityLatencyMin} minute${severityLatencyMin === 1 ? "" : "s"} after invocation.`,
-      clause: "Afin IMP §6.2.1",
+      clause: "best practice",
       recommendation:
         level === "good"
           ? "Quick classification — regulator clocks started cleanly."
@@ -188,7 +188,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "severity-missing",
       level: "warn",
       finding: "Severity not classified.",
-      clause: "Afin IMP §6.2.1",
+      clause: "best practice",
       recommendation:
         "Run the five-dimension matrix. Without a severity call the regulator clocks haven't started and the IMT can't size its response.",
     });
@@ -199,7 +199,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "regulator-breach",
       level: "critical",
       finding: `${regulatorBreaches} regulator notification clock${regulatorBreaches === 1 ? "" : "s"} breached.`,
-      clause: "Afin IMP §6.3.1.2",
+      clause: "best practice",
       recommendation:
         "FCA + PRA notifications must go within 4 hours of IMT invocation for High severity. ICO is 72 hours from awareness. If you can't send, file a documented waiver.",
     });
@@ -210,7 +210,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "decisions-thin",
       level: "warn",
       finding: `Only ${incident.decisions.length} formal decision${incident.decisions.length === 1 ? "" : "s"} logged on a High-severity incident.`,
-      clause: "Afin IMP §6.4.1",
+      clause: "best practice",
       recommendation:
         "A High-severity incident typically generates 5–10 structured decisions (invoke, classify, activate BCP, notify FCA, approve comms, etc.). Capture them as Decisions, not Notes — the regulator wants authority + rationale.",
     });
@@ -221,7 +221,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "sitreps-missing",
       level: "warn",
       finding: "No sitreps filed.",
-      clause: "Afin BCP §6.4.3.1",
+      clause: "best practice",
       recommendation:
         "IMT requires an initial sitrep from each business unit on invocation. File a GREEN / AMBER / RED with summary + issues + asks.",
     });
@@ -232,7 +232,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "imt-meeting-missing",
       level: "warn",
       finding: "No IMT meeting recorded.",
-      clause: "Afin IMP §6.2.5",
+      clause: "best practice",
       recommendation:
         "Standing agenda: situation, decisions, actions, next-meeting time. Even a 5-minute meeting recorded as a meeting is more defensible than no record.",
     });
@@ -243,7 +243,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "cascade-violation",
       level: "warn",
       finding: `${cascadeViolations} communication draft${cascadeViolations === 1 ? "" : "s"} rejected.`,
-      clause: "Afin IMP §6.3.0",
+      clause: "best practice",
       recommendation:
         "Cascade ordering rule: Employees BEFORE customers / third parties. Most rejections happen because the cascade was attempted out of order.",
     });
@@ -254,7 +254,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "mobilisation-thin",
       level: "warn",
       finding: `Only ${mobilisationCoveragePct}% of the roster has mobilised.`,
-      clause: "Afin IMP §6.2.3",
+      clause: "best practice",
       recommendation:
         "On invocation, every IMT seat should mobilise (or mark unreachable so the deputy steps up). Low mobilisation often signals an unrehearsed call tree.",
     });
@@ -265,7 +265,7 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
       id: "read-coverage-thin",
       level: "warn",
       finding: `${readCoverage}% of addressed messages have been read.`,
-      clause: "Afin IMP §6.4.1",
+      clause: "best practice",
       recommendation:
         "If addressed participants aren't reading, they can't act. Check whether email notifications are firing or whether participants are using the live workspace.",
     });

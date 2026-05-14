@@ -141,7 +141,7 @@ function Recommendation({
       </div>
       <div className="text-lg font-bold text-rose-50">🚨 Stand up the IMT now</div>
       <p className="text-xs text-rose-100/90">
-        {yesCount} trigger condition{yesCount === 1 ? "" : "s"} met. Per Afin IMP §6.2.2,{" "}
+        {yesCount} trigger condition{yesCount === 1 ? "" : "s"} met. Per best practice,{" "}
         <em>"it is better to stand it up and back down than to fail to stand it up."</em>
       </p>
       {cyberYes && (

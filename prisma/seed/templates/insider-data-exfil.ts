@@ -215,7 +215,7 @@ export const insiderDataExfil: ScenarioTemplate = {
       senderRoleTitle: "CPO",
       toRoleTitles: ["CTO", "Head of Compliance"],
       ccRoleTitles: ["CEO"],
-      relation: "Tests the HR-Legal-Security coordination playbook (BCPlans §6.3.7 / Afin insider-threat module).",
+      relation: "Tests the HR-Legal-Security coordination playbook (best practice / the insider-threat module).",
     },
   ],
 };

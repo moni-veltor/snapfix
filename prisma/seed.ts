@@ -369,18 +369,20 @@ async function main() {
     data: debriefQs.map((q, i) => ({ ...q, scenarioId: scenario.id, orderIdx: i })),
   });
 
-  // ─── Sample exercise cast (additional Astro Bank users) ───────────────────
-  const cast: { email: string; name: string; roleTitle: string }[] = [
-    { email: "fadaei@astrobank.com", name: "Mohammed Fadaei", roleTitle: "Sn.TPM" },
-    { email: "najem@astrobank.com", name: "Mohammed Najem", roleTitle: "TPM" },
-    { email: "sifah@astrobank.com", name: "Emmanuel Sifah", roleTitle: "Sn. DA/E" },
-    { email: "musawi@astrobank.com", name: "Imran Musawi", roleTitle: "ISM" },
-    { email: "oakley@astrobank.com", name: "Jason Oakley", roleTitle: "CEO" },
-    { email: "ferguson@astrobank.com", name: "Patrick Ferguson", roleTitle: "CRO" },
-    { email: "lewis@astrobank.com", name: "Rebecca Lewis", roleTitle: "Comms Lead" },
-    { email: "tunney@astrobank.com", name: "Nicola Tunney", roleTitle: "Customer Ops Lead" },
+  // ─── Sample exercise cast — generic participants, no named individuals.
+  // The seat-claim model handles who-sits-where at exercise time, so we
+  // don't pre-assign people to specific roles in the seed.
+  const cast: { email: string; name: string }[] = [
+    { email: "participant1@astrobank.com", name: "Participant 1" },
+    { email: "participant2@astrobank.com", name: "Participant 2" },
+    { email: "participant3@astrobank.com", name: "Participant 3" },
+    { email: "participant4@astrobank.com", name: "Participant 4" },
+    { email: "participant5@astrobank.com", name: "Participant 5" },
+    { email: "participant6@astrobank.com", name: "Participant 6" },
+    { email: "participant7@astrobank.com", name: "Participant 7" },
+    { email: "participant8@astrobank.com", name: "Participant 8" },
   ];
-  const castUsers: Record<string, { id: string; roleTitle: string }> = {};
+  const castUsers: Record<string, { id: string }> = {};
   for (const c of cast) {
     const u = await prisma.user.upsert({
       where: { email: c.email },
@@ -393,22 +395,16 @@ async function main() {
       },
       update: { orgId: org.id, orgRole: "MEMBER", name: c.name },
     });
-    castUsers[c.email] = { id: u.id, roleTitle: c.roleTitle };
+    castUsers[c.email] = { id: u.id };
   }
 
-  // ─── Seed Astro Bank's IMT role catalogue + default holders ───────────────
+  // ─── Seed the IMT role catalogue ─────────────────────────────────────────
+  // Seats start empty — participants claim them live in the war room. The
+  // only default holder is the org owner (admin), suggested for the CTO seat
+  // since they're the facilitator.
   await seedDefaultRolesForOrg(prisma, org.id);
-  // Map default holders so the seat-claim UI suggests sensible defaults
-  await assignDefaultHolder(prisma, org.id, "CEO", castUsers["oakley@astrobank.com"]!.id);
-  await assignDefaultHolder(prisma, org.id, "CRO", castUsers["ferguson@astrobank.com"]!.id);
-  await assignDefaultHolder(prisma, org.id, "CTO", owner.id); // Astro Bank Admin
-  await assignDefaultHolder(prisma, org.id, "Comms Lead", castUsers["lewis@astrobank.com"]!.id);
-  await assignDefaultHolder(prisma, org.id, "Customer Ops Lead", castUsers["tunney@astrobank.com"]!.id);
-  await assignDefaultHolder(prisma, org.id, "ISM", castUsers["musawi@astrobank.com"]!.id);
-  await assignDefaultHolder(prisma, org.id, "Sn.TPM", castUsers["fadaei@astrobank.com"]!.id);
-  await assignDefaultHolder(prisma, org.id, "TPM", castUsers["najem@astrobank.com"]!.id);
-  await assignDefaultHolder(prisma, org.id, "Sn. DA/E", castUsers["sifah@astrobank.com"]!.id);
-  console.log("  Seeded 15 default IMT roles for Astro Bank with default holders.");
+  await assignDefaultHolder(prisma, org.id, "CTO", owner.id);
+  console.log("  Seeded 15 default IMT roles. Seats start empty — claim live.");
 
   // ─── Sample exercise (PLANNING) using Simulation 2 ────────────────────────
   const exercise = await prisma.exercise.create({
@@ -443,40 +439,19 @@ async function main() {
   });
   const teamByName = Object.fromEntries(teams.map((t) => [t.name, t]));
 
-  // Assign cast members to teams with role titles
-  const assignments: { email: string; team: string; role: "LEAD" | "PARTICIPANT" | "OBSERVER" }[] = [
-    { email: "fadaei@astrobank.com", team: "Tech Recovery", role: "LEAD" },
-    { email: "najem@astrobank.com", team: "Tech Recovery", role: "PARTICIPANT" },
-    { email: "sifah@astrobank.com", team: "Incident Management", role: "PARTICIPANT" },
-    { email: "musawi@astrobank.com", team: "Incident Management", role: "LEAD" },
-    { email: "lewis@astrobank.com", team: "Communications", role: "LEAD" },
-    { email: "tunney@astrobank.com", team: "Customer Operations", role: "LEAD" },
-    { email: "oakley@astrobank.com", team: "Executive Observers", role: "OBSERVER" },
-    { email: "ferguson@astrobank.com", team: "Executive Observers", role: "OBSERVER" },
-  ];
-  // The CTO (Astro Bank Admin) is the facilitator
+  // Only the admin is pre-rostered as facilitator. Participants claim seats
+  // live in the war room — that's the point of the seat-claim model.
+  void teamByName; // teams kept for legacy display; seats are the truth
+  void castUsers;
   await prisma.exerciseParticipant.create({
     data: {
       exerciseId: exercise.id,
       userId: owner.id,
-      teamId: teamByName["Incident Management"]?.id ?? null,
-      roleTitle: "CTO (Facilitator)",
+      teamId: null,
+      roleTitle: "Facilitator",
       exerciseRole: "FACILITATOR",
     },
   });
-  for (const a of assignments) {
-    const u = castUsers[a.email];
-    if (!u || !teamByName[a.team]) continue;
-    await prisma.exerciseParticipant.create({
-      data: {
-        exerciseId: exercise.id,
-        userId: u.id,
-        teamId: teamByName[a.team].id,
-        roleTitle: u.roleTitle,
-        exerciseRole: a.role,
-      },
-    });
-  }
 
   // ─── Astro Bank IBS register (mirrors the IBS reference doc) ──────────────
   await prisma.organizationIBS.deleteMany({ where: { orgId: org.id } });
@@ -644,10 +619,11 @@ async function main() {
   });
 
   console.log("✓ Seed complete.");
-  console.log("  Sign in as admin@astrobank.com / password123 (OWNER, exercise facilitator)");
-  console.log("  Sign in as participant@astrobank.com / password123 (MEMBER)");
+  console.log("  Admin:        admin@astrobank.com / password123 (OWNER, exercise facilitator)");
+  console.log("  Participants: participant@astrobank.com / password123");
+  console.log("                participant1@astrobank.com … participant8@astrobank.com / password123");
   console.log(`  Sample exercise: ${exercise.title} (${exercise.id})`);
-  console.log(`  Seeded ${allIBS.length} IBSs in the Astro Bank register.`);
+  console.log(`  Seeded ${allIBS.length} IBSs in the register.`);
 
   await prisma.$disconnect();
 }

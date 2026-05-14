@@ -20,7 +20,7 @@ const StakeholderLabel: Record<CommsStakeholder, string> = {
 };
 
 /**
- * Cascade ordering per Afin IMP §6.3.0:
+ * Cascade ordering rule:
  *   - Employees BEFORE customers / third parties
  *   - Customers WITH third parties (i.e. customers requires employees done)
  *   - Media WITH customers (i.e. media requires employees done)
@@ -47,7 +47,7 @@ async function cascadeViolation(
   });
   if (employeeSent) return null;
 
-  return `Per IMP §6.3.0, communications to ${StakeholderLabel[stakeholder]} must come AFTER communications to employees. Send the employee cascade first.`;
+  return `Per industry best practice, communications to ${StakeholderLabel[stakeholder]} must come AFTER communications to employees. Send the employee cascade first.`;
 }
 
 const SubmitSchema = z.object({
@@ -111,7 +111,7 @@ const SendSchema = z.object({
   draftId: z.string(),
 });
 
-/** Mark a draft as sent. Enforces cascade-ordering (IMP §6.3.0). */
+/** Mark a draft as sent. Enforces cascade-ordering (best practice */
 export async function sendCommsAction(formData: FormData): Promise<{ error?: string } | void> {
   const me = await requireOrgUser();
   const data = SendSchema.parse(Object.fromEntries(formData));

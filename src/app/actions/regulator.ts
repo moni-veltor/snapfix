@@ -58,7 +58,7 @@ const CreateICOSchema = z.object({
 
 /**
  * Spawn the 72h ICO clock for a personal data breach. Owned by Head of
- * Compliance, approved by CRO (IMP §6.3.1.2).
+ * Compliance, approved by CRO (best practice
  */
 export async function flagDataBreachAction(formData: FormData) {
   const me = await requireOrgUser();

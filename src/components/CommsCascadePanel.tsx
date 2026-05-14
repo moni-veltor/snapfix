@@ -66,7 +66,7 @@ export default function CommsCascadePanel({ exerciseId, drafts }: Props) {
   return (
     <div className="space-y-3">
       <p className="text-[11px] text-muted">
-        Cascade rule (Afin IMP §6.3.0): <strong>Employees BEFORE</strong> customers / third
+        Cascade rule (best practice: <strong>Employees BEFORE</strong> customers / third
         parties. Customers <strong>WITH</strong> third parties. Media <strong>WITH</strong>{" "}
         customers. The platform blocks sending out-of-order.
       </p>

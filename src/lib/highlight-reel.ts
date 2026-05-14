@@ -91,7 +91,7 @@ export async function buildHighlightReel(exerciseId: string): Promise<Highlight[
         id: `bcp-${bcp.id}`,
         at: bcp.activatedAt,
         text: "Business Continuity activated",
-        detail: "Joint CEO + CRO decision per BCP §6.4.2.2.",
+        detail: "Joint CEO + CRO decision per best practice",
         tone: "warn",
       });
     }

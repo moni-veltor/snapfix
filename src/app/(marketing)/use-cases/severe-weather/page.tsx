@@ -23,7 +23,7 @@ export default function SevereWeatherUseCase() {
         "BCP activation tested with joint CEO + CRO decision in the live exercise",
         "Alternative work locations validated — not just listed in a document",
         "Staff welfare protocol exercised, with HR + CPO playing their actual roles",
-        "Damage assessment report (per BCPlans §6.3.3) produced as a real deliverable",
+        "Damage assessment report (produced as a real deliverable)",
         "Comms cascade for premises events — different stakeholders than cyber, similar discipline",
       ]}
       exercises={[
@@ -83,7 +83,7 @@ export default function SevereWeatherUseCase() {
         <li>Pre-built CMORG scenarios covering grid, weather, premises, and absenteeism</li>
         <li>BCP activation as a joint CEO + CRO decision distinct from IMT invocation</li>
         <li>BRT mobilisation tracking — Finance, Buildings, Tech, Comms</li>
-        <li>Damage assessment report template (per BCPlans §6.3.3)</li>
+        <li>Damage assessment report template (per best practice)</li>
         <li>
           Staff welfare protocol references built into the after-action retrospective (BCPlans
           §6.6.1 R-4)

@@ -98,7 +98,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
           </div>
           <p className="mt-1 text-sm text-slate-700">
             If something looks wrong, stand up the IMT. <em>Better to stand it up and back down
-            than to fail to stand it up</em> — Afin IMP §6.2.2.
+            than to fail to stand it up</em> — best practice
           </p>
         </div>
         <button
@@ -231,7 +231,7 @@ function SeverityWizard({
       <input type="hidden" name="exerciseId" value={exerciseId} />
       <input type="hidden" name="incidentId" value={incident.id} />
       <p className="text-xs text-muted">
-        Classify across five dimensions (Afin IMP §6.2.1 + ORP App.1). Overall severity = the
+        Classify across five dimensions (best practice + best practice). Overall severity = the
         highest of the five. Aggravating factors promote to High.
       </p>
 
@@ -251,7 +251,7 @@ function SeverityWizard({
           />
           <span>
             <strong>Consumer Duty trigger</strong> — affects customers' ability to access funds,
-            complete transactions, receive support, or exercise rights (IMP §6.2.4). Promotes
+            complete transactions, receive support, or exercise rights (best practice Promotes
             severity to High regardless of financial threshold.
           </span>
         </label>
@@ -264,7 +264,7 @@ function SeverityWizard({
           />
           <span>
             <strong>Cyber default rule</strong> — ransomware or data exfiltration defaults to
-            High unless explicitly assessed otherwise (BCPlans §6.3.8).
+            High unless explicitly assessed otherwise (best practice
           </span>
         </label>
       </div>

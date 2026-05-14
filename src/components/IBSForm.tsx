@@ -100,7 +100,7 @@ export default function IBSForm({ existing }: { existing?: IBS }) {
       <Section title="Importance assessment">
         <p className="mb-3 text-xs text-muted">
           Score across six dimensions. Overall importance is the highest of the six. Each dimension
-          carries threshold guidance from the Afin ORP — pick the band that best describes the
+          carries threshold guidance from the the ORP — pick the band that best describes the
           worst-plausible impact.
         </p>
         <ImportanceWizard

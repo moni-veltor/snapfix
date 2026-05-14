@@ -50,7 +50,7 @@ const CHECKS = [
   {
     question: "Does your IMP separate Incident Leader (CEO) from Incident Manager (CRO)?",
     evidence:
-      "Explicit statement in the IMP. Per Afin IMP §6.1.3, the same person cannot hold both roles.",
+      "Explicit statement in the IMP. Per industry best practice, the same person cannot hold both roles.",
   },
   {
     question: "Do you have a Business Continuity Plan that wires into the IMP?",

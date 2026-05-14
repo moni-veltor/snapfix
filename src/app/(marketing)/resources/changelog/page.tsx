@@ -31,7 +31,7 @@ const CHANGELOG: Entry[] = [
     date: "2026-05-12",
     title: "Policy-aligned incident management",
     body:
-      "Six new feature epics mirroring Afin's IMP / ORP / BCP: incident invocation + 5-dimension severity, two-tier team mobilisation with deputy chain, structured decision log + sitreps + IMT meetings, regulator clocks (FCA/PRA 4h, ICO 72h, closure 2 business days), BCP activation as a joint CEO+CRO decision, critical-third-party register, five-criterion closure gate with Post-Incident Report and retrospective.",
+      "Six new feature epics mirroring the IMP / ORP / BCP: incident invocation + 5-dimension severity, two-tier team mobilisation with deputy chain, structured decision log + sitreps + IMT meetings, regulator clocks (FCA/PRA 4h, ICO 72h, closure 2 business days), BCP activation as a joint CEO+CRO decision, critical-third-party register, five-criterion closure gate with Post-Incident Report and retrospective.",
     tags: ["App", "Schema"],
   },
   {

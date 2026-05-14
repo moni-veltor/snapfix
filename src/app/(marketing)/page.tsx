@@ -147,7 +147,7 @@ export default async function MarketingHome() {
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 <TierCard label="Tier 1" desc="Global universal / G-SIB" examples="HSBC · Barclays · JPM" />
                 <TierCard label="Tier 2" desc="Digital challenger" examples="Starling · Monzo · Revolut" />
-                <TierCard label="Tier 3" desc="New banks / fintechs" examples="GBB · Afin · BaaS-dependent" />
+                <TierCard label="Tier 3" desc="New banks / fintechs" examples="GBB · the · BaaS-dependent" />
               </div>
             </div>
             <TiersVisual />

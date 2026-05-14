@@ -50,9 +50,9 @@ export const GLOSSARY: GlossaryEntry[] = [
     short:
       "The strategic team that runs a major incident. CEO-led; CRO is typically the Incident Manager. Distinct from the IRT (tactical).",
     longer:
-      "Per Afin IMP §6.1, the IMT decides invocation, severity, regulator notification, BCP activation and crisis communications. It does not do the hands-on recovery work.",
+      "Per industry best practice, the IMT decides invocation, severity, regulator notification, BCP activation and crisis communications. It does not do the hands-on recovery work.",
     related: ["irt", "incident-manager", "imp"],
-    source: "Afin IMP §6.1",
+    source: "best practice",
   },
   {
     slug: "irt",
@@ -62,7 +62,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     short:
       "The tactical team that does the actual response work — usually split into a Technology Response Team and a Customer Response Team.",
     related: ["imt", "brt"],
-    source: "Afin IMP §4.1.1",
+    source: "best practice",
   },
   {
     slug: "brt",
@@ -72,7 +72,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     short:
       "A team mobilised under the Business Continuity Plan to recover a specific area (Finance, Buildings, Technology, Communications).",
     related: ["bcp", "imt"],
-    source: "Afin BCP §6.6",
+    source: "best practice",
   },
   {
     slug: "incident-manager",
@@ -81,9 +81,9 @@ export const GLOSSARY: GlossaryEntry[] = [
     short:
       "The person managing the response process — typically the CRO. Distinct from the Incident Leader (the CEO).",
     longer:
-      "Afin IMP §6.1.3 is explicit: 'the incident manager should not be the individual leading the incident team.' Separation is mandatory.",
+      "best practice is explicit: 'the incident manager should not be the individual leading the incident team.' Separation is mandatory.",
     related: ["imt"],
-    source: "Afin IMP §6.1.3",
+    source: "best practice",
   },
   {
     slug: "imp",
@@ -102,7 +102,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     short:
       "The plan invoked when a disruptive event will interrupt one or more IBSs. Sub-flow of the IMP — activation is a joint CEO + CRO decision.",
     related: ["brt", "imp"],
-    source: "Afin BCP §6.4.2.2",
+    source: "best practice",
   },
   {
     slug: "rto",
@@ -171,7 +171,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     category: "Process",
     short:
       "A structured update from a business unit during an incident: status (GREEN / AMBER / RED), issues, asks, next-update time.",
-    source: "Afin BCP §6.4.3.1",
+    source: "best practice",
   },
   {
     slug: "aar",
@@ -190,7 +190,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     short:
       "Formal report due within 10 business days of incident closure. Eight mandatory sections — summary, timeline, RCA, customer impact, regulatory impact, control failures, what worked, remediation.",
     related: ["aar"],
-    source: "Afin IMP §6.5.3",
+    source: "best practice",
   },
   {
     slug: "rca",

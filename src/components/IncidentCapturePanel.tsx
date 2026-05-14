@@ -298,7 +298,7 @@ function MeetingForm({
       <input type="hidden" name="exerciseId" value={exerciseId} />
       <input type="hidden" name="incidentId" value={incidentId} />
       <p className="col-span-2 text-[11px] text-muted">
-        Standing agenda per Afin IMP §6.2.5. "Next meeting" time is required as the meeting's
+        Standing agenda — next meeting time is required as the meeting's
         formal output.
       </p>
       <textarea

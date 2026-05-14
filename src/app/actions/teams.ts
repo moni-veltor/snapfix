@@ -42,7 +42,7 @@ const DeputySchema = z.object({
   deputyParticipantId: z.string().optional(),
 });
 
-/** Set or clear the deputy for a participant (Afin IMP §6.2.3 deputy chain). */
+/** Set or clear the deputy for a participant (best practice deputy chain). */
 export async function setDeputyAction(formData: FormData) {
   const me = await requireOrgRole("OWNER", "ADMIN");
   const data = DeputySchema.parse(Object.fromEntries(formData));

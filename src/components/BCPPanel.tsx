@@ -35,7 +35,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
         title={
           <>
             Business Continuity · active
-            <PolicyHint clause="BCP §6.4.2.2">
+            <PolicyHint>
               Joint CEO + CRO decision. IM governance wraps BC.
             </PolicyHint>
           </>
@@ -68,7 +68,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
       title={
         <>
           Business Continuity
-          <PolicyHint clause="BCP §6.4.2.2">
+          <PolicyHint>
             Joint CEO + CRO decision. Activate when a disruptive event will interrupt an IBS.
           </PolicyHint>
         </>
