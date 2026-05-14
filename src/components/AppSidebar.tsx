@@ -17,6 +17,8 @@ import {
   Users,
   ScrollText,
   Settings,
+  Award,
+  Gift,
   ChevronsLeft,
   ChevronsRight,
   LogOut,
@@ -52,6 +54,11 @@ const ADMIN: NavItem[] = [
   { href: "/org", label: "Organisation", icon: Users },
   { href: "/audit", label: "Audit log", icon: ScrollText },
   { href: "/settings", label: "Settings", icon: Settings },
+];
+
+const CULTURE: NavItem[] = [
+  { href: "/achievements", label: "Achievements", icon: Award },
+  { href: "/wrapped", label: "Wrapped", icon: Gift },
 ];
 
 function isActive(pathname: string, href: string): boolean {
@@ -177,6 +184,8 @@ export default function AppSidebar({
               <NavSection collapsed={collapsed} items={ADMIN} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
             </>
           )}
+          <SectionDivider collapsed={collapsed} label="Culture" />
+          <NavSection collapsed={collapsed} items={CULTURE} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
         </nav>
 
         {/* Bottom: user */}

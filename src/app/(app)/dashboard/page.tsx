@@ -21,6 +21,7 @@ import { computePulse, pickHeadline } from "@/lib/dashboard";
 import { ProgressRing, Sparkline, Bar, Donut, MiniHeatmap } from "@/components/ui/charts";
 import FeaturedCard from "@/components/ui/FeaturedCard";
 import Card from "@/components/ui/Card";
+import DailyTipCard from "@/components/fun/DailyTipCard";
 
 export default async function Home() {
   const session = await auth();
@@ -302,6 +303,8 @@ async function Dashboard({
       <QuickActions canManage={canManage} ibsCount={ibsCount} rolesCount={rolesCount} />
 
       {canManage && recentAudit.length > 0 && <RecentActivity items={recentAudit} />}
+
+      <DailyTipCard />
     </div>
   );
 }
