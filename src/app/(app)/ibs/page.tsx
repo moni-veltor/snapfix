@@ -1,16 +1,11 @@
 import Link from "next/link";
-import { Building2, Plus } from "lucide-react";
+import { Building2, Flame, Plus, Server } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
+import IBSRegisterGrid from "@/components/ibs/IBSRegisterGrid";
 
 export const metadata = { title: "IBS Register — SnapFix" };
-
-const STATUS_STYLES: Record<string, string> = {
-  DRAFT: "bg-amber-100 text-amber-800",
-  APPROVED: "bg-emerald-100 text-emerald-800",
-  DEPRECATED: "bg-surface-2 text-ink",
-};
 
 export default async function IBSListPage() {
   const me = await requireOrgUser();
@@ -25,13 +20,39 @@ export default async function IBSListPage() {
     },
   });
 
+  const rows = items.map((i) => ({
+    id: i.id,
+    code: i.code,
+    name: i.name,
+    outcome: i.outcome,
+    status: i.status,
+    criticality: i.criticality,
+    impactToleranceMin: i.impactToleranceMin,
+    fcaToleranceMin: i.fcaToleranceMin,
+    praToleranceMin: i.praToleranceMin,
+    processOwner: i.processOwner,
+    exerciseCount: i._count.exerciseLinks,
+    coversPeople: i.coversPeople,
+    coversProperty: i.coversProperty,
+    coversTechnology: i.coversTechnology,
+    coversDataAvailability: i.coversDataAvailability,
+    coversDataIntegrity: i.coversDataIntegrity,
+    coversThirdParty: i.coversThirdParty,
+  }));
+
+  const counts = {
+    total: rows.length,
+    critical: rows.filter((r) => r.criticality === "CRITICAL").length,
+    untested: rows.filter((r) => r.exerciseCount === 0).length,
+  };
+
   return (
     <div className="space-y-6">
       <PageHero
         eyebrow="Register"
         icon={Building2}
         title="Important Business Services"
-        pitch={`The spine of your operational-resilience programme. ${items.length} ${items.length === 1 ? "service" : "services"} captured — each with its tolerance, its resource map, and its testing history.`}
+        pitch={`The spine of your operational-resilience programme. ${counts.total} ${counts.total === 1 ? "service" : "services"} captured — each with its tolerance, resource map, and testing history.`}
         actions={
           canManage && (
             <Link
@@ -45,72 +66,82 @@ export default async function IBSListPage() {
         }
       />
 
-      {items.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-line-strong bg-surface-1 p-8 text-center text-sm text-muted">
-          No IBS yet.{" "}
-          {canManage ? (
-            <>
-              Start by{" "}
-              <Link href="/ibs/new" className="underline">
-                adding your first one
-              </Link>
-              .
-            </>
-          ) : (
-            "Ask an admin to add the first one."
-          )}
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {items.map((i) => (
-            <li
-              key={i.id}
-              className="rounded-md border border-line bg-surface-1 p-4 text-sm"
+      {rows.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-line-strong bg-surface-1 p-10 text-center">
+          <Server size={28} className="mx-auto text-indigo-500 dark:text-indigo-300" />
+          <p className="mt-3 text-sm font-medium text-ink">
+            No IBS in the register yet
+          </p>
+          <p className="mx-auto mt-1 max-w-md text-xs text-muted">
+            {canManage
+              ? "Use the wizard to capture your first Important Business Service — five steps and you're done."
+              : "Ask an admin to start the register."}
+          </p>
+          {canManage && (
+            <Link
+              href="/ibs/new"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link href={`/ibs/${i.id}`} className="font-medium hover:underline">
-                      <span className="font-mono text-xs">{i.code}</span> · {i.name}
-                    </Link>
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_STYLES[i.status] ?? ""}`}>
-                      {i.status}
-                    </span>
-                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">
-                      {i.criticality}
-                    </span>
-                  </div>
-                  {i.outcome && (
-                    <p className="mt-1 line-clamp-2 text-muted">{i.outcome}</p>
-                  )}
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
-                    <span className="rounded-full bg-surface-2 px-2 py-0.5">
-                      Tolerance {Math.round(i.impactToleranceMin / 60)}h
-                    </span>
-                    {i.fcaToleranceMin && (
-                      <span className="rounded-full bg-surface-2 px-2 py-0.5">
-                        FCA {Math.round(i.fcaToleranceMin / 60 / 24)}d
-                      </span>
-                    )}
-                    {i.praToleranceMin && (
-                      <span className="rounded-full bg-surface-2 px-2 py-0.5">
-                        PRA {Math.round(i.praToleranceMin / 60 / 24)}d
-                      </span>
-                    )}
-                    <span className="rounded-full bg-surface-2 px-2 py-0.5">
-                      Tested in {i._count.exerciseLinks}{" "}
-                      {i._count.exerciseLinks === 1 ? "exercise" : "exercises"}
-                    </span>
-                    {i.processOwner && (
-                      <span className="text-muted">Owner: {i.processOwner}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+              <Plus size={12} />
+              Start the wizard
+            </Link>
+          )}
+        </div>
+      ) : (
+        <>
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatTile label="Total" value={counts.total} icon={<Building2 size={12} />} />
+            <StatTile
+              label="Critical"
+              value={counts.critical}
+              icon={<Flame size={12} />}
+              tone="critical"
+            />
+            <StatTile
+              label="Never tested"
+              value={counts.untested}
+              tone={counts.untested > 0 ? "warn" : "ok"}
+            />
+            <StatTile
+              label="Total exercises"
+              value={rows.reduce((acc, r) => acc + r.exerciseCount, 0)}
+              tone="ok"
+            />
+          </section>
+
+          <IBSRegisterGrid rows={rows} />
+        </>
       )}
+    </div>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  icon,
+  tone = "neutral",
+}: {
+  label: string;
+  value: number;
+  icon?: React.ReactNode;
+  tone?: "ok" | "warn" | "critical" | "neutral";
+}) {
+  const cls =
+    tone === "critical"
+      ? "border-rose-200 bg-rose-50 dark:border-rose-800/60 dark:bg-rose-950/30"
+      : tone === "warn"
+        ? "border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30"
+        : tone === "ok"
+          ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/30"
+          : "border-line bg-surface-1";
+  return (
+    <div className={`rounded-lg border p-3 ${cls}`}>
+      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-soft">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-1 text-2xl font-semibold text-ink">{value}</div>
     </div>
   );
 }

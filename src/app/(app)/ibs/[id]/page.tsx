@@ -11,6 +11,7 @@ import {
 import DependencyMap from "@/components/ibs/DependencyMap";
 import ToleranceTester from "@/components/ibs/ToleranceTester";
 import HarmTypeLibrary from "@/components/ibs/HarmTypeLibrary";
+import IBSDetailTabs from "@/components/ibs/IBSDetailTabs";
 
 export default async function IBSDetailPage({
   params,
@@ -143,108 +144,132 @@ export default async function IBSDetailPage({
         </div>
       </header>
 
-      <DependencyMap
-        ibsCode={ibs.code}
-        ibsName={ibs.name}
-        technology={ibs.technology}
-        thirdParties={ibs.thirdParties}
-        information={ibs.information}
-        processes={ibs.processes}
-        peopleNotes={ibs.peopleNotes}
-        facilities={ibs.facilities}
-        sharedBy={sharedBy}
-      />
-
-      <ToleranceTester
-        ibsCode={ibs.code}
-        primaryToleranceMin={ibs.impactToleranceMin}
-        fcaToleranceMin={ibs.fcaToleranceMin}
-        praToleranceMin={ibs.praToleranceMin}
-      />
-
-      <HarmTypeLibrary
-        coverage={{
-          people: ibs.coversPeople,
-          property: ibs.coversProperty,
-          technology: ibs.coversTechnology,
-          dataAvailability: ibs.coversDataAvailability,
-          dataIntegrity: ibs.coversDataIntegrity,
-          thirdParty: ibs.coversThirdParty,
+      <IBSDetailTabs
+        ibsId={ibs.id}
+        counts={{ history: ibs.exerciseLinks.length }}
+        panels={{
+          overview: (
+            <div className="space-y-5">
+              <DependencyMap
+                ibsCode={ibs.code}
+                ibsName={ibs.name}
+                technology={ibs.technology}
+                thirdParties={ibs.thirdParties}
+                information={ibs.information}
+                processes={ibs.processes}
+                peopleNotes={ibs.peopleNotes}
+                facilities={ibs.facilities}
+                sharedBy={sharedBy}
+              />
+              <ToleranceTester
+                ibsCode={ibs.code}
+                primaryToleranceMin={ibs.impactToleranceMin}
+                fcaToleranceMin={ibs.fcaToleranceMin}
+                praToleranceMin={ibs.praToleranceMin}
+              />
+            </div>
+          ),
+          resources: (
+            <div className="space-y-5">
+              <Card title="Resource map">
+                <Block label="Technology" list={ibs.technology} />
+                <Block label="3rd parties" list={ibs.thirdParties} />
+                <Block label="Information" list={ibs.information} />
+                <Block label="Processes" list={ibs.processes} />
+                {ibs.peopleNotes && <Block label="People" body={ibs.peopleNotes} />}
+                {ibs.facilities && <KV k="Facilities" v={ibs.facilities} />}
+              </Card>
+              <Card title="Methodology">
+                <Block label="Customer journeys" list={ibs.customerJourneys} />
+                <Block label="Products covered" list={ibs.productsCovered} />
+              </Card>
+            </div>
+          ),
+          tolerance: (
+            <div className="space-y-5">
+              <Card title="Impact tolerance">
+                <KV k="Primary" v={fmtMin(ibs.impactToleranceMin)} />
+                <KV k="FCA" v={ibs.fcaToleranceMin ? fmtMin(ibs.fcaToleranceMin) : "—"} />
+                <KV k="PRA" v={ibs.praToleranceMin ? fmtMin(ibs.praToleranceMin) : "—"} />
+                <KV k="Criticality" v={ibs.criticality} />
+                {ibs.toleranceRationale && (
+                  <Block label="Rationale" body={ibs.toleranceRationale} />
+                )}
+              </Card>
+              <Card title="Importance assessment">
+                <ImpactGrid ibs={ibs} />
+                {ibs.importanceAssessmentNotes && (
+                  <Block label="Notes" body={ibs.importanceAssessmentNotes} />
+                )}
+              </Card>
+              <Card title="Risk coverage (6-box)">
+                <CoverageMatrix ibs={ibs} />
+              </Card>
+              <HarmTypeLibrary
+                coverage={{
+                  people: ibs.coversPeople,
+                  property: ibs.coversProperty,
+                  technology: ibs.coversTechnology,
+                  dataAvailability: ibs.coversDataAvailability,
+                  dataIntegrity: ibs.coversDataIntegrity,
+                  thirdParty: ibs.coversThirdParty,
+                }}
+              />
+            </div>
+          ),
+          governance: (
+            <div className="space-y-5">
+              <Card title="Governance & ownership">
+                <KV k="Process type" v={ibs.processType ?? "—"} />
+                <KV k="Process owner" v={ibs.processOwner ?? "—"} />
+                <KV k="2nd-line reviewer" v={ibs.secondLineReviewer ?? "—"} />
+                <KV
+                  k="Review due"
+                  v={ibs.reviewDueAt ? ibs.reviewDueAt.toISOString().slice(0, 10) : "—"}
+                />
+                <KV
+                  k="Approved"
+                  v={ibs.approvedAt ? ibs.approvedAt.toISOString().slice(0, 10) : "Not approved"}
+                />
+                <KV k="Created" v={ibs.createdAt.toISOString().slice(0, 10)} />
+              </Card>
+              {(ibs.vulnerabilitiesNotes || ibs.testingNotes) && (
+                <Card title="Vulnerabilities & testing">
+                  {ibs.vulnerabilitiesNotes && (
+                    <Block label="Vulnerabilities" body={ibs.vulnerabilitiesNotes} />
+                  )}
+                  {ibs.testingNotes && (
+                    <Block label="Testing notes" body={ibs.testingNotes} />
+                  )}
+                </Card>
+              )}
+            </div>
+          ),
+          history:
+            ibs.exerciseLinks.length > 0 ? (
+              <Card
+                title={`Tested in ${ibs.exerciseLinks.length} exercise${ibs.exerciseLinks.length === 1 ? "" : "s"}`}
+              >
+                <ul className="space-y-1 text-sm sm:col-span-2">
+                  {ibs.exerciseLinks.map((l) => (
+                    <li key={l.exerciseId}>
+                      <Link className="underline" href={`/exercises/${l.exercise.id}`}>
+                        {l.exercise.title}
+                      </Link>
+                      {" · "}
+                      <span className="text-xs text-muted">{l.exercise.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : (
+              <div className="rounded-xl border border-dashed border-line bg-surface-1 p-8 text-center text-sm text-muted">
+                This IBS has never been included in an exercise. Plan a scenario that
+                covers it from the Scenarios library.
+              </div>
+            ),
         }}
       />
-
-      <Card title="Governance & ownership">
-        <KV k="Process type" v={ibs.processType ?? "—"} />
-        <KV k="Process owner" v={ibs.processOwner ?? "—"} />
-        <KV k="2nd-line reviewer" v={ibs.secondLineReviewer ?? "—"} />
-        <KV
-          k="Review due"
-          v={ibs.reviewDueAt ? ibs.reviewDueAt.toISOString().slice(0, 10) : "—"}
-        />
-        <KV
-          k="Approved"
-          v={ibs.approvedAt ? ibs.approvedAt.toISOString().slice(0, 10) : "Not approved"}
-        />
-        <KV k="Created" v={ibs.createdAt.toISOString().slice(0, 10)} />
-      </Card>
-
-      <Card title="Impact tolerance">
-        <KV k="Primary" v={fmtMin(ibs.impactToleranceMin)} />
-        <KV k="FCA" v={ibs.fcaToleranceMin ? fmtMin(ibs.fcaToleranceMin) : "—"} />
-        <KV k="PRA" v={ibs.praToleranceMin ? fmtMin(ibs.praToleranceMin) : "—"} />
-        <KV k="Criticality" v={ibs.criticality} />
-        {ibs.toleranceRationale && (
-          <Block label="Rationale" body={ibs.toleranceRationale} />
-        )}
-      </Card>
-
-      <Card title="Methodology">
-        <Block label="Customer journeys" list={ibs.customerJourneys} />
-        <Block label="Products covered" list={ibs.productsCovered} />
-      </Card>
-
-      <Card title="Resource map">
-        <Block label="Technology" list={ibs.technology} />
-        <Block label="3rd parties" list={ibs.thirdParties} />
-        <Block label="Information" list={ibs.information} />
-        <Block label="Processes" list={ibs.processes} />
-        {ibs.peopleNotes && <Block label="People" body={ibs.peopleNotes} />}
-        {ibs.facilities && <KV k="Facilities" v={ibs.facilities} />}
-      </Card>
-
-      <Card title="Importance assessment">
-        <ImpactGrid ibs={ibs} />
-        {ibs.importanceAssessmentNotes && (
-          <Block label="Notes" body={ibs.importanceAssessmentNotes} />
-        )}
-      </Card>
-
-      <Card title="Risk coverage (6-box)">
-        <CoverageMatrix ibs={ibs} />
-      </Card>
-
-      {(ibs.vulnerabilitiesNotes || ibs.testingNotes) && (
-        <Card title="Vulnerabilities & testing">
-          {ibs.vulnerabilitiesNotes && <Block label="Vulnerabilities" body={ibs.vulnerabilitiesNotes} />}
-          {ibs.testingNotes && <Block label="Testing notes" body={ibs.testingNotes} />}
-        </Card>
-      )}
-
-      {ibs.exerciseLinks.length > 0 && (
-        <Card title={`Tested in ${ibs.exerciseLinks.length} exercise${ibs.exerciseLinks.length === 1 ? "" : "s"}`}>
-          <ul className="space-y-1 text-sm">
-            {ibs.exerciseLinks.map((l) => (
-              <li key={l.exerciseId}>
-                <Link className="underline" href={`/exercises/${l.exercise.id}`}>
-                  {l.exercise.title}
-                </Link>
-                {" · "}
-                <span className="text-xs text-muted">{l.exercise.status}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
     </div>
   );
 }

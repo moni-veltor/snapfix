@@ -181,41 +181,68 @@ export default function IBSForm({ existing }: { existing?: IBS }) {
 }
 
 function TabBar({ value, onChange }: { value: TabKey; onChange: (t: TabKey) => void }) {
+  const currentIdx = TABS.findIndex((t) => t.key === value);
+  const progressPct = ((currentIdx + 1) / TABS.length) * 100;
+
   return (
-    <div
-      role="tablist"
-      className="sticky top-0 z-10 -mx-1 flex flex-wrap gap-1 rounded-xl border border-line bg-surface-1/95 p-1 backdrop-blur"
-    >
-      {TABS.map((t) => {
-        const Icon = t.icon;
-        const active = value === t.key;
-        return (
-          <button
-            key={t.key}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(t.key)}
-            className={`group flex flex-1 min-w-[140px] items-center gap-2 rounded-lg px-3 py-2 text-left transition-all ${
-              active
-                ? "bg-gradient-brand text-white shadow-[var(--shadow-card)]"
-                : "text-muted hover:bg-surface-2 hover:text-ink"
-            }`}
-          >
-            <Icon size={14} className="shrink-0" />
-            <span className="min-w-0">
-              <span className="block truncate text-xs font-semibold">{t.label}</span>
+    <div className="sticky top-0 z-10 -mx-1 space-y-2 rounded-xl border border-line bg-surface-1/95 p-2 backdrop-blur">
+      <div className="flex items-center gap-3 px-1 pt-1">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-soft">
+          Step {currentIdx + 1} of {TABS.length}
+        </span>
+        <div className="flex-1 h-1 overflow-hidden rounded-full bg-surface-2">
+          <div
+            className="h-full rounded-full bg-gradient-brand transition-all"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+      </div>
+      <div role="tablist" className="flex flex-wrap gap-1">
+        {TABS.map((t, i) => {
+          const Icon = t.icon;
+          const active = value === t.key;
+          const done = i < currentIdx;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(t.key)}
+              className={`group flex flex-1 min-w-[140px] items-center gap-2 rounded-lg px-3 py-2 text-left transition-all ${
+                active
+                  ? "bg-gradient-brand text-white shadow-[var(--shadow-card)]"
+                  : done
+                    ? "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-200"
+                    : "text-muted hover:bg-surface-2 hover:text-ink"
+              }`}
+            >
               <span
-                className={`block truncate text-[10px] ${
-                  active ? "text-white/80" : "text-soft"
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                  active
+                    ? "bg-white/30 text-white"
+                    : done
+                      ? "bg-emerald-500 text-white"
+                      : "bg-surface-2 text-soft"
                 }`}
               >
-                {t.hint}
+                {done ? "✓" : i + 1}
               </span>
-            </span>
+              <Icon size={14} className="shrink-0" />
+              <span className="min-w-0">
+                <span className="block truncate text-xs font-semibold">{t.label}</span>
+                <span
+                  className={`block truncate text-[10px] ${
+                    active ? "text-white/80" : done ? "text-emerald-700/70 dark:text-emerald-300/70" : "text-soft"
+                  }`}
+                >
+                  {t.hint}
+                </span>
+              </span>
           </button>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
