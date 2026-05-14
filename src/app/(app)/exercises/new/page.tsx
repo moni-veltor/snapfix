@@ -38,7 +38,7 @@ export default async function NewExercisePage({
         className="space-y-4 rounded-md border border-line bg-surface-1 p-5"
       >
         <label className="block text-sm">
-          <span className="text-slate-700">Scenario</span>
+          <span className="text-ink">Scenario</span>
           <select
             name="scenarioId"
             required
@@ -103,7 +103,7 @@ function Field({
 }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <label className="block text-sm">
-      <span className="text-slate-700">{label}</span>
+      <span className="text-ink">{label}</span>
       <input
         {...props}
         className="mt-1 w-full rounded-md border border-line-strong px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400"
@@ -118,7 +118,7 @@ function TextArea({
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }) {
   return (
     <label className="block text-sm">
-      <span className="text-slate-700">{label}</span>
+      <span className="text-ink">{label}</span>
       <textarea
         {...props}
         className="mt-1 w-full rounded-md border border-line-strong px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400"

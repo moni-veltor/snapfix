@@ -6,8 +6,8 @@ import { updateActionItemStatusAction } from "@/app/actions/action-items";
 export const metadata = { title: "Action Items — SnapFix" };
 
 const PRIORITY_STYLES: Record<string, string> = {
-  LOW: "bg-surface-2 text-slate-700",
-  MEDIUM: "bg-slate-200 text-slate-800",
+  LOW: "bg-surface-2 text-ink",
+  MEDIUM: "bg-surface-2 text-ink",
   HIGH: "bg-amber-100 text-amber-800",
   CRITICAL: "bg-rose-100 text-rose-800",
 };
@@ -17,7 +17,7 @@ const STATUS_STYLES: Record<string, string> = {
   IN_PROGRESS: "bg-sky-100 text-sky-800",
   BLOCKED: "bg-rose-100 text-rose-800",
   DONE: "bg-emerald-100 text-emerald-800",
-  WONT_FIX: "bg-slate-200 text-slate-700",
+  WONT_FIX: "bg-surface-2 text-ink",
 };
 
 export default async function ActionItemsPage({
@@ -70,7 +70,7 @@ export default async function ActionItemsPage({
               className={`rounded-full px-3 py-1 ${
                 filter === f
                   ? "bg-slate-900 text-white"
-                  : "border border-line-strong text-slate-700 hover:bg-surface-1"
+                  : "border border-line-strong text-ink hover:bg-surface-1"
               }`}
             >
               {f.toUpperCase()}
@@ -114,7 +114,7 @@ export default async function ActionItemsPage({
                       </span>
                     )}
                   </div>
-                  {i.description && <p className="mt-1 text-slate-600">{i.description}</p>}
+                  {i.description && <p className="mt-1 text-muted">{i.description}</p>}
                   <div className="mt-2 text-xs text-muted">
                     From{" "}
                     <Link href={`/exercises/${i.exercise.id}`} className="underline">

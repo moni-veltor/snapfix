@@ -62,7 +62,7 @@ export default async function ScenariosPage() {
                 D-Day {s.dDayDate.toISOString().slice(0, 10)} · {s.durationMin} min ·
                 {" "}created by {s.createdBy?.name ?? s.createdBy?.email ?? "system"}
               </p>
-              <p className="mt-3 line-clamp-3 text-sm text-slate-600">{s.background}</p>
+              <p className="mt-3 line-clamp-3 text-sm text-muted">{s.background}</p>
               <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted">
                 <Pill>{s._count.ibsList} IBS</Pill>
                 <Pill>{s._count.events} events</Pill>

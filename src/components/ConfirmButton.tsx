@@ -48,7 +48,7 @@ export default function ConfirmButton({
       ? `rounded-md px-3 py-1.5 text-sm ${destructive ? "border border-rose-300 text-rose-700 hover:bg-rose-50" : "border border-line-strong"}`
       : destructive
         ? "text-xs text-rose-600 hover:underline"
-        : "text-xs text-slate-600 hover:underline";
+        : "text-xs text-muted hover:underline";
 
   return (
     <>
@@ -58,8 +58,8 @@ export default function ConfirmButton({
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
           <div className="w-full max-w-sm rounded-lg border border-line bg-surface-1 p-5 shadow-xl">
-            <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-            {body && <p className="mt-2 text-sm text-slate-600">{body}</p>}
+            <h2 className="text-base font-semibold text-ink">{title}</h2>
+            {body && <p className="mt-2 text-sm text-muted">{body}</p>}
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"

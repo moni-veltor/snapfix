@@ -240,7 +240,7 @@ function SeatTile({
         <h3 className="font-mono text-sm font-semibold text-ink">{seat.roleAbbreviation}</h3>
         <p className="text-xs text-muted">{seat.roleTitle}</p>
         {seat.isSMF && (
-          <span className="mt-1 inline-block rounded bg-slate-900/10 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wider text-slate-700 dark:bg-white/10 dark:text-slate-300">
+          <span className="mt-1 inline-block rounded bg-slate-900/10 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wider text-ink dark:bg-white/10 dark:text-slate-300">
             SMF
           </span>
         )}

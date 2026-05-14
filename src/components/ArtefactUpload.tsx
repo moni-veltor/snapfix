@@ -57,7 +57,7 @@ export default function ArtefactUpload({
       <input type="hidden" name="targetId" value={targetId} />
       {!compact && (
         <label className="block text-sm sm:col-span-2">
-          <span className="text-slate-700">Title</span>
+          <span className="text-ink">Title</span>
           <input
             name="title"
             required

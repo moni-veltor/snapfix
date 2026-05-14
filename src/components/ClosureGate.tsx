@@ -84,7 +84,7 @@ export default function ClosureGate({ exerciseId, incidentId, checks }: Props) {
                 className="mt-0.5"
               />
               <div className="min-w-0 text-xs">
-                <div className={v ? "text-slate-700 dark:text-slate-200" : "text-slate-600 dark:text-slate-300"}>
+                <div className={v ? "text-ink dark:text-slate-200" : "text-muted dark:text-slate-300"}>
                   {item.label}
                 </div>
                 <div className="text-[10px] text-soft dark:text-muted">{item.clause}</div>

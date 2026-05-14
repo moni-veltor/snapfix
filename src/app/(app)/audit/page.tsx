@@ -38,7 +38,7 @@ export default async function AuditPage() {
                   {e.createdAt.toISOString().slice(0, 19).replace("T", " ")}
                 </span>{" "}
                 <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{e.action}</span>{" "}
-                <span className="text-slate-800">{e.summary}</span>
+                <span className="text-ink">{e.summary}</span>
               </div>
               <span className="text-xs text-muted">
                 {e.actor?.name ?? e.actor?.email ?? "system"}

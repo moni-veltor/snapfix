@@ -93,7 +93,7 @@ export default async function ExerciseOverviewPage({
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">{exercise.title}</h1>
           {exercise.description && (
-            <p className="mt-2 max-w-2xl text-sm text-slate-600">{exercise.description}</p>
+            <p className="mt-2 max-w-2xl text-sm text-muted">{exercise.description}</p>
           )}
           <p className="mt-3 text-xs text-muted">
             <span className="rounded-full bg-surface-2 px-2 py-0.5">{exercise.status}</span>

@@ -30,7 +30,7 @@ export default function IncidentLogPanel({
           <li key={e.id} className="rounded border border-line bg-surface-1 px-3 py-2">
             <span className="font-mono text-xs text-muted">{e.dDayTime}</span>
             <span className="mx-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs">{e.kind}</span>
-            <span className="text-slate-800">{e.body}</span>
+            <span className="text-ink">{e.body}</span>
             <div className="text-xs text-soft">— {e.author}</div>
           </li>
         ))}

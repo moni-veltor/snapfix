@@ -44,7 +44,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
         subtitle={`Activated ${activation.activatedAt.toISOString().slice(11, 16)} · CEO ${activation.ceoName ?? "—"} + CRO ${activation.croName ?? "—"}`}
       >
         {activation.rationale && (
-          <p className="mb-2 text-xs text-slate-600 dark:text-slate-300">{activation.rationale}</p>
+          <p className="mb-2 text-xs text-muted dark:text-slate-300">{activation.rationale}</p>
         )}
         <form action={deactivateBCPAction} className="flex items-center gap-2">
           <input type="hidden" name="exerciseId" value={exerciseId} />
@@ -84,7 +84,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
           <input type="hidden" name="exerciseId" value={exerciseId} />
           <input type="hidden" name="incidentId" value={incidentId} />
           <label className="block text-xs">
-            <span className="font-medium text-slate-700 dark:text-slate-200">CEO approver *</span>
+            <span className="font-medium text-ink dark:text-slate-200">CEO approver *</span>
             <select
               name="ceoUserId"
               required
@@ -100,7 +100,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
             </select>
           </label>
           <label className="block text-xs">
-            <span className="font-medium text-slate-700 dark:text-slate-200">CRO approver *</span>
+            <span className="font-medium text-ink dark:text-slate-200">CRO approver *</span>
             <select
               name="croUserId"
               required

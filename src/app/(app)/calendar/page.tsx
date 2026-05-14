@@ -54,7 +54,7 @@ export default async function CalendarPage() {
             const list = groups.get(ym) ?? [];
             return (
               <section key={ym} className="space-y-2">
-                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
+                <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted">
                   {label}
                   {isCurrent && (
                     <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">
@@ -75,7 +75,7 @@ export default async function CalendarPage() {
                             <div className="text-xs uppercase tracking-wide text-muted">
                               {d?.toLocaleString("en-GB", { weekday: "short" })}
                             </div>
-                            <div className="text-2xl font-semibold text-slate-800">
+                            <div className="text-2xl font-semibold text-ink">
                               {d?.getDate()}
                             </div>
                           </div>

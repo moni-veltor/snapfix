@@ -66,7 +66,7 @@ export default function CommandPalette() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 left-5 z-30 hidden items-center gap-2 rounded-full border border-line-strong bg-surface-1 px-3 py-2 text-xs text-slate-600 shadow-sm hover:bg-surface-0 md:flex"
+        className="fixed bottom-5 left-5 z-30 hidden items-center gap-2 rounded-full border border-line-strong bg-surface-1 px-3 py-2 text-xs text-muted shadow-sm hover:bg-surface-0 md:flex"
         aria-label="Open search"
       >
         <Search size={14} />
@@ -212,7 +212,7 @@ function Item({
   return (
     <Command.Item
       onSelect={onSelect}
-      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-slate-700 aria-selected:bg-indigo-50 aria-selected:text-indigo-700"
+      className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-ink aria-selected:bg-indigo-50 aria-selected:text-indigo-700"
     >
       {children}
     </Command.Item>

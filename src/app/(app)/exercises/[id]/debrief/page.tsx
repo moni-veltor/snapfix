@@ -95,7 +95,7 @@ export default async function DebriefPage({
                   {answers.map((a) => (
                     <li key={a.id} className="rounded bg-surface-0 px-3 py-2">
                       <div className="text-xs text-muted">{a.author?.name ?? a.author?.email ?? "—"}</div>
-                      <p className="whitespace-pre-wrap text-slate-700">{a.body}</p>
+                      <p className="whitespace-pre-wrap text-ink">{a.body}</p>
                     </li>
                   ))}
                 </ul>
@@ -159,7 +159,7 @@ export default async function DebriefPage({
                       {a.status}
                     </span>
                   </div>
-                  {a.description && <p className="mt-1 text-slate-600">{a.description}</p>}
+                  {a.description && <p className="mt-1 text-muted">{a.description}</p>}
                   <div className="mt-1 text-xs text-muted">
                     {a.ownerUser?.name ?? a.ownerUser?.email ?? a.ownerText ?? "Unassigned"}
                     {a.dueAt && <> · Due {a.dueAt.toISOString().slice(0, 10)}</>}
@@ -304,7 +304,7 @@ export default async function DebriefPage({
 function TextArea({ label, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }) {
   return (
     <label className="block text-sm">
-      <span className="text-slate-700">{label}</span>
+      <span className="text-ink">{label}</span>
       <textarea {...props} rows={4} className="mt-1 w-full rounded-md border border-line-strong px-3 py-2" />
     </label>
   );
@@ -314,7 +314,7 @@ function ReadOnlyBlock({ label, body }: { label: string; body: string }) {
   return (
     <div>
       <div className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</div>
-      <p className="mt-1 whitespace-pre-wrap text-slate-700">{body}</p>
+      <p className="mt-1 whitespace-pre-wrap text-ink">{body}</p>
     </div>
   );
 }

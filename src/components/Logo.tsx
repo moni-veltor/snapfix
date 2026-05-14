@@ -78,7 +78,7 @@ export function Wordmark({
       <Logo size={size} tone={tone} />
       <span
         className={`font-semibold tracking-tight ${
-          tone === "light" ? "text-white" : "text-slate-900"
+          tone === "light" ? "text-white" : "text-ink"
         }`}
         style={{ fontSize: size * 0.75 }}
       >

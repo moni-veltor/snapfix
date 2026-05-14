@@ -73,7 +73,7 @@ export default async function FacilitatorPage({
         ) : (
           <form action={startExerciseAction} className="flex items-center gap-2">
             <input type="hidden" name="id" value={exercise.id} />
-            <label className="text-sm text-slate-600">
+            <label className="text-sm text-muted">
               Speed
               <select name="speed" defaultValue="1" className="ml-2 rounded border border-line-strong px-2 py-1">
                 <option value="1">×1 real-time</option>
@@ -118,7 +118,7 @@ export default async function FacilitatorPage({
                     <div className="font-medium">
                       Event #{e.eventNo} · {e.scheduledTime} — {e.title}
                     </div>
-                    <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-slate-700">{e.description}</p>
+                    <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-ink">{e.description}</p>
                   </div>
                   {e.released ? (
                     <div className="flex flex-col items-end gap-1">
@@ -152,7 +152,7 @@ export default async function FacilitatorPage({
                     <div className="font-medium">
                       Inject #{j.injectNo} · {j.scheduledTime} — {j.summary}
                     </div>
-                    <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-slate-700">{j.description}</p>
+                    <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-ink">{j.description}</p>
                   </div>
                   {j.released ? (
                     <div className="flex flex-col items-end gap-1">

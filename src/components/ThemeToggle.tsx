@@ -40,7 +40,7 @@ export default function ThemeToggle({ collapsed = false }: { collapsed?: boolean
       onClick={toggle}
       title={label}
       aria-label={label}
-      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-slate-600 hover:bg-surface-2 hover:text-slate-900 dark:text-soft dark:hover:bg-slate-800 dark:hover:text-slate-100 ${
+      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted hover:bg-surface-2 hover:text-ink dark:text-soft dark:hover:bg-slate-800 dark:hover:text-slate-100 ${
         collapsed ? "w-full justify-center" : "w-full"
       }`}
     >

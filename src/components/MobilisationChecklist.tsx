@@ -53,7 +53,7 @@ export default function MobilisationChecklist({ exerciseId, members, myParticipa
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            className="text-xs text-soft hover:text-slate-700 dark:hover:text-slate-200"
+            className="text-xs text-soft hover:text-ink dark:hover:text-slate-200"
           >
             {open ? "−" : "+"}
           </button>
@@ -74,7 +74,7 @@ export default function MobilisationChecklist({ exerciseId, members, myParticipa
                     className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs"
                   >
                     <div className="min-w-0 flex-1">
-                      <span className="font-medium text-slate-800 dark:text-slate-100">
+                      <span className="font-medium text-ink dark:text-slate-100">
                         {m.name ?? m.email}
                       </span>
                       <span className="ml-2 text-muted dark:text-soft">{m.roleTitle}</span>

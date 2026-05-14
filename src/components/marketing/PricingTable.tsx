@@ -320,7 +320,7 @@ function Cell({ value }: { value: string | boolean }) {
     );
   }
   if (value === false) {
-    return <span className="text-slate-600">—</span>;
+    return <span className="text-muted">—</span>;
   }
   return <span className="text-slate-300">{value}</span>;
 }

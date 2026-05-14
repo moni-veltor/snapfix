@@ -63,7 +63,7 @@ export default function LivePresenceBar({ exerciseId, members, status, pollMs = 
   return (
     <div className="rounded-md border border-line bg-surface-1 p-3 dark:border-slate-700 dark:bg-slate-900">
       <div className="flex items-center justify-between gap-3">
-        <div className="text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+        <div className="text-xs font-semibold uppercase tracking-wide text-ink dark:text-slate-200">
           In the room · {online.length}/{members.length}
         </div>
         {status === "IN_PROGRESS" && (
@@ -96,7 +96,7 @@ export default function LivePresenceBar({ exerciseId, members, status, pollMs = 
               />
             </span>
             <span className="flex flex-col leading-tight">
-              <span className="font-medium text-slate-800 dark:text-slate-100">{m.name ?? m.email}</span>
+              <span className="font-medium text-ink dark:text-slate-100">{m.name ?? m.email}</span>
               <span className="text-[10px] text-muted dark:text-soft">
                 {m.roleTitle}
                 {m.exerciseRole === "FACILITATOR" && " · facilitator"}

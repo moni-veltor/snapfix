@@ -42,7 +42,7 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
             <span className="rounded-full bg-surface-2 px-1.5 py-0.5">{item.kind}</span>
             <span
               className={`rounded-full px-1.5 py-0.5 ${
-                item.addressing === "TO" ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-700"
+                item.addressing === "TO" ? "bg-slate-900 text-white" : "bg-surface-2 text-ink"
               }`}
             >
               {item.addressing}
@@ -52,15 +52,15 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
             )}
             {item.from && <span>· from {item.from}</span>}
           </div>
-          <div className="mt-1 truncate font-medium text-slate-900">{item.title}</div>
-          {!open && <p className="mt-1 line-clamp-1 text-xs text-slate-600">{item.summary}</p>}
+          <div className="mt-1 truncate font-medium text-ink">{item.title}</div>
+          {!open && <p className="mt-1 line-clamp-1 text-xs text-muted">{item.summary}</p>}
         </div>
         <span className="text-xs text-soft">{open ? "−" : "+"}</span>
       </button>
 
       {open && (
         <div className="space-y-3 border-t border-line px-3 pb-3 pt-2">
-          <p className="whitespace-pre-wrap text-sm text-slate-700">{item.summary}</p>
+          <p className="whitespace-pre-wrap text-sm text-ink">{item.summary}</p>
 
           {item.attachments.length > 0 && (
             <ul className="space-y-1 text-xs">
@@ -69,12 +69,12 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
                   key={a.id}
                   className="flex items-center gap-2 rounded border border-line bg-surface-0 px-2 py-1"
                 >
-                  <span className="rounded-full bg-slate-200 px-1.5 py-0.5 font-mono">{a.kind}</span>
+                  <span className="rounded-full bg-surface-2 px-1.5 py-0.5 font-mono">{a.kind}</span>
                   <a
                     href={a.blobUrl}
                     target="_blank"
                     rel="noopener"
-                    className="flex-1 truncate font-medium text-slate-800 hover:underline"
+                    className="flex-1 truncate font-medium text-ink hover:underline"
                   >
                     {a.title}
                   </a>
@@ -166,7 +166,7 @@ function Field({
 }) {
   return (
     <label className="block text-xs">
-      <span className="font-medium text-slate-700">
+      <span className="font-medium text-ink">
         {label}
         {required && <span className="text-rose-600"> *</span>}
       </span>

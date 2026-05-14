@@ -65,7 +65,7 @@ export default async function ScenarioDetailPage({
         <p className="mt-1 text-sm text-muted">
           D-Day {scenario.dDayDate.toISOString().slice(0, 10)} · {scenario.durationMin} min
         </p>
-        <div className="mt-4 prose prose-sm max-w-none whitespace-pre-wrap text-slate-700">
+        <div className="mt-4 prose prose-sm max-w-none whitespace-pre-wrap text-ink">
           {scenario.background}
         </div>
       </header>
@@ -101,7 +101,7 @@ export default async function ScenarioDetailPage({
                   Impact tolerance: {ibs.impactToleranceMin} min
                   {ibs.impactMetrics ? ` · ${ibs.impactMetrics}` : ""}
                 </div>
-                {ibs.description && <div className="mt-1 text-slate-600">{ibs.description}</div>}
+                {ibs.description && <div className="mt-1 text-muted">{ibs.description}</div>}
               </div>
               {canEdit && (
                 <form action={deleteIBSAction}>
@@ -170,7 +170,7 @@ export default async function ScenarioDetailPage({
                   <div className="font-medium">
                     Event #{e.eventNo} · {e.scheduledTime} — {e.title}
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap text-slate-700">{e.description}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-ink">{e.description}</p>
                   <AddressingBlock
                     from={e.senderRoleTitle}
                     to={e.toRoleTitles}
@@ -179,7 +179,7 @@ export default async function ScenarioDetailPage({
                   {e.expectedActions.length > 0 && (
                     <details className="mt-2">
                       <summary className="cursor-pointer text-xs text-muted">Expected actions</summary>
-                      <ul className="mt-1 list-disc pl-5 text-slate-700">
+                      <ul className="mt-1 list-disc pl-5 text-ink">
                         {e.expectedActions.map((a, i) => <li key={i}>{a}</li>)}
                       </ul>
                     </details>
@@ -233,7 +233,7 @@ export default async function ScenarioDetailPage({
                   <div className="font-medium">
                     Inject #{j.injectNo} · {j.scheduledTime} — {j.summary}
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap text-slate-700">{j.description}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-ink">{j.description}</p>
                   <AddressingBlock
                     from={j.senderRoleTitle}
                     to={j.toRoleTitles}
@@ -284,7 +284,7 @@ export default async function ScenarioDetailPage({
                 <Link className="hover:underline" href={`/exercises/${r.id}`}>
                   {r.title}
                 </Link>
-                <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-slate-600">{r.status}</span>
+                <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">{r.status}</span>
               </li>
             ))}
           </ul>
@@ -314,7 +314,7 @@ function AddressingBlock({
 }) {
   if (!from && to.length === 0 && cc.length === 0) return null;
   return (
-    <div className="mt-2 space-y-0.5 text-xs text-slate-600">
+    <div className="mt-2 space-y-0.5 text-xs text-muted">
       {from && (
         <div>
           <span className="font-semibold text-muted">From:</span> {from}

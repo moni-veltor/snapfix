@@ -101,7 +101,7 @@ export default async function TemplatesPage({
     <div className="space-y-8">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Scenario Library</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-muted">
           {templates.length} scenario templates. CMORG DSL plus tier-specific scenarios for Tier 1
           (HSBC-scale), Tier 2 (Starling-scale), and Tier 3 (new banks / fintechs).
         </p>
@@ -147,7 +147,7 @@ export default async function TemplatesPage({
                           </span>
                         )}
                       </div>
-                      <p className="mt-1 line-clamp-2 text-slate-600">{t.background}</p>
+                      <p className="mt-1 line-clamp-2 text-muted">{t.background}</p>
                       <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
                         <span className="rounded-full bg-surface-2 px-2 py-0.5">{t._count.ibsList} IBS</span>
                         <span className="rounded-full bg-surface-2 px-2 py-0.5">{t._count.events} events</span>
@@ -219,7 +219,7 @@ function FilterBar({
           className={`rounded-full px-3 py-1 text-xs ${
             l.active
               ? "bg-slate-900 text-white"
-              : "border border-line-strong text-slate-700 hover:bg-surface-1"
+              : "border border-line-strong text-ink hover:bg-surface-1"
           }`}
         >
           {l.label}

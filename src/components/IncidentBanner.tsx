@@ -38,7 +38,7 @@ export default function IncidentBanner({ exerciseId, incident }: Props) {
     <div className={`rounded-md border p-4 ${severityClass(sev)}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-700">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink">
             <span className="rounded-full bg-rose-600 px-2 py-0.5 text-white">IMT INVOKED</span>
             <span className="font-mono">{incident.shortCode}</span>
             {incident.invokedByName && (
@@ -48,7 +48,7 @@ export default function IncidentBanner({ exerciseId, incident }: Props) {
               </span>
             )}
           </div>
-          <h2 className="mt-1 text-base font-semibold text-slate-900">{incident.title}</h2>
+          <h2 className="mt-1 text-base font-semibold text-ink">{incident.title}</h2>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <SeverityPill level={sev} label="Overall" />
             <SeverityPill level={incident.severityFinancial} label="Fin" />
@@ -96,7 +96,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
           <div className="text-xs font-semibold uppercase tracking-wide text-rose-700">
             No incident invoked
           </div>
-          <p className="mt-1 text-sm text-slate-700">
+          <p className="mt-1 text-sm text-ink">
             If something looks wrong, stand up the IMT. <em>Better to stand it up and back down
             than to fail to stand it up</em> — best practice
           </p>
@@ -118,7 +118,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
         <form action={invokeIncidentAction} className="mt-3 space-y-2 rounded-md bg-surface-1 p-3 text-sm">
           <input type="hidden" name="exerciseId" value={exerciseId} />
           <label className="block text-xs">
-            <span className="font-medium text-slate-700">Incident title *</span>
+            <span className="font-medium text-ink">Incident title *</span>
             <input
               name="title"
               required
@@ -127,7 +127,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
             />
           </label>
           <label className="block text-xs">
-            <span className="font-medium text-slate-700">What's happening?</span>
+            <span className="font-medium text-ink">What's happening?</span>
             <textarea
               name="summary"
               rows={2}
@@ -135,7 +135,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
             />
           </label>
           <label className="block text-xs">
-            <span className="font-medium text-slate-700">Why invoke now? (rationale)</span>
+            <span className="font-medium text-ink">Why invoke now? (rationale)</span>
             <input
               name="rationale"
               placeholder="e.g. customer-facing impact, regulator notification window"
@@ -167,7 +167,7 @@ function StandDownButton({ exerciseId, incidentId }: { exerciseId: string; incid
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-sm space-y-3 rounded-lg bg-surface-1 p-4">
             <h3 className="text-sm font-semibold">Stand down the IMT?</h3>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-muted">
               The "back down" reflex is legitimate — captures rationale for the audit log.
             </p>
             <form
@@ -298,7 +298,7 @@ function DimensionRow({
 }) {
   return (
     <fieldset className="rounded-md border border-line p-2">
-      <legend className="px-1 text-xs font-semibold text-slate-700">{label}</legend>
+      <legend className="px-1 text-xs font-semibold text-ink">{label}</legend>
       <div className="grid grid-cols-3 gap-2 text-[11px]">
         {(["HIGH", "MEDIUM", "LOW"] as const).map((level) => (
           <label

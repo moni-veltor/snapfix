@@ -73,7 +73,7 @@ export default function CommsCascadePanel({ exerciseId, drafts }: Props) {
       {groups.map((stakeholder) => (
         <div key={stakeholder}>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted">
               {STAKEHOLDER_LABEL[stakeholder] ?? stakeholder}
             </span>
             {!employeeSent && CASCADE_BLOCKED_UNTIL_EMPLOYEES.includes(stakeholder) && (
@@ -118,8 +118,8 @@ function DraftRow({ exerciseId, draft }: { exerciseId: string; draft: Draft }) {
             {draft.approver && <span>· approved by {draft.approver}</span>}
             {draft.sentAt && <span>· sent {draft.sentAt.toISOString().slice(11, 16)}</span>}
           </div>
-          <div className="mt-1 font-medium text-slate-800">{draft.subject}</div>
-          <p className="mt-0.5 line-clamp-2 text-xs text-slate-700">{draft.body}</p>
+          <div className="mt-1 font-medium text-ink">{draft.subject}</div>
+          <p className="mt-0.5 line-clamp-2 text-xs text-ink">{draft.body}</p>
           {draft.rejectionReason && (
             <p className="mt-1 text-[11px] text-rose-700">
               Rejected: {draft.rejectionReason}
@@ -193,7 +193,7 @@ function DraftRow({ exerciseId, draft }: { exerciseId: string; draft: Draft }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const cls = STATUS_BADGE[status] ?? "bg-slate-200 text-slate-700";
+  const cls = STATUS_BADGE[status] ?? "bg-surface-2 text-ink";
   return <span className={`rounded-full px-1.5 py-0.5 ${cls}`}>{status.replace("_", " ")}</span>;
 }
 
@@ -205,7 +205,7 @@ const STATUS_CLASS: Record<string, string> = {
   REJECTED: "border-rose-300 bg-rose-50",
 };
 const STATUS_BADGE: Record<string, string> = {
-  DRAFT: "bg-slate-200 text-slate-700",
+  DRAFT: "bg-surface-2 text-ink",
   AWAITING_APPROVAL: "bg-amber-600 text-white",
   APPROVED: "bg-indigo-600 text-white",
   SENT: "bg-emerald-600 text-white",

@@ -73,16 +73,16 @@ export default async function VendorsPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-slate-900">{v.name}</h2>
+                  <h2 className="text-base font-semibold text-ink">{v.name}</h2>
                   <TierPill tier={v.tier} />
                   {v.serviceKind && (
-                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-slate-700">
+                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-ink">
                       {v.serviceKind}
                     </span>
                   )}
                 </div>
                 {v.description && (
-                  <p className="mt-1 text-sm text-slate-600">{v.description}</p>
+                  <p className="mt-1 text-sm text-muted">{v.description}</p>
                 )}
                 <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted">
                   {v.contactName && <span>👤 {v.contactName}</span>}
@@ -108,7 +108,7 @@ export default async function VendorsPage() {
                           className="flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs"
                         >
                           <span className="font-mono">{l.ibs.code}</span>
-                          <span className="text-slate-600">{l.ibs.name}</span>
+                          <span className="text-muted">{l.ibs.name}</span>
                           {canManage && (
                             <form action={unlinkVendorFromIBSAction} className="inline">
                               <input type="hidden" name="vendorId" value={v.id} />
@@ -148,7 +148,7 @@ export default async function VendorsPage() {
                 <div className="flex flex-col gap-2">
                   <Link
                     href={`/vendors?edit=${v.id}`}
-                    className="text-xs text-slate-600 hover:underline"
+                    className="text-xs text-muted hover:underline"
                   >
                     Edit
                   </Link>
@@ -174,7 +174,7 @@ export default async function VendorsPage() {
 }
 
 function TierPill({ tier }: { tier: string }) {
-  const cls = TIER_CLASS[tier] ?? "bg-surface-2 text-slate-700";
+  const cls = TIER_CLASS[tier] ?? "bg-surface-2 text-ink";
   return (
     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>
       {TIER_LABEL[tier] ?? tier}
@@ -190,7 +190,7 @@ const TIER_LABEL: Record<string, string> = {
 const TIER_CLASS: Record<string, string> = {
   TIER_1: "bg-rose-100 text-rose-800",
   TIER_2: "bg-amber-100 text-amber-800",
-  TIER_3: "bg-surface-2 text-slate-700",
+  TIER_3: "bg-surface-2 text-ink",
 };
 
 function VendorForm() {

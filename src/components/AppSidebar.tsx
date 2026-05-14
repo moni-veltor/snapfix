@@ -154,7 +154,7 @@ export default function AppSidebar({
             )}
             {!collapsed && (
               <div className="overflow-hidden">
-                <div className="truncate text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                <div className="truncate text-sm font-semibold tracking-tight text-ink dark:text-slate-100">
                   {orgName ?? "SnapFix"}
                 </div>
                 <div className="truncate text-[11px] text-muted dark:text-soft">
@@ -165,7 +165,7 @@ export default function AppSidebar({
           </Link>
           <button
             onClick={toggle}
-            className="hidden h-7 w-7 items-center justify-center rounded-md text-soft hover:bg-surface-2 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 md:flex"
+            className="hidden h-7 w-7 items-center justify-center rounded-md text-soft hover:bg-surface-2 hover:text-ink dark:hover:bg-slate-800 dark:hover:text-slate-200 md:flex"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -200,7 +200,7 @@ export default function AppSidebar({
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <div className="truncate text-xs font-medium text-slate-900 dark:text-slate-100">
+                <div className="truncate text-xs font-medium text-ink dark:text-slate-100">
                   {user.name ?? user.email}
                 </div>
                 <div className="truncate text-[11px] text-muted dark:text-soft">{user.email}</div>
@@ -213,7 +213,7 @@ export default function AppSidebar({
           <form action={signOutAction}>
             <button
               type="submit"
-              className={`mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-muted hover:bg-surface-2 hover:text-slate-700 dark:text-soft dark:hover:bg-slate-800 dark:hover:text-slate-100 ${
+              className={`mt-1 flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-muted hover:bg-surface-2 hover:text-ink dark:text-soft dark:hover:bg-slate-800 dark:hover:text-slate-100 ${
                 collapsed ? "justify-center" : ""
               }`}
               title="Sign out"
@@ -252,7 +252,7 @@ function NavSection({
             className={`group flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors ${
               active
                 ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
-                : "text-slate-700 hover:bg-surface-2 dark:text-slate-300 dark:hover:bg-slate-800"
+                : "text-ink hover:bg-surface-2 dark:text-slate-300 dark:hover:bg-slate-800"
             } ${collapsed ? "justify-center px-2" : ""}`}
             title={collapsed ? item.label : undefined}
           >
@@ -269,7 +269,7 @@ function NavSection({
 }
 
 function SectionDivider({ collapsed, label }: { collapsed: boolean; label: string }) {
-  if (collapsed) return <div className="my-1 h-px bg-slate-200 dark:bg-slate-800" />;
+  if (collapsed) return <div className="my-1 h-px bg-surface-2 dark:bg-slate-800" />;
   return (
     <div className="mt-3 px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-soft dark:text-muted">
       {label}

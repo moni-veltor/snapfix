@@ -150,7 +150,7 @@ export default async function OrgPage() {
                   <div className="flex items-center gap-3">
                     <form action={resendInvitationAction}>
                       <input type="hidden" name="id" value={inv.id} />
-                      <button className="text-xs text-slate-600 hover:underline">Resend</button>
+                      <button className="text-xs text-muted hover:underline">Resend</button>
                     </form>
                     <ConfirmButton
                       action={revokeInvitationAction}

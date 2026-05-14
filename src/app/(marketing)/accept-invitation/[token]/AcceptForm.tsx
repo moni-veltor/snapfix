@@ -24,7 +24,7 @@ export default function AcceptForm({ token, mode, email }: Props) {
         </>
       )}
       {mode === "signed-in" && (
-        <p className="text-sm text-slate-600">Click below to join the organisation.</p>
+        <p className="text-sm text-muted">Click below to join the organisation.</p>
       )}
       {state?.error && <p className="text-sm text-rose-700">{state.error}</p>}
       <button
@@ -44,7 +44,7 @@ function Field({
 }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <label className="block text-sm">
-      <span className="text-slate-700">{label}</span>
+      <span className="text-ink">{label}</span>
       <input
         {...props}
         className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400 disabled:bg-slate-50 disabled:text-slate-500"

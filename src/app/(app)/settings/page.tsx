@@ -27,11 +27,11 @@ export default async function SettingsPage() {
         action={updateOrgSettingsAction}
         className="space-y-4 rounded-md border border-line bg-surface-1 p-5"
       >
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
           Profile
         </h2>
         <label className="block text-sm">
-          <span className="text-slate-700">Organisation name</span>
+          <span className="text-ink">Organisation name</span>
           <input
             name="name"
             required
@@ -41,7 +41,7 @@ export default async function SettingsPage() {
           />
         </label>
         <label className="block text-sm">
-          <span className="text-slate-700">Tier</span>
+          <span className="text-ink">Tier</span>
           <select
             name="tier"
             defaultValue={org.tier ?? ""}
@@ -85,7 +85,7 @@ export default async function SettingsPage() {
       </Link>
 
       <section className="space-y-4 rounded-md border border-line bg-surface-1 p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
           Branding
         </h2>
         <p className="text-xs text-muted">

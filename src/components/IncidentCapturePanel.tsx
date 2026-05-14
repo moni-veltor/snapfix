@@ -41,10 +41,10 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
               onClick={() => setTab(t.id)}
               className={`px-4 py-2 text-xs font-medium ${
                 tab === t.id
-                  ? "border-b-2 border-indigo-600 text-slate-900"
+                  ? "border-b-2 border-indigo-600 text-ink"
                   : isDisabled
                     ? "text-slate-300"
-                    : "text-muted hover:text-slate-700"
+                    : "text-muted hover:text-ink"
               }`}
               title={isDisabled ? "Invoke the IMT first" : undefined}
             >

@@ -106,7 +106,7 @@ export default async function IBSDetailPage({
               <Pill kind={statusKind(ibs.status)}>{ibs.status}</Pill>
               <Pill>{ibs.criticality}</Pill>
             </div>
-            {ibs.outcome && <p className="mt-2 text-slate-700">{ibs.outcome}</p>}
+            {ibs.outcome && <p className="mt-2 text-ink">{ibs.outcome}</p>}
           </div>
           {canManage && (
             <div className="flex gap-2">
@@ -274,15 +274,15 @@ function Pill({
       : kind === "warn"
         ? "bg-amber-100 text-amber-800"
         : kind === "muted"
-          ? "bg-slate-200 text-slate-700"
-          : "bg-surface-2 text-slate-700";
+          ? "bg-surface-2 text-ink"
+          : "bg-surface-2 text-ink";
   return <span className={`rounded-full px-2 py-0.5 text-xs ${cls}`}>{children}</span>;
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3 rounded-md border border-line bg-surface-1 p-5">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">{title}</h2>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
     </section>
   );
@@ -292,7 +292,7 @@ function KV({ k, v }: { k: string; v: string }) {
   return (
     <div className="text-sm">
       <div className="text-xs uppercase tracking-wide text-muted">{k}</div>
-      <div className="mt-1 text-slate-800">{v}</div>
+      <div className="mt-1 text-ink">{v}</div>
     </div>
   );
 }
@@ -311,13 +311,13 @@ function Block({
     <div className="sm:col-span-2">
       <div className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</div>
       {list ? (
-        <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
+        <ul className="mt-1 list-disc pl-5 text-sm text-ink">
           {list.map((x, i) => (
             <li key={i}>{x}</li>
           ))}
         </ul>
       ) : (
-        <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{body}</p>
+        <p className="mt-1 whitespace-pre-wrap text-sm text-ink">{body}</p>
       )}
     </div>
   );
@@ -350,7 +350,7 @@ function ImpactGrid({
           key={i.label}
           className="rounded-md border border-line bg-surface-0 p-2 text-xs"
         >
-          <div className="font-medium text-slate-600">{i.label}</div>
+          <div className="font-medium text-muted">{i.label}</div>
           <div className="mt-1">{i.v ? <Pill kind={impactKind(i.v)}>{i.v}</Pill> : "—"}</div>
         </div>
       ))}

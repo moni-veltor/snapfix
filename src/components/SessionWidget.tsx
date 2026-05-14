@@ -15,14 +15,14 @@ export default function SessionWidget({ session }: { session: Session | null }) 
   }
   return (
     <div className="flex items-center gap-3">
-      <span className="text-slate-600">
+      <span className="text-muted">
         {session.user.name ?? session.user.email}
         {session.user.orgRole && (
           <span className="ml-1 text-xs text-soft">({session.user.orgRole})</span>
         )}
       </span>
       <form action={signOutAction}>
-        <button className="text-muted hover:text-slate-900" type="submit">
+        <button className="text-muted hover:text-ink" type="submit">
           Sign out
         </button>
       </form>

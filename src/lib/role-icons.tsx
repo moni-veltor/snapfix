@@ -89,9 +89,9 @@ export const FAMILY_TONE: Record<
   },
   other: {
     ring: "border-slate-300 dark:border-slate-700/50",
-    chip: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200",
+    chip: "bg-surface-2 text-ink dark:bg-slate-800 dark:text-slate-200",
     iconBg: "bg-slate-500/10 dark:bg-slate-500/20",
-    iconColor: "text-slate-600 dark:text-slate-300",
+    iconColor: "text-muted dark:text-slate-300",
     label: "Other",
   },
 };

@@ -55,7 +55,7 @@ export default async function TemplateDetailPage({
             </form>
           )}
         </div>
-        <p className="whitespace-pre-wrap text-slate-700">{template.background}</p>
+        <p className="whitespace-pre-wrap text-ink">{template.background}</p>
         <div className="text-xs text-muted">
           <Link href="/templates" className="underline">
             ← Back to library
@@ -77,7 +77,7 @@ export default async function TemplateDetailPage({
 
       {template.characteristics.length > 0 && (
         <Section title="Characteristics">
-          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
+          <ul className="list-disc space-y-1 pl-5 text-sm text-ink">
             {template.characteristics.map((c, i) => (
               <li key={i}>{c}</li>
             ))}
@@ -87,7 +87,7 @@ export default async function TemplateDetailPage({
 
       {template.assumptions.length > 0 && (
         <Section title="Assumptions">
-          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
+          <ul className="list-disc space-y-1 pl-5 text-sm text-ink">
             {template.assumptions.map((c, i) => (
               <li key={i}>{c}</li>
             ))}
@@ -170,7 +170,7 @@ export default async function TemplateDetailPage({
                   Impact tolerance: {i.impactToleranceMin} min
                 </span>
                 {i.description && (
-                  <p className="mt-1 text-xs text-slate-600">{i.description}</p>
+                  <p className="mt-1 text-xs text-muted">{i.description}</p>
                 )}
               </li>
             ))}
@@ -189,7 +189,7 @@ export default async function TemplateDetailPage({
                 <div className="font-medium">
                   Event #{e.eventNo} · {e.scheduledTime} — {e.title}
                 </div>
-                <p className="mt-1 text-slate-700">{e.description}</p>
+                <p className="mt-1 text-ink">{e.description}</p>
                 <AddressingBlock
                   from={e.senderRoleTitle}
                   to={e.toRoleTitles}
@@ -212,7 +212,7 @@ export default async function TemplateDetailPage({
                 <div className="font-medium">
                   Inject #{j.injectNo} · {j.scheduledTime} — {j.summary}
                 </div>
-                <p className="mt-1 text-slate-700">{j.description}</p>
+                <p className="mt-1 text-ink">{j.description}</p>
                 <AddressingBlock
                   from={j.senderRoleTitle}
                   to={j.toRoleTitles}
@@ -238,14 +238,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Prose({ body }: { body: string | null | undefined }) {
   if (!body) return null;
-  return <p className="whitespace-pre-wrap text-sm text-slate-700">{body}</p>;
+  return <p className="whitespace-pre-wrap text-sm text-ink">{body}</p>;
 }
 
 function FieldRow({ label, body }: { label: string; body: string }) {
   return (
     <div>
       <span className="text-xs font-semibold uppercase tracking-wide text-muted">{label}: </span>
-      <span className="text-slate-700">{body}</span>
+      <span className="text-ink">{body}</span>
     </div>
   );
 }
@@ -261,7 +261,7 @@ function AddressingBlock({
 }) {
   if (!from && to.length === 0 && cc.length === 0) return null;
   return (
-    <div className="mt-2 space-y-0.5 text-xs text-slate-600">
+    <div className="mt-2 space-y-0.5 text-xs text-muted">
       {from && (
         <div>
           <span className="font-semibold text-muted">From:</span> {from}

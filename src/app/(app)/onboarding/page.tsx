@@ -7,7 +7,7 @@ export default async function OnboardingPage() {
   return (
     <div className="mx-auto max-w-md space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">No organisation yet</h1>
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted">
         You're signed in as <span className="font-mono">{user.email}</span>, but you don't belong to an
         organisation. To get started, ask an admin to invite you — or sign out and create a new
         organisation.

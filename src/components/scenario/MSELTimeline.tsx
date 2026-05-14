@@ -204,8 +204,8 @@ function Marker({
         top: above ? "calc(50% - 28px)" : "calc(50% + 12px)",
       }}
     >
-      <span className="font-mono text-slate-700 dark:text-slate-200">{marker.time}</span>
-      <span className="hidden text-slate-600 sm:inline dark:text-slate-300">
+      <span className="font-mono text-ink dark:text-slate-200">{marker.time}</span>
+      <span className="hidden text-muted sm:inline dark:text-slate-300">
         #{marker.no}
       </span>
     </button>

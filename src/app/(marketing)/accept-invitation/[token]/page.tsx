@@ -32,7 +32,7 @@ export default async function AcceptInvitationPage({
     <div className="mx-auto max-w-md space-y-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Join {invitation.org.name}</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-muted">
           {(invitation.invitedBy?.name ?? invitation.invitedBy?.email) ?? "Someone"} invited{" "}
           <span className="font-medium">{invitation.email}</span> to join as{" "}
           <span className="font-medium">{invitation.role}</span>.
@@ -69,7 +69,7 @@ export default async function AcceptInvitationPage({
               </Banner>
             )
           ) : existingAccount ? (
-            <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
+            <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-muted">
               An account with this email already exists. Please{" "}
               <Link href={`/sign-in?next=${encodeURIComponent(`/accept-invitation/${token}`)}`} className="underline">
                 sign in

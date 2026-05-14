@@ -9,7 +9,7 @@ export const metadata = { title: "IBS Register — SnapFix" };
 const STATUS_STYLES: Record<string, string> = {
   DRAFT: "bg-amber-100 text-amber-800",
   APPROVED: "bg-emerald-100 text-emerald-800",
-  DEPRECATED: "bg-slate-200 text-slate-700",
+  DEPRECATED: "bg-surface-2 text-ink",
 };
 
 export default async function IBSListPage() {
@@ -81,7 +81,7 @@ export default async function IBSListPage() {
                     </span>
                   </div>
                   {i.outcome && (
-                    <p className="mt-1 line-clamp-2 text-slate-600">{i.outcome}</p>
+                    <p className="mt-1 line-clamp-2 text-muted">{i.outcome}</p>
                   )}
                   <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
                     <span className="rounded-full bg-surface-2 px-2 py-0.5">

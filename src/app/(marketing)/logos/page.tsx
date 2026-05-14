@@ -115,7 +115,7 @@ export default function LogoOptionsPage() {
                     <span className="inline-flex items-baseline gap-2">
                       <v.Mark size={28} tone="brand" />
                       <span
-                        className="text-[20px] font-semibold tracking-tight text-slate-900"
+                        className="text-[20px] font-semibold tracking-tight text-ink"
                       >
                         SnapFix
                       </span>

@@ -28,7 +28,7 @@ export default async function NewScenarioPage() {
 function Field({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
     <label className="block text-sm">
-      <span className="text-slate-700">{label}</span>
+      <span className="text-ink">{label}</span>
       <input {...props} className="mt-1 w-full rounded-md border border-line-strong px-3 py-2" />
     </label>
   );
@@ -37,7 +37,7 @@ function Field({ label, ...props }: React.InputHTMLAttributes<HTMLInputElement> 
 function TextArea({ label, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }) {
   return (
     <label className="block text-sm">
-      <span className="text-slate-700">{label}</span>
+      <span className="text-ink">{label}</span>
       <textarea {...props} className="mt-1 w-full rounded-md border border-line-strong px-3 py-2" />
     </label>
   );

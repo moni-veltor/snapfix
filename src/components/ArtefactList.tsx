@@ -50,7 +50,7 @@ export default function ArtefactList({
               </a>
             </div>
             {a.description && (
-              <p className="mt-1 text-xs text-slate-600">{a.description}</p>
+              <p className="mt-1 text-xs text-muted">{a.description}</p>
             )}
             <p className="mt-1 text-xs text-soft">
               {formatBytes(a.sizeBytes)}

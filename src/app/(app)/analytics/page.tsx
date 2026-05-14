@@ -167,7 +167,7 @@ export default async function AnalyticsPage() {
       <Section title="6-box risk coverage" subtitle="Library = scenarios you've added · Tested = exercises with that risk-box covered (in progress / paused / completed)">
         <div className="overflow-hidden rounded-md border border-line bg-surface-1">
           <table className="w-full text-sm">
-            <thead className="bg-surface-0 text-left text-xs uppercase tracking-wide text-slate-600">
+            <thead className="bg-surface-0 text-left text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="p-3">Risk box</th>
                 <th className="p-3">In library</th>
@@ -214,7 +214,7 @@ export default async function AnalyticsPage() {
       <Section title="CMORG category coverage" subtitle="Scenarios per CMORG taxonomy category, vs. exercises run">
         <div className="overflow-hidden rounded-md border border-line bg-surface-1">
           <table className="w-full text-sm">
-            <thead className="bg-surface-0 text-left text-xs uppercase tracking-wide text-slate-600">
+            <thead className="bg-surface-0 text-left text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="p-3">Category</th>
                 <th className="p-3">Scenarios</th>

@@ -200,7 +200,7 @@ export default async function LiveWorkspacePage({
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-wide text-muted dark:text-soft">
             {exercise.scenario.title} · Playing as{" "}
-            <span className="font-semibold text-slate-700 dark:text-slate-200">{participant.roleTitle}</span>
+            <span className="font-semibold text-ink dark:text-slate-200">{participant.roleTitle}</span>
           </p>
           <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight">{exercise.title}</h1>
           <p className="mt-1 text-xs text-muted dark:text-soft">
@@ -338,7 +338,7 @@ export default async function LiveWorkspacePage({
           />
 
           <details className="rounded-md border border-line bg-surface-1 p-3 dark:border-slate-700 dark:bg-slate-900" open={commsDrafts.length > 0}>
-            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-ink dark:text-slate-200">
               Comms cascade · {commsDrafts.length} draft{commsDrafts.length === 1 ? "" : "s"}
             </summary>
             <div className="mt-3">
@@ -374,7 +374,7 @@ export default async function LiveWorkspacePage({
           <div className="grid gap-4 xl:grid-cols-2">
             <section className="space-y-2">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-ink dark:text-slate-200">
                   My inbox
                 </h2>
                 <span className="text-xs text-muted dark:text-soft">
@@ -427,7 +427,7 @@ export default async function LiveWorkspacePage({
 
             <section className="space-y-2">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-ink dark:text-slate-200">
                   Live team feed
                 </h2>
                 <span className="text-xs text-muted dark:text-soft">{feed.length} entries</span>
@@ -462,11 +462,11 @@ function statusBadge(status: string): string {
     case "PAUSED":
       return "bg-amber-100 text-amber-800";
     case "COMPLETED":
-      return "bg-slate-200 text-slate-700";
+      return "bg-surface-2 text-ink";
     case "READY":
       return "bg-indigo-100 text-indigo-800";
     default:
-      return "bg-surface-2 text-slate-700";
+      return "bg-surface-2 text-ink";
   }
 }
 
@@ -513,7 +513,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
         <li className={neutralCard}>
           <FeedLine time={time} tag="EVENT" tagVariant="info">
             <span className="font-medium">#{item.eventNo} {item.title}</span>
-            <span className="text-xs text-slate-600 dark:text-soft">
+            <span className="text-xs text-muted dark:text-soft">
               {" "}· released · D-Day {item.scheduledTime}
               {item.toRoleTitles.length > 0 && ` · to ${item.toRoleTitles.join(", ")}`}
             </span>
@@ -525,7 +525,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
         <li className={neutralCard}>
           <FeedLine time={time} tag="INJECT" tagVariant="info">
             <span className="font-medium">#{item.injectNo} {item.title}</span>
-            <span className="text-xs text-slate-600 dark:text-soft">
+            <span className="text-xs text-muted dark:text-soft">
               {" "}· released · D-Day {item.scheduledTime}
               {item.toRoleTitles.length > 0 && ` · to ${item.toRoleTitles.join(", ")}`}
             </span>
@@ -538,29 +538,29 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
           <FeedLine time={time} tag={item.logKind} tagVariant="neutral">
             <span className="text-xs text-muted dark:text-soft">{item.author} · D-Day {item.dDayTime}</span>
           </FeedLine>
-          <p className="mt-1 whitespace-pre-wrap text-slate-700 dark:text-slate-200">{item.body}</p>
+          <p className="mt-1 whitespace-pre-wrap text-ink dark:text-slate-200">{item.body}</p>
         </li>
       );
     case "RESPONSE":
       return (
         <li className={neutralCard}>
           <FeedLine time={time} tag="RESPONSE" tagVariant="ok">
-            <span className="text-xs text-slate-600 dark:text-soft">
+            <span className="text-xs text-muted dark:text-soft">
               {item.author} responded to <span className="font-medium">{item.injectSummary}</span>
             </span>
           </FeedLine>
-          <p className="mt-1 line-clamp-2 text-slate-700 dark:text-slate-200">{item.assessment}</p>
+          <p className="mt-1 line-clamp-2 text-ink dark:text-slate-200">{item.assessment}</p>
         </li>
       );
     case "COMMS":
       return (
         <li className={neutralCard}>
           <FeedLine time={time} tag="COMMS" tagVariant="warn">
-            <span className="text-xs text-slate-600 dark:text-soft">
+            <span className="text-xs text-muted dark:text-soft">
               {item.author} drafted comms to <span className="font-medium">{item.audience}</span>
             </span>
           </FeedLine>
-          <p className="mt-1 font-medium text-slate-800 dark:text-slate-100">{item.subject}</p>
+          <p className="mt-1 font-medium text-ink dark:text-slate-100">{item.subject}</p>
         </li>
       );
     case "DECISION":
@@ -570,11 +570,11 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
             <span className="font-mono text-[10px] uppercase text-muted dark:text-soft">
               {item.decisionType}
             </span>
-            <span className="text-xs text-slate-600 dark:text-slate-300">· {item.author}</span>
+            <span className="text-xs text-muted dark:text-slate-300">· {item.author}</span>
           </FeedLine>
-          <p className="mt-1 font-medium text-slate-800 dark:text-slate-100">{item.title}</p>
+          <p className="mt-1 font-medium text-ink dark:text-slate-100">{item.title}</p>
           {item.rationale && (
-            <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{item.rationale}</p>
+            <p className="mt-0.5 text-xs text-muted dark:text-slate-300">{item.rationale}</p>
           )}
           {item.approverRoles.length > 0 && (
             <p className="mt-1 text-[10px] uppercase tracking-wide text-muted dark:text-soft">
@@ -587,11 +587,11 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
       return (
         <li className={neutralCard}>
           <FeedLine time={time} tag={`SITREP · ${item.status}`} tagVariant={SITREP_VARIANT[item.status] ?? "neutral"}>
-            <span className="text-xs text-slate-600 dark:text-soft">
+            <span className="text-xs text-muted dark:text-soft">
               {item.businessUnit} · {item.author}
             </span>
           </FeedLine>
-          <p className="mt-1 text-slate-700 dark:text-slate-200">{item.summary}</p>
+          <p className="mt-1 text-ink dark:text-slate-200">{item.summary}</p>
         </li>
       );
     case "MEETING":
@@ -599,7 +599,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
         <li className={neutralCard}>
           <FeedLine time={time} tag={`IMT MEETING #${item.meetingNumber}`} tagVariant="info">
             {item.nextMeetingDDay && (
-              <span className="text-xs text-slate-600 dark:text-soft">Next meeting D-Day {item.nextMeetingDDay}</span>
+              <span className="text-xs text-muted dark:text-soft">Next meeting D-Day {item.nextMeetingDDay}</span>
             )}
           </FeedLine>
         </li>
@@ -608,9 +608,9 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
       return (
         <li className={criticalCard}>
           <FeedLine time={time} tag={item.shortCode} tagVariant="critical">
-            <span className="font-medium text-slate-800 dark:text-slate-100">{item.transition}</span>
+            <span className="font-medium text-ink dark:text-slate-100">{item.transition}</span>
             {item.severity && (
-              <span className="text-xs text-slate-600 dark:text-slate-300">· severity {item.severity}</span>
+              <span className="text-xs text-muted dark:text-slate-300">· severity {item.severity}</span>
             )}
           </FeedLine>
         </li>
@@ -619,7 +619,7 @@ function FeedRow({ item }: { item: LiveFeedItem }) {
       return (
         <li className={neutralCard}>
           <FeedLine time={time} tag="STATUS" tagVariant="neutral">
-            <span className="font-medium text-slate-700 dark:text-slate-200">{item.status}</span>
+            <span className="font-medium text-ink dark:text-slate-200">{item.status}</span>
           </FeedLine>
         </li>
       );

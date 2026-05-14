@@ -136,7 +136,7 @@ export default async function ExerciseTeamPage({
         >
           <input type="hidden" name="exerciseId" value={exercise.id} />
           <label className="block text-sm">
-            <span className="text-slate-700">Person (must already belong to the organisation)</span>
+            <span className="text-ink">Person (must already belong to the organisation)</span>
             <select
               name="userId"
               required
@@ -156,7 +156,7 @@ export default async function ExerciseTeamPage({
             </select>
           </label>
           <label className="block text-sm">
-            <span className="text-slate-700">Team</span>
+            <span className="text-ink">Team</span>
             <select
               name="teamId"
               defaultValue=""
@@ -169,7 +169,7 @@ export default async function ExerciseTeamPage({
             </select>
           </label>
           <label className="block text-sm">
-            <span className="text-slate-700">Role title</span>
+            <span className="text-ink">Role title</span>
             <input
               name="roleTitle"
               required
@@ -179,7 +179,7 @@ export default async function ExerciseTeamPage({
             />
           </label>
           <label className="block text-sm">
-            <span className="text-slate-700">Exercise role</span>
+            <span className="text-ink">Exercise role</span>
             <select
               name="exerciseRole"
               required

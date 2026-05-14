@@ -79,7 +79,7 @@ function ClockRow({ exerciseId, c }: { exerciseId: string; c: Clock }) {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <Pill variant="critical" tone="solid">{c.regulator}</Pill>
-            <span className="text-slate-700 dark:text-slate-200">{c.trigger}</span>
+            <span className="text-ink dark:text-slate-200">{c.trigger}</span>
             <span className="text-soft">·</span>
             <span className="text-muted dark:text-soft">SLA {c.slaHours}h</span>
             {c.ownerRoleTitle && (
