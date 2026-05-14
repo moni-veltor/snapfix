@@ -107,6 +107,9 @@ model User {
   bcpDeactivations        BCPActivation[]         @relation("BCPDeactivator")
   defaultRoleHoldings     OrganizationRole[]      @relation("RoleDefaultHolder")
   heldSeats               ExerciseSeat[]          @relation("SeatHolder")
+  chatMessages            ChatMessage[]           @relation("ChatAuthor")
+  reactions               Reaction[]              @relation("ReactionAuthor")
+  scratchpadEdits         ExerciseScratchpad[]    @relation("ScratchpadEditor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -383,6 +386,8 @@ model Exercise {
   incidents      Incident[]
   retrospective  Retrospective?
   seats          ExerciseSeat[]
+  chatMessages   ChatMessage[]
+  scratchpad     ExerciseScratchpad?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -432,6 +437,10 @@ model ExerciseParticipant {
   exerciseRole ExerciseRole  @default(PARTICIPANT)
   joinedAt     DateTime      @default(now())
   lastSeenAt   DateTime?
+  /// Free-text presence broadcast — e.g. "On a call with FCA" — shown to
+  /// teammates so they know you're momentarily unavailable. Null = available.
+  onCallStatus String?
+  onCallSince  DateTime?
 
   /// Deputy chain (Afin IMP §6.2.3). When a participant is unreachable, the
   /// deputy steps up. Pointer to another participant in the same exercise.
@@ -1273,4 +1282,68 @@ model ExerciseSeat {
 
   @@unique([exerciseId, roleId])
   @@index([exerciseId, status])
+}
+
+// ─── Team chat (the back-channel real incidents need) ───────────────────────
+
+model ChatMessage {
+  id                     String   @id @default(cuid())
+  exerciseId             String
+  exercise               Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  authorId               String
+  author                 User     @relation("ChatAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  /// Author's role at the moment they posted — denormalised for display so
+  /// re-seating doesn't rewrite history.
+  authorRoleAbbreviation String?
+  body                   String
+  /// dDayTime at the moment of posting — for chronological alignment in
+  /// the post-exercise reconstruction.
+  dDayTime               String?
+  createdAt              DateTime @default(now())
+
+  reactions Reaction[]
+
+  @@index([exerciseId, createdAt])
+}
+
+// ─── Reactions (polymorphic on chat / log / decision / sitrep) ──────────────
+
+enum ReactionTarget {
+  CHAT
+  LOG_ENTRY
+  DECISION
+  SITREP
+}
+
+model Reaction {
+  id         String         @id @default(cuid())
+  targetType ReactionTarget
+  targetId   String
+  userId     String
+  user       User           @relation("ReactionAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  /// Emoji or short string. Kept loose so we can iterate on the picker.
+  emoji      String
+  createdAt  DateTime       @default(now())
+
+  // FK to ChatMessage when targetType=CHAT (optional; makes cascade-delete clean)
+  chatMessageId String?
+  chatMessage   ChatMessage? @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+
+  @@unique([targetType, targetId, userId, emoji])
+  @@index([targetType, targetId])
+}
+
+// ─── Working-doc scratchpad (the shared Notion-style doc) ───────────────────
+
+model ExerciseScratchpad {
+  id             String   @id @default(cuid())
+  exerciseId     String   @unique
+  exercise       Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  body           String   @default("")
+  lastEditedById String?
+  lastEditedBy   User?    @relation("ScratchpadEditor", fields: [lastEditedById], references: [id], onDelete: SetNull)
+  lastEditedAt   DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

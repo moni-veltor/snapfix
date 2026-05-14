@@ -25,6 +25,11 @@ import NudgePanel from "@/components/live/NudgePanel";
 import { computeNudges } from "@/lib/nudges";
 import ActivityTicker from "@/components/live/ActivityTicker";
 import { autoReleaseExpired } from "@/lib/auto-release";
+import ChatPanel from "@/components/live/ChatPanel";
+import { loadChat } from "@/lib/chat";
+import Scratchpad from "@/components/live/Scratchpad";
+import OnCallStatus from "@/components/live/OnCallStatus";
+import RoleBriefing from "@/components/live/RoleBriefing";
 
 export default async function LiveWorkspacePage({
   params,
@@ -181,6 +186,14 @@ export default async function LiveWorkspacePage({
     text: tickerLineFor(item),
   }));
 
+  // Team chat — the back-channel real incidents need.
+  const chat = await loadChat(exercise.id, me.id);
+  // Shared scratchpad
+  const scratchpad = await prisma.exerciseScratchpad.findUnique({
+    where: { exerciseId: exercise.id },
+    include: { lastEditedBy: { select: { name: true, email: true } } },
+  });
+
   return (
     <div className="space-y-4">
       {/* Top stripe — incident state is always at the top */}
@@ -205,7 +218,12 @@ export default async function LiveWorkspacePage({
             </Link>
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <OnCallStatus
+            exerciseId={exercise.id}
+            currentStatus={participant.onCallStatus}
+            currentSince={participant.onCallSince}
+          />
           {liveScore && (
             <LiveScoreBadge
               exerciseId={exercise.id}
@@ -304,10 +322,23 @@ export default async function LiveWorkspacePage({
               waiverRationale: c.waiverRationale,
             }))}
           />
+
+          <ChatPanel exerciseId={exercise.id} meId={me.id} messages={chat} />
         </aside>
 
         {/* Right column — where work happens */}
         <main className="space-y-4">
+          {mySeat && (
+            <RoleBriefing
+              seatId={mySeat.id}
+              abbreviation={mySeat.roleAbbreviation}
+              title={mySeat.roleTitle}
+              responsibility={mySeat.responsibility}
+              isSMF={mySeat.isSMF}
+              isDeputy={mySeat.isDeputy}
+            />
+          )}
+
           <NudgePanel nudges={nudges} />
 
           <IncidentCapturePanel
@@ -340,6 +371,15 @@ export default async function LiveWorkspacePage({
               />
             </div>
           </details>
+
+          <Scratchpad
+            exerciseId={exercise.id}
+            initialBody={scratchpad?.body ?? ""}
+            lastEditedByName={
+              scratchpad?.lastEditedBy?.name ?? scratchpad?.lastEditedBy?.email ?? null
+            }
+            lastEditedAt={scratchpad?.lastEditedAt ?? null}
+          />
 
           <div className="grid gap-4 xl:grid-cols-2">
             <section className="space-y-2">

@@ -104,6 +104,8 @@ export type PresenceMember = {
   teamName: string | null;
   lastSeenAt: Date | null;
   online: boolean;
+  onCallStatus: string | null;
+  onCallSince: Date | null;
 };
 
 export type MobilisationMember = {
@@ -165,6 +167,8 @@ export async function loadPresence(exerciseId: string): Promise<PresenceMember[]
     teamName: r.team?.name ?? null,
     lastSeenAt: r.lastSeenAt,
     online: !!r.lastSeenAt && now - r.lastSeenAt.getTime() < ONLINE_WINDOW_MS,
+    onCallStatus: r.onCallStatus,
+    onCallSince: r.onCallSince,
   }));
 }
 

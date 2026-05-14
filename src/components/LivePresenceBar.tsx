@@ -102,6 +102,11 @@ export default function LivePresenceBar({ exerciseId, members, status, pollMs = 
                 {m.exerciseRole === "FACILITATOR" && " · facilitator"}
                 {!m.online && ` · ${relativeTime(m.lastSeenAt)}`}
               </span>
+              {m.onCallStatus && (
+                <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-medium text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                  📞 {m.onCallStatus}
+                </span>
+              )}
             </span>
           </li>
         ))}
