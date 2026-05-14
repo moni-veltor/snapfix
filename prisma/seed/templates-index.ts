@@ -9,6 +9,17 @@ import { severeWeather } from "./templates/severe-weather";
 import { lossOfTelecoms } from "./templates/loss-of-telecoms";
 import { globalPandemic } from "./templates/global-pandemic";
 import { allShells } from "./templates/shells";
+// Modern resilience pack
+import { awsRegionOutage } from "./templates/aws-region-outage";
+import { dnsProviderCompromise } from "./templates/dns-provider-compromise";
+import { cascadingMicroserviceFailure } from "./templates/cascading-microservice-failure";
+import { certificateExpiry } from "./templates/certificate-expiry";
+import { badDeploy } from "./templates/bad-deploy";
+import { ddosAuth } from "./templates/ddos-auth";
+import { supplyChainNpm } from "./templates/supply-chain-npm";
+import { databaseCorruption } from "./templates/database-corruption";
+import { keyPersonAbsence } from "./templates/key-person-absence";
+import { fourthPartyCascade } from "./templates/fourth-party-cascade";
 // Tier-specific
 import { tier1TradingDisruption } from "./templates/tier1-trading-disruption";
 import { tier1DataLeak } from "./templates/tier1-data-leak";
@@ -34,6 +45,17 @@ export async function seedSystemTemplates(prisma: PrismaClient): Promise<void> {
     lossOfTelecoms,
     globalPandemic,
     ...allShells,
+    // Modern resilience pack — cloud, microservices, supply chain, data, people
+    awsRegionOutage,
+    dnsProviderCompromise,
+    cascadingMicroserviceFailure,
+    certificateExpiry,
+    badDeploy,
+    ddosAuth,
+    supplyChainNpm,
+    databaseCorruption,
+    keyPersonAbsence,
+    fourthPartyCascade,
     // Tier-specific
     tier1TradingDisruption,
     tier1DataLeak,
