@@ -68,17 +68,35 @@ export async function signUpAction(
 }
 
 export async function signOutAction() {
-  // Clear NextAuth's session cookies. (We're using JWT strategy, so no DB row to delete.)
+  // Clear NextAuth's session cookies. (We're using JWT strategy, so no DB row
+  // to delete.) `cookieStore.delete()` is unreliable for cookies with explicit
+  // path / secure / __Host- prefixes, so we override with maxAge:0 + matching
+  // path which forces the browser to expire them.
   const cookieStore = await cookies();
-  for (const name of [
+  const cookieNames = [
     "next-auth.session-token",
     "__Secure-next-auth.session-token",
     "next-auth.csrf-token",
     "__Host-next-auth.csrf-token",
     "next-auth.callback-url",
     "__Secure-next-auth.callback-url",
-  ]) {
-    cookieStore.delete(name);
+    // Some deployments use a chunked variant for large JWTs
+    "next-auth.session-token.0",
+    "next-auth.session-token.1",
+    "__Secure-next-auth.session-token.0",
+    "__Secure-next-auth.session-token.1",
+  ];
+  for (const name of cookieNames) {
+    cookieStore.set(name, "", {
+      maxAge: 0,
+      path: "/",
+      expires: new Date(0),
+      sameSite: "lax",
+      // Match the secure setting of the original cookie when running under HTTPS.
+      secure: name.startsWith("__Secure-") || name.startsWith("__Host-"),
+    });
   }
-  redirect("/");
+  // Redirect to /sign-in with a marker so the sign-in page can opt out of its
+  // "you're already signed in, jump to dashboard" auto-redirect.
+  redirect("/sign-in?signedOut=1");
 }
