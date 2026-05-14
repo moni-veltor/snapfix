@@ -30,6 +30,7 @@ import { loadChat } from "@/lib/chat";
 import Scratchpad from "@/components/live/Scratchpad";
 import OnCallStatus from "@/components/live/OnCallStatus";
 import RoleBriefing from "@/components/live/RoleBriefing";
+import LiveTabs from "@/components/live/LiveTabs";
 
 export default async function LiveWorkspacePage({
   params,
@@ -244,198 +245,188 @@ export default async function LiveWorkspacePage({
 
       {tickerEntries.length > 0 && <ActivityTicker entries={tickerEntries} />}
 
-      {/* Body: left rail with context, right column with action */}
-      <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-        {/* Left rail — status / context widgets (sticky on desktop) */}
-        <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
-          <LivePresenceBar
-            exerciseId={exercise.id}
-            members={presence}
-            status={exercise.status}
-            pollMs={3000}
-          />
-
-          <SeatBoardCompact exerciseId={exercise.id} seats={seats} meId={me.id} />
-
-          {activeIncident && (
-            <ClosureGate
-              exerciseId={exercise.id}
-              incidentId={activeIncident.id}
-              checks={{
-                closureImpactCeased: activeIncident.closureImpactCeased,
-                closureRegsNotified: activeIncident.closureRegsNotified,
-                closureLogComplete: activeIncident.closureLogComplete,
-                closurePreliminaryRCA: activeIncident.closurePreliminaryRCA,
-                closureCRO_SignOff: activeIncident.closureCRO_SignOff,
-              }}
-            />
-          )}
-
-          {activeIncident && (
-            <BCPPanel
-              exerciseId={exercise.id}
-              incidentId={activeIncident.id}
-              activation={
-                bcpActivation
-                  ? {
-                      id: bcpActivation.id,
-                      activatedAt: bcpActivation.activatedAt,
-                      ceoName:
-                        bcpActivation.activatedByCEO?.name ??
-                        bcpActivation.activatedByCEO?.email ??
-                        null,
-                      croName:
-                        bcpActivation.activatedByCRO?.name ??
-                        bcpActivation.activatedByCRO?.email ??
-                        null,
-                      rationale: bcpActivation.rationale,
-                      deactivatedAt: bcpActivation.deactivatedAt,
-                    }
-                  : null
-              }
-              orgUsers={orgUsers}
-            />
-          )}
-
-          <RegulatorClocks
-            exerciseId={exercise.id}
-            incidentId={activeIncident?.id ?? null}
-            clocks={regulatorClocks.map((c) => ({
-              id: c.id,
-              regulator: c.regulator,
-              trigger: c.trigger,
-              slaHours: c.slaHours,
-              dueAt: c.dueAt,
-              status: c.status,
-              sentAt: c.sentAt,
-              ownerRoleTitle: c.ownerRoleTitle,
-              approverRoleTitle: c.approverRoleTitle,
-              waiverRationale: c.waiverRationale,
-            }))}
-          />
-
-        </aside>
-
-        {/* Right column — where work happens */}
-        <main className="space-y-4">
-          {mySeat && (
-            <RoleBriefing
-              seatId={mySeat.id}
-              abbreviation={mySeat.roleAbbreviation}
-              title={mySeat.roleTitle}
-              responsibility={mySeat.responsibility}
-              isSMF={mySeat.isSMF}
-              isDeputy={mySeat.isDeputy}
-            />
-          )}
-
-          <NudgePanel nudges={nudges} />
-
-          <IncidentCapturePanel
-            exerciseId={exercise.id}
-            incidentId={activeIncident?.id ?? null}
-            dDayHHMM={clock.hhmm}
-          />
-
-          <details className="rounded-md border border-line bg-surface-1 p-3 dark:border-slate-700 dark:bg-slate-900" open={commsDrafts.length > 0}>
-            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-ink dark:text-slate-200">
-              Comms cascade · {commsDrafts.length} draft{commsDrafts.length === 1 ? "" : "s"}
-            </summary>
-            <div className="mt-3">
-              <CommsCascadePanel
-                exerciseId={exercise.id}
-                drafts={commsDrafts.map((d) => ({
-                  id: d.id,
-                  stakeholder: d.stakeholder,
-                  audience: d.audience,
-                  subject: d.subject,
-                  body: d.body,
-                  status: d.status,
-                  author: d.author?.name ?? d.author?.email ?? "—",
-                  approver: d.approver?.name ?? d.approver?.email ?? null,
-                  approvedAt: d.approvedAt,
-                  sentAt: d.sentAt,
-                  rejectionReason: d.rejectionReason,
-                  createdAt: d.createdAt,
-                }))}
+      <LiveTabs
+        unreadCount={unreadCount}
+        decisionsBadge={activeIncident ? 1 : 0}
+        commsBadge={commsDrafts.length}
+        teamBadge={presence.filter((p) => p.online).length}
+        briefing={
+          <div className="space-y-4">
+            {mySeat && (
+              <RoleBriefing
+                seatId={mySeat.id}
+                abbreviation={mySeat.roleAbbreviation}
+                title={mySeat.roleTitle}
+                responsibility={mySeat.responsibility}
+                isSMF={mySeat.isSMF}
+                isDeputy={mySeat.isDeputy}
               />
+            )}
+            <NudgePanel nudges={nudges} />
+            <Scratchpad
+              exerciseId={exercise.id}
+              initialBody={scratchpad?.body ?? ""}
+              lastEditedByName={
+                scratchpad?.lastEditedBy?.name ?? scratchpad?.lastEditedBy?.email ?? null
+              }
+              lastEditedAt={scratchpad?.lastEditedAt ?? null}
+            />
+          </div>
+        }
+        inbox={
+          <section className="space-y-3">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-sm font-semibold text-ink">My inbox</h2>
+              <span className="text-xs text-muted">
+                {inbox.length} message{inbox.length === 1 ? "" : "s"}
+                {unreadCount > 0 && (
+                  <span className="ml-2 rounded-full bg-rose-600 px-2 py-0.5 text-white">
+                    {unreadCount} unread
+                  </span>
+                )}
+              </span>
             </div>
-          </details>
-
-          <Scratchpad
-            exerciseId={exercise.id}
-            initialBody={scratchpad?.body ?? ""}
-            lastEditedByName={
-              scratchpad?.lastEditedBy?.name ?? scratchpad?.lastEditedBy?.email ?? null
-            }
-            lastEditedAt={scratchpad?.lastEditedAt ?? null}
-          />
-
-          <div className="grid gap-4 xl:grid-cols-2">
+            {inbox.length === 0 ? (
+              <p className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-center text-xs text-muted">
+                No messages addressed to{" "}
+                <span className="font-medium">{participant.roleTitle}</span> yet.
+                {exercise.status !== "IN_PROGRESS" && (
+                  <>
+                    <br />
+                    Exercise is currently <strong>{exercise.status}</strong>.
+                  </>
+                )}
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {inbox.map((item) => {
+                  const existing =
+                    item.kind === "INJECT" ? responseByInject.get(item.id) ?? null : null;
+                  return (
+                    <LiveInboxItem
+                      key={`${item.kind}:${item.id}`}
+                      exerciseId={exercise.id}
+                      item={item}
+                      existingResponse={
+                        existing
+                          ? {
+                              assessment: existing.assessment,
+                              proposedActions: existing.proposedActions,
+                              stakeholders: existing.stakeholders,
+                              resources: existing.resources,
+                              commsNeeds: existing.commsNeeds,
+                            }
+                          : null
+                      }
+                    />
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        }
+        decisions={
+          <div className="space-y-4">
+            <IncidentCapturePanel
+              exerciseId={exercise.id}
+              incidentId={activeIncident?.id ?? null}
+              dDayHHMM={clock.hhmm}
+            />
+            {activeIncident && (
+              <ClosureGate
+                exerciseId={exercise.id}
+                incidentId={activeIncident.id}
+                checks={{
+                  closureImpactCeased: activeIncident.closureImpactCeased,
+                  closureRegsNotified: activeIncident.closureRegsNotified,
+                  closureLogComplete: activeIncident.closureLogComplete,
+                  closurePreliminaryRCA: activeIncident.closurePreliminaryRCA,
+                  closureCRO_SignOff: activeIncident.closureCRO_SignOff,
+                }}
+              />
+            )}
+            {activeIncident && (
+              <BCPPanel
+                exerciseId={exercise.id}
+                incidentId={activeIncident.id}
+                activation={
+                  bcpActivation
+                    ? {
+                        id: bcpActivation.id,
+                        activatedAt: bcpActivation.activatedAt,
+                        ceoName:
+                          bcpActivation.activatedByCEO?.name ??
+                          bcpActivation.activatedByCEO?.email ??
+                          null,
+                        croName:
+                          bcpActivation.activatedByCRO?.name ??
+                          bcpActivation.activatedByCRO?.email ??
+                          null,
+                        rationale: bcpActivation.rationale,
+                        deactivatedAt: bcpActivation.deactivatedAt,
+                      }
+                    : null
+                }
+                orgUsers={orgUsers}
+              />
+            )}
+          </div>
+        }
+        comms={
+          <div className="space-y-4">
+            <CommsCascadePanel
+              exerciseId={exercise.id}
+              drafts={commsDrafts.map((d) => ({
+                id: d.id,
+                stakeholder: d.stakeholder,
+                audience: d.audience,
+                subject: d.subject,
+                body: d.body,
+                status: d.status,
+                author: d.author?.name ?? d.author?.email ?? "—",
+                approver: d.approver?.name ?? d.approver?.email ?? null,
+                approvedAt: d.approvedAt,
+                sentAt: d.sentAt,
+                rejectionReason: d.rejectionReason,
+                createdAt: d.createdAt,
+              }))}
+            />
+            <RegulatorClocks
+              exerciseId={exercise.id}
+              incidentId={activeIncident?.id ?? null}
+              clocks={regulatorClocks.map((c) => ({
+                id: c.id,
+                regulator: c.regulator,
+                trigger: c.trigger,
+                slaHours: c.slaHours,
+                dueAt: c.dueAt,
+                status: c.status,
+                sentAt: c.sentAt,
+                ownerRoleTitle: c.ownerRoleTitle,
+                approverRoleTitle: c.approverRoleTitle,
+                waiverRationale: c.waiverRationale,
+              }))}
+            />
+          </div>
+        }
+        team={
+          <div className="space-y-4">
+            <LivePresenceBar
+              exerciseId={exercise.id}
+              members={presence}
+              status={exercise.status}
+              pollMs={3000}
+            />
+            <SeatBoardCompact exerciseId={exercise.id} seats={seats} meId={me.id} />
             <section className="space-y-2">
               <div className="flex items-baseline justify-between">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-ink dark:text-slate-200">
-                  My inbox
-                </h2>
-                <span className="text-xs text-muted dark:text-soft">
-                  {inbox.length} message{inbox.length === 1 ? "" : "s"}
-                  {unreadCount > 0 && (
-                    <span className="ml-2 rounded-full bg-rose-600 px-2 py-0.5 text-white">
-                      {unreadCount} unread
-                    </span>
-                  )}
-                </span>
-              </div>
-              {inbox.length === 0 ? (
-                <p className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-center text-xs text-muted dark:border-slate-700 dark:bg-slate-900 dark:text-soft">
-                  No messages addressed to{" "}
-                  <span className="font-medium">{participant.roleTitle}</span> yet.
-                  {exercise.status !== "IN_PROGRESS" && (
-                    <>
-                      <br />
-                      Exercise is currently <strong>{exercise.status}</strong>.
-                    </>
-                  )}
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {inbox.map((item) => {
-                    const existing =
-                      item.kind === "INJECT" ? responseByInject.get(item.id) ?? null : null;
-                    return (
-                      <LiveInboxItem
-                        key={`${item.kind}:${item.id}`}
-                        exerciseId={exercise.id}
-                        item={item}
-                        existingResponse={
-                          existing
-                            ? {
-                                assessment: existing.assessment,
-                                proposedActions: existing.proposedActions,
-                                stakeholders: existing.stakeholders,
-                                resources: existing.resources,
-                                commsNeeds: existing.commsNeeds,
-                              }
-                            : null
-                        }
-                      />
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-
-            <section className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-ink dark:text-slate-200">
-                  Live team feed
-                </h2>
-                <span className="text-xs text-muted dark:text-soft">{feed.length} entries</span>
+                <h2 className="text-sm font-semibold text-ink">Live team feed</h2>
+                <span className="text-xs text-muted">{feed.length} entries</span>
               </div>
               {feed.length === 0 ? (
-                <p className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-center text-xs text-muted dark:border-slate-700 dark:bg-slate-900 dark:text-soft">
-                  No activity yet. Anything anyone logs, releases or responds to will appear here in
-                  real-time.
+                <p className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-center text-xs text-muted">
+                  No activity yet. Anything anyone logs, releases or responds to will
+                  appear here in real-time.
                 </p>
               ) : (
                 <ul className="space-y-2">
@@ -446,8 +437,8 @@ export default async function LiveWorkspacePage({
               )}
             </section>
           </div>
-        </main>
-      </div>
+        }
+      />
 
       {/* Floating team chat — always reachable, bottom-right drawer. */}
       <FloatingChatDrawer exerciseId={exercise.id} meId={me.id} messages={chat} />
