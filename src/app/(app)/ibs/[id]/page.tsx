@@ -8,6 +8,9 @@ import {
   deprecateIBSAction,
   deleteIBSAction,
 } from "@/app/actions/ibs";
+import DependencyMap from "@/components/ibs/DependencyMap";
+import ToleranceTester from "@/components/ibs/ToleranceTester";
+import HarmTypeLibrary from "@/components/ibs/HarmTypeLibrary";
 
 export default async function IBSDetailPage({
   params,
@@ -33,6 +36,40 @@ export default async function IBSDetailPage({
   if (!ibs) notFound();
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
   const editing = canManage && sp.edit === "1";
+
+  // Compute shared-dependency map — for every dependency item this IBS uses,
+  // find which OTHER IBSs in the org list the same item.
+  const peers = await prisma.organizationIBS.findMany({
+    where: { orgId: me.orgId, id: { not: ibs.id } },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      technology: true,
+      thirdParties: true,
+      information: true,
+      processes: true,
+    },
+  });
+  const sharedBy: Record<string, { id: string; code: string; name: string }[]> = {};
+  const allItems = [
+    ...ibs.technology,
+    ...ibs.thirdParties,
+    ...ibs.information,
+    ...ibs.processes,
+  ];
+  for (const item of allItems) {
+    const list = peers
+      .filter(
+        (p) =>
+          p.technology.includes(item) ||
+          p.thirdParties.includes(item) ||
+          p.information.includes(item) ||
+          p.processes.includes(item),
+      )
+      .map((p) => ({ id: p.id, code: p.code, name: p.name }));
+    sharedBy[item] = list;
+  }
 
   if (editing) {
     return (
@@ -105,6 +142,36 @@ export default async function IBSDetailPage({
           )}
         </div>
       </header>
+
+      <DependencyMap
+        ibsCode={ibs.code}
+        ibsName={ibs.name}
+        technology={ibs.technology}
+        thirdParties={ibs.thirdParties}
+        information={ibs.information}
+        processes={ibs.processes}
+        peopleNotes={ibs.peopleNotes}
+        facilities={ibs.facilities}
+        sharedBy={sharedBy}
+      />
+
+      <ToleranceTester
+        ibsCode={ibs.code}
+        primaryToleranceMin={ibs.impactToleranceMin}
+        fcaToleranceMin={ibs.fcaToleranceMin}
+        praToleranceMin={ibs.praToleranceMin}
+      />
+
+      <HarmTypeLibrary
+        coverage={{
+          people: ibs.coversPeople,
+          property: ibs.coversProperty,
+          technology: ibs.coversTechnology,
+          dataAvailability: ibs.coversDataAvailability,
+          dataIntegrity: ibs.coversDataIntegrity,
+          thirdParty: ibs.coversThirdParty,
+        }}
+      />
 
       <Card title="Governance & ownership">
         <KV k="Process type" v={ibs.processType ?? "—"} />
