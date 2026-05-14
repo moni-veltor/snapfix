@@ -31,10 +31,16 @@ export default function FeaturedCard({
       }}
     >
       <div
-        className={`relative rounded-[11px] bg-surface-1 bg-gradient-brand-soft ${
-          padded ? "p-6" : ""
-        }`}
-        style={{ margin: 1 }}
+        className={`relative rounded-[11px] ${padded ? "p-6" : ""}`}
+        style={{
+          margin: 1,
+          // Stacked backgrounds: soft tint on top, opaque surface beneath.
+          // Two separate classes both set `background` and the second wins
+          // (leaving an alpha-only overlay with no opaque base), which is
+          // why the outer ring used to bleed through.
+          background:
+            "var(--gradient-brand-soft), var(--surface-1)",
+        }}
       >
         {children}
       </div>

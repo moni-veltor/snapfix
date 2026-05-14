@@ -373,18 +373,32 @@ function HeadlineBanner({ headline }: { headline: ReturnType<typeof pickHeadline
     <FeaturedCard className={toneClass} glow={headline.tone === "live"}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 max-w-2xl">
-          <div className={`flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] ${eyebrowClass}`}>
-            {headline.tone === "live" && (
+          {headline.tone === "live" ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_0_3px_rgba(244,63,94,0.18)]">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-500 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-90" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
               </span>
-            )}
-            {headline.tone === "ok" && <Sparkles size={11} />}
-            {headline.tone === "critical" && <ShieldAlert size={11} />}
-            {headline.eyebrow}
-          </div>
-          <h2 className="mt-1.5 text-xl font-semibold text-ink">{headline.title}</h2>
+              {headline.eyebrow}
+            </span>
+          ) : (
+            <div
+              className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] ${eyebrowClass} ${
+                headline.tone === "critical"
+                  ? "bg-rose-100 dark:bg-rose-950/40"
+                  : headline.tone === "warn"
+                    ? "bg-amber-100 dark:bg-amber-950/40"
+                    : headline.tone === "info"
+                      ? "bg-indigo-100 dark:bg-indigo-950/40"
+                      : "bg-emerald-100 dark:bg-emerald-950/40"
+              }`}
+            >
+              {headline.tone === "ok" && <Sparkles size={11} />}
+              {headline.tone === "critical" && <ShieldAlert size={11} />}
+              {headline.eyebrow}
+            </div>
+          )}
+          <h2 className="mt-2 text-xl font-semibold text-ink">{headline.title}</h2>
           <p className="mt-1.5 text-sm text-muted">{headline.body}</p>
         </div>
         <Link
