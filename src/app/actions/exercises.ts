@@ -224,6 +224,11 @@ export async function startExerciseAction(formData: FormData) {
     select: { status: true, startedAt: true, dDayAnchor: true },
   });
   if (!exercise) return;
+
+  // Generate empty seats for every org role so participants can claim live.
+  const { ensureSeatsForExercise } = await import("@/app/actions/seats");
+  await ensureSeatsForExercise(id, me.orgId);
+
   await prisma.exercise.update({
     where: { id },
     data: {
@@ -236,6 +241,7 @@ export async function startExerciseAction(formData: FormData) {
   });
   revalidatePath(`/exercises/${id}`);
   revalidatePath(`/exercises/${id}/facilitator`);
+  revalidatePath(`/exercises/${id}/live`);
 }
 
 export async function pauseExerciseAction(formData: FormData) {

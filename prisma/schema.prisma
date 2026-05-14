@@ -43,6 +43,7 @@ model Organization {
   auditLog      AuditLogEntry[]
   teamTemplates OrganizationTeamTemplate[]
   vendors       Vendor[]
+  roles         OrganizationRole[]
 }
 
 model Invitation {
@@ -104,6 +105,8 @@ model User {
   imtMeetingsRecorded     IMTMeeting[]            @relation("IMTMeetingScribe")
   bcpActivations          BCPActivation[]         @relation("BCPActivator")
   bcpDeactivations        BCPActivation[]         @relation("BCPDeactivator")
+  defaultRoleHoldings     OrganizationRole[]      @relation("RoleDefaultHolder")
+  heldSeats               ExerciseSeat[]          @relation("SeatHolder")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -379,6 +382,7 @@ model Exercise {
   actionItems    ExerciseActionItem[]
   incidents      Incident[]
   retrospective  Retrospective?
+  seats          ExerciseSeat[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1197,4 +1201,76 @@ model Retrospective {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── Role-as-seat model ────────────────────────────────────────────────────
+//
+// Roles are an org-level concept (CEO, CRO, CTO…). An ExerciseSeat is a
+// role × exercise that may be empty or claimed live. Addressing on
+// events/injects matches by role abbreviation — so when someone claims the
+// CRO seat in the middle of an exercise, every message addressed to "CRO"
+// routes to them immediately.
+
+model OrganizationRole {
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  title          String // "Chief Risk Officer"
+  abbreviation   String // "CRO" — matches inject/event addressing strings
+  responsibility String? // 1-line description of the seat
+  isSMF          Boolean @default(false)
+  isExecutive    Boolean @default(false)
+  orderIdx       Int     @default(0)
+
+  // Deputy chain — this role is the deputy of another role. If the primary's
+  // seat is empty/unreachable, the deputy is expected to step up.
+  deputyOfRoleId String?
+  deputyOf       OrganizationRole?  @relation("RoleDeputy", fields: [deputyOfRoleId], references: [id], onDelete: SetNull)
+  deputies       OrganizationRole[] @relation("RoleDeputy")
+
+  // Standing holder — who normally sits in this seat outside an exercise.
+  // Used as a suggestion when claiming seats live.
+  defaultHolderId String?
+  defaultHolder   User?   @relation("RoleDefaultHolder", fields: [defaultHolderId], references: [id], onDelete: SetNull)
+
+  seats ExerciseSeat[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, abbreviation])
+  @@index([orgId])
+}
+
+enum SeatStatus {
+  EMPTY // No one in the seat
+  CLAIMED // Someone has taken the seat
+  UNREACHABLE // The seat-holder is unreachable; deputy should step up
+  DEPUTY_FILLED // A deputy from another role is covering
+  STOOD_DOWN // The seat was filled but is now stood down
+}
+
+model ExerciseSeat {
+  id         String           @id @default(cuid())
+  exerciseId String
+  exercise   Exercise         @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  roleId     String
+  role       OrganizationRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  status       SeatStatus @default(EMPTY)
+  holderUserId String?
+  holderUser   User?      @relation("SeatHolder", fields: [holderUserId], references: [id], onDelete: SetNull)
+  claimedAt    DateTime?
+  vacatedAt    DateTime?
+
+  /// True if this seat is filled by someone whose primary role is a deputy —
+  /// useful for the UI to distinguish "deputy stepped up" from "primary".
+  isDeputy Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([exerciseId, roleId])
+  @@index([exerciseId, status])
 }

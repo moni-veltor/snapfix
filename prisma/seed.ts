@@ -4,6 +4,7 @@ import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { seedSystemTemplates } from "./seed/templates-index";
+import { seedDefaultRolesForOrg, assignDefaultHolder } from "../src/lib/seed-roles";
 
 if (typeof WebSocket !== "undefined") {
   neonConfig.webSocketConstructor = WebSocket as unknown as typeof neonConfig.webSocketConstructor;
@@ -394,6 +395,20 @@ async function main() {
     });
     castUsers[c.email] = { id: u.id, roleTitle: c.roleTitle };
   }
+
+  // ─── Seed Astro Bank's IMT role catalogue + default holders ───────────────
+  await seedDefaultRolesForOrg(prisma, org.id);
+  // Map default holders so the seat-claim UI suggests sensible defaults
+  await assignDefaultHolder(prisma, org.id, "CEO", castUsers["oakley@astrobank.com"]!.id);
+  await assignDefaultHolder(prisma, org.id, "CRO", castUsers["ferguson@astrobank.com"]!.id);
+  await assignDefaultHolder(prisma, org.id, "CTO", owner.id); // Astro Bank Admin
+  await assignDefaultHolder(prisma, org.id, "Comms Lead", castUsers["lewis@astrobank.com"]!.id);
+  await assignDefaultHolder(prisma, org.id, "Customer Ops Lead", castUsers["tunney@astrobank.com"]!.id);
+  await assignDefaultHolder(prisma, org.id, "ISM", castUsers["musawi@astrobank.com"]!.id);
+  await assignDefaultHolder(prisma, org.id, "Sn.TPM", castUsers["fadaei@astrobank.com"]!.id);
+  await assignDefaultHolder(prisma, org.id, "TPM", castUsers["najem@astrobank.com"]!.id);
+  await assignDefaultHolder(prisma, org.id, "Sn. DA/E", castUsers["sifah@astrobank.com"]!.id);
+  console.log("  Seeded 15 default IMT roles for Astro Bank with default holders.");
 
   // ─── Sample exercise (PLANNING) using Simulation 2 ────────────────────────
   const exercise = await prisma.exercise.create({

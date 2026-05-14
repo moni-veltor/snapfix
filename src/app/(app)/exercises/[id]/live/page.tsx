@@ -18,6 +18,9 @@ import ClosureGate from "@/components/ClosureGate";
 import Pill from "@/components/ui/Pill";
 import LiveScoreBadge from "@/components/scoring/LiveScoreBadge";
 import { scoreIncident } from "@/lib/scoring";
+import SeatBoard from "@/components/seats/SeatBoard";
+import { loadSeats } from "@/lib/seats";
+import { ensureSeatsForExercise } from "@/app/actions/seats";
 
 export default async function LiveWorkspacePage({
   params,
@@ -33,23 +36,49 @@ export default async function LiveWorkspacePage({
   });
   if (!exercise) notFound();
 
-  const participant = await prisma.exerciseParticipant.findFirst({
+  // Ensure seats exist for this exercise so the seat-board is meaningful.
+  await ensureSeatsForExercise(exercise.id, me.orgId);
+  const seats = await loadSeats(exercise.id);
+  const mySeat = seats.find((s) => s.holderUserId === me.id) ?? null;
+  let participant = await prisma.exerciseParticipant.findFirst({
     where: { exerciseId: exercise.id, userId: me.id },
   });
 
-  if (!participant) {
+  // Seat-claim entry view — shown when the user hasn't yet taken a seat.
+  // Replaces the old "you're not on the roster" wall — any org member can
+  // walk in and claim a seat in a live exercise.
+  if (!participant && !mySeat) {
     return (
-      <div className="mx-auto max-w-md space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Live workspace</h1>
-        <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          You're not on the roster for this exercise. Ask the facilitator to add you on the{" "}
-          <Link href={`/exercises/${exercise.id}/team`} className="underline">
-            team page
-          </Link>
-          .
-        </p>
+      <div className="mx-auto max-w-3xl space-y-4">
+        <header>
+          <p className="text-xs uppercase tracking-wide text-muted">{exercise.scenario.title}</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{exercise.title}</h1>
+          <p className="mt-2 text-sm text-muted">
+            Welcome to the war room. Pick a seat below to join the exercise — the platform
+            routes all addressed messages and decisions through whoever's holding the seat at
+            the moment.
+          </p>
+        </header>
+        <SeatBoard exerciseId={exercise.id} seats={seats} meId={me.id} />
       </div>
     );
+  }
+  // Auto-create a participant record on first claim if missing (back-compat)
+  if (!participant && mySeat) {
+    participant = await prisma.exerciseParticipant.create({
+      data: {
+        exerciseId: exercise.id,
+        userId: me.id,
+        roleTitle: mySeat.roleAbbreviation,
+        exerciseRole: "PARTICIPANT",
+        mobilisationStatus: "MOBILISED",
+        mobilisedAt: new Date(),
+      },
+    });
+  }
+  if (!participant) {
+    // Safety net — shouldn't happen, but TypeScript needs it
+    return null;
   }
 
   const [
@@ -185,7 +214,9 @@ export default async function LiveWorkspacePage({
             pollMs={3000}
           />
 
-          {activeIncident && (
+          <SeatBoard exerciseId={exercise.id} seats={seats} meId={me.id} />
+
+          {activeIncident && mobilisation.length > 0 && (
             <MobilisationChecklist
               exerciseId={exercise.id}
               members={mobilisation}
