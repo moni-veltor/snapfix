@@ -44,6 +44,7 @@ model Organization {
   teamTemplates OrganizationTeamTemplate[]
   vendors       Vendor[]
   roles         OrganizationRole[]
+  techSystems   TechSystem[]
 }
 
 model Invitation {
@@ -1371,4 +1372,95 @@ model ExerciseScratchpad {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── Technical recovery — system register + DR test ledger ──────────────────
+
+enum TechSystemKind {
+  APPLICATION
+  INFRASTRUCTURE
+  DATABASE
+  NETWORK
+  AUTH
+  OBSERVABILITY
+  OTHER
+}
+
+enum TechSystemTier {
+  CRITICAL  // RTO < 1h, RPO measured in minutes
+  ESSENTIAL // RTO < 4h
+  IMPORTANT // RTO < 24h
+  ROUTINE   // best effort
+}
+
+enum TechFailoverKind {
+  ACTIVE_ACTIVE
+  ACTIVE_PASSIVE
+  WARM_STANDBY
+  COLD_RESTORE
+  NONE
+}
+
+enum DRTestOutcome {
+  PASS
+  PARTIAL
+  FAIL
+}
+
+/// A technical system that supports one or more IBSs. The recovery posture
+/// for each — RTO/RPO/MTPD, failover topology, backup story — lives here.
+model TechSystem {
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  name        String
+  kind        TechSystemKind @default(APPLICATION)
+  tier        TechSystemTier @default(IMPORTANT)
+  description String?
+  owner       String?
+
+  // Objectives
+  rtoMin  Int? // recovery time objective (minutes)
+  rpoMin  Int? // recovery point objective (minutes)
+  mtpdMin Int? // max tolerable period of disruption (minutes)
+
+  // Failover topology
+  primaryRegion  String?
+  failoverRegion String?
+  failoverKind   TechFailoverKind @default(NONE)
+
+  // Backup posture
+  backupFrequency       String? // free text e.g. "continuous", "hourly", "daily"
+  backupRetentionDays   Int?
+  lastBackupValidatedAt DateTime?
+
+  notes String?
+
+  drTests DRTest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, name])
+  @@index([orgId])
+}
+
+/// A DR-test result against a TechSystem. Used to derive "last tested" and
+/// "actual RTO vs target" — the ledger the regulator asks for.
+model DRTest {
+  id       String     @id @default(cuid())
+  systemId String
+  system   TechSystem @relation(fields: [systemId], references: [id], onDelete: Cascade)
+
+  testedAt     DateTime
+  outcome      DRTestOutcome @default(PASS)
+  rtoActualMin Int?
+  rpoActualMin Int?
+  participants String? // free text who ran the test
+  notes        String?
+
+  createdAt DateTime @default(now())
+
+  @@index([systemId])
 }

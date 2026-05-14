@@ -66,6 +66,7 @@ const ROUTE_PREFIX_TO_ZONE: { prefix: string; zone: Zone }[] = [
   { prefix: "/analytics", zone: "intel" },
   { prefix: "/audit", zone: "intel" },
   { prefix: "/ibs", zone: "intel" },
+  { prefix: "/tech-recovery", zone: "intel" },
 
   { prefix: "/org", zone: "governance" },
   { prefix: "/settings", zone: "governance" },

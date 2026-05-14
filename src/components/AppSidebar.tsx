@@ -12,6 +12,7 @@ import {
   CheckSquare,
   Building2,
   Boxes,
+  Server,
   BarChart3,
   Users,
   ScrollText,
@@ -43,6 +44,7 @@ const PRIMARY: NavItem[] = [
 const REGISTRY: NavItem[] = [
   { href: "/ibs", label: "IBS register", icon: Building2 },
   { href: "/vendors", label: "Vendors", icon: Boxes },
+  { href: "/tech-recovery", label: "Tech recovery", icon: Server },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
