@@ -1,19 +1,29 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import {
+  ArrowLeft,
+  Building,
+  Clock,
+  FileText,
+  History,
+  Plus,
+  Trash2,
+  Zap,
+} from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   addEventAction,
   addIBSAction,
-  addInjectAction,
   deleteEventAction,
   deleteIBSAction,
   deleteInjectAction,
 } from "@/app/actions/scenarios";
 import ArtefactList from "@/components/ArtefactList";
 import ArtefactUpload from "@/components/ArtefactUpload";
-import MSELTimeline from "@/components/scenario/MSELTimeline";
 import InjectComposer from "@/components/scenario/InjectComposer";
+import ScenarioDetailTabs from "@/components/scenarios/ScenarioDetailTabs";
+import ScenarioPlayback from "@/components/scenarios/ScenarioPlayback";
 
 const ARTEFACT_INCLUDE = {
   orderBy: { createdAt: "asc" as const },
@@ -45,13 +55,12 @@ export default async function ScenarioDetailPage({
         include: { participants: { select: { roleTitle: true } } },
       },
       artefacts: ARTEFACT_INCLUDE,
+      templateOrigin: { select: { id: true, title: true, category: true } },
     },
   });
   if (!scenario) notFound();
   const canEdit = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
 
-  // Union of role titles used on exercises of this scenario — used by the
-  // addressing validator on the inject composer + timeline preview.
   const knownRoles = Array.from(
     new Set(scenario.exercises.flatMap((e) => e.participants.map((p) => p.roleTitle))),
   );
@@ -59,247 +68,630 @@ export default async function ScenarioDetailPage({
     Math.max(0, ...scenario.injects.map((j) => j.injectNo)) + 1;
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{scenario.title}</h1>
-        <p className="mt-1 text-sm text-muted">
-          D-Day {scenario.dDayDate.toISOString().slice(0, 10)} · {scenario.durationMin} min
-        </p>
-        <div className="mt-4 prose prose-sm max-w-none whitespace-pre-wrap text-ink">
-          {scenario.background}
-        </div>
-      </header>
+    <div className="space-y-6">
+      <Link
+        href="/scenarios"
+        className="inline-flex items-center gap-1 text-xs text-muted hover:text-ink"
+      >
+        <ArrowLeft size={12} />
+        Back to scenarios
+      </Link>
 
-      {canEdit && (
-        <div className="rounded-lg border border-line bg-surface-1 p-4">
-          <Link
-            href={`/exercises/new?scenarioId=${scenario.id}`}
-            className="inline-block rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
-          >
-            Plan an exercise from this scenario
-          </Link>
-        </div>
-      )}
-
-      <Section title="Documents">
-        <ArtefactList artefacts={scenario.artefacts} canManage={canEdit} empty="No scenario documents yet (facilitator/participant/scenario guide, briefing docs)." />
-        {canEdit && <ArtefactUpload target="SCENARIO" targetId={scenario.id} />}
-      </Section>
-
-      <Section title="Important Business Services">
-        <ul className="space-y-2">
-          {scenario.ibsList.map((ibs) => (
-            <li key={ibs.id} className="flex items-start justify-between rounded-md border border-line bg-surface-1 p-3 text-sm">
-              <div>
-                <div className="font-medium">
-                  {ibs.code} — {ibs.name}{" "}
-                  <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs">
-                    {ibs.criticality}
-                  </span>
-                </div>
-                <div className="text-muted">
-                  Impact tolerance: {ibs.impactToleranceMin} min
-                  {ibs.impactMetrics ? ` · ${ibs.impactMetrics}` : ""}
-                </div>
-                {ibs.description && <div className="mt-1 text-muted">{ibs.description}</div>}
-              </div>
-              {canEdit && (
-                <form action={deleteIBSAction}>
-                  <input type="hidden" name="id" value={ibs.id} />
-                  <input type="hidden" name="scenarioId" value={scenario.id} />
-                  <button className="text-xs text-rose-600 hover:underline">Delete</button>
-                </form>
-              )}
-            </li>
-          ))}
-        </ul>
-        {canEdit && (
-          <form action={addIBSAction} className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-3 text-sm">
-            <input type="hidden" name="scenarioId" value={scenario.id} />
-            <input name="code" required placeholder="IBS_06" className="rounded border border-line-strong px-2 py-1" />
-            <input name="name" required placeholder="Name" className="rounded border border-line-strong px-2 py-1" />
-            <input name="impactToleranceMin" type="number" min={0} required placeholder="Impact tolerance (min)" className="rounded border border-line-strong px-2 py-1" />
-            <select name="criticality" required defaultValue="HIGH" className="rounded border border-line-strong px-2 py-1">
-              <option>LOW</option>
-              <option>MEDIUM</option>
-              <option>HIGH</option>
-              <option>CRITICAL</option>
-            </select>
-            <input name="impactMetrics" placeholder="Impact metrics (optional)" className="col-span-2 rounded border border-line-strong px-2 py-1" />
-            <textarea name="description" placeholder="Description (optional)" className="col-span-2 rounded border border-line-strong px-2 py-1" rows={2} />
-            <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700">Add IBS</button>
-          </form>
-        )}
-      </Section>
-
-      <Section title="Timeline">
-        <MSELTimeline
-          durationMin={scenario.durationMin}
-          events={scenario.events.map((e) => ({
-            id: e.id,
-            kind: "EVENT" as const,
-            no: e.eventNo,
-            time: e.scheduledTime,
-            title: e.title,
-            description: e.description,
-            senderRoleTitle: e.senderRoleTitle,
-            toRoleTitles: e.toRoleTitles,
-            ccRoleTitles: e.ccRoleTitles,
-          }))}
-          injects={scenario.injects.map((j) => ({
-            id: j.id,
-            kind: "INJECT" as const,
-            no: j.injectNo,
-            time: j.scheduledTime,
-            title: j.summary,
-            description: j.description,
-            senderRoleTitle: j.senderRoleTitle,
-            toRoleTitles: j.toRoleTitles,
-            ccRoleTitles: j.ccRoleTitles,
-          }))}
-          knownRoles={knownRoles}
+      {/* Hero */}
+      <header className="relative overflow-hidden rounded-2xl border border-line bg-gradient-brand-soft p-6">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-12 -top-12 h-64 w-64 rounded-full opacity-40 blur-3xl"
+          style={{ background: "var(--gradient-brand)" }}
         />
-      </Section>
-
-      <Section title="Master Scenario Events List (MSEL)">
-        <ol className="space-y-2">
-          {scenario.events.map((e) => (
-            <li key={e.id} className="rounded-md border border-line bg-surface-1 p-3 text-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-medium">
-                    Event #{e.eventNo} · {e.scheduledTime} — {e.title}
-                  </div>
-                  <p className="mt-1 whitespace-pre-wrap text-ink">{e.description}</p>
-                  <AddressingBlock
-                    from={e.senderRoleTitle}
-                    to={e.toRoleTitles}
-                    cc={e.ccRoleTitles}
-                  />
-                  {e.expectedActions.length > 0 && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-muted">Expected actions</summary>
-                      <ul className="mt-1 list-disc pl-5 text-ink">
-                        {e.expectedActions.map((a, i) => <li key={i}>{a}</li>)}
-                      </ul>
-                    </details>
-                  )}
-                  {(e.artefacts.length > 0 || canEdit) && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-muted">
-                        Attachments ({e.artefacts.length})
-                      </summary>
-                      <div className="mt-2 space-y-2">
-                        <ArtefactList artefacts={e.artefacts} canManage={canEdit} empty="No attachments." />
-                        {canEdit && <ArtefactUpload target="EVENT" targetId={e.id} compact />}
-                      </div>
-                    </details>
-                  )}
-                </div>
-                {canEdit && (
-                  <form action={deleteEventAction}>
-                    <input type="hidden" name="id" value={e.id} />
-                    <input type="hidden" name="scenarioId" value={scenario.id} />
-                    <button className="text-xs text-rose-600 hover:underline">Delete</button>
-                  </form>
-                )}
-              </div>
-            </li>
-          ))}
-        </ol>
-        {canEdit && (
-          <form action={addEventAction} className="mt-3 grid grid-cols-2 gap-2 rounded-md border border-dashed border-line-strong bg-surface-1 p-3 text-sm">
-            <input type="hidden" name="scenarioId" value={scenario.id} />
-            <input name="eventNo" type="number" min={1} required placeholder="Event #" className="rounded border border-line-strong px-2 py-1" />
-            <input name="scheduledTime" required pattern="[0-9]{2}:[0-9]{2}" placeholder="HH:MM (D-Day)" className="rounded border border-line-strong px-2 py-1" />
-            <input name="title" required placeholder="Title" className="col-span-2 rounded border border-line-strong px-2 py-1" />
-            <textarea name="description" required placeholder="Description" className="col-span-2 rounded border border-line-strong px-2 py-1" rows={3} />
-            <input name="senderRoleTitle" placeholder='From (role title — e.g. "CTO")' className="col-span-2 rounded border border-line-strong px-2 py-1" />
-            <input name="toRoleTitles" placeholder='To (comma-separated role titles — e.g. "Sn.TPM, TPM, ISM")' className="col-span-2 rounded border border-line-strong px-2 py-1" />
-            <input name="ccRoleTitles" placeholder='Cc (comma-separated role titles — e.g. "CEO, CRO")' className="col-span-2 rounded border border-line-strong px-2 py-1" />
-            <textarea name="expectedActions" placeholder="Expected actions (one per line)" className="rounded border border-line-strong px-2 py-1" rows={3} />
-            <textarea name="objectives" placeholder="Objectives (one per line)" className="rounded border border-line-strong px-2 py-1" rows={3} />
-            <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700">Add event</button>
-          </form>
-        )}
-      </Section>
-
-      <Section title="Injects">
-        <ul className="space-y-2">
-          {scenario.injects.map((j) => (
-            <li key={j.id} className="rounded-md border border-line bg-surface-1 p-3 text-sm">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-medium">
-                    Inject #{j.injectNo} · {j.scheduledTime} — {j.summary}
-                  </div>
-                  <p className="mt-1 whitespace-pre-wrap text-ink">{j.description}</p>
-                  <AddressingBlock
-                    from={j.senderRoleTitle}
-                    to={j.toRoleTitles}
-                    cc={j.ccRoleTitles}
-                  />
-                  {j.relation && (
-                    <p className="mt-2 text-xs text-muted"><span className="font-semibold">Relation:</span> {j.relation}</p>
-                  )}
-                  {(j.artefacts.length > 0 || canEdit) && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-muted">
-                        Attachments ({j.artefacts.length})
-                      </summary>
-                      <div className="mt-2 space-y-2">
-                        <ArtefactList artefacts={j.artefacts} canManage={canEdit} empty="No attachments." />
-                        {canEdit && <ArtefactUpload target="INJECT" targetId={j.id} compact />}
-                      </div>
-                    </details>
-                  )}
-                </div>
-                {canEdit && (
-                  <form action={deleteInjectAction}>
-                    <input type="hidden" name="id" value={j.id} />
-                    <input type="hidden" name="scenarioId" value={scenario.id} />
-                    <button className="text-xs text-rose-600 hover:underline">Delete</button>
-                  </form>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-        {canEdit && (
-          <div className="mt-4">
-            <InjectComposer
-              scenarioId={scenario.id}
-              nextInjectNo={nextInjectNo}
-              knownRoles={knownRoles}
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:text-indigo-200">
+              {scenario.category && <span>{scenario.category}</span>}
+              {scenario.templateOrigin && (
+                <>
+                  <span className="text-soft">·</span>
+                  <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-indigo-700 dark:text-indigo-200">
+                    cloned from {scenario.templateOrigin.title}
+                  </span>
+                </>
+              )}
+            </div>
+            <h1 className="mt-1 text-balance text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+              {scenario.title}
+            </h1>
+            <p className="mt-3 line-clamp-3 text-sm text-muted">
+              {scenario.background}
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <HeroStat
+              icon={<Clock size={14} />}
+              value={`${scenario.durationMin}m`}
+              label="Duration"
+            />
+            <HeroStat
+              icon={<FileText size={14} />}
+              value={scenario.events.length}
+              label="Events"
+            />
+            <HeroStat
+              icon={<Zap size={14} />}
+              value={scenario.injects.length}
+              label="Injects"
             />
           </div>
+        </div>
+        {canEdit && (
+          <div className="relative mt-5 flex flex-wrap gap-2">
+            <Link
+              href={`/exercises/new?scenarioId=${scenario.id}`}
+              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
+            >
+              Plan an exercise from this scenario
+            </Link>
+          </div>
         )}
-      </Section>
+      </header>
 
-      {scenario.exercises.length > 0 && (
-        <Section title="Recent runs">
-          <ul className="space-y-1 text-sm">
-            {scenario.exercises.map((r) => (
-              <li key={r.id}>
-                <Link className="hover:underline" href={`/exercises/${r.id}`}>
-                  {r.title}
-                </Link>
-                <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">{r.status}</span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
+      <ScenarioDetailTabs
+        counts={{
+          events: scenario.events.length,
+          injects: scenario.injects.length,
+          ibs: scenario.ibsList.length,
+          documents: scenario.artefacts.length,
+        }}
+        panels={{
+          overview: (
+            <div className="space-y-4">
+              <SectionCard title="Background" icon={<FileText size={14} />} tone="indigo">
+                <p className="whitespace-pre-wrap text-sm text-ink">
+                  {scenario.background}
+                </p>
+              </SectionCard>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <SectionCard
+                  title={`D-Day · ${scenario.dDayDate.toISOString().slice(0, 10)}`}
+                  icon={<Clock size={14} />}
+                  tone="cyan"
+                >
+                  <ul className="text-xs text-muted">
+                    <li>
+                      Duration: <span className="text-ink">{scenario.durationMin} minutes</span>
+                    </li>
+                    {scenario.category && (
+                      <li>
+                        Category: <span className="text-ink">{scenario.category}</span>
+                      </li>
+                    )}
+                    {scenario.srrRef && (
+                      <li>
+                        Strategic risk ref: <span className="font-mono text-ink">{scenario.srrRef}</span>
+                      </li>
+                    )}
+                    {scenario.tier && (
+                      <li>
+                        Firm tier: <span className="text-ink">{scenario.tier.replace("_", " ")}</span>
+                      </li>
+                    )}
+                  </ul>
+                </SectionCard>
+
+                <SectionCard
+                  title={`Recent runs (${scenario.exercises.length})`}
+                  icon={<History size={14} />}
+                  tone="emerald"
+                >
+                  {scenario.exercises.length === 0 ? (
+                    <p className="text-xs text-muted">
+                      This scenario has never been exercised.
+                    </p>
+                  ) : (
+                    <ul className="space-y-1 text-xs">
+                      {scenario.exercises.map((r) => (
+                        <li
+                          key={r.id}
+                          className="flex items-center justify-between gap-2 rounded-md border border-line bg-surface-0 px-2.5 py-1.5"
+                        >
+                          <Link href={`/exercises/${r.id}`} className="text-ink hover:underline">
+                            {r.title}
+                          </Link>
+                          <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted">
+                            {r.status.replace("_", " ")}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </SectionCard>
+              </div>
+            </div>
+          ),
+          timeline: (
+            <ScenarioPlayback
+              durationMin={scenario.durationMin}
+              events={scenario.events.map((e) => ({
+                id: e.id,
+                eventNo: e.eventNo,
+                scheduledTime: e.scheduledTime,
+                title: e.title,
+                description: e.description,
+                senderRoleTitle: e.senderRoleTitle,
+                toRoleTitles: e.toRoleTitles,
+                ccRoleTitles: e.ccRoleTitles,
+              }))}
+              injects={scenario.injects.map((j) => ({
+                id: j.id,
+                injectNo: j.injectNo,
+                scheduledTime: j.scheduledTime,
+                summary: j.summary,
+                description: j.description,
+                relation: j.relation,
+                senderRoleTitle: j.senderRoleTitle,
+                toRoleTitles: j.toRoleTitles,
+                ccRoleTitles: j.ccRoleTitles,
+              }))}
+            />
+          ),
+          events: (
+            <div className="space-y-4">
+              {scenario.events.length === 0 ? (
+                <EmptyTab
+                  icon={<FileText size={20} />}
+                  title="No events yet"
+                  body="Events are the scheduled beats of the scenario — the messages your team responds to. Add the first one below."
+                />
+              ) : (
+                <ol className="space-y-2">
+                  {scenario.events.map((e) => (
+                    <li
+                      key={e.id}
+                      className="rounded-xl border border-line bg-surface-1 p-3 text-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-baseline gap-2">
+                            <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                              Event #{e.eventNo}
+                            </span>
+                            <span className="font-mono text-[10px] text-soft">
+                              {e.scheduledTime}
+                            </span>
+                            <h3 className="font-semibold text-ink">{e.title}</h3>
+                          </div>
+                          <p className="mt-1.5 whitespace-pre-wrap text-xs text-muted">
+                            {e.description}
+                          </p>
+                          <AddressingBlock
+                            from={e.senderRoleTitle}
+                            to={e.toRoleTitles}
+                            cc={e.ccRoleTitles}
+                          />
+                          {e.expectedActions.length > 0 && (
+                            <details className="mt-2 text-xs">
+                              <summary className="cursor-pointer text-muted">
+                                Expected actions ({e.expectedActions.length})
+                              </summary>
+                              <ul className="mt-1 list-disc pl-5 text-ink">
+                                {e.expectedActions.map((a, i) => (
+                                  <li key={i}>{a}</li>
+                                ))}
+                              </ul>
+                            </details>
+                          )}
+                          {(e.artefacts.length > 0 || canEdit) && (
+                            <details className="mt-2 text-xs">
+                              <summary className="cursor-pointer text-muted">
+                                Attachments ({e.artefacts.length})
+                              </summary>
+                              <div className="mt-2 space-y-2">
+                                <ArtefactList
+                                  artefacts={e.artefacts}
+                                  canManage={canEdit}
+                                  empty="No attachments."
+                                />
+                                {canEdit && (
+                                  <ArtefactUpload target="EVENT" targetId={e.id} compact />
+                                )}
+                              </div>
+                            </details>
+                          )}
+                        </div>
+                        {canEdit && (
+                          <form action={deleteEventAction}>
+                            <input type="hidden" name="id" value={e.id} />
+                            <input type="hidden" name="scenarioId" value={scenario.id} />
+                            <button
+                              type="submit"
+                              className="rounded-md p-1.5 text-soft hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
+                              aria-label="Delete event"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </form>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+
+              {canEdit && (
+                <form
+                  action={addEventAction}
+                  className="space-y-2 rounded-xl border-2 border-dashed border-indigo-300 bg-surface-1 p-4 text-sm dark:border-indigo-700"
+                >
+                  <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    <Plus size={11} /> Add an event
+                  </div>
+                  <input type="hidden" name="scenarioId" value={scenario.id} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      name="eventNo"
+                      type="number"
+                      min={1}
+                      required
+                      placeholder="Event #"
+                      className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                    />
+                    <input
+                      name="scheduledTime"
+                      required
+                      pattern="[0-9]{2}:[0-9]{2}"
+                      placeholder="HH:MM (D-Day)"
+                      className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                    />
+                  </div>
+                  <input
+                    name="title"
+                    required
+                    placeholder="Title"
+                    className="w-full rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  />
+                  <textarea
+                    name="description"
+                    required
+                    placeholder="Description"
+                    rows={2}
+                    className="w-full rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  />
+                  <input
+                    name="senderRoleTitle"
+                    placeholder='From (role title — e.g. "CTO")'
+                    className="w-full rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  />
+                  <input
+                    name="toRoleTitles"
+                    placeholder='To (comma-separated — "Sn.TPM, TPM, ISM")'
+                    className="w-full rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  />
+                  <input
+                    name="ccRoleTitles"
+                    placeholder='Cc (comma-separated)'
+                    className="w-full rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <textarea
+                      name="expectedActions"
+                      placeholder="Expected actions (one per line)"
+                      rows={2}
+                      className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                    />
+                    <textarea
+                      name="objectives"
+                      placeholder="Objectives (one per line)"
+                      rows={2}
+                      className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                  >
+                    Add event
+                  </button>
+                </form>
+              )}
+            </div>
+          ),
+          injects: (
+            <div className="space-y-4">
+              {scenario.injects.length === 0 ? (
+                <EmptyTab
+                  icon={<Zap size={20} />}
+                  title="No injects yet"
+                  body="Injects are unscheduled pressure beats — the curveballs that test how your team adapts. Use the composer below to add one."
+                />
+              ) : (
+                <ul className="space-y-2">
+                  {scenario.injects.map((j) => (
+                    <li
+                      key={j.id}
+                      className="rounded-xl border border-line bg-surface-1 p-3 text-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-baseline gap-2">
+                            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                              Inject #{j.injectNo}
+                            </span>
+                            <span className="font-mono text-[10px] text-soft">
+                              {j.scheduledTime}
+                            </span>
+                            <h3 className="font-semibold text-ink">{j.summary}</h3>
+                          </div>
+                          <p className="mt-1.5 whitespace-pre-wrap text-xs text-muted">
+                            {j.description}
+                          </p>
+                          <AddressingBlock
+                            from={j.senderRoleTitle}
+                            to={j.toRoleTitles}
+                            cc={j.ccRoleTitles}
+                          />
+                          {j.relation && (
+                            <p className="mt-1.5 rounded-md bg-surface-0 px-2 py-1 text-[11px] italic text-muted">
+                              {j.relation}
+                            </p>
+                          )}
+                          {(j.artefacts.length > 0 || canEdit) && (
+                            <details className="mt-2 text-xs">
+                              <summary className="cursor-pointer text-muted">
+                                Attachments ({j.artefacts.length})
+                              </summary>
+                              <div className="mt-2 space-y-2">
+                                <ArtefactList
+                                  artefacts={j.artefacts}
+                                  canManage={canEdit}
+                                  empty="No attachments."
+                                />
+                                {canEdit && (
+                                  <ArtefactUpload target="INJECT" targetId={j.id} compact />
+                                )}
+                              </div>
+                            </details>
+                          )}
+                        </div>
+                        {canEdit && (
+                          <form action={deleteInjectAction}>
+                            <input type="hidden" name="id" value={j.id} />
+                            <input type="hidden" name="scenarioId" value={scenario.id} />
+                            <button
+                              type="submit"
+                              className="rounded-md p-1.5 text-soft hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
+                              aria-label="Delete inject"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </form>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {canEdit && (
+                <InjectComposer
+                  scenarioId={scenario.id}
+                  nextInjectNo={nextInjectNo}
+                  knownRoles={knownRoles}
+                />
+              )}
+            </div>
+          ),
+          ibs: (
+            <div className="space-y-4">
+              {scenario.ibsList.length === 0 ? (
+                <EmptyTab
+                  icon={<Building size={20} />}
+                  title="No IBSs linked yet"
+                  body="Link the Important Business Services this scenario stresses. Used for coverage analytics and tolerance reporting."
+                />
+              ) : (
+                <ul className="grid gap-2 sm:grid-cols-2">
+                  {scenario.ibsList.map((ibs) => (
+                    <li
+                      key={ibs.id}
+                      className="flex items-start justify-between gap-2 rounded-xl border border-line bg-surface-1 p-3 text-sm"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-baseline gap-2">
+                          <span className="font-mono text-[10px] text-soft">{ibs.code}</span>
+                          <span className="font-medium text-ink">{ibs.name}</span>
+                          <CriticalityPill kind={ibs.criticality} />
+                        </div>
+                        <div className="mt-1 text-[11px] text-muted">
+                          Tolerance {ibs.impactToleranceMin} min
+                          {ibs.impactMetrics ? ` · ${ibs.impactMetrics}` : ""}
+                        </div>
+                        {ibs.description && (
+                          <p className="mt-1 text-[11px] text-muted">{ibs.description}</p>
+                        )}
+                      </div>
+                      {canEdit && (
+                        <form action={deleteIBSAction}>
+                          <input type="hidden" name="id" value={ibs.id} />
+                          <input type="hidden" name="scenarioId" value={scenario.id} />
+                          <button
+                            type="submit"
+                            className="rounded-md p-1.5 text-soft hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
+                            aria-label="Delete IBS"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </form>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {canEdit && (
+                <form
+                  action={addIBSAction}
+                  className="grid grid-cols-2 gap-2 rounded-xl border-2 border-dashed border-indigo-300 bg-surface-1 p-4 text-sm dark:border-indigo-700"
+                >
+                  <div className="col-span-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    <Plus size={11} /> Add an IBS
+                  </div>
+                  <input type="hidden" name="scenarioId" value={scenario.id} />
+                  <input
+                    name="code"
+                    required
+                    placeholder="IBS_06"
+                    className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  />
+                  <input
+                    name="name"
+                    required
+                    placeholder="Name"
+                    className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  />
+                  <input
+                    name="impactToleranceMin"
+                    type="number"
+                    min={0}
+                    required
+                    placeholder="Impact tolerance (min)"
+                    className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  />
+                  <select
+                    name="criticality"
+                    required
+                    defaultValue="HIGH"
+                    className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  >
+                    <option>LOW</option>
+                    <option>MEDIUM</option>
+                    <option>HIGH</option>
+                    <option>CRITICAL</option>
+                  </select>
+                  <input
+                    name="impactMetrics"
+                    placeholder="Impact metrics (optional)"
+                    className="col-span-2 rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  />
+                  <textarea
+                    name="description"
+                    placeholder="Description (optional)"
+                    rows={2}
+                    className="col-span-2 rounded-md border border-line bg-surface-0 px-2 py-1.5"
+                  />
+                  <button
+                    type="submit"
+                    className="col-span-2 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+                  >
+                    Add IBS
+                  </button>
+                </form>
+              )}
+            </div>
+          ),
+          documents: (
+            <div className="space-y-4">
+              <ArtefactList
+                artefacts={scenario.artefacts}
+                canManage={canEdit}
+                empty="No scenario documents yet (facilitator/participant/scenario guide, briefing docs)."
+              />
+              {canEdit && <ArtefactUpload target="SCENARIO" targetId={scenario.id} />}
+            </div>
+          ),
+        }}
+      />
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function HeroStat({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: React.ReactNode;
+  label: string;
+}) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      {children}
+    <div className="rounded-lg border border-line bg-surface-0/70 p-2.5 text-center backdrop-blur">
+      <span className="mx-auto mb-0.5 inline-flex text-indigo-600 dark:text-indigo-300">
+        {icon}
+      </span>
+      <div className="text-base font-semibold text-ink">{value}</div>
+      <div className="text-[9px] uppercase tracking-wider text-soft">{label}</div>
+    </div>
+  );
+}
+
+function SectionCard({
+  title,
+  icon,
+  tone,
+  children,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  tone: "indigo" | "rose" | "amber" | "cyan" | "emerald" | "violet";
+  children: React.ReactNode;
+}) {
+  const bar = {
+    indigo: "from-indigo-500 to-indigo-400",
+    rose: "from-rose-500 to-rose-400",
+    amber: "from-amber-500 to-amber-400",
+    cyan: "from-cyan-500 to-cyan-400",
+    emerald: "from-emerald-500 to-emerald-400",
+    violet: "from-violet-500 to-violet-400",
+  }[tone];
+  return (
+    <section className="overflow-hidden rounded-xl border border-line bg-surface-1">
+      <div className={`h-1 bg-gradient-to-r ${bar}`} />
+      <div className="p-4">
+        <header className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink">
+          <span className="text-indigo-600 dark:text-indigo-300">{icon}</span>
+          {title}
+        </header>
+        {children}
+      </div>
     </section>
+  );
+}
+
+function EmptyTab({
+  icon,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-xl border border-dashed border-line bg-surface-1 p-8 text-center">
+      <div className="mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-indigo-600 dark:text-indigo-300">
+        {icon}
+      </div>
+      <p className="text-sm font-medium text-ink">{title}</p>
+      <p className="mx-auto mt-1 max-w-md text-xs text-muted">{body}</p>
+    </div>
+  );
+}
+
+function CriticalityPill({ kind }: { kind: string }) {
+  const cls =
+    kind === "CRITICAL"
+      ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
+      : kind === "HIGH"
+        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+        : kind === "MEDIUM"
+          ? "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200"
+          : "bg-surface-2 text-muted";
+  return (
+    <span
+      className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${cls}`}
+    >
+      {kind}
+    </span>
   );
 }
 
@@ -314,22 +706,26 @@ function AddressingBlock({
 }) {
   if (!from && to.length === 0 && cc.length === 0) return null;
   return (
-    <div className="mt-2 space-y-0.5 text-xs text-muted">
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-soft">
       {from && (
-        <div>
-          <span className="font-semibold text-muted">From:</span> {from}
-        </div>
+        <span>
+          <span className="font-semibold">From:</span>{" "}
+          <span className="text-muted">{from}</span>
+        </span>
       )}
       {to.length > 0 && (
-        <div>
-          <span className="font-semibold text-muted">To:</span> {to.join(", ")}
-        </div>
+        <span>
+          <span className="font-semibold">To:</span>{" "}
+          <span className="text-muted">{to.join(", ")}</span>
+        </span>
       )}
       {cc.length > 0 && (
-        <div>
-          <span className="font-semibold text-muted">Cc:</span> {cc.join(", ")}
-        </div>
+        <span>
+          <span className="font-semibold">Cc:</span>{" "}
+          <span className="text-muted">{cc.join(", ")}</span>
+        </span>
       )}
     </div>
   );
 }
+
