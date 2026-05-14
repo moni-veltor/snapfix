@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AppSidebar from "@/components/AppSidebar";
 import CommandPalette from "@/components/CommandPalette";
+import ZoneFrame from "@/components/ZoneFrame";
 
 export default async function AppLayout({
   children,
@@ -28,12 +29,12 @@ export default async function AppLayout({
           canManageOrg={canManageOrg}
         />
       )}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <ZoneFrame>
         <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
         <footer className="border-t border-line bg-surface-1 py-4 text-center text-xs text-soft">
           SnapFix Simulator · part of the SnapFix platform
         </footer>
-      </div>
+      </ZoneFrame>
       {session?.user && <CommandPalette />}
     </div>
   );

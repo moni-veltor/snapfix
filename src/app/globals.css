@@ -129,6 +129,37 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Semantic page-family zones. Each zone swaps `--accent` + `--accent-soft`
+   so links, focus rings, and chart strokes shift hue without rebuilding
+   components. Default is control (indigo). */
+.zone-control {
+  /* indigo — inherit defaults */
+}
+.zone-exercise {
+  --accent: #f59e0b;                              /* amber-500 */
+  --accent-soft: rgba(245, 158, 11, 0.12);
+}
+.dark .zone-exercise {
+  --accent: #fbbf24;                              /* amber-400 */
+  --accent-soft: rgba(245, 158, 11, 0.20);
+}
+.zone-intel {
+  --accent: #06b6d4;                              /* cyan-500 */
+  --accent-soft: rgba(6, 182, 212, 0.12);
+}
+.dark .zone-intel {
+  --accent: #22d3ee;                              /* cyan-400 */
+  --accent-soft: rgba(6, 182, 212, 0.22);
+}
+.zone-governance {
+  --accent: #8b5cf6;                              /* violet-500 */
+  --accent-soft: rgba(139, 92, 246, 0.12);
+}
+.dark .zone-governance {
+  --accent: #a78bfa;                              /* violet-400 */
+  --accent-soft: rgba(139, 92, 246, 0.22);
+}
+
 /* Brand-gradient utility classes. Use sparingly — these are signature
    moments (hero CTAs, the performance ring, active sidebar item, success
    states). Overuse kills the signal. */
