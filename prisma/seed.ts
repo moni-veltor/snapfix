@@ -406,7 +406,14 @@ async function main() {
   await assignDefaultHolder(prisma, org.id, "CTO", owner.id);
   console.log("  Seeded 15 default IMT roles. Seats start empty — claim live.");
 
-  // ─── Sample exercise (PLANNING) using Simulation 2 ────────────────────────
+  // ─── Sample exercise (IN_PROGRESS) using Simulation 2 ────────────────────
+  // The D-Day anchor is set 10h 30m in the past so the clock reads ~10:30 by
+  // the time anyone visits. Events scheduled at 08:00 and 10:15 will have
+  // auto-released (via auto-release on heartbeat); event 3 at 11:00 fires
+  // 30 minutes later. This gives every fresh participant something to read
+  // immediately + a near-future event to anticipate.
+  const now = new Date();
+  const dDayAnchor = new Date(now.getTime() - (10 * 60 + 30) * 60 * 1000);
   const exercise = await prisma.exercise.create({
     data: {
       orgId: org.id,
@@ -414,10 +421,13 @@ async function main() {
       facilitatorId: owner.id,
       title: "Astro Bank — Operational Resilience Functional Exercise (Demo)",
       description:
-        "Sample exercise to demonstrate the SnapFix planning hub. Drives the Simulation 2 scenario with the standard team layout.",
+        "Live demo exercise. D-Day clock is already running — claim a seat to join.",
       plannedDate: new Date("2026-06-15T10:00:00Z"),
       location: "Lower Ground Floor, 10 Chiswell Street, London EC1Y 4UQ",
-      status: "PLANNING",
+      status: "IN_PROGRESS",
+      startedAt: dDayAnchor,
+      dDayAnchor: dDayAnchor,
+      speedMultiplier: 1.0,
     },
   });
 
