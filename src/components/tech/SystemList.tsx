@@ -33,11 +33,44 @@ type Props = {
   canManage: boolean;
 };
 
+type TierFilter = "ALL" | "CRITICAL" | "ESSENTIAL" | "IMPORTANT" | "ROUTINE";
+
+const TIER_FILTERS: { id: TierFilter; label: string }[] = [
+  { id: "ALL", label: "All" },
+  { id: "CRITICAL", label: "Critical" },
+  { id: "ESSENTIAL", label: "Essential" },
+  { id: "IMPORTANT", label: "Important" },
+  { id: "ROUTINE", label: "Routine" },
+];
+
 export default function SystemList({ systems, canManage }: Props) {
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [logging, setLogging] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [tierFilter, setTierFilter] = useState<TierFilter>("ALL");
+  const [query, setQuery] = useState("");
+
+  const tierCounts = systems.reduce(
+    (acc, s) => {
+      acc[s.tier] = (acc[s.tier] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  const q = query.trim().toLowerCase();
+  const filtered = systems.filter((s) => {
+    if (tierFilter !== "ALL" && s.tier !== tierFilter) return false;
+    if (
+      q &&
+      !s.name.toLowerCase().includes(q) &&
+      !(s.description ?? "").toLowerCase().includes(q) &&
+      !(s.owner ?? "").toLowerCase().includes(q)
+    )
+      return false;
+    return true;
+  });
 
   return (
     <section className="space-y-3">
@@ -58,31 +91,76 @@ export default function SystemList({ systems, canManage }: Props) {
         )}
       </header>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search systems by name, owner or description…"
+          className="min-w-[220px] flex-1 rounded-md border border-line bg-surface-0 px-3 py-1.5 text-sm text-ink placeholder:text-soft focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+        />
+        <div role="tablist" className="flex flex-wrap gap-1">
+          {TIER_FILTERS.map((t) => {
+            const active = tierFilter === t.id;
+            const count = t.id === "ALL" ? systems.length : tierCounts[t.id] ?? 0;
+            return (
+              <button
+                key={t.id}
+                role="tab"
+                type="button"
+                aria-selected={active}
+                onClick={() => setTierFilter(t.id)}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                  active
+                    ? "bg-slate-900 text-white dark:bg-indigo-500"
+                    : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
+                }`}
+              >
+                <span>{t.label}</span>
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
+                    active ? "bg-white/30 dark:bg-black/30" : "bg-surface-2 text-soft"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {creating && <SystemForm onDone={() => setCreating(false)} />}
 
-      <ul className="space-y-2">
-        {systems.map((s) => (
-          <li key={s.id}>
-            {editingId === s.id ? (
-              <SystemForm system={s} onDone={() => setEditingId(null)} />
-            ) : (
-              <SystemRow
-                system={s}
-                canManage={canManage}
-                expanded={expandedId === s.id}
-                logging={logging === s.id}
-                onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                onEdit={() => {
-                  setEditingId(s.id);
-                  setCreating(false);
-                }}
-                onLogOpen={() => setLogging(s.id)}
-                onLogClose={() => setLogging(null)}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
+      {filtered.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-line bg-surface-1 p-8 text-center text-sm text-muted">
+          No systems match this view.
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {filtered.map((s) => (
+            <li key={s.id}>
+              {editingId === s.id ? (
+                <SystemForm system={s} onDone={() => setEditingId(null)} />
+              ) : (
+                <SystemRow
+                  system={s}
+                  canManage={canManage}
+                  expanded={expandedId === s.id}
+                  logging={logging === s.id}
+                  onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                  onEdit={() => {
+                    setEditingId(s.id);
+                    setCreating(false);
+                  }}
+                  onLogOpen={() => setLogging(s.id)}
+                  onLogClose={() => setLogging(null)}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

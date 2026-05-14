@@ -1,15 +1,9 @@
-import Link from "next/link";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  upsertVendorAction,
-  deleteVendorAction,
-  linkVendorToIBSAction,
-  unlinkVendorFromIBSAction,
-} from "@/app/actions/vendors";
-import ConfirmButton from "@/components/ConfirmButton";
+import { upsertVendorAction } from "@/app/actions/vendors";
 import PageHero from "@/components/ui/PageHero";
 import DORAInsights from "@/components/vendors/DORAInsights";
+import VendorGrid from "@/components/vendors/VendorGrid";
 import type { VendorLite } from "@/lib/dora";
 
 export default async function VendorsPage() {
@@ -62,136 +56,45 @@ export default async function VendorsPage() {
 
       <DORAInsights vendors={vendorsLite} />
 
-      <ul className="space-y-3">
-        {vendors.length === 0 && (
-          <li className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-center text-sm text-muted">
-            No vendors yet. {canManage ? "Add one below — start with your Tier 1 core providers." : "Ask an admin to add the firm's critical third parties."}
-          </li>
-        )}
-        {vendors.map((v) => (
-          <li key={v.id} className="rounded-md border border-line bg-surface-1 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-ink">{v.name}</h2>
-                  <TierPill tier={v.tier} />
-                  {v.serviceKind && (
-                    <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-ink">
-                      {v.serviceKind}
-                    </span>
-                  )}
-                </div>
-                {v.description && (
-                  <p className="mt-1 text-sm text-muted">{v.description}</p>
-                )}
-                <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted">
-                  {v.contactName && <span>👤 {v.contactName}</span>}
-                  {v.contactEmail && <span>✉️ {v.contactEmail}</span>}
-                  {v.contactPhone && <span>📞 {v.contactPhone}</span>}
-                  {v.statusUrl && (
-                    <a href={v.statusUrl} target="_blank" rel="noopener" className="underline">
-                      🔍 status page
-                    </a>
-                  )}
-                </div>
-                <div className="mt-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">
-                    Supports IBSs
-                  </p>
-                  {v.ibsLinks.length === 0 ? (
-                    <p className="text-xs text-soft">No IBS links yet.</p>
-                  ) : (
-                    <ul className="mt-1 flex flex-wrap gap-1">
-                      {v.ibsLinks.map((l) => (
-                        <li
-                          key={l.ibsId}
-                          className="flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs"
-                        >
-                          <span className="font-mono">{l.ibs.code}</span>
-                          <span className="text-muted">{l.ibs.name}</span>
-                          {canManage && (
-                            <form action={unlinkVendorFromIBSAction} className="inline">
-                              <input type="hidden" name="vendorId" value={v.id} />
-                              <input type="hidden" name="ibsId" value={l.ibsId} />
-                              <button className="ml-1 text-soft hover:text-rose-600">×</button>
-                            </form>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {canManage && ibsList.length > 0 && (
-                    <form action={linkVendorToIBSAction} className="mt-1 flex items-center gap-1">
-                      <input type="hidden" name="vendorId" value={v.id} />
-                      <select
-                        name="ibsId"
-                        defaultValue=""
-                        className="rounded border border-line-strong px-2 py-0.5 text-xs"
-                      >
-                        <option value="" disabled>+ link IBS…</option>
-                        {ibsList
-                          .filter((i) => !v.ibsLinks.some((l) => l.ibsId === i.id))
-                          .map((i) => (
-                            <option key={i.id} value={i.id}>
-                              {i.code} — {i.name}
-                            </option>
-                          ))}
-                      </select>
-                      <button className="rounded border border-line-strong px-2 py-0.5 text-[11px]">
-                        Link
-                      </button>
-                    </form>
-                  )}
-                </div>
-              </div>
-              {canManage && (
-                <div className="flex flex-col gap-2">
-                  <Link
-                    href={`/vendors?edit=${v.id}`}
-                    className="text-xs text-muted hover:underline"
-                  >
-                    Edit
-                  </Link>
-                  <ConfirmButton
-                    action={deleteVendorAction}
-                    hidden={{ id: v.id }}
-                    label="Delete"
-                    title={`Delete ${v.name}?`}
-                    body="This will remove the vendor and all its IBS links."
-                    confirmLabel="Delete"
-                    successMessage="Vendor deleted"
-                  />
-                </div>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
+      {vendors.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-line-strong bg-surface-1 p-8 text-center text-sm text-muted">
+          No vendors yet.{" "}
+          {canManage
+            ? "Add one below — start with your Tier 1 core providers."
+            : "Ask an admin to add the firm's critical third parties."}
+        </div>
+      ) : (
+        <VendorGrid
+          vendors={vendors.map((v) => ({
+            id: v.id,
+            name: v.name,
+            description: v.description,
+            serviceKind: v.serviceKind,
+            tier: v.tier,
+            contactName: v.contactName,
+            contactEmail: v.contactEmail,
+            contactPhone: v.contactPhone,
+            statusUrl: v.statusUrl,
+            isDoraCritical: v.isDoraCritical,
+            hyperscaler: v.hyperscaler,
+            region: v.region,
+            assuranceKind: v.assuranceKind,
+            assuranceExpiryAt: v.assuranceExpiryAt,
+            exitPlanReviewedAt: v.exitPlanReviewedAt,
+            ibsLinks: v.ibsLinks.map((l) => ({
+              ibsId: l.ibsId,
+              ibs: { id: l.ibs.id, code: l.ibs.code, name: l.ibs.name },
+            })),
+          }))}
+          ibsList={ibsList}
+          canManage={canManage}
+        />
+      )}
 
       {canManage && <VendorForm />}
     </div>
   );
 }
-
-function TierPill({ tier }: { tier: string }) {
-  const cls = TIER_CLASS[tier] ?? "bg-surface-2 text-ink";
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>
-      {TIER_LABEL[tier] ?? tier}
-    </span>
-  );
-}
-
-const TIER_LABEL: Record<string, string> = {
-  TIER_1: "Tier 1 · mission-critical",
-  TIER_2: "Tier 2 · business-critical",
-  TIER_3: "Tier 3 · operational",
-};
-const TIER_CLASS: Record<string, string> = {
-  TIER_1: "bg-rose-100 text-rose-800",
-  TIER_2: "bg-amber-100 text-amber-800",
-  TIER_3: "bg-surface-2 text-ink",
-};
 
 function VendorForm() {
   return (

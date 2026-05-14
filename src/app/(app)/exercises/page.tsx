@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import EmptyState from "@/components/EmptyState";
 import PageHero from "@/components/ui/PageHero";
 import { ExercisesIllustration } from "@/components/illustrations/Illustrations";
+import ExerciseGrid from "@/components/exercises/ExerciseGrid";
 
 export default async function ExercisesPage() {
   const user = await requireOrgUser();
@@ -53,31 +54,7 @@ export default async function ExercisesPage() {
           secondaryLabel={canCreate ? "Browse scenarios" : undefined}
         />
       ) : (
-        <ul className="space-y-2">
-          {exercises.map((e) => (
-            <li
-              key={e.id}
-              className="flex items-center justify-between rounded-md border border-line bg-surface-1 p-4 text-sm"
-            >
-              <div>
-                <Link href={`/exercises/${e.id}`} className="font-medium hover:underline">
-                  {e.title}
-                </Link>
-                <div className="text-xs text-muted">
-                  {e.scenario.title}
-                  {e.plannedDate && (
-                    <> · {e.plannedDate.toISOString().slice(0, 16).replace("T", " ")}</>
-                  )}
-                  {" · facilitator "}
-                  {e.facilitator?.name ?? e.facilitator?.email ?? "—"}
-                  {" · "}
-                  {e._count.participants} on roster
-                </div>
-              </div>
-              <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{e.status}</span>
-            </li>
-          ))}
-        </ul>
+        <ExerciseGrid exercises={exercises} />
       )}
     </div>
   );
