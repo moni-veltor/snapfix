@@ -143,3 +143,188 @@ export function pickHeadline(input: HeadlineInput, now: Date = new Date()): Head
     cta: { label: "Browse scenarios", href: "/scenarios" },
   };
 }
+
+// ─── Next-best-actions engine ─────────────────────────────────────────────
+
+export type NextBestAction = {
+  id: string;
+  priority: "critical" | "warn" | "info";
+  title: string;
+  body: string;
+  cta: { label: string; href: string };
+  iconKey:
+    | "shield"
+    | "flame"
+    | "calendar"
+    | "server"
+    | "users"
+    | "boxes"
+    | "alert"
+    | "sparkles";
+};
+
+export type NextBestActionsInput = {
+  ibsCount: number;
+  untestedIBSCount: number;
+  ibsReviewDueSoon: number; // count of IBS reviews due in <= 30 days
+  overdueActionItems: number;
+  rolesTotal: number;
+  rolesWithoutDeputy: number;
+  exercisesLast90Days: number;
+  oldestSystemDRTestDays: number | null; // null = never tested or no systems
+  systemsWithoutRTO: number;
+  weakExitPlanCriticalVendors: number;
+  hyperscalerConcentration: { name: string; count: number } | null;
+  pendingInvites: number;
+  liveExerciseCount: number;
+};
+
+/**
+ * Compute the top 5 next-best-actions a CTO should act on, ranked by
+ * priority × specificity. Each one is concrete and has a verb on the CTA.
+ */
+export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
+  const all: NextBestAction[] = [];
+
+  if (input.liveExerciseCount > 0) {
+    all.push({
+      id: "join-live",
+      priority: "critical",
+      title: `${input.liveExerciseCount} exercise${input.liveExerciseCount === 1 ? "" : "s"} live right now`,
+      body: "Join the war room or check in on the facilitator.",
+      cta: { label: "Open war room", href: "/exercises" },
+      iconKey: "flame",
+    });
+  }
+
+  if (input.overdueActionItems >= 10) {
+    all.push({
+      id: "clear-backlog",
+      priority: "critical",
+      title: `${input.overdueActionItems} action items past due`,
+      body: "A growing backlog erodes regulator confidence and slows the next exercise. Triage today.",
+      cta: { label: "Clear backlog", href: "/action-items?status=overdue" },
+      iconKey: "alert",
+    });
+  } else if (input.overdueActionItems >= 3) {
+    all.push({
+      id: "clear-backlog-soft",
+      priority: "warn",
+      title: `${input.overdueActionItems} action items past due`,
+      body: "Worth clearing before your next debrief generates more.",
+      cta: { label: "Triage", href: "/action-items?status=overdue" },
+      iconKey: "alert",
+    });
+  }
+
+  if (input.ibsCount === 0) {
+    all.push({
+      id: "no-ibs",
+      priority: "critical",
+      title: "Capture your IBS register",
+      body: "Your IBSs are the spine of the programme — and the first thing a supervisor will ask for.",
+      cta: { label: "Add your first IBS", href: "/ibs/new" },
+      iconKey: "shield",
+    });
+  } else if (input.untestedIBSCount > 0) {
+    all.push({
+      id: "untested-ibs",
+      priority: "warn",
+      title: `${input.untestedIBSCount} IBS${input.untestedIBSCount === 1 ? "" : "s"} never stress-tested`,
+      body: "Pick a scenario that covers these and plan a focused drill.",
+      cta: { label: "Plan exercise", href: "/exercises/new" },
+      iconKey: "shield",
+    });
+  }
+
+  if (input.oldestSystemDRTestDays !== null && input.oldestSystemDRTestDays > 365) {
+    all.push({
+      id: "stale-dr-test",
+      priority: "critical",
+      title: `DR test ${input.oldestSystemDRTestDays} days stale`,
+      body: "Your oldest system DR test is over a year old. Schedule a fresh test before the next audit.",
+      cta: { label: "View tech recovery", href: "/tech-recovery" },
+      iconKey: "server",
+    });
+  } else if (input.systemsWithoutRTO > 0) {
+    all.push({
+      id: "systems-without-rto",
+      priority: "warn",
+      title: `${input.systemsWithoutRTO} system${input.systemsWithoutRTO === 1 ? "" : "s"} without RTO`,
+      body: "Declare recovery objectives so the IMT has something concrete to track against.",
+      cta: { label: "Set RTOs", href: "/tech-recovery" },
+      iconKey: "server",
+    });
+  }
+
+  if (input.weakExitPlanCriticalVendors > 0) {
+    all.push({
+      id: "weak-exit-plans",
+      priority: "warn",
+      title: `${input.weakExitPlanCriticalVendors} critical vendor${input.weakExitPlanCriticalVendors === 1 ? "" : "s"} have weak exit plans`,
+      body: "DORA requires tested exit plans for critical third parties — paper plans aren't enough.",
+      cta: { label: "Review vendors", href: "/vendors" },
+      iconKey: "boxes",
+    });
+  }
+
+  if (input.hyperscalerConcentration && input.hyperscalerConcentration.count >= 3) {
+    all.push({
+      id: "hyperscaler-concentration",
+      priority: "warn",
+      title: `${input.hyperscalerConcentration.count} vendors on ${input.hyperscalerConcentration.name}`,
+      body: "Test the hyperscaler-outage scenario before the regulator asks how you'd cope.",
+      cta: { label: "Browse scenarios", href: "/templates" },
+      iconKey: "boxes",
+    });
+  }
+
+  if (input.ibsReviewDueSoon > 0) {
+    all.push({
+      id: "ibs-reviews-due",
+      priority: "info",
+      title: `${input.ibsReviewDueSoon} IBS review${input.ibsReviewDueSoon === 1 ? "" : "s"} due this month`,
+      body: "Refresh the register so the data backing your dashboards isn't stale.",
+      cta: { label: "Open IBS register", href: "/ibs" },
+      iconKey: "calendar",
+    });
+  }
+
+  if (input.rolesTotal > 0 && input.rolesWithoutDeputy >= Math.ceil(input.rolesTotal * 0.5)) {
+    all.push({
+      id: "deputy-chain",
+      priority: "info",
+      title: "Deputy chain is thin",
+      body: `Only ${input.rolesTotal - input.rolesWithoutDeputy} of ${input.rolesTotal} roles have a deputy. Single point of failure in absences.`,
+      cta: { label: "Edit role catalogue", href: "/org/roles" },
+      iconKey: "users",
+    });
+  }
+
+  if (input.exercisesLast90Days === 0) {
+    all.push({
+      id: "no-recent-exercise",
+      priority: "warn",
+      title: "No exercises in the last 90 days",
+      body: "Cadence builds muscle memory. Run a short drill this month, even a tabletop.",
+      cta: { label: "Plan an exercise", href: "/exercises/new" },
+      iconKey: "calendar",
+    });
+  }
+
+  if (input.pendingInvites >= 5) {
+    all.push({
+      id: "stale-invites",
+      priority: "info",
+      title: `${input.pendingInvites} unaccepted invitations`,
+      body: "Chase or revoke — empty seats kill exercise realism.",
+      cta: { label: "Review roster", href: "/org" },
+      iconKey: "users",
+    });
+  }
+
+  // Rank by priority then by initial order. Cap at 5.
+  const order = { critical: 0, warn: 1, info: 2 } as const;
+  all.sort((a, b) => order[a.priority] - order[b.priority]);
+  return all.slice(0, 5);
+}
