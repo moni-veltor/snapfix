@@ -13,6 +13,8 @@ import { prisma } from "@/lib/prisma";
 import { scoreIncident } from "@/lib/scoring";
 import PerformanceCard from "@/components/scoring/PerformanceCard";
 import ClosureCelebration from "@/components/scoring/ClosureCelebration";
+import HighlightReel from "@/components/scoring/HighlightReel";
+import { buildHighlightReel } from "@/lib/highlight-reel";
 
 export default async function DebriefPage({
   params,
@@ -46,6 +48,7 @@ export default async function DebriefPage({
     select: { id: true },
   });
   const score = scoredIncident ? await scoreIncident(scoredIncident.id) : null;
+  const highlights = await buildHighlightReel(exercise.id);
   const answersByQuestion = new Map<string, typeof exercise.debriefAnswers>();
   for (const a of exercise.debriefAnswers) {
     const list = answersByQuestion.get(a.questionId) ?? [];
@@ -74,6 +77,7 @@ export default async function DebriefPage({
         />
       )}
       {score && <PerformanceCard score={score} />}
+      {highlights.length > 0 && <HighlightReel highlights={highlights} />}
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Debrief questions</h2>

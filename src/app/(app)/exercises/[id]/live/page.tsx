@@ -21,6 +21,10 @@ import { scoreIncident } from "@/lib/scoring";
 import SeatBoard from "@/components/seats/SeatBoard";
 import { loadSeats } from "@/lib/seats";
 import { ensureSeatsForExercise } from "@/app/actions/seats";
+import NudgePanel from "@/components/live/NudgePanel";
+import { computeNudges } from "@/lib/nudges";
+import ActivityTicker from "@/components/live/ActivityTicker";
+import { autoReleaseExpired } from "@/lib/auto-release";
 
 export default async function LiveWorkspacePage({
   params,
@@ -38,6 +42,8 @@ export default async function LiveWorkspacePage({
 
   // Ensure seats exist for this exercise so the seat-board is meaningful.
   await ensureSeatsForExercise(exercise.id, me.orgId);
+  // Auto-release any scheduled events/injects whose D-Day time has come.
+  await autoReleaseExpired(exercise.id);
   const seats = await loadSeats(exercise.id);
   const mySeat = seats.find((s) => s.holderUserId === me.id) ?? null;
   let participant = await prisma.exerciseParticipant.findFirst({
@@ -159,6 +165,22 @@ export default async function LiveWorkspacePage({
   // Live performance score — only meaningful once an incident has been invoked.
   const liveScore = activeIncident ? await scoreIncident(activeIncident.id) : null;
 
+  // Compute next-best-action nudges for this user given the current state.
+  const nudges = await computeNudges({
+    exerciseId: exercise.id,
+    userId: me.id,
+    clockHHMM: clock.hhmm,
+    mySeatAbbreviation: mySeat?.roleAbbreviation ?? participant?.roleTitle ?? null,
+  });
+
+  // Last 6 activity entries for the rolling ticker.
+  const tickerEntries = feed.slice(0, 6).map((item) => ({
+    id: item.id,
+    at: item.at,
+    kind: item.kind,
+    text: tickerLineFor(item),
+  }));
+
   return (
     <div className="space-y-4">
       {/* Top stripe — incident state is always at the top */}
@@ -202,6 +224,8 @@ export default async function LiveWorkspacePage({
       </header>
 
       <IncidentBanner exerciseId={exercise.id} incident={incidentForBanner} />
+
+      {tickerEntries.length > 0 && <ActivityTicker entries={tickerEntries} />}
 
       {/* Body: left rail with context, right column with action */}
       <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -284,6 +308,8 @@ export default async function LiveWorkspacePage({
 
         {/* Right column — where work happens */}
         <main className="space-y-4">
+          <NudgePanel nudges={nudges} />
+
           <IncidentCapturePanel
             exerciseId={exercise.id}
             incidentId={activeIncident?.id ?? null}
@@ -408,6 +434,32 @@ function statusBadge(status: string): string {
       return "bg-indigo-100 text-indigo-800";
     default:
       return "bg-surface-2 text-slate-700";
+  }
+}
+
+/** Short, human-readable summary of a feed item for the rolling ticker. */
+function tickerLineFor(item: LiveFeedItem): string {
+  switch (item.kind) {
+    case "EVENT_RELEASED":
+      return `Event #${item.eventNo} released — ${item.title}`;
+    case "INJECT_RELEASED":
+      return `Inject #${item.injectNo} released — ${item.title}`;
+    case "DECISION":
+      return `${item.author} recorded ${item.decisionType.replace(/_/g, " ").toLowerCase()}`;
+    case "SITREP":
+      return `${item.author} filed ${item.status} sitrep · ${item.businessUnit}`;
+    case "MEETING":
+      return `IMT meeting #${item.meetingNumber} recorded`;
+    case "RESPONSE":
+      return `${item.author} responded to inject ${item.injectSummary}`;
+    case "COMMS":
+      return `${item.author} drafted comms to ${item.audience.toLowerCase()}`;
+    case "LOG":
+      return `${item.author} logged ${item.logKind.toLowerCase()}`;
+    case "INCIDENT":
+      return `${item.shortCode} · ${item.transition}`;
+    case "STATUS":
+      return item.status;
   }
 }
 
