@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Crown } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import InviteForm from "./InviteForm";
@@ -45,12 +47,23 @@ export default async function OrgPage() {
 
   return (
     <div className="space-y-10">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{org.name}</h1>
-        <p className="mt-1 text-sm text-muted">
-          {members.length} {members.length === 1 ? "member" : "members"} · You are{" "}
-          <span className="font-medium text-slate-700">{me.orgRole}</span>
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{org.name}</h1>
+          <p className="mt-1 text-sm text-muted">
+            {members.length} {members.length === 1 ? "member" : "members"} · You are{" "}
+            <span className="font-medium text-ink">{me.orgRole}</span>
+          </p>
+        </div>
+        {canManage && (
+          <Link
+            href="/org/roles"
+            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-1.5 text-xs font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+          >
+            <Crown size={12} />
+            Manage role catalogue
+          </Link>
+        )}
       </header>
 
       {canManage && (
