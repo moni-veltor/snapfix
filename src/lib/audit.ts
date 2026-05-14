@@ -7,7 +7,7 @@ export type AuditAction =
   | "exercise.member.added" | "exercise.member.removed"
   | "team.added" | "team.removed"
   | "event.released" | "inject.released"
-  | "ibs.created" | "ibs.updated" | "ibs.approved" | "ibs.deprecated" | "ibs.deleted"
+  | "ibs.created" | "ibs.updated" | "ibs.approved" | "ibs.deprecated" | "ibs.deleted" | "ibs.added-from-library"
   | "action_item.created" | "action_item.updated" | "action_item.closed"
   | "member.added" | "member.removed" | "member.role_changed"
   | "invitation.sent" | "invitation.revoked" | "invitation.accepted"

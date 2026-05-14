@@ -53,7 +53,7 @@ export default function ReadReceiptGrid({ messages, participants, cells }: Props
   if (messages.length === 0) {
     return (
       <p className="rounded-md border border-dashed border-line bg-surface-1 p-6 text-center text-xs text-muted">
-        Once you release events or injects, this grid shows you who's read what.
+        Once you release events or injects, this grid shows you who&apos;s read what.
       </p>
     );
   }

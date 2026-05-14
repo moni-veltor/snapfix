@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { createIBSAction, updateIBSAction } from "@/app/actions/ibs";
 import ImportanceWizard from "@/components/ibs/ImportanceWizard";
+import ResourcePicker from "@/components/ibs/ResourcePicker";
+import { Boxes, Database, Server, Workflow } from "lucide-react";
 
 type IBS = {
   id?: string;
@@ -62,7 +64,21 @@ const TABS: { key: TabKey; label: string; icon: typeof Sparkles; hint: string }[
   { key: "coverage", label: "Coverage & notes", icon: CheckSquare, hint: "Harm types & free text" },
 ];
 
-export default function IBSForm({ existing }: { existing?: IBS }) {
+type ResourceSuggestion = { value: string; source: "system" | "vendor" | "library" };
+
+export default function IBSForm({
+  existing,
+  techSuggestions = [],
+  vendorSuggestions = [],
+  informationSuggestions = [],
+  processSuggestions = [],
+}: {
+  existing?: IBS;
+  techSuggestions?: ResourceSuggestion[];
+  vendorSuggestions?: ResourceSuggestion[];
+  informationSuggestions?: ResourceSuggestion[];
+  processSuggestions?: ResourceSuggestion[];
+}) {
   const isEdit = !!existing?.id;
   const action = isEdit ? updateIBSAction : createIBSAction;
   const [tab, setTab] = useState<TabKey>("identity");
@@ -118,11 +134,45 @@ export default function IBSForm({ existing }: { existing?: IBS }) {
 
       <Panel active={tab === "resources"}>
         <Section title="Resource map">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ResourcePicker
+              name="technology"
+              label="Technology / platforms"
+              icon={Server}
+              initial={existing?.technology ?? []}
+              suggestions={techSuggestions}
+              placeholder="Pick from your systems or type a name…"
+              hint="Suggestions from your tech-recovery register."
+            />
+            <ResourcePicker
+              name="thirdParties"
+              label="3rd parties"
+              icon={Boxes}
+              initial={existing?.thirdParties ?? []}
+              suggestions={vendorSuggestions}
+              placeholder="Pick a vendor or type a name…"
+              hint="Suggestions from your vendor register."
+            />
+            <ResourcePicker
+              name="information"
+              label="Information / data types"
+              icon={Database}
+              initial={existing?.information ?? []}
+              suggestions={informationSuggestions}
+              placeholder="e.g. Customer PII, KYC docs…"
+              hint="Common patterns; you can type any custom value."
+            />
+            <ResourcePicker
+              name="processes"
+              label="Processes"
+              icon={Workflow}
+              initial={existing?.processes ?? []}
+              suggestions={processSuggestions}
+              placeholder="e.g. Identity verification, Account creation…"
+              hint="Common patterns; you can type any custom value."
+            />
+          </div>
           <Grid>
-            <TextArea label="Technology / platforms (one per line)" name="technology" defaultValue={(existing?.technology ?? []).join("\n")} rows={4} placeholder={"Core Banking Platform\nPayment Gateway\nKYC/AML Platform"} />
-            <TextArea label="3rd parties (one per line)" name="thirdParties" defaultValue={(existing?.thirdParties ?? []).join("\n")} rows={4} placeholder={"Thought Machine\nClearBank\nSumsub\nComplyAdvantage"} />
-            <TextArea label="Information / data types" name="information" defaultValue={(existing?.information ?? []).join("\n")} rows={3} placeholder={"Customer identification data\nKYC documentation\nDeposit details"} />
-            <TextArea label="Processes" name="processes" defaultValue={(existing?.processes ?? []).join("\n")} rows={3} placeholder={"Digital application submission\nIdentity verification\nAccount creation"} />
             <TextArea label="People notes" name="peopleNotes" defaultValue={existing?.peopleNotes ?? ""} rows={2} wide />
             <Field label="Facilities" name="facilities" defaultValue={existing?.facilities ?? ""} placeholder="AWS UK region, multi-AZ" wide />
           </Grid>

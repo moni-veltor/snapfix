@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, Flame, Plus, Server } from "lucide-react";
+import { Building2, Flame, Library, Plus, Server } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
@@ -55,13 +55,22 @@ export default async function IBSListPage() {
         pitch={`The spine of your operational-resilience programme. ${counts.total} ${counts.total === 1 ? "service" : "services"} captured — each with its tolerance, resource map, and testing history.`}
         actions={
           canManage && (
-            <Link
-              href="/ibs/new"
-              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
-            >
-              <Plus size={14} strokeWidth={2.4} />
-              Add IBS
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/ibs/library"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                <Library size={14} strokeWidth={2.2} />
+                Browse library
+              </Link>
+              <Link
+                href="/ibs/new"
+                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
+              >
+                <Plus size={14} strokeWidth={2.4} />
+                Add IBS
+              </Link>
+            </div>
           )
         }
       />

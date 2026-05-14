@@ -73,6 +73,29 @@ export default async function IBSDetailPage({
   }
 
   if (editing) {
+    // Suggestions for the resource picker — same shape as /ibs/new
+    const [systems, vendors] = await Promise.all([
+      prisma.techSystem.findMany({
+        where: { orgId: me.orgId },
+        orderBy: { name: "asc" },
+        select: { name: true },
+      }),
+      prisma.vendor.findMany({
+        where: { orgId: me.orgId },
+        orderBy: { name: "asc" },
+        select: { name: true },
+      }),
+    ]);
+    const commonInfo = [
+      "Customer PII", "KYC documentation", "Account balances",
+      "Transaction history", "Payment instructions", "Authentication credentials",
+      "Risk-scoring features", "Regulatory reports",
+    ];
+    const commonProc = [
+      "Identity verification", "AML screening", "Account creation",
+      "Payment authorisation", "Fraud review", "Customer onboarding",
+      "Application underwriting", "Customer-comms cascade",
+    ];
     return (
       <div className="mx-auto max-w-4xl space-y-6">
         <header>
@@ -85,7 +108,13 @@ export default async function IBSDetailPage({
             Edit {ibs.code} — {ibs.name}
           </h1>
         </header>
-        <IBSForm existing={ibs} />
+        <IBSForm
+          existing={ibs}
+          techSuggestions={systems.map((s) => ({ value: s.name, source: "system" as const }))}
+          vendorSuggestions={vendors.map((v) => ({ value: v.name, source: "vendor" as const }))}
+          informationSuggestions={commonInfo.map((value) => ({ value, source: "library" as const }))}
+          processSuggestions={commonProc.map((value) => ({ value, source: "library" as const }))}
+        />
       </div>
     );
   }

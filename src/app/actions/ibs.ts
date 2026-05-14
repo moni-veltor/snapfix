@@ -188,3 +188,74 @@ export async function deleteIBSAction(formData: FormData) {
   });
   redirect("/ibs");
 }
+
+import { IBS_LIBRARY } from "@/lib/ibs-library";
+
+/**
+ * Add a pre-built IBS from the library into the org's register. Generates
+ * the next IBS_NN code automatically so admins don't need to manage codes.
+ */
+export async function addLibraryIBSAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const slug = String(formData.get("slug") ?? "");
+  const lib = IBS_LIBRARY.find((i) => i.slug === slug);
+  if (!lib) return;
+
+  // Generate the next sequential IBS_NN code for this org.
+  const existing = await prisma.organizationIBS.findMany({
+    where: { orgId: me.orgId },
+    select: { code: true },
+  });
+  let maxN = 0;
+  for (const e of existing) {
+    const m = e.code.match(/^IBS_(\d+)$/i);
+    if (m) maxN = Math.max(maxN, parseInt(m[1], 10));
+  }
+  const nextCode = `IBS_${String(maxN + 1).padStart(2, "0")}`;
+
+  // Avoid duplicate-by-name within the same org.
+  const dup = await prisma.organizationIBS.findFirst({
+    where: { orgId: me.orgId, name: lib.name },
+    select: { id: true },
+  });
+  if (dup) {
+    redirect(`/ibs/${dup.id}`);
+  }
+
+  const created = await prisma.organizationIBS.create({
+    data: {
+      orgId: me.orgId,
+      code: nextCode,
+      name: lib.name,
+      outcome: lib.outcome,
+      description: lib.description ?? null,
+      impactToleranceMin: lib.toleranceMin,
+      fcaToleranceMin: lib.fcaToleranceMin ?? null,
+      praToleranceMin: lib.praToleranceMin ?? null,
+      criticality: lib.criticality,
+      customerJourneys: lib.customerJourneys ?? [],
+      productsCovered: lib.productsCovered ?? [],
+      technology: lib.technology ?? [],
+      thirdParties: lib.thirdParties ?? [],
+      information: lib.information ?? [],
+      processes: lib.processes ?? [],
+      coversPeople: lib.coversPeople ?? false,
+      coversProperty: lib.coversProperty ?? false,
+      coversTechnology: lib.coversTechnology ?? false,
+      coversDataAvailability: lib.coversDataAvailability ?? false,
+      coversDataIntegrity: lib.coversDataIntegrity ?? false,
+      coversThirdParty: lib.coversThirdParty ?? false,
+    },
+  });
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "ibs.added-from-library",
+    targetType: "ibs",
+    targetId: created.id,
+    summary: `Added ${created.code} — ${created.name} from library (slug: ${slug})`,
+  });
+  revalidatePath("/ibs");
+  revalidatePath("/ibs/library");
+  redirect(`/ibs/${created.id}`);
+}
