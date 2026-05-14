@@ -3,13 +3,12 @@ import { notFound } from "next/navigation";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { loadInbox } from "@/lib/inbox";
-import { loadLiveFeed, loadPresence, loadMobilisation, type LiveFeedItem } from "@/lib/live";
+import { loadLiveFeed, loadPresence, type LiveFeedItem } from "@/lib/live";
 import { currentDDay } from "@/lib/dday";
 import DDayClockTicker from "@/components/DDayClockTicker";
 import LivePresenceBar from "@/components/LivePresenceBar";
 import LiveInboxItem from "@/components/LiveInboxItem";
 import IncidentBanner from "@/components/IncidentBanner";
-import MobilisationChecklist from "@/components/MobilisationChecklist";
 import IncidentCapturePanel from "@/components/IncidentCapturePanel";
 import RegulatorClocks from "@/components/RegulatorClocks";
 import CommsCascadePanel from "@/components/CommsCascadePanel";
@@ -18,14 +17,15 @@ import ClosureGate from "@/components/ClosureGate";
 import Pill from "@/components/ui/Pill";
 import LiveScoreBadge from "@/components/scoring/LiveScoreBadge";
 import { scoreIncident } from "@/lib/scoring";
-import SeatBoard from "@/components/seats/SeatBoard";
+import SeatLobby from "@/components/seats/SeatLobby";
+import SeatBoardCompact from "@/components/seats/SeatBoardCompact";
 import { loadSeats } from "@/lib/seats";
 import { ensureSeatsForExercise } from "@/app/actions/seats";
 import NudgePanel from "@/components/live/NudgePanel";
 import { computeNudges } from "@/lib/nudges";
 import ActivityTicker from "@/components/live/ActivityTicker";
 import { autoReleaseExpired } from "@/lib/auto-release";
-import ChatPanel from "@/components/live/ChatPanel";
+import FloatingChatDrawer from "@/components/live/FloatingChatDrawer";
 import { loadChat } from "@/lib/chat";
 import Scratchpad from "@/components/live/Scratchpad";
 import OnCallStatus from "@/components/live/OnCallStatus";
@@ -55,23 +55,24 @@ export default async function LiveWorkspacePage({
     where: { exerciseId: exercise.id, userId: me.id },
   });
 
-  // Seat-claim entry view — shown when the user hasn't yet taken a seat.
-  // Replaces the old "you're not on the roster" wall — any org member can
-  // walk in and claim a seat in a live exercise.
+  // Seat-claim entry view — the "war room lobby". Card grid with a hero,
+  // suggested-for-you, family filters, and live presence ribbon. Replaces
+  // the old "you're not on the roster" wall — any org member can walk in
+  // and claim a seat in a live exercise.
   if (!participant && !mySeat) {
+    const lobbyClock = currentDDay(exercise.dDayAnchor, exercise.speedMultiplier);
+    const lobbyPresence = await loadPresence(exercise.id);
     return (
-      <div className="mx-auto max-w-3xl space-y-4">
-        <header>
-          <p className="text-xs uppercase tracking-wide text-muted">{exercise.scenario.title}</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{exercise.title}</h1>
-          <p className="mt-2 text-sm text-muted">
-            Welcome to the war room. Pick a seat below to join the exercise — the platform
-            routes all addressed messages and decisions through whoever's holding the seat at
-            the moment.
-          </p>
-        </header>
-        <SeatBoard exerciseId={exercise.id} seats={seats} meId={me.id} />
-      </div>
+      <SeatLobby
+        exerciseId={exercise.id}
+        exerciseTitle={exercise.title}
+        scenarioTitle={exercise.scenario.title}
+        dDayHHMM={lobbyClock.hhmm}
+        seats={seats}
+        presence={lobbyPresence}
+        meId={me.id}
+        meName={me.name ?? me.email}
+      />
     );
   }
   // Auto-create a participant record on first claim if missing (back-compat)
@@ -96,7 +97,6 @@ export default async function LiveWorkspacePage({
     inbox,
     feed,
     presence,
-    mobilisation,
     myResponses,
     activeIncident,
     regulatorClocks,
@@ -107,7 +107,6 @@ export default async function LiveWorkspacePage({
     loadInbox(exercise.id, { roleTitle: participant.roleTitle, participantId: participant.id }),
     loadLiveFeed(exercise.id),
     loadPresence(exercise.id),
-    loadMobilisation(exercise.id),
     prisma.participantResponse.findMany({
       where: { exerciseId: exercise.id, authorId: me.id },
     }),
@@ -256,15 +255,7 @@ export default async function LiveWorkspacePage({
             pollMs={3000}
           />
 
-          <SeatBoard exerciseId={exercise.id} seats={seats} meId={me.id} />
-
-          {activeIncident && mobilisation.length > 0 && (
-            <MobilisationChecklist
-              exerciseId={exercise.id}
-              members={mobilisation}
-              myParticipantId={participant.id}
-            />
-          )}
+          <SeatBoardCompact exerciseId={exercise.id} seats={seats} meId={me.id} />
 
           {activeIncident && (
             <ClosureGate
@@ -323,7 +314,6 @@ export default async function LiveWorkspacePage({
             }))}
           />
 
-          <ChatPanel exerciseId={exercise.id} meId={me.id} messages={chat} />
         </aside>
 
         {/* Right column — where work happens */}
@@ -458,6 +448,9 @@ export default async function LiveWorkspacePage({
           </div>
         </main>
       </div>
+
+      {/* Floating team chat — always reachable, bottom-right drawer. */}
+      <FloatingChatDrawer exerciseId={exercise.id} meId={me.id} messages={chat} />
     </div>
   );
 }
