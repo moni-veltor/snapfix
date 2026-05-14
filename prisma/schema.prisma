@@ -1142,6 +1142,31 @@ model Vendor {
   statusUrl    String?
   notes        String?
 
+  // ─── DORA / ICT-third-party register ───────────────────────────────
+  isDoraCritical  Boolean    @default(false)
+  doraIctTier     VendorTier? // ICT-third-party tier; may differ from commercial tier
+  hyperscaler     String?     // "AWS", "GCP", "Azure", "OCI", etc. — for 4th-party concentration
+  region          String?     // e.g. "eu-west-2", used to detect regional concentration
+
+  // ─── Contract ──────────────────────────────────────────────────────
+  contractStartAt           DateTime?
+  contractEndAt             DateTime?
+  contractRenewalNoticeDays Int?
+  contractAnnualValueGBP    Int?
+
+  // ─── Assurance ─────────────────────────────────────────────────────
+  /// "SOC2_TYPE_2" | "SOC2_TYPE_1" | "ISAE3402" | "ISO27001" | "NONE"
+  assuranceKind   String?
+  assuranceExpiryAt DateTime?
+
+  // ─── Exit plan ─────────────────────────────────────────────────────
+  exitPlanReviewedAt DateTime?
+  exitPlanRTOMin     Int?     // time to exit & switch in minutes
+  exitPlanNotes      String?
+
+  // 4th-party register — JSON array of { name, role, hyperscaler?, region? }
+  fourthParties Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
