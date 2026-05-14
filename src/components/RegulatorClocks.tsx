@@ -1,5 +1,6 @@
 "use client";
 
+import { Landmark, AlertTriangle } from "lucide-react";
 import { transitionRegulatorNotificationAction, flagDataBreachAction } from "@/app/actions/regulator";
 import Section from "@/components/ui/Section";
 import Pill from "@/components/ui/Pill";
@@ -31,6 +32,7 @@ export default function RegulatorClocks({ exerciseId, incidentId, clocks }: Prop
 
   return (
     <Section
+      icon={Landmark}
       title={
         <>
           Regulator clocks
@@ -45,8 +47,8 @@ export default function RegulatorClocks({ exerciseId, incidentId, clocks }: Prop
           <form action={flagDataBreachAction}>
             <input type="hidden" name="exerciseId" value={exerciseId} />
             <input type="hidden" name="incidentId" value={incidentId} />
-            <Button variant="warn" size="sm" type="submit">
-              Flag data breach (ICO 72h)
+            <Button variant="warn" size="sm" icon={AlertTriangle} type="submit">
+              Flag data breach
             </Button>
           </form>
         )

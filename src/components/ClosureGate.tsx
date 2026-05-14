@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { CheckCircle2, Check } from "lucide-react";
 import { closeIncidentAction, updateClosureChecksAction } from "@/app/actions/closure";
 import Section from "@/components/ui/Section";
 import Button from "@/components/ui/Button";
@@ -58,6 +59,7 @@ export default function ClosureGate({ exerciseId, incidentId, checks }: Props) {
 
   return (
     <Section
+      icon={CheckCircle2}
       title={
         <>
           Closure gate
@@ -95,7 +97,15 @@ export default function ClosureGate({ exerciseId, incidentId, checks }: Props) {
         <span className="text-[11px] text-muted dark:text-soft">
           {passed ? "All criteria satisfied." : "Closure blocked until all five ✓."}
         </span>
-        <Button onClick={close} disabled={!passed || pending} size="sm" type="button">
+        <Button
+          onClick={close}
+          disabled={!passed || pending}
+          variant={passed ? "gradient" : "primary"}
+          size="sm"
+          icon={Check}
+          loading={pending}
+          type="button"
+        >
           {pending ? "Closing…" : "Close incident"}
         </Button>
       </div>

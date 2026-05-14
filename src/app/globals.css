@@ -54,6 +54,19 @@
 
   --background: var(--surface-0);
   --foreground: var(--ink);
+
+  /* Brand gradient — indigo → cyan. Used on hero CTAs, performance ring,
+     active sidebar pill, success celebrations. The signature treatment. */
+  --gradient-brand: linear-gradient(135deg, #4f46e5 0%, #6366f1 40%, #06b6d4 100%);
+  --gradient-brand-soft: linear-gradient(135deg, rgba(79, 70, 229, 0.12) 0%, rgba(6, 182, 212, 0.10) 100%);
+  --gradient-night: linear-gradient(135deg, rgba(99, 102, 241, 0.32) 0%, rgba(6, 182, 212, 0.18) 100%);
+
+  /* Elevation — light mode uses crisp small shadows. Subtle by default,
+     bigger on hover-lifted cards and modals. */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.03);
+  --shadow-md: 0 4px 8px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 24px -8px rgba(15, 23, 42, 0.14), 0 4px 8px -2px rgba(15, 23, 42, 0.06);
+  --shadow-glow: 0 0 0 1px rgba(99, 102, 241, 0.20), 0 8px 24px -6px rgba(99, 102, 241, 0.35);
 }
 
 /* War-room dark theme — applied when `.dark` is on <html> (set by ThemeToggle).
@@ -69,10 +82,16 @@
   --ink-muted: #a5b1c8;          /* secondary */
   --ink-soft: #6b7691;           /* tertiary */
   --accent: #818cf8;             /* indigo-400 */
-  --accent-soft: rgba(99, 102, 241, 0.12);
+  --accent-soft: rgba(99, 102, 241, 0.18);
 
   --background: var(--surface-0);
   --foreground: var(--ink);
+
+  /* Dark-mode shadows pick up an indigo glow instead of slate fade. */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.40);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-glow: 0 0 0 1px rgba(129, 140, 248, 0.35), 0 8px 28px -6px rgba(129, 140, 248, 0.45);
 }
 
 @theme inline {
@@ -100,8 +119,33 @@
   --color-soft: var(--ink-soft);
   --color-accent-soft: var(--accent-soft);
 
+  /* Elevation utilities (shadow-card, shadow-card-lg, shadow-glow) */
+  --shadow-card: var(--shadow-sm);
+  --shadow-card-md: var(--shadow-md);
+  --shadow-card-lg: var(--shadow-lg);
+  --shadow-card-glow: var(--shadow-glow);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+/* Brand-gradient utility classes. Use sparingly — these are signature
+   moments (hero CTAs, the performance ring, active sidebar item, success
+   states). Overuse kills the signal. */
+.bg-gradient-brand {
+  background: var(--gradient-brand);
+}
+.bg-gradient-brand-soft {
+  background: var(--gradient-brand-soft);
+}
+.text-gradient-brand {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ring-brand-glow {
+  box-shadow: var(--shadow-glow);
 }
 
 body {
@@ -165,5 +209,40 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Skeleton shimmer — used by the loading placeholders. */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Closure-celebration sparkle — short, restrained. Used when an incident
+   closes with all five criteria satisfied. */
+@keyframes sparkle {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(360deg);
+  }
+}
+
+/* Soft pulse for breached / critical states. Calmer than the live-presence
+   ping; this is the "something is wrong" hum. */
+@keyframes hum {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
   }
 }

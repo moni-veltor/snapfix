@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Users } from "lucide-react";
 import { mobiliseParticipantAction } from "@/app/actions/teams";
 import Section from "@/components/ui/Section";
 import Pill from "@/components/ui/Pill";
@@ -42,6 +43,7 @@ export default function MobilisationChecklist({ exerciseId, members, myParticipa
 
   return (
     <Section
+      icon={Users}
       title={`Mobilisation · ${mobilisedCount}/${members.length}`}
       right={
         <div className="flex items-center gap-2">

@@ -12,6 +12,7 @@ import { savePIRAction, saveRetrospectiveAction } from "@/app/actions/closure";
 import { prisma } from "@/lib/prisma";
 import { scoreIncident } from "@/lib/scoring";
 import PerformanceCard from "@/components/scoring/PerformanceCard";
+import ClosureCelebration from "@/components/scoring/ClosureCelebration";
 
 export default async function DebriefPage({
   params,
@@ -65,6 +66,13 @@ export default async function DebriefPage({
         </p>
       </header>
 
+      {score && score.closedAt && (
+        <ClosureCelebration
+          closedAt={score.closedAt}
+          shortCode={score.shortCode}
+          overall={score.overall}
+        />
+      )}
       {score && <PerformanceCard score={score} />}
 
       <section className="space-y-4">

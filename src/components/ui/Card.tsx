@@ -4,16 +4,27 @@ type Props = {
   className?: string;
   padded?: boolean;
   hoverable?: boolean;
+  elevated?: boolean;
   children: ReactNode;
 };
 
 /** Plain card — surface-1 background, line border, consistent radius. */
-export default function Card({ className = "", padded = true, hoverable = false, children }: Props) {
+export default function Card({
+  className = "",
+  padded = true,
+  hoverable = false,
+  elevated = false,
+  children,
+}: Props) {
   return (
     <div
       className={`rounded-md border border-line bg-surface-1 ${
         padded ? "p-4" : ""
-      } ${hoverable ? "transition-colors hover:border-line-strong hover:bg-surface-2" : ""} ${className}`}
+      } ${elevated ? "shadow-[var(--shadow-card)]" : ""} ${
+        hoverable
+          ? "transition-all hover:-translate-y-px hover:border-line-strong hover:bg-surface-2 hover:shadow-[var(--shadow-card-md)]"
+          : ""
+      } ${className}`}
     >
       {children}
     </div>

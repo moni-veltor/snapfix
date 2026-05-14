@@ -104,9 +104,13 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500"
+          className="group inline-flex items-center gap-2 rounded-md bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-card-md)] transition-all hover:-translate-y-px hover:bg-rose-500 hover:shadow-[var(--shadow-card-lg)] active:translate-y-0"
         >
-          🚨 Stand up the IMT
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-200 opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-200" />
+          </span>
+          Stand up the IMT
         </button>
       </div>
 
@@ -138,7 +142,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
               className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 text-sm"
             />
           </label>
-          <button className="w-full rounded-md bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-rose-500">
+          <button className="w-full rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-rose-500 hover:shadow-[var(--shadow-card-md)]">
             Confirm — stand up the IMT
           </button>
         </form>

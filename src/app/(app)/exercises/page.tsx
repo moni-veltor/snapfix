@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { Target } from "lucide-react";
+import { Target, Plus } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import EmptyState from "@/components/EmptyState";
+import PageHero from "@/components/ui/PageHero";
+import { ExercisesIllustration } from "@/components/illustrations/Illustrations";
 
 export default async function ExercisesPage() {
   const user = await requireOrgUser();
@@ -19,28 +21,36 @@ export default async function ExercisesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Exercises</h1>
-        {canCreate && (
-          <Link
-            href="/exercises/new"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
-          >
-            Plan a new exercise
-          </Link>
-        )}
-      </div>
+      <PageHero
+        eyebrow="War room"
+        icon={Target}
+        title="Exercises"
+        pitch="Where scenarios meet your team. Plan it, run it live with a D-Day clock, debrief honestly, learn fast."
+        actions={
+          canCreate && (
+            <Link
+              href="/exercises/new"
+              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
+            >
+              <Plus size={14} strokeWidth={2.4} />
+              Plan an exercise
+            </Link>
+          )
+        }
+      />
       {exercises.length === 0 ? (
         <EmptyState
-          icon={<Target size={20} />}
-          title="No exercises yet"
+          icon={<ExercisesIllustration size={96} className="text-indigo-500 dark:text-indigo-300" />}
+          title="A quiet calendar"
           body={
             canCreate
-              ? "Plan an exercise from one of your scenarios — pick a date, assemble your team, run it live."
-              : "Ask an admin to plan one."
+              ? "Pick a scenario, set a date, assemble the team. The platform handles the D-Day clock, the addressed inbox and the read-receipt grid."
+              : "Your team hasn't planned an exercise yet. When they do, you'll see it here."
           }
           ctaHref={canCreate ? "/exercises/new" : undefined}
           ctaLabel={canCreate ? "Plan an exercise" : undefined}
+          secondaryHref={canCreate ? "/templates" : undefined}
+          secondaryLabel={canCreate ? "Browse scenarios" : undefined}
         />
       ) : (
         <ul className="space-y-2">

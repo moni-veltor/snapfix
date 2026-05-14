@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Building2, Plus } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import PageHero from "@/components/ui/PageHero";
 
 export const metadata = { title: "IBS Register — SnapFix" };
 
@@ -25,23 +27,23 @@ export default async function IBSListPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Important Business Services</h1>
-          <p className="mt-1 text-sm text-muted">
-            Your organisation's IBS register. {items.length}{" "}
-            {items.length === 1 ? "service" : "services"} captured.
-          </p>
-        </div>
-        {canManage && (
-          <Link
-            href="/ibs/new"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
-          >
-            Add IBS
-          </Link>
-        )}
-      </header>
+      <PageHero
+        eyebrow="Register"
+        icon={Building2}
+        title="Important Business Services"
+        pitch={`The spine of your operational-resilience programme. ${items.length} ${items.length === 1 ? "service" : "services"} captured — each with its tolerance, its resource map, and its testing history.`}
+        actions={
+          canManage && (
+            <Link
+              href="/ibs/new"
+              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
+            >
+              <Plus size={14} strokeWidth={2.4} />
+              Add IBS
+            </Link>
+          )
+        }
+      />
 
       {items.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line-strong bg-surface-1 p-8 text-center text-sm text-muted">

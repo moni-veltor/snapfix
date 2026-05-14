@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Shield, Power } from "lucide-react";
 import { activateBCPAction, deactivateBCPAction } from "@/app/actions/bcp";
 import Section from "@/components/ui/Section";
 import Button from "@/components/ui/Button";
@@ -30,6 +31,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
   if (activation && !activation.deactivatedAt) {
     return (
       <Section
+        icon={Shield}
         title={
           <>
             Business Continuity · active
@@ -62,6 +64,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
 
   return (
     <Section
+      icon={Shield}
       title={
         <>
           Business Continuity
@@ -71,7 +74,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
         </>
       }
       right={
-        <Button variant="primary" size="sm" type="button" onClick={() => setOpen((o) => !o)}>
+        <Button variant="gradient" size="sm" icon={Power} type="button" onClick={() => setOpen((o) => !o)}>
           Activate BCP
         </Button>
       }
@@ -118,7 +121,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
             placeholder="Rationale (e.g. Tier 1 system down, RTO exceeded)"
             className="rounded border border-line-strong px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
           />
-          <Button variant="primary" size="sm" type="submit">
+          <Button variant="gradient" size="md" icon={Power} type="submit">
             Confirm — activate BCP
           </Button>
         </form>

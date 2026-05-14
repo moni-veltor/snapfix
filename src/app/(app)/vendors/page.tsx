@@ -8,6 +8,7 @@ import {
   unlinkVendorFromIBSAction,
 } from "@/app/actions/vendors";
 import ConfirmButton from "@/components/ConfirmButton";
+import PageHero from "@/components/ui/PageHero";
 
 export default async function VendorsPage() {
   const me = await requireOrgUser();
@@ -29,13 +30,11 @@ export default async function VendorsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Critical third parties</h1>
-        <p className="mt-1 text-sm text-muted">
-          Vendors that support your IBSs (Afin BCPlans §6.3.6). Link each to the services it
-          underpins so a vendor outage instantly surfaces the affected IBSs.
-        </p>
-      </header>
+      <PageHero
+        eyebrow="Dependencies"
+        title="Critical third parties"
+        pitch="Vendors that support your IBSs (Afin BCPlans §6.3.6). Link each to the services it underpins so a vendor outage instantly surfaces the affected IBSs."
+      />
 
       <ul className="space-y-3">
         {vendors.length === 0 && (

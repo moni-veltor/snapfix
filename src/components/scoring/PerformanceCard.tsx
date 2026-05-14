@@ -1,5 +1,6 @@
 import type { IncidentScore, CoachingLevel } from "@/lib/scoring";
 import Pill from "@/components/ui/Pill";
+import CountUp from "@/components/ui/CountUp";
 
 type Props = {
   score: IncidentScore;
@@ -30,10 +31,12 @@ export default function PerformanceCard({ score }: Props) {
         : "text-rose-600 dark:text-rose-300";
 
   return (
-    <div className="rounded-lg border border-line bg-surface-1 p-6">
+    <div className="rounded-lg border border-line bg-surface-1 p-6 shadow-[var(--shadow-card)]">
       <div className="flex flex-wrap items-center justify-between gap-6">
         <div>
-          <p className="text-xs uppercase tracking-wider text-muted">Performance</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
+            Performance
+          </p>
           <h2 className="mt-1 text-base font-semibold text-ink">
             Incident {score.shortCode}
           </h2>
@@ -42,8 +45,13 @@ export default function PerformanceCard({ score }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className={`flex h-20 w-20 items-center justify-center rounded-full ring-4 ${ringColor} ring-offset-2 ring-offset-surface-1 dark:ring-offset-surface-1`}>
-            <span className={`text-3xl font-bold ${numberColor}`}>{score.overall}</span>
+          <div
+            className={`relative flex h-24 w-24 items-center justify-center rounded-full ring-4 ${ringColor} ring-offset-2 ring-offset-surface-1 dark:ring-offset-surface-1`}
+          >
+            <div className="absolute inset-1 rounded-full bg-gradient-brand-soft" />
+            <span className={`relative text-4xl font-bold tabular-nums tracking-tight ${numberColor}`}>
+              <CountUp value={score.overall} />
+            </span>
           </div>
           <div className="text-xs">
             <div className="text-muted">out of 100</div>
