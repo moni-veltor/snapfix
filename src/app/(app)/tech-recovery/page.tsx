@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Plus, Server } from "lucide-react";
+import { Library, Plus, Server } from "lucide-react";
 import PageHero from "@/components/ui/PageHero";
 import { ProgressRing, Bar } from "@/components/ui/charts";
 import { postureScore, type SystemWithTests } from "@/lib/tech-recovery";
@@ -40,8 +41,20 @@ export default async function TechRecoveryPage() {
     <div className="space-y-6">
       <PageHero
         eyebrow="Technical recovery"
+        icon={Server}
         title="System recovery register"
         pitch="The systems behind your IBSs — recovery objectives, failover topology, backup posture, and the DR-test ledger that proves you can actually meet your RTOs."
+        actions={
+          canManage ? (
+            <Link
+              href="/tech-recovery/library"
+              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+            >
+              <Library size={13} />
+              Browse system library
+            </Link>
+          ) : undefined
+        }
       />
 
       {systems.length > 0 ? (
@@ -102,10 +115,19 @@ export default async function TechRecoveryPage() {
             posture. Start with your tier-1 systems.
           </p>
           {canManage && (
-            <p className="mt-4 inline-flex items-center gap-1.5 text-xs text-soft">
-              <Plus size={11} />
-              Use the form below to add your first system.
-            </p>
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <Link
+                href="/tech-recovery/library"
+                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+              >
+                <Library size={11} />
+                Browse the library
+              </Link>
+              <span className="inline-flex items-center gap-1.5 text-xs text-soft">
+                <Plus size={11} />
+                or use the wizard below
+              </span>
+            </div>
           )}
         </section>
       )}

@@ -18,6 +18,7 @@ import {
   logDRTestAction,
   upsertTechSystemAction,
 } from "@/app/actions/tech-recovery";
+import SystemAddWizard from "@/components/tech/SystemAddWizard";
 import {
   FAILOVER_LABEL,
   SYSTEM_KIND_LABEL,
@@ -130,7 +131,7 @@ export default function SystemList({ systems, canManage }: Props) {
         </div>
       </div>
 
-      {creating && <SystemForm onDone={() => setCreating(false)} />}
+      {creating && <SystemAddWizard onDone={() => setCreating(false)} />}
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line bg-surface-1 p-8 text-center text-sm text-muted">

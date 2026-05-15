@@ -1,8 +1,11 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireOrgRole } from "@/lib/auth";
+import { audit } from "@/lib/audit";
+import { SYSTEM_LIBRARY } from "@/lib/tech-system-library";
 import type {
   DRTestOutcome,
   TechFailoverKind,
@@ -126,4 +129,55 @@ export async function logDRTestAction(formData: FormData) {
   });
 
   revalidatePath("/tech-recovery");
+}
+
+/**
+ * One-click add a system from the curated library. De-dupes by name within
+ * the org (also enforced by the model's @@unique([orgId, name])). Seeds
+ * objectives, failover topology and suggested regions so the admin can
+ * tune from a sensible starting point.
+ */
+export async function addLibrarySystemAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const slug = String(formData.get("slug") ?? "");
+  const lib = SYSTEM_LIBRARY.find((s) => s.slug === slug);
+  if (!lib) return;
+
+  const dup = await prisma.techSystem.findFirst({
+    where: { orgId: me.orgId, name: lib.name },
+    select: { id: true },
+  });
+  if (dup) {
+    revalidatePath("/tech-recovery");
+    redirect("/tech-recovery");
+  }
+
+  const created = await prisma.techSystem.create({
+    data: {
+      orgId: me.orgId,
+      name: lib.name,
+      kind: lib.kind,
+      tier: lib.suggestedTier,
+      description: lib.description,
+      rtoMin: lib.rtoMin,
+      rpoMin: lib.rpoMin,
+      mtpdMin: lib.mtpdMin,
+      failoverKind: lib.suggestedFailoverKind,
+      primaryRegion: lib.primaryRegion ?? null,
+      failoverRegion: lib.failoverRegion ?? null,
+      backupFrequency: lib.backupFrequency ?? null,
+      backupRetentionDays: lib.backupRetentionDays ?? null,
+    },
+  });
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "system.added-from-library",
+    targetType: "tech-system",
+    targetId: created.id,
+    summary: `Added system ${created.name} from library (${lib.kind})`,
+  });
+  revalidatePath("/tech-recovery");
+  revalidatePath("/tech-recovery/library");
+  redirect("/tech-recovery");
 }
