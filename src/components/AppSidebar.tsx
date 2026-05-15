@@ -28,6 +28,7 @@ import { signOutAction } from "@/app/actions/auth";
 import ThemeToggle from "@/components/ThemeToggle";
 import ComposeMenu from "@/components/ComposeMenu";
 import NotificationBell from "@/components/NotificationBell";
+import HelpDrawer from "@/components/HelpDrawer";
 import type { NotificationKind } from "@/lib/notifications";
 
 type SerializedNotification = {
@@ -188,13 +189,14 @@ export default function AppSidebar({
           </button>
         </div>
 
-        {/* Global compose / "+ New" entry-point + notification bell */}
+        {/* Global compose / "+ New" entry-point + notification bell + help */}
         {!collapsed && (
           <div className="flex items-center gap-2 px-2 pt-2">
             <div className="flex-1">
               <ComposeMenu canManage={canManageOrg} />
             </div>
             <NotificationBell notifications={notifications} />
+            <HelpDrawer />
           </div>
         )}
 
