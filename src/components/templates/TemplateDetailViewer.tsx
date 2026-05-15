@@ -47,6 +47,7 @@ type Inject = {
   summary: string;
   description: string;
   relation: string | null;
+  kind?: "BUSINESS" | "TECHNICAL";
 };
 
 type FacilQ = { id: string; category: string; text: string };
@@ -439,6 +440,16 @@ function TimelinePanel({
                   >
                     {it.kind === "event" ? `Event #${it.no}` : `Inject #${it.no}`}
                   </span>
+                  {it.kind === "inject" && it.injectKind === "TECHNICAL" && (
+                    <span className="rounded-full bg-cyan-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200">
+                      Technical
+                    </span>
+                  )}
+                  {it.kind === "inject" && it.injectKind === "BUSINESS" && (
+                    <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-violet-800 dark:bg-violet-950/40 dark:text-violet-200">
+                      Business
+                    </span>
+                  )}
                   <h3 className="text-sm font-semibold text-ink">{it.title}</h3>
                 </header>
                 <p className="mt-1.5 text-xs text-muted">{it.description}</p>
@@ -470,6 +481,7 @@ function TimelinePanel({
 type TimelineItem = {
   key: string;
   kind: "event" | "inject";
+  injectKind?: "BUSINESS" | "TECHNICAL";
   no: number;
   scheduledTime: string;
   title: string;
@@ -498,6 +510,7 @@ function mergeTimeline(events: Event[], injects: Inject[]): TimelineItem[] {
     all.push({
       key: `i-${j.id}`,
       kind: "inject",
+      injectKind: j.kind ?? "BUSINESS",
       no: j.injectNo,
       scheduledTime: j.scheduledTime,
       title: j.summary,

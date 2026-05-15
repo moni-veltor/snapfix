@@ -105,6 +105,7 @@ export default async function TemplateDetailPage({
           summary: j.summary,
           description: j.description,
           relation: j.relation,
+          kind: j.kind,
         }))}
         facilitatorQuestions={template.facilitatorQuestions.map((q) => ({
           id: q.id,

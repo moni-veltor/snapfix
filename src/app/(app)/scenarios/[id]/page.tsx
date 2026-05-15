@@ -231,6 +231,7 @@ export default async function ScenarioDetailPage({
                 senderRoleTitle: j.senderRoleTitle,
                 toRoleTitles: j.toRoleTitles,
                 ccRoleTitles: j.ccRoleTitles,
+                kind: j.kind,
               }))}
             />
           ),
@@ -415,6 +416,15 @@ export default async function ScenarioDetailPage({
                           <div className="flex flex-wrap items-baseline gap-2">
                             <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                               Inject #{j.injectNo}
+                            </span>
+                            <span
+                              className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${
+                                j.kind === "TECHNICAL"
+                                  ? "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200"
+                                  : "bg-violet-100 text-violet-800 dark:bg-violet-950/40 dark:text-violet-200"
+                              }`}
+                            >
+                              {j.kind === "TECHNICAL" ? "Technical" : "Business"}
                             </span>
                             <span className="font-mono text-[10px] text-soft">
                               {j.scheduledTime}

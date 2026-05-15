@@ -28,6 +28,20 @@ import { tier2BankRun } from "./templates/tier2-bank-run";
 import { tier3BaasFailure } from "./templates/tier3-baas-failure";
 import { tier3AcquisitionSurge } from "./templates/tier3-acquisition-surge";
 import { allTierShells } from "./templates/tier-shells";
+// New tier-2 scenarios with business + technical injects
+import { tier2BaasSoftFail } from "./templates/tier2-baas-soft-fail";
+import { tier2MobileCertPin } from "./templates/tier2-mobile-cert-pin";
+import { tier2AiFraudFalsePositive } from "./templates/tier2-ai-fraud-false-positive";
+import { tier2ViralRun } from "./templates/tier2-viral-run";
+// New tier-3 scenarios with business + technical injects
+import { tier3ReinsurerDispute } from "./templates/tier3-reinsurer-dispute";
+import { tier3BordereauFailure } from "./templates/tier3-bordereau-failure";
+import { tier3UnderwritingDrift } from "./templates/tier3-underwriting-drift";
+import { tier3AgmDisruption } from "./templates/tier3-agm-disruption";
+// AI & algorithmic risk (tier-agnostic)
+import { aiPromptInjection } from "./templates/ai-prompt-injection";
+import { aiModelBias } from "./templates/ai-model-bias";
+import { aiTransparencyFailure } from "./templates/ai-transparency-failure";
 
 /**
  * Seed all system-level scenario templates. Idempotent — each template is
@@ -64,6 +78,20 @@ export async function seedSystemTemplates(prisma: PrismaClient): Promise<void> {
     tier3BaasFailure,
     tier3AcquisitionSurge,
     ...allTierShells,
+    // Tier-2 with business + technical injects
+    tier2BaasSoftFail,
+    tier2MobileCertPin,
+    tier2AiFraudFalsePositive,
+    tier2ViralRun,
+    // Tier-3 with business + technical injects
+    tier3ReinsurerDispute,
+    tier3BordereauFailure,
+    tier3UnderwritingDrift,
+    tier3AgmDisruption,
+    // AI & algorithmic risk
+    aiPromptInjection,
+    aiModelBias,
+    aiTransparencyFailure,
   ];
   for (const t of templates) {
     await upsertTemplate(prisma, t);

@@ -37,6 +37,9 @@ type InjectBeat = {
   toRoleTitles: string[];
   ccRoleTitles: string[];
   released: boolean;
+  /** business vs technical inject — renamed to avoid colliding with the
+   *  `kind` discriminator on the Beat union below. */
+  injectKind?: "BUSINESS" | "TECHNICAL";
 };
 
 type Beat =
@@ -258,6 +261,16 @@ function BeatRow({
             <>Inject #{(beat as InjectBeat & { kind: "inject" }).injectNo}</>
           )}
         </span>
+        {beat.kind === "inject" && (beat as InjectBeat & { kind: "inject" }).injectKind === "TECHNICAL" && (
+          <span className="rounded-full bg-cyan-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200">
+            Technical
+          </span>
+        )}
+        {beat.kind === "inject" && (beat as InjectBeat & { kind: "inject" }).injectKind === "BUSINESS" && (
+          <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-violet-800 dark:bg-violet-950/40 dark:text-violet-200">
+            Business
+          </span>
+        )}
         <h3 className="text-sm font-semibold text-ink">
           {beat.kind === "event"
             ? (beat as EventBeat & { kind: "event" }).title

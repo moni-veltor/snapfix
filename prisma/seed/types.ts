@@ -50,6 +50,9 @@ export type InjectDef = {
   injectNo: number;
   scheduledTime: string;
   isScheduled?: boolean;
+  /** "BUSINESS" = ops/customer/regulator pressure; "TECHNICAL" = monitoring
+   *  / observability signals. Defaults to BUSINESS for back-compat. */
+  kind?: "BUSINESS" | "TECHNICAL";
   summary: string;
   description: string;
   relation?: string;
@@ -163,6 +166,7 @@ export async function upsertTemplate(
         injectNo: j.injectNo,
         scheduledTime: j.scheduledTime,
         isScheduled: j.isScheduled ?? true,
+        kind: (j.kind ?? "BUSINESS") as "BUSINESS" | "TECHNICAL",
         summary: j.summary,
         description: j.description,
         relation: j.relation ?? null,

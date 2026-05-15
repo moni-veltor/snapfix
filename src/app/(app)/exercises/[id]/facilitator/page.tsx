@@ -141,6 +141,7 @@ export default async function FacilitatorPage({
                     toRoleTitles: j.toRoleTitles,
                     ccRoleTitles: j.ccRoleTitles,
                     released: j.released,
+                    injectKind: j.kind,
                   }))}
                   dDayHHMM={clock.hhmm}
                 />

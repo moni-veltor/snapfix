@@ -260,15 +260,21 @@ model EventIBS {
   @@id([eventId, ibsId])
 }
 
+enum InjectKind {
+  BUSINESS  // ops / customer / comms / regulator-driven pressure
+  TECHNICAL // monitoring signals, observability alerts, system fault patterns
+}
+
 model Inject {
-  id            String   @id @default(cuid())
+  id            String     @id @default(cuid())
   scenarioId    String
-  scenario      Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  scenario      Scenario   @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
   eventId       String?
-  event         Event?   @relation(fields: [eventId], references: [id])
+  event         Event?     @relation(fields: [eventId], references: [id])
   injectNo      Int
   scheduledTime String
-  isScheduled   Boolean  @default(true)
+  isScheduled   Boolean    @default(true)
+  kind          InjectKind @default(BUSINESS)
   summary       String
   description   String
   relation      String?
