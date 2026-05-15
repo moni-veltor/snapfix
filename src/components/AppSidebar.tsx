@@ -26,6 +26,7 @@ import {
 import { Logo } from "@/components/Logo";
 import { signOutAction } from "@/app/actions/auth";
 import ThemeToggle from "@/components/ThemeToggle";
+import ComposeMenu from "@/components/ComposeMenu";
 
 type NavItem = {
   href: string;
@@ -172,6 +173,13 @@ export default function AppSidebar({
             {collapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
           </button>
         </div>
+
+        {/* Global compose / "+ New" entry-point */}
+        {!collapsed && (
+          <div className="px-2 pt-2">
+            <ComposeMenu canManage={canManageOrg} />
+          </div>
+        )}
 
         {/* Sections */}
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-2">

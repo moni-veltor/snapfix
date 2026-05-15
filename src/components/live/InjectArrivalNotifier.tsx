@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Bell, Zap } from "lucide-react";
+import { playArrivalChime } from "@/lib/arrival-chime";
 
 type InboxItem = {
   kind: "EVENT" | "INJECT";
@@ -69,6 +70,7 @@ export default function InjectArrivalNotifier({
   // double-toast across renders.
   const toastedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
+    let firstNew = true;
     for (const item of unseen) {
       const key = `${item.kind}:${item.id}`;
       if (toastedRef.current.has(key)) continue;
@@ -82,6 +84,11 @@ export default function InjectArrivalNotifier({
           icon: item.kind === "INJECT" ? "⚡" : "📨",
         },
       );
+      // Chime once per arrival batch (not per item — would be annoying).
+      if (firstNew) {
+        playArrivalChime(item.kind);
+        firstNew = false;
+      }
     }
   }, [unseen]);
 
