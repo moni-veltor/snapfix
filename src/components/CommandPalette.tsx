@@ -3,7 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { FileText, Target, Building2, CheckSquare, Users, Search } from "lucide-react";
+import {
+  FileText,
+  Target,
+  Building2,
+  CheckSquare,
+  Users,
+  Search,
+  Boxes,
+  Server,
+} from "lucide-react";
 
 type SearchPayload = {
   q: string;
@@ -13,6 +22,8 @@ type SearchPayload = {
     ibsList: { id: string; code: string; name: string }[];
     actionItems: { id: string; title: string; exerciseId: string; status: string }[];
     members: { id: string; name: string | null; email: string }[];
+    vendors?: { id: string; name: string; tier: string; serviceKind: string | null }[];
+    systems?: { id: string; name: string; tier: string }[];
   };
 };
 
@@ -162,6 +173,37 @@ export default function CommandPalette() {
                     </Item>
                   ))}
                 </Group>
+                {data.vendors && data.vendors.length > 0 && (
+                  <Group label="Vendors" Icon={Boxes}>
+                    {data.vendors.map((v) => (
+                      <Item key={v.id} onSelect={() => go("/vendors")}>
+                        <Boxes size={14} className="text-soft" />
+                        <span className="truncate">{v.name}</span>
+                        {v.serviceKind && (
+                          <span className="text-xs text-soft">
+                            {v.serviceKind}
+                          </span>
+                        )}
+                        <span className="ml-auto rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-muted">
+                          {v.tier.replace("_", " ")}
+                        </span>
+                      </Item>
+                    ))}
+                  </Group>
+                )}
+                {data.systems && data.systems.length > 0 && (
+                  <Group label="Tech systems" Icon={Server}>
+                    {data.systems.map((s) => (
+                      <Item key={s.id} onSelect={() => go("/tech-recovery")}>
+                        <Server size={14} className="text-soft" />
+                        <span className="truncate">{s.name}</span>
+                        <span className="ml-auto rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-muted">
+                          {s.tier}
+                        </span>
+                      </Item>
+                    ))}
+                  </Group>
+                )}
               </>
             )}
             <Command.Empty className="px-3 py-6 text-center text-xs text-muted">

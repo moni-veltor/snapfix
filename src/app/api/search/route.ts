@@ -19,7 +19,7 @@ export async function GET(req: Request) {
       }
     : undefined;
 
-  const [scenarios, exercises, ibsList, actionItems, members] = await Promise.all([
+  const [scenarios, exercises, ibsList, actionItems, members, vendors, systems] = await Promise.all([
     prisma.scenario.findMany({
       where: q
         ? {
@@ -64,6 +64,29 @@ export async function GET(req: Request) {
       take: 6,
       select: { id: true, name: true, email: true },
     }),
+    prisma.vendor.findMany({
+      where: q
+        ? {
+            orgId,
+            OR: [
+              { name: where },
+              { serviceKind: where },
+              { hyperscaler: where },
+            ],
+          }
+        : { orgId },
+      orderBy: [{ tier: "asc" }, { name: "asc" }],
+      take: 6,
+      select: { id: true, name: true, tier: true, serviceKind: true },
+    }),
+    prisma.techSystem.findMany({
+      where: q
+        ? { orgId, OR: [{ name: where }, { description: where }] }
+        : { orgId },
+      orderBy: [{ tier: "asc" }, { name: "asc" }],
+      take: 6,
+      select: { id: true, name: true, tier: true },
+    }),
   ]);
 
   return NextResponse.json({
@@ -74,6 +97,8 @@ export async function GET(req: Request) {
       ibsList,
       actionItems,
       members,
+      vendors,
+      systems,
     },
   });
 }
