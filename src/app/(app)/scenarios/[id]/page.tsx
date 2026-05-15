@@ -13,7 +13,6 @@ import {
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
-  addEventAction,
   addIBSAction,
   deleteEventAction,
   deleteIBSAction,
@@ -22,6 +21,7 @@ import {
 import ArtefactList from "@/components/ArtefactList";
 import ArtefactUpload from "@/components/ArtefactUpload";
 import InjectComposerModal from "@/components/scenario/InjectComposerModal";
+import EventComposerModal from "@/components/scenario/EventComposerModal";
 import ScenarioDetailTabs from "@/components/scenarios/ScenarioDetailTabs";
 import ScenarioPlayback from "@/components/scenarios/ScenarioPlayback";
 
@@ -66,6 +66,8 @@ export default async function ScenarioDetailPage({
   );
   const nextInjectNo =
     Math.max(0, ...scenario.injects.map((j) => j.injectNo)) + 1;
+  const nextEventNo =
+    Math.max(0, ...scenario.events.map((e) => e.eventNo)) + 1;
 
   return (
     <div className="space-y-6">
@@ -237,11 +239,28 @@ export default async function ScenarioDetailPage({
           ),
           events: (
             <div className="space-y-4">
+              {canEdit && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface-1 p-3">
+                  <div className="text-xs text-muted">
+                    <span className="font-semibold text-ink">
+                      {scenario.events.length}
+                    </span>{" "}
+                    event{scenario.events.length === 1 ? "" : "s"} authored ·
+                    Next is #
+                    <span className="font-mono text-ink">{nextEventNo}</span>
+                  </div>
+                  <EventComposerModal
+                    scenarioId={scenario.id}
+                    nextEventNo={nextEventNo}
+                    knownRoles={knownRoles}
+                  />
+                </div>
+              )}
               {scenario.events.length === 0 ? (
                 <EmptyTab
                   icon={<FileText size={20} />}
                   title="No events yet"
-                  body="Events are the scheduled beats of the scenario — the messages your team responds to. Add the first one below."
+                  body="Events are the scheduled beats of the scenario — the messages your team responds to. Use the +Add event button above."
                 />
               ) : (
                 <ol className="space-y-2">
@@ -318,82 +337,6 @@ export default async function ScenarioDetailPage({
                 </ol>
               )}
 
-              {canEdit && (
-                <form
-                  action={addEventAction}
-                  className="space-y-2 rounded-xl border-2 border-dashed border-indigo-300 bg-surface-1 p-4 text-sm dark:border-indigo-700"
-                >
-                  <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted">
-                    <Plus size={11} /> Add an event
-                  </div>
-                  <input type="hidden" name="scenarioId" value={scenario.id} />
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      name="eventNo"
-                      type="number"
-                      min={1}
-                      required
-                      placeholder="Event #"
-                      className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                    />
-                    <input
-                      name="scheduledTime"
-                      required
-                      pattern="[0-9]{2}:[0-9]{2}"
-                      placeholder="HH:MM (D-Day)"
-                      className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                    />
-                  </div>
-                  <input
-                    name="title"
-                    required
-                    placeholder="Title"
-                    className="w-full rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  />
-                  <textarea
-                    name="description"
-                    required
-                    placeholder="Description"
-                    rows={2}
-                    className="w-full rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  />
-                  <input
-                    name="senderRoleTitle"
-                    placeholder='From (role title — e.g. "CTO")'
-                    className="w-full rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  />
-                  <input
-                    name="toRoleTitles"
-                    placeholder='To (comma-separated — "Sn.TPM, TPM, ISM")'
-                    className="w-full rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  />
-                  <input
-                    name="ccRoleTitles"
-                    placeholder='Cc (comma-separated)'
-                    className="w-full rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <textarea
-                      name="expectedActions"
-                      placeholder="Expected actions (one per line)"
-                      rows={2}
-                      className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                    />
-                    <textarea
-                      name="objectives"
-                      placeholder="Objectives (one per line)"
-                      rows={2}
-                      className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-                  >
-                    Add event
-                  </button>
-                </form>
-              )}
             </div>
           ),
           injects: (
