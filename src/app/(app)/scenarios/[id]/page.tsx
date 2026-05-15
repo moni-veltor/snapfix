@@ -21,7 +21,7 @@ import {
 } from "@/app/actions/scenarios";
 import ArtefactList from "@/components/ArtefactList";
 import ArtefactUpload from "@/components/ArtefactUpload";
-import InjectComposer from "@/components/scenario/InjectComposer";
+import InjectComposerModal from "@/components/scenario/InjectComposerModal";
 import ScenarioDetailTabs from "@/components/scenarios/ScenarioDetailTabs";
 import ScenarioPlayback from "@/components/scenarios/ScenarioPlayback";
 
@@ -398,11 +398,28 @@ export default async function ScenarioDetailPage({
           ),
           injects: (
             <div className="space-y-4">
+              {canEdit && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-surface-1 p-3">
+                  <div className="text-xs text-muted">
+                    <span className="font-semibold text-ink">
+                      {scenario.injects.length}
+                    </span>{" "}
+                    inject{scenario.injects.length === 1 ? "" : "s"} authored ·
+                    Next is #
+                    <span className="font-mono text-ink">{nextInjectNo}</span>
+                  </div>
+                  <InjectComposerModal
+                    scenarioId={scenario.id}
+                    nextInjectNo={nextInjectNo}
+                    knownRoles={knownRoles}
+                  />
+                </div>
+              )}
               {scenario.injects.length === 0 ? (
                 <EmptyTab
                   icon={<Zap size={20} />}
                   title="No injects yet"
-                  body="Injects are unscheduled pressure beats — the curveballs that test how your team adapts. Use the composer below to add one."
+                  body="Injects are unscheduled pressure beats — the curveballs that test how your team adapts. Use the +Add inject button above."
                 />
               ) : (
                 <ul className="space-y-2">
@@ -481,13 +498,6 @@ export default async function ScenarioDetailPage({
                 </ul>
               )}
 
-              {canEdit && (
-                <InjectComposer
-                  scenarioId={scenario.id}
-                  nextInjectNo={nextInjectNo}
-                  knownRoles={knownRoles}
-                />
-              )}
             </div>
           ),
           ibs: (

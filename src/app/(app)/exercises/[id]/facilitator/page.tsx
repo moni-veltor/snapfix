@@ -13,6 +13,7 @@ import FacilitatorControls from "@/components/facilitator/FacilitatorControls";
 import ReadReceiptGrid from "@/components/facilitator/ReadReceiptGrid";
 import RunSheet from "@/components/facilitator/RunSheet";
 import FacilitatorPanels from "@/components/facilitator/FacilitatorPanels";
+import InjectComposerModal from "@/components/scenario/InjectComposerModal";
 import { loadReadReceipts } from "@/lib/read-receipts";
 
 export default async function FacilitatorPage({
@@ -30,6 +31,26 @@ export default async function FacilitatorPage({
   const overdueBeats =
     events.filter((e) => !e.released).length +
     injects.filter((j) => !j.released).length;
+
+  // Roles + next-inject-no for the in-flight composer modal. Pull role
+  // titles from existing inject/event addressing so the composer can warn
+  // about typos against the cast that's already in play.
+  const knownRoles = Array.from(
+    new Set<string>([
+      ...exercise.scenario.injects.flatMap((j) => [
+        ...(j.senderRoleTitle ? [j.senderRoleTitle] : []),
+        ...(j.toRoleTitles ?? []),
+        ...(j.ccRoleTitles ?? []),
+      ]),
+      ...exercise.scenario.events.flatMap((e) => [
+        ...(e.senderRoleTitle ? [e.senderRoleTitle] : []),
+        ...(e.toRoleTitles ?? []),
+        ...(e.ccRoleTitles ?? []),
+      ]),
+    ]),
+  );
+  const nextInjectNo =
+    Math.max(0, ...exercise.scenario.injects.map((j) => j.injectNo)) + 1;
 
   return (
     <div className="space-y-5">
@@ -53,11 +74,19 @@ export default async function FacilitatorPage({
             <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{exercise.status}</span>
           </p>
         </div>
-        <DDayClockTicker
-          anchor={exercise.dDayAnchor?.toISOString() ?? null}
-          speedMultiplier={exercise.speedMultiplier}
-          status={exercise.status}
-        />
+        <div className="flex items-center gap-2">
+          <InjectComposerModal
+            scenarioId={exercise.scenario.id}
+            nextInjectNo={nextInjectNo}
+            knownRoles={knownRoles}
+            triggerLabel="Compose inject"
+          />
+          <DDayClockTicker
+            anchor={exercise.dDayAnchor?.toISOString() ?? null}
+            speedMultiplier={exercise.speedMultiplier}
+            status={exercise.status}
+          />
+        </div>
       </header>
 
       <section className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface-1 p-3">

@@ -8,7 +8,7 @@ type Props = {
   onClose: () => void;
   title: ReactNode;
   subtitle?: ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   children: ReactNode;
   footer?: ReactNode;
 };
@@ -17,6 +17,7 @@ const SIZE = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-2xl",
+  xl: "max-w-4xl",
 } as const;
 
 export default function Modal({ open, onClose, title, subtitle, size = "md", children, footer }: Props) {

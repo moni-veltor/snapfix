@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { INJECT_TEMPLATES, type InjectTemplate } from "@/lib/inject-templates";
 import { addInjectAction } from "@/app/actions/scenarios";
 import { Input, Textarea, FormField } from "@/components/ui/Input";
@@ -13,9 +14,14 @@ type Props = {
   nextInjectNo: number;
   /** Role titles already on exercise rosters — used by the validator. */
   knownRoles: string[];
+  /** When provided, the form wraps the server action with a success toast
+   *  + this callback (used by the modal wrapper to auto-close). */
+  onSuccess?: () => void;
+  /** Hide the outer dashed card chrome — the modal already supplies its own. */
+  bare?: boolean;
 };
 
-export default function InjectComposer({ scenarioId, nextInjectNo, knownRoles }: Props) {
+export default function InjectComposer({ scenarioId, nextInjectNo, knownRoles, onSuccess, bare = false }: Props) {
   const [picked, setPicked] = useState<InjectTemplate | null>(null);
   const [injectNo, setInjectNo] = useState(nextInjectNo);
   const [scheduledTime, setScheduledTime] = useState("00:30");
@@ -59,14 +65,43 @@ export default function InjectComposer({ scenarioId, nextInjectNo, knownRoles }:
   if (unknownCc.length > 0)
     errors.push(`Unknown Cc role${unknownCc.length === 1 ? "" : "s"}: ${unknownCc.join(", ")}`);
 
+  // When `bare`, the modal supplies its own header + chrome — render
+  // without the outer card and without a duplicate title.
+  const outerCls = bare
+    ? "space-y-4"
+    : "space-y-4 rounded-lg border border-dashed border-line-strong bg-surface-1 p-4";
+
+  const formAction = onSuccess
+    ? async (fd: FormData) => {
+        try {
+          await addInjectAction(fd);
+          toast.success(`Inject #${injectNo} added`, {
+            description: summary || undefined,
+          });
+          onSuccess();
+        } catch {
+          toast.error("Couldn't add the inject — please try again.");
+        }
+      }
+    : addInjectAction;
+
   return (
-    <div className="space-y-4 rounded-lg border border-dashed border-line-strong bg-surface-1 p-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-sm font-semibold text-ink">Add an inject</h3>
-        <Button type="button" variant="ghost" size="sm" onClick={reset}>
-          Clear
-        </Button>
-      </div>
+    <div className={outerCls}>
+      {!bare && (
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="text-sm font-semibold text-ink">Add an inject</h3>
+          <Button type="button" variant="ghost" size="sm" onClick={reset}>
+            Clear
+          </Button>
+        </div>
+      )}
+      {bare && (
+        <div className="flex justify-end">
+          <Button type="button" variant="ghost" size="sm" onClick={reset}>
+            Clear form
+          </Button>
+        </div>
+      )}
 
       {/* Template chips */}
       <div>
@@ -94,7 +129,7 @@ export default function InjectComposer({ scenarioId, nextInjectNo, knownRoles }:
 
       {/* Two-column composer + preview */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <form action={addInjectAction} className="space-y-3">
+        <form action={formAction} className="space-y-3">
           <input type="hidden" name="scenarioId" value={scenarioId} />
 
           <div className="grid grid-cols-2 gap-2">

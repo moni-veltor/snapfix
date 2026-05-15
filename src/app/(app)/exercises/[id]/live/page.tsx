@@ -31,6 +31,8 @@ import Scratchpad from "@/components/live/Scratchpad";
 import OnCallStatus from "@/components/live/OnCallStatus";
 import RoleBriefing from "@/components/live/RoleBriefing";
 import LiveTabs from "@/components/live/LiveTabs";
+import LivePoller from "@/components/live/LivePoller";
+import InjectArrivalNotifier from "@/components/live/InjectArrivalNotifier";
 
 export default async function LiveWorkspacePage({
   params,
@@ -442,6 +444,26 @@ export default async function LiveWorkspacePage({
 
       {/* Floating team chat — always reachable, bottom-right drawer. */}
       <FloatingChatDrawer exerciseId={exercise.id} meId={me.id} messages={chat} />
+
+      {/* Real-time spine — gentle polling refresh + dramatic modal for new
+          injects / events addressed to me. */}
+      {exercise.status === "IN_PROGRESS" && (
+        <>
+          <LivePoller intervalMs={10_000} />
+          <InjectArrivalNotifier
+            exerciseId={exercise.id}
+            roleTitle={participant.roleTitle}
+            inbox={inbox.map((i) => ({
+              kind: i.kind,
+              id: i.id,
+              scheduledTime: i.scheduledTime,
+              title: i.title,
+              description: i.summary,
+              senderRoleTitle: i.from,
+            }))}
+          />
+        </>
+      )}
     </div>
   );
 }
