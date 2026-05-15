@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireOrgRole } from "@/lib/auth";
 import { VendorTier } from "@/generated/prisma/enums";
+import { audit } from "@/lib/audit";
+import { VENDOR_LIBRARY } from "@/lib/vendor-library";
 
 function optDate(v: FormDataEntryValue | null): Date | null {
   if (typeof v !== "string" || v.trim() === "") return null;
@@ -134,4 +136,52 @@ export async function unlinkVendorFromIBSAction(formData: FormData) {
     where: { vendorId, ibsId, vendor: { orgId: me.orgId } },
   });
   revalidatePath("/vendors");
+}
+
+/**
+ * One-click add a vendor from the curated library. De-dupes by name within
+ * the org — if the vendor already exists we just bounce back to /vendors so
+ * the admin can see it. Audit captured so the org switcher / log can show
+ * who seeded which providers.
+ */
+export async function addLibraryVendorAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const slug = String(formData.get("slug") ?? "");
+  const lib = VENDOR_LIBRARY.find((v) => v.slug === slug);
+  if (!lib) return;
+
+  const dup = await prisma.vendor.findFirst({
+    where: { orgId: me.orgId, name: lib.name },
+    select: { id: true },
+  });
+  if (dup) {
+    revalidatePath("/vendors");
+    redirect("/vendors");
+  }
+
+  const created = await prisma.vendor.create({
+    data: {
+      orgId: me.orgId,
+      name: lib.name,
+      description: lib.description,
+      serviceKind: lib.serviceKind,
+      tier: lib.suggestedTier,
+      isDoraCritical: lib.isDoraCritical,
+      hyperscaler: lib.hyperscaler ?? null,
+      region: lib.region ?? null,
+      assuranceKind: lib.assuranceKind ?? null,
+      statusUrl: lib.statusUrl ?? null,
+    },
+  });
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "vendor.added-from-library",
+    targetType: "vendor",
+    targetId: created.id,
+    summary: `Added vendor ${created.name} from library (${lib.category})`,
+  });
+  revalidatePath("/vendors");
+  revalidatePath("/vendors/library");
+  redirect("/vendors");
 }

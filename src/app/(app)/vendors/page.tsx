@@ -1,9 +1,11 @@
+import Link from "next/link";
+import { Boxes, Library } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { upsertVendorAction } from "@/app/actions/vendors";
 import PageHero from "@/components/ui/PageHero";
 import DORAInsights from "@/components/vendors/DORAInsights";
 import VendorGrid from "@/components/vendors/VendorGrid";
+import VendorAddWizard from "@/components/vendors/VendorAddWizard";
 import type { VendorLite } from "@/lib/dora";
 
 export default async function VendorsPage() {
@@ -50,8 +52,20 @@ export default async function VendorsPage() {
     <div className="space-y-6">
       <PageHero
         eyebrow="Dependencies"
+        icon={Boxes}
         title="Critical third parties"
         pitch="Vendors that support your IBSs. Link each to the services it underpins so a vendor outage instantly surfaces the affected IBSs — and capture DORA fields below so the Register of Information stays current."
+        actions={
+          canManage ? (
+            <Link
+              href="/vendors/library"
+              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+            >
+              <Library size={13} />
+              Browse vendor library
+            </Link>
+          ) : undefined
+        }
       />
 
       <DORAInsights vendors={vendorsLite} />
@@ -60,7 +74,7 @@ export default async function VendorsPage() {
         <div className="rounded-xl border border-dashed border-line-strong bg-surface-1 p-8 text-center text-sm text-muted">
           No vendors yet.{" "}
           {canManage
-            ? "Add one below — start with your Tier 1 core providers."
+            ? "Start from the library above — or add one manually with the wizard below."
             : "Ask an admin to add the firm's critical third parties."}
         </div>
       ) : (
@@ -91,209 +105,7 @@ export default async function VendorsPage() {
         />
       )}
 
-      {canManage && <VendorForm />}
+      {canManage && <VendorAddWizard />}
     </div>
-  );
-}
-
-function VendorForm() {
-  return (
-    <details className="rounded-md border border-line bg-surface-1 p-4">
-      <summary className="cursor-pointer text-sm font-semibold">Add a vendor</summary>
-      <form
-        action={upsertVendorAction}
-        className="mt-4 space-y-5 text-sm"
-      >
-        <fieldset className="space-y-3">
-          <legend className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-            Basics
-          </legend>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <input
-              name="name"
-              required
-              placeholder="Vendor name (e.g. Thought Machine)"
-              className="rounded border border-line-strong bg-surface-0 px-3 py-2"
-            />
-            <select
-              name="tier"
-              required
-              defaultValue="TIER_2"
-              className="rounded border border-line-strong bg-surface-0 px-3 py-2"
-            >
-              <option value="TIER_1">Tier 1 — mission-critical</option>
-              <option value="TIER_2">Tier 2 — business-critical</option>
-              <option value="TIER_3">Tier 3 — business-operational</option>
-            </select>
-            <input
-              name="serviceKind"
-              placeholder="Service (e.g. Core banking)"
-              className="rounded border border-line-strong bg-surface-0 px-3 py-2"
-            />
-            <input
-              name="statusUrl"
-              placeholder="Status URL"
-              className="rounded border border-line-strong bg-surface-0 px-3 py-2"
-            />
-            <input
-              name="contactName"
-              placeholder="Contact name"
-              className="rounded border border-line-strong bg-surface-0 px-3 py-2"
-            />
-            <input
-              name="contactEmail"
-              placeholder="Contact email"
-              className="rounded border border-line-strong bg-surface-0 px-3 py-2"
-            />
-          </div>
-          <textarea
-            name="description"
-            rows={2}
-            placeholder="Short description"
-            className="w-full rounded border border-line-strong bg-surface-0 px-3 py-2"
-          />
-        </fieldset>
-
-        <fieldset className="space-y-3 border-t border-line pt-4">
-          <legend className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-            DORA / ICT-third-party
-          </legend>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <label className="flex items-center gap-2 text-xs">
-              <input type="checkbox" name="isDoraCritical" className="rounded border-line" />
-              <span>Tag as DORA-critical third party</span>
-            </label>
-            <select
-              name="doraIctTier"
-              defaultValue="none"
-              className="rounded border border-line-strong bg-surface-0 px-3 py-2"
-            >
-              <option value="none">DORA ICT tier — same as commercial</option>
-              <option value="TIER_1">DORA · Tier 1</option>
-              <option value="TIER_2">DORA · Tier 2</option>
-              <option value="TIER_3">DORA · Tier 3</option>
-            </select>
-            <input
-              name="hyperscaler"
-              placeholder="Hyperscaler (AWS / GCP / Azure / …)"
-              className="rounded border border-line-strong bg-surface-0 px-3 py-2"
-            />
-            <input
-              name="region"
-              placeholder="Region (e.g. eu-west-2)"
-              className="rounded border border-line-strong bg-surface-0 px-3 py-2"
-            />
-          </div>
-        </fieldset>
-
-        <fieldset className="space-y-3 border-t border-line pt-4">
-          <legend className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-            Contract
-          </legend>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <label className="text-xs">
-              <span className="text-soft">Start date</span>
-              <input
-                type="date"
-                name="contractStartAt"
-                className="mt-1 w-full rounded border border-line-strong bg-surface-0 px-2 py-1.5"
-              />
-            </label>
-            <label className="text-xs">
-              <span className="text-soft">End date</span>
-              <input
-                type="date"
-                name="contractEndAt"
-                className="mt-1 w-full rounded border border-line-strong bg-surface-0 px-2 py-1.5"
-              />
-            </label>
-            <label className="text-xs">
-              <span className="text-soft">Notice days</span>
-              <input
-                type="number"
-                name="contractRenewalNoticeDays"
-                min={0}
-                placeholder="90"
-                className="mt-1 w-full rounded border border-line-strong bg-surface-0 px-2 py-1.5"
-              />
-            </label>
-            <label className="text-xs">
-              <span className="text-soft">Annual value (£)</span>
-              <input
-                type="number"
-                name="contractAnnualValueGBP"
-                min={0}
-                placeholder="250000"
-                className="mt-1 w-full rounded border border-line-strong bg-surface-0 px-2 py-1.5"
-              />
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset className="space-y-3 border-t border-line pt-4">
-          <legend className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-            Assurance
-          </legend>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <select
-              name="assuranceKind"
-              defaultValue=""
-              className="rounded border border-line-strong bg-surface-0 px-3 py-2"
-            >
-              <option value="">— Assurance kind —</option>
-              <option value="SOC2_TYPE_2">SOC 2 Type 2</option>
-              <option value="SOC2_TYPE_1">SOC 2 Type 1</option>
-              <option value="ISAE3402">ISAE 3402</option>
-              <option value="ISO27001">ISO 27001</option>
-              <option value="NONE">None / pending</option>
-            </select>
-            <label className="text-xs">
-              <span className="text-soft">Expiry date</span>
-              <input
-                type="date"
-                name="assuranceExpiryAt"
-                className="mt-1 w-full rounded border border-line-strong bg-surface-0 px-2 py-1.5"
-              />
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset className="space-y-3 border-t border-line pt-4">
-          <legend className="text-[10px] font-semibold uppercase tracking-wider text-muted">
-            Exit plan
-          </legend>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <label className="text-xs">
-              <span className="text-soft">Last reviewed</span>
-              <input
-                type="date"
-                name="exitPlanReviewedAt"
-                className="mt-1 w-full rounded border border-line-strong bg-surface-0 px-2 py-1.5"
-              />
-            </label>
-            <label className="text-xs">
-              <span className="text-soft">Exit RTO (minutes)</span>
-              <input
-                type="number"
-                name="exitPlanRTOMin"
-                min={0}
-                placeholder="2880"
-                className="mt-1 w-full rounded border border-line-strong bg-surface-0 px-2 py-1.5"
-              />
-            </label>
-          </div>
-          <textarea
-            name="exitPlanNotes"
-            rows={3}
-            placeholder="Exit-plan summary — trigger conditions, target alternative provider, switching steps, data extraction approach."
-            className="w-full rounded border border-line-strong bg-surface-0 px-3 py-2"
-          />
-        </fieldset>
-
-        <button className="w-full rounded-md bg-slate-900 px-3 py-2 text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">
-          Save vendor
-        </button>
-      </form>
-    </details>
   );
 }
