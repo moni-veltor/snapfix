@@ -62,7 +62,10 @@ export default function ComposeMenu({ canManage }: Props) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-1.5 w-64 overflow-hidden rounded-xl border border-line bg-surface-elev shadow-[var(--shadow-card-lg)]"
+          // Anchor to the button's LEFT edge so the dropdown opens out into
+          // the main content area instead of getting clipped against the
+          // sidebar's right border.
+          className="absolute left-0 top-full z-50 mt-1.5 w-64 overflow-hidden rounded-xl border border-line bg-surface-elev shadow-[var(--shadow-card-lg)]"
         >
           <Group label="Plan & run">
             <Item href="/exercises/new" icon={Target} label="Plan an exercise" />
