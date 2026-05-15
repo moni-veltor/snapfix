@@ -117,7 +117,9 @@ export default function NotificationBell({ notifications }: Props) {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-1.5 w-80 overflow-hidden rounded-xl border border-line bg-surface-elev shadow-[var(--shadow-card-lg)]">
+        // Anchor to the bell's LEFT edge so the dropdown opens out into
+        // the main content area instead of clipping past the sidebar.
+        <div className="absolute left-0 top-full z-50 mt-1.5 w-80 overflow-hidden rounded-xl border border-line bg-surface-elev shadow-[var(--shadow-card-lg)]">
           <header className="flex items-center justify-between border-b border-line px-3 py-2">
             <span className="text-xs font-semibold text-ink">Notifications</span>
             <span className="text-[10px] text-soft">
