@@ -34,6 +34,7 @@ export default async function AppLayout({
       {session?.user && (
         <AppSidebar
           user={{ name: session.user.name, email: session.user.email }}
+          orgId={session.user.orgId ?? null}
           orgName={org?.name ?? null}
           orgLogoUrl={org?.logoBlobUrl ?? null}
           canManageOrg={canManageOrg}

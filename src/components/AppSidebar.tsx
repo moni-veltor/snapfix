@@ -29,6 +29,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import ComposeMenu from "@/components/ComposeMenu";
 import NotificationBell from "@/components/NotificationBell";
 import HelpDrawer from "@/components/HelpDrawer";
+import OrgSwitcher from "@/components/OrgSwitcher";
 import type { NotificationKind } from "@/lib/notifications";
 
 type SerializedNotification = {
@@ -82,12 +83,14 @@ function isActive(pathname: string, href: string): boolean {
 
 export default function AppSidebar({
   user,
+  orgId,
   orgName,
   orgLogoUrl,
   canManageOrg,
   notifications = [],
 }: {
   user: { name: string | null | undefined; email: string };
+  orgId?: string | null;
   orgName: string | null;
   orgLogoUrl?: string | null;
   canManageOrg: boolean;
@@ -151,34 +154,34 @@ export default function AppSidebar({
           collapsed ? "w-[68px]" : "w-[240px]"
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
-        {/* Top: logo + collapse toggle */}
-        <div className="flex h-16 shrink-0 items-center justify-between px-3">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 overflow-hidden"
-            onClick={() => setMobileOpen(false)}
-          >
-            {orgLogoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={orgLogoUrl}
-                alt={orgName ?? "Organisation"}
-                className="h-7 w-7 shrink-0 rounded object-contain"
-              />
-            ) : (
-              <Logo size={26} tone="brand" />
-            )}
-            {!collapsed && (
-              <div className="overflow-hidden">
-                <div className="truncate text-sm font-semibold tracking-tight text-ink dark:text-slate-100">
-                  {orgName ?? "SnapFix"}
-                </div>
-                <div className="truncate text-[11px] text-muted dark:text-soft">
-                  {orgName ? "SnapFix" : "Operational resilience"}
-                </div>
-              </div>
-            )}
-          </Link>
+        {/* Top: org switcher + collapse toggle */}
+        <div className="flex h-16 shrink-0 items-center justify-between gap-2 px-3">
+          {collapsed ? (
+            <Link
+              href="/dashboard"
+              className="flex items-center"
+              onClick={() => setMobileOpen(false)}
+            >
+              {orgLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={orgLogoUrl}
+                  alt={orgName ?? "Organisation"}
+                  className="h-7 w-7 shrink-0 rounded object-contain"
+                />
+              ) : (
+                <Logo size={26} tone="brand" />
+              )}
+            </Link>
+          ) : (
+            <OrgSwitcher
+              active={{
+                id: orgId ?? "active",
+                name: orgName ?? "SnapFix",
+                logoBlobUrl: orgLogoUrl ?? null,
+              }}
+            />
+          )}
           <button
             onClick={toggle}
             className="hidden h-7 w-7 items-center justify-center rounded-md text-soft hover:bg-surface-2 hover:text-ink dark:hover:bg-slate-800 dark:hover:text-slate-200 md:flex"
