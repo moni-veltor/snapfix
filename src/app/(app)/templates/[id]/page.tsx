@@ -4,6 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cloneTemplateAction } from "@/app/actions/templates";
+import ToastForm from "@/components/ui/ToastForm";
+import SubmitButton from "@/components/ui/SubmitButton";
 import TemplateDetailViewer from "@/components/templates/TemplateDetailViewer";
 
 export default async function TemplateDetailPage({
@@ -44,15 +46,19 @@ export default async function TemplateDetailPage({
           Back to library
         </Link>
         {canClone && (
-          <form action={cloneTemplateAction}>
+          <ToastForm
+            action={cloneTemplateAction}
+            toast={{
+              loading: "Cloning into your org…",
+              success: "Cloned — open it from /scenarios",
+              error: "Couldn't clone this scenario",
+            }}
+          >
             <input type="hidden" name="templateId" value={template.id} />
-            <button
-              type="submit"
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
-            >
+            <SubmitButton size="lg" pendingLabel="Cloning…">
               Clone into my org
-            </button>
-          </form>
+            </SubmitButton>
+          </ToastForm>
         )}
       </div>
 

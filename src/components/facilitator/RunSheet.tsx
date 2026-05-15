@@ -14,6 +14,8 @@ import {
   releaseInjectAction,
 } from "@/app/actions/exercises";
 import RecallButton from "@/components/facilitator/RecallButton";
+import { withToast } from "@/lib/toast-action";
+import SubmitButton from "@/components/ui/SubmitButton";
 
 type EventBeat = {
   id: string;
@@ -296,9 +298,23 @@ function BeatRow({
             </div>
           ) : (
             <form
-              action={
-                beat.kind === "event" ? releaseEventAction : releaseInjectAction
-              }
+              action={withToast(
+                beat.kind === "event" ? releaseEventAction : releaseInjectAction,
+                {
+                  success:
+                    beat.kind === "event"
+                      ? `Event #${(beat as EventBeat & { kind: "event" }).eventNo} released`
+                      : `Inject #${(beat as InjectBeat & { kind: "inject" }).injectNo} released`,
+                  description: () =>
+                    beat.kind === "event"
+                      ? (beat as EventBeat & { kind: "event" }).title
+                      : (beat as InjectBeat & { kind: "inject" }).summary,
+                  error:
+                    beat.kind === "event"
+                      ? "Couldn't release the event"
+                      : "Couldn't release the inject",
+                },
+              )}
             >
               <input type="hidden" name="exerciseId" value={exerciseId} />
               <input
@@ -306,17 +322,14 @@ function BeatRow({
                 name={beat.kind === "event" ? "eventId" : "injectId"}
                 value={beat.id}
               />
-              <button
-                type="submit"
-                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:shadow-[var(--shadow-card-md)] ${
-                  overdue
-                    ? "bg-rose-600 hover:bg-rose-500"
-                    : "bg-slate-900 hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-                }`}
+              <SubmitButton
+                size="sm"
+                tone={overdue ? "danger" : "primary"}
+                pendingLabel="Releasing…"
               >
                 {beat.kind === "event" ? <PlayCircle size={11} /> : <Zap size={11} />}
                 Release
-              </button>
+              </SubmitButton>
             </form>
           )}
         </div>

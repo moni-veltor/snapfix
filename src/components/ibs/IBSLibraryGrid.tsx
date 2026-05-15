@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { addLibraryIBSAction } from "@/app/actions/ibs";
+import { withToast } from "@/lib/toast-action";
 import {
   IBS_CATEGORIES,
   type IBSCategory,
@@ -320,7 +321,13 @@ function LibraryCard({
             </span>
           )}
           {canManage && !already && (
-            <form action={addLibraryIBSAction}>
+            <form
+              action={withToast(addLibraryIBSAction, {
+                success: `Added ${ibs.name}`,
+                description: "Opened in your IBS register",
+                error: "Couldn't add this IBS",
+              })}
+            >
               <input type="hidden" name="slug" value={ibs.slug} />
               <button
                 type="submit"

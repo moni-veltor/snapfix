@@ -12,6 +12,8 @@ import DependencyMap from "@/components/ibs/DependencyMap";
 import ToleranceTester from "@/components/ibs/ToleranceTester";
 import HarmTypeLibrary from "@/components/ibs/HarmTypeLibrary";
 import IBSDetailTabs from "@/components/ibs/IBSDetailTabs";
+import ToastForm from "@/components/ui/ToastForm";
+import SubmitButton from "@/components/ui/SubmitButton";
 
 export default async function IBSDetailPage({
   params,
@@ -147,27 +149,39 @@ export default async function IBSDetailPage({
                 Edit
               </Link>
               {ibs.status === "DRAFT" && (
-                <form action={approveIBSAction}>
+                <ToastForm
+                  action={approveIBSAction}
+                  toast={{
+                    success: `${ibs.code} approved`,
+                    error: "Couldn't approve this IBS",
+                  }}
+                >
                   <input type="hidden" name="id" value={ibs.id} />
-                  <button className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white">
-                    Approve
-                  </button>
-                </form>
+                  <SubmitButton tone="ok" size="md">Approve</SubmitButton>
+                </ToastForm>
               )}
               {ibs.status !== "DEPRECATED" && (
-                <form action={deprecateIBSAction}>
+                <ToastForm
+                  action={deprecateIBSAction}
+                  toast={{
+                    success: `${ibs.code} deprecated`,
+                    error: "Couldn't deprecate this IBS",
+                  }}
+                >
                   <input type="hidden" name="id" value={ibs.id} />
-                  <button className="rounded-md border border-line-strong px-3 py-1.5 text-sm">
-                    Deprecate
-                  </button>
-                </form>
+                  <SubmitButton tone="outline" size="md">Deprecate</SubmitButton>
+                </ToastForm>
               )}
-              <form action={deleteIBSAction}>
+              <ToastForm
+                action={deleteIBSAction}
+                toast={{
+                  success: `${ibs.code} deleted`,
+                  error: "Couldn't delete this IBS",
+                }}
+              >
                 <input type="hidden" name="id" value={ibs.id} />
-                <button className="rounded-md border border-rose-300 px-3 py-1.5 text-sm text-rose-700">
-                  Delete
-                </button>
-              </form>
+                <SubmitButton tone="danger" size="md">Delete</SubmitButton>
+              </ToastForm>
             </div>
           )}
         </div>

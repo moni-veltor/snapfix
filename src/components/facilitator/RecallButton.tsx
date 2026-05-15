@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { recallReleaseAction } from "@/app/actions/facilitator";
 
 type Props = {
@@ -19,7 +20,15 @@ export default function RecallButton({ exerciseId, kind, id }: Props) {
       fd.set("exerciseId", exerciseId);
       fd.set("kind", kind);
       fd.set("id", id);
-      await recallReleaseAction(fd);
+      try {
+        await recallReleaseAction(fd);
+        toast.success(
+          kind === "EVENT" ? "Event recalled" : "Inject recalled",
+          { description: "Read receipts cleared." },
+        );
+      } catch {
+        toast.error("Couldn't recall — please try again.");
+      }
       setConfirming(false);
     });
 

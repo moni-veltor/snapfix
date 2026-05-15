@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PRESETS, presetById } from "@/lib/industry-presets";
 import { applyIndustryPresetAction } from "@/app/actions/industry-presets";
+import ToastForm from "@/components/ui/ToastForm";
+import SubmitButton from "@/components/ui/SubmitButton";
 
 type Search = { applied?: string };
 
@@ -133,15 +135,21 @@ export default async function PresetsPage({
                   </div>
                 </div>
               </details>
-              <form action={applyIndustryPresetAction} className="mt-auto pt-4">
+              <ToastForm
+                action={applyIndustryPresetAction}
+                toast={{
+                  loading: `Applying ${p.label}…`,
+                  success: `${p.label} preset applied`,
+                  description: `${p.roles.length} roles · ${p.ibs.length} IBSs · ${p.vendors.length} vendors · ${p.techSystems.length} systems`,
+                  error: "Couldn't apply this preset",
+                }}
+                className="mt-auto pt-4"
+              >
                 <input type="hidden" name="presetId" value={p.id} />
-                <button
-                  type="submit"
-                  className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-                >
+                <SubmitButton size="md" className="w-full">
                   Apply {p.label}
-                </button>
-              </form>
+                </SubmitButton>
+              </ToastForm>
             </article>
           </li>
         ))}
