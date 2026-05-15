@@ -192,12 +192,17 @@ export default function AppSidebar({
           </button>
         </div>
 
-        {/* Global compose / "+ New" entry-point + notification bell + help */}
+        {/* "+ New" is admin-only — participants don't create org content.
+            Bell + help remain for everyone. */}
         {!collapsed && (
           <div className="flex items-center gap-2 px-2 pt-2">
-            <div className="flex-1">
-              <ComposeMenu canManage={canManageOrg} />
-            </div>
+            {canManageOrg ? (
+              <div className="flex-1">
+                <ComposeMenu canManage={canManageOrg} />
+              </div>
+            ) : (
+              <div className="flex-1" />
+            )}
             <NotificationBell notifications={notifications} />
             <HelpDrawer />
           </div>
