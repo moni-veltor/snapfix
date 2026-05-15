@@ -31,6 +31,9 @@ model Organization {
   tier         FirmTier?
   logoBlobUrl  String?
   logoBlobPath String?
+  /// Hex accent colour ("#4f46e5") — overrides the brand --accent token
+  /// across the app shell. Null = default indigo.
+  accentHex    String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

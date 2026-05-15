@@ -10,6 +10,11 @@ import { audit } from "@/lib/audit";
 const SettingsInput = z.object({
   name: z.string().min(1).max(120),
   tier: z.enum(["TIER_1", "TIER_2", "TIER_3"]).optional().or(z.literal("")),
+  accentHex: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Use a 6-digit hex like #4f46e5")
+    .optional()
+    .or(z.literal("")),
 });
 
 export async function updateOrgSettingsAction(formData: FormData) {
@@ -17,16 +22,26 @@ export async function updateOrgSettingsAction(formData: FormData) {
   const parsed = SettingsInput.parse({
     name: formData.get("name"),
     tier: formData.get("tier") || "",
+    accentHex: (formData.get("accentHex") as string) ?? "",
   });
   const current = await prisma.organization.findUnique({ where: { id: me.orgId } });
   if (!current) return;
 
-  const updates: { name?: string; tier?: "TIER_1" | "TIER_2" | "TIER_3" | null } = {};
+  const updates: {
+    name?: string;
+    tier?: "TIER_1" | "TIER_2" | "TIER_3" | null;
+    accentHex?: string | null;
+  } = {};
   if (parsed.name !== current.name) updates.name = parsed.name;
   if (parsed.tier === "") {
     if (current.tier !== null) updates.tier = null;
   } else if (parsed.tier && parsed.tier !== current.tier) {
     updates.tier = parsed.tier;
+  }
+  if (parsed.accentHex === "" || parsed.accentHex === undefined) {
+    if (current.accentHex !== null) updates.accentHex = null;
+  } else if (parsed.accentHex.toLowerCase() !== (current.accentHex ?? "").toLowerCase()) {
+    updates.accentHex = parsed.accentHex.toLowerCase();
   }
   if (Object.keys(updates).length === 0) return;
 

@@ -14,9 +14,10 @@ export default async function AppLayout({
   const org = session?.user?.orgId
     ? await prisma.organization.findUnique({
         where: { id: session.user.orgId },
-        select: { name: true, logoBlobUrl: true },
+        select: { name: true, logoBlobUrl: true, accentHex: true },
       })
     : null;
+  const accentStyle = accentVars(org?.accentHex ?? null);
   const canManageOrg =
     session?.user?.orgRole === "OWNER" || session?.user?.orgRole === "ADMIN";
 
@@ -26,7 +27,10 @@ export default async function AppLayout({
     : [];
 
   return (
-    <div className="flex min-h-screen bg-surface-0 text-ink">
+    <div
+      className="flex min-h-screen bg-surface-0 text-ink"
+      style={accentStyle}
+    >
       {session?.user && (
         <AppSidebar
           user={{ name: session.user.name, email: session.user.email }}
@@ -53,4 +57,22 @@ export default async function AppLayout({
       {session?.user && <CommandPalette />}
     </div>
   );
+}
+
+/**
+ * Convert a hex accent colour ("#1f7a8c") into an inline CSS-variable
+ * override that retints the brand --accent + --accent-soft tokens.
+ * Returns an empty object if no accent is set so the brand defaults
+ * apply.
+ */
+function accentVars(hex: string | null): React.CSSProperties {
+  if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) return {};
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    ["--accent" as string]: hex,
+    ["--accent-soft" as string]: `rgba(${r}, ${g}, ${b}, 0.12)`,
+  } as React.CSSProperties;
 }

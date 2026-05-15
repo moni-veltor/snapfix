@@ -56,6 +56,25 @@ export default async function SettingsPage() {
             Determines the recommended scenarios shown in the library.
           </span>
         </label>
+
+        <label className="block text-sm">
+          <span className="text-ink">Brand accent</span>
+          <div className="mt-1 flex items-center gap-2">
+            <input
+              type="color"
+              name="accentHex"
+              defaultValue={org.accentHex ?? "#4f46e5"}
+              className="h-10 w-12 cursor-pointer rounded-md border border-line-strong bg-surface-1"
+              aria-label="Brand accent colour"
+            />
+            <span className="flex-1 text-xs text-muted">
+              Overrides the indigo brand accent across the app shell —
+              focus rings, active tabs, links and chart strokes.
+              Leave blank to keep the SnapFix default.
+            </span>
+          </div>
+        </label>
+
         <div className="text-xs text-muted">
           Slug: <span className="font-mono">{org.slug}</span> (cannot be changed)
         </div>
