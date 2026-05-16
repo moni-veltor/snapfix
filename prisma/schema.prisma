@@ -77,6 +77,14 @@ model User {
   emailVerified DateTime?
   image         String?
 
+  // Profile / contact — used for real-incident response, not just exercises.
+  jobTitle        String? // "Group CRO", "Head of Tech Operations"
+  location        String? // "London HQ", "Manchester ops centre", "Remote (Edinburgh)"
+  phone           String? // primary contact number
+  altEmail        String? // alternate / personal email for OOH escalation
+  outOfHoursPhone String? // explicit OOH escalation number
+  bio             String? // free text — skills, certifications, qualifications
+
   // Tenant membership (one user → one org)
   orgId   String?
   org     Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)

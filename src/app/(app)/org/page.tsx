@@ -81,18 +81,21 @@ export default async function OrgPage() {
         <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface-1">
           {members.map((m) => (
             <li key={m.id} className="flex items-center justify-between p-3 text-sm">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
+              <Link
+                href={`/org/${m.id}`}
+                className="-m-3 flex items-center gap-3 rounded-md p-3 hover:bg-surface-2"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
                   {initials(m.name ?? m.email)}
                 </div>
                 <div>
-                  <div className="font-medium">{m.name ?? m.email}</div>
+                  <div className="font-medium text-ink">{m.name ?? m.email}</div>
                   <div className="text-xs text-muted">
                     {m.email} · {m._count.exerciseParticipations}{" "}
                     {m._count.exerciseParticipations === 1 ? "exercise" : "exercises"}
                   </div>
                 </div>
-              </div>
+              </Link>
               <div className="flex items-center gap-3">
                 {canManage && m.id !== me.id ? (
                   <form action={changeRoleAction} className="flex items-center gap-2">

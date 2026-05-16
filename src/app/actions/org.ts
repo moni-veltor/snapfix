@@ -168,6 +168,71 @@ export async function removeMemberAction(formData: FormData) {
   revalidatePath("/org");
 }
 
+// ─── Per-member profile updates ─────────────────────────────────────────────
+
+const ProfileSchema = z.object({
+  userId: z.string().min(1),
+  name: z.string().max(120).optional(),
+  jobTitle: z.string().max(120).optional(),
+  location: z.string().max(120).optional(),
+  phone: z.string().max(40).optional(),
+  altEmail: z.string().max(200).optional(),
+  outOfHoursPhone: z.string().max(40).optional(),
+  bio: z.string().max(2000).optional(),
+});
+
+function emptyToNull(v: string | undefined): string | null {
+  if (v === undefined) return null;
+  const t = v.trim();
+  return t === "" ? null : t;
+}
+
+/**
+ * Update a member's profile fields. Admins can edit anyone in their org;
+ * members can edit themselves. Email / role are not editable here.
+ */
+export async function updateMemberProfileAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN", "MEMBER");
+  const parsed = ProfileSchema.safeParse({
+    userId: formData.get("userId"),
+    name: formData.get("name") ?? undefined,
+    jobTitle: formData.get("jobTitle") ?? undefined,
+    location: formData.get("location") ?? undefined,
+    phone: formData.get("phone") ?? undefined,
+    altEmail: formData.get("altEmail") ?? undefined,
+    outOfHoursPhone: formData.get("outOfHoursPhone") ?? undefined,
+    bio: formData.get("bio") ?? undefined,
+  });
+  if (!parsed.success) return;
+  const { userId, name, jobTitle, location, phone, altEmail, outOfHoursPhone, bio } =
+    parsed.data;
+
+  const canEditAnyone = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
+  if (!canEditAnyone && userId !== me.id) return;
+
+  const target = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { orgId: true },
+  });
+  if (!target || target.orgId !== me.orgId) return;
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: emptyToNull(name) ?? undefined,
+      jobTitle: emptyToNull(jobTitle),
+      location: emptyToNull(location),
+      phone: emptyToNull(phone),
+      altEmail: emptyToNull(altEmail),
+      outOfHoursPhone: emptyToNull(outOfHoursPhone),
+      bio: emptyToNull(bio),
+    },
+  });
+
+  revalidatePath(`/org/${userId}`);
+  revalidatePath("/org");
+}
+
 const ChangeRoleSchema = z.object({
   userId: z.string(),
   role: z.enum(["OWNER", "ADMIN", "MEMBER"]),
