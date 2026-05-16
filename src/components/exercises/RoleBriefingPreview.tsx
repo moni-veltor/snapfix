@@ -11,8 +11,8 @@ type Props = {
 /**
  * Pre-live preview of the role briefing a participant will see when the
  * exercise goes live. Lets people prepare before they're under time
- * pressure — the IMP expects participants to know their role's first-10-
- * minutes doctrine cold, not be reading it for the first time at D-Day.
+ * pressure — participants should know their role's first-10-minutes
+ * playbook cold, not be reading it for the first time at D-Day.
  */
 export default function RoleBriefingPreview({
   roleTitle,
@@ -29,7 +29,7 @@ export default function RoleBriefingPreview({
         </p>
         <p className="mt-1 text-xs text-muted">
           Ask the facilitator to assign you a role on the team page. Once you have a
-          role, you&apos;ll see the doctrine you need to know before going live.
+          role, you&apos;ll see the playbook you need to know before going live.
         </p>
       </section>
     );

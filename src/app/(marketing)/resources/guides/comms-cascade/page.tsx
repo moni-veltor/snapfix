@@ -13,11 +13,11 @@ export default function CommsCascadeGuide() {
       badge="Interactive guide"
       readingTime="3 min"
       title="The communications cascade, visualised"
-      pitch="During an incident, the order you communicate in is as important as what you say. Most operational-resilience policies — including the — codify a strict cascade. Try sending out of order below; the rule will stop you."
+      pitch="During an incident, the order you communicate in is as important as what you say. Most operational-resilience playbooks codify a strict cascade. Try sending out of order below; the rule will stop you."
     >
       <h2>The rule</h2>
       <p>
-        Three constraints, repeated verbatim across stakeholder cards in the doctrine:
+        Three constraints, repeated across stakeholder playbooks:
       </p>
       <ul>
         <li>

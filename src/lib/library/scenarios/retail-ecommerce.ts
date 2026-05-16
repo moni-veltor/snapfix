@@ -124,7 +124,7 @@ export const RETAIL_ECOMMERCE_SCENARIOS: LibraryScenario[] = [
       "A unit-conversion bug in the pricing engine lists ~2,800 premium SKUs at 1/100th of their intended price for 28 minutes. Social media catches on; ~14,000 orders are placed. Operations halt order release. The question becomes: honour the orders (loss ~£14M), cancel and refund (reputational hit, possible CMA complaint) or honour with a goodwill discount?",
     characteristics: [
       "Self-inflicted, fast-moving event",
-      "Customer-rights ambiguity (display-error doctrine)",
+      "Customer-rights ambiguity around display-error pricing",
       "Brand-vs-bottom-line trade-off",
     ],
     assumptions: [

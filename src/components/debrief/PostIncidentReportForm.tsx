@@ -44,7 +44,7 @@ const SECTIONS: Section[] = [
     label: "Timeline",
     hint: "Material moments in chronological order with timestamps. Detection, escalation, IMT invocation, key decisions, recovery milestones, all-clear. Use the live incident log as your source — don't re-author from memory.",
     placeholder:
-      "HH:MM — Detection (source)\nHH:MM — Escalation to on-call lead\nHH:MM — IMT invoked\nHH:MM — Severity classified as ...\nHH:MM — BCP activated\nHH:MM — Customer comms cascade started\n...",
+      "HH:MM — Detection (source)\nHH:MM — Escalation to on-call lead\nHH:MM — IMT invoked\nHH:MM — Severity classified as ...\nHH:MM — Business continuity plan activated\nHH:MM — Customer comms cascade started\n...",
     minChars: 300,
   },
   {
@@ -84,7 +84,7 @@ const SECTIONS: Section[] = [
     label: "What worked well",
     hint: "Genuinely. The PIR is not just blame — capture the behaviours, processes, and tools that should be reinforced. The Board will look for evidence of operational maturity here.",
     placeholder:
-      "- Detection signal fired within {N} min of root event\n- Comms cascade reached employees before media\n- BCP activation was rehearsed in last exercise — team executed without hesitation\n- ...",
+      "- Detection signal fired within {N} min of root event\n- Comms cascade reached employees before media\n- Business continuity activation was rehearsed in the last exercise — team executed without hesitation\n- ...",
     minChars: 100,
   },
   {
@@ -131,11 +131,11 @@ type Props = {
 };
 
 /**
- * Doctrine-aligned PIR form (IMP §6.5.3). Eight mandatory sections
- * grouped into three Board-facing buckets (What happened / Impact /
- * What we'll do) with per-section guidance and live completeness
- * tracking. Submission is gated until all sections have content
- * because partial PIRs going to ERCC/BRCC get bounced.
+ * Structured PIR form. Eight mandatory sections grouped into three
+ * Board-facing buckets (What happened / Impact / What we'll do) with
+ * per-section guidance and live completeness tracking. Submission is
+ * gated until all sections have content because partial PIRs going
+ * to ERCC/BRCC get bounced.
  */
 export default function PostIncidentReportForm({
   exerciseId,

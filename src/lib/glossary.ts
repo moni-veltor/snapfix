@@ -91,7 +91,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     acronymOf: "Incident Management Plan",
     category: "Governance",
     short:
-      "The firm's master incident-response doctrine. Covers invocation, severity classification, comms cascade, regulator notification, closure and lessons-learned.",
+      "The firm's master incident-response plan. Covers invocation, severity classification, comms cascade, regulator notification, closure and lessons-learned.",
     related: ["bcp", "imt"],
   },
   {
@@ -100,7 +100,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     acronymOf: "Business Continuity Plan",
     category: "Governance",
     short:
-      "The plan invoked when a disruptive event will interrupt one or more IBSs. Sub-flow of the IMP — activation is a joint CEO + CRO decision.",
+      "The plan invoked when a disruptive event will interrupt one or more IBSs. Sits underneath the IMP — activation is typically a joint CEO + CRO decision.",
     related: ["brt", "imp"],
     source: "best practice",
   },

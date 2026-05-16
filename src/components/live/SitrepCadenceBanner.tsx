@@ -20,11 +20,11 @@ type Props = {
 };
 
 /**
- * Surfaces sitrep-cadence breaches against IMP §6.4.3.1. The IMT
- * expects an initial sitrep from each business unit within 15 minutes
- * of invocation, then updates on the cadence each sitrep declared
- * (nextUpdateDDayTime). When that promise slips, the war-room is
- * flying blind — so we say so out loud.
+ * Surfaces sitrep-cadence breaches. Doctrine expects an initial sitrep
+ * from each affected business unit within 15 minutes of invocation,
+ * then updates on the cadence each sitrep declared (nextUpdateDDayTime).
+ * When that promise slips, the war-room is flying blind — so we say so
+ * out loud.
  *
  * Three escalating states:
  *  - QUIET: no incident, or sitreps within cadence → renders nothing
@@ -50,8 +50,8 @@ export default function SitrepCadenceBanner({
             No sitreps filed yet
           </p>
           <p className="mt-0.5 text-amber-800 dark:text-amber-200">
-            IMP §6.4.3.1 expects an initial sitrep from each business unit within 15 min
-            of incident invocation. Use the <span className="font-semibold">Sitrep</span> tab
+            Each affected business unit should file an initial sitrep within 15 min of
+            incident invocation. Use the <span className="font-semibold">Sitrep</span> tab
             on the Decisions panel to file the first one.
           </p>
         </div>

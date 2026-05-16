@@ -480,7 +480,7 @@ model ExerciseTeam {
   orderIdx    Int       @default(0)
   /// Policy-aligned team type. IMT = strategic oversight; IRT_TECH/IRT_CUSTOMER
   /// = tactical response ; COMMS = communications team;
-  /// BRT_* = Business Recovery Teams (BCP §6.6); EXECUTIVE_OBSERVERS / ACTION_COMMITTEE
+  /// BRT_* = Business Recovery Teams; EXECUTIVE_OBSERVERS / ACTION_COMMITTEE
   /// = governance. OTHER = legacy / unclassified.
   kind        TeamKind? @default(OTHER)
 
@@ -644,7 +644,7 @@ enum CommsStatus {
 /// Stakeholder mapping per best practice Each stakeholder has an
 /// execution owner (drafts) and an approver (signs off). Ordering rule:
 /// Employees BEFORE Customers/Third-Parties; Customers WITH Third-Parties;
-/// Media WITH Customers (IMP §6.3.0).
+/// Media WITH Customers.
 enum CommsStakeholder {
   EMPLOYEES
   CUSTOMERS
@@ -667,7 +667,7 @@ model CommunicationDraft {
   authorId        String?
   author          User?             @relation("CommsAuthor", fields: [authorId], references: [id])
   audience        CommsAudience
-  /// Policy stakeholder (cf. IMP §6.3.1 stakeholder table). The legacy `audience`
+  /// Policy stakeholder (per the standard stakeholder table). The legacy `audience`
   /// is kept for back-compat; new code should set `stakeholder` for ordering rules.
   stakeholder     CommsStakeholder?
   subject         String
@@ -723,7 +723,7 @@ model DebriefAnswer {
 }
 
 /// Legacy free-form After-Action Report. Retained for back-compat; new
-/// reports should use PostIncidentReport (IMP §6.5.3) which has the eight
+/// reports should use PostIncidentReport which has the eight
 /// mandatory sections.
 model AfterActionReport {
   id         String   @id @default(cuid())
@@ -990,7 +990,7 @@ model OrganizationTeamTemplate {
   @@unique([orgId, name])
 }
 
-// ─── Policy-aligned incident management (incident-management doctrine) ──────────────
+// ─── Incident management lifecycle ──────────────────────────────────────────
 
 /// An Incident is a live response episode inside an Exercise. An exercise can
 /// have ≥0 incidents — most have exactly one, but escalating scenarios may
@@ -1005,7 +1005,7 @@ model Incident {
 
   status IncidentStatus @default(DECLARED)
 
-  // Invocation (IMP §6.2.2–3)
+  // Invocation
   invokedAt           DateTime?
   invokedById         String?
   invokedBy           User?     @relation("IncidentInvoker", fields: [invokedById], references: [id], onDelete: SetNull)
@@ -1015,22 +1015,22 @@ model Incident {
   stoodDownAt     DateTime?
   stoodDownReason String?
 
-  // Severity (IMP §6.2.1 + ORP App.1)
+  // Severity
   severity             SeverityLevel?
   severityFinancial    SeverityLevel?
   severityCustomer     SeverityLevel?
   severityData         SeverityLevel?
   severitySystems      SeverityLevel?
   severityReputational SeverityLevel?
-  /// Aggravating factor — Consumer Duty PS22/3 (IMP §6.2.4). When true, severity
+  /// Aggravating factor — Consumer Duty PS22/3. When true, severity
   /// is promoted regardless of the financial threshold.
   consumerDutyTrigger  Boolean        @default(false)
   /// Aggravating factor — cyber/ransomware/data exfiltration default to High
-  /// severity (BCPlans §6.3.8).
+  /// severity.
   cyberDefaultHigh     Boolean        @default(false)
   severityAssessedAt   DateTime?
 
-  // Closure (IMP §6.4.1 — five mandatory criteria)
+  // Closure — five mandatory criteria
   closedAt              DateTime?
   closedById            String?
   closedBy              User?     @relation("IncidentCloser", fields: [closedById], references: [id], onDelete: SetNull)
@@ -1149,7 +1149,7 @@ model OrgDecisionType {
   @@index([orgId, archived, sortOrder])
 }
 
-/// Canonical decision templates from incident-management doctrine. UI offers these as a
+/// Canonical decision templates. UI offers these as a
 /// pick-list when a participant records a decision so we capture authority &
 /// approver consistently.
 enum DecisionType {
@@ -1172,7 +1172,7 @@ enum DecisionType {
   OTHER
 }
 
-// ─── Sitreps (BCP §6.4.3.1 — IMT requires initial sitrep from each BU) ──────
+// ─── Sitreps (initial sitrep expected from each affected BU) ────────────────
 
 model Sitrep {
   id                 String       @id @default(cuid())
@@ -1200,7 +1200,7 @@ enum SitrepStatus {
   RED
 }
 
-// ─── IMT meetings (IMP §6.2.5 standing agenda) ──────────────────────────────
+// ─── IMT meetings (standing agenda) ─────────────────────────────────────────
 
 model IMTMeeting {
   id              String   @id @default(cuid())
@@ -1208,7 +1208,7 @@ model IMTMeeting {
   incident        Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
   meetingNumber   Int // 1, 2, 3…
   startedAtDDay   String // HH:MM on the D-Day clock
-  /// Required output of every meeting per IMP §6.2.5.
+  /// Required output of every meeting.
   nextMeetingDDay String?
 
   // Standing agenda fields
@@ -1225,7 +1225,7 @@ model IMTMeeting {
   createdAt DateTime @default(now())
 }
 
-// ─── Regulator notifications (IMP §6.3.1.2 — countdown clocks) ──────────────
+// ─── Regulator notifications (countdown clocks) ─────────────────────────────
 
 enum Regulator {
   FCA
@@ -1270,7 +1270,7 @@ model RegulatorNotification {
   @@index([incidentId, dueAt])
 }
 
-// ─── Business Continuity activation (BCP §6.4.2.2) ──────────────────────────
+// ─── Business Continuity activation ─────────────────────────────────────────
 
 model BCPActivation {
   id         String   @id @default(cuid())
@@ -1290,7 +1290,7 @@ model BCPActivation {
   createdAt DateTime @default(now())
 }
 
-// ─── Critical third parties (BCPlans §6.3.6) ────────────────────────────────
+// ─── Critical third parties ─────────────────────────────────────────────────
 
 model Vendor {
   id    String       @id @default(cuid())
@@ -1361,7 +1361,7 @@ model VendorIBSLink {
   @@id([vendorId, ibsId])
 }
 
-// ─── Post-Incident Report (IMP §6.5.3 — 10 business days) ───────────────────
+// ─── Post-Incident Report (best practice: within 10 business days) ──────────
 
 model PostIncidentReport {
   id         String   @id @default(cuid())
@@ -1371,7 +1371,7 @@ model PostIncidentReport {
   dueAt       DateTime
   submittedAt DateTime?
 
-  // Eight mandatory sections (IMP §6.5.3)
+  // Eight mandatory sections
   incidentSummary        String?
   timeline               String?
   rootCause              String?
@@ -1388,7 +1388,7 @@ model PostIncidentReport {
   updatedAt DateTime @updatedAt
 }
 
-// ─── Retrospective (BCPlans §6.6.1 R-5 — 5 business days post-closure) ──────
+// ─── Retrospective (best practice: within 5 business days post-closure) ─────
 
 model Retrospective {
   id         String    @id @default(cuid())

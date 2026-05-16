@@ -13,23 +13,22 @@ export default function InvocationGuide() {
       badge="Interactive guide"
       readingTime="4 min"
       title="Should I invoke the IMT? A decision walker"
-      pitch="Standing up the Incident Management Team is the most consequential call in the first hour of an incident. Wait too long and the regulator's reading your timeline back to you. Invoke too eagerly and you cry wolf. Here's the doctrine."
+      pitch="Standing up the Incident Management Team is the most consequential call in the first hour of an incident. Wait too long and the regulator's reading your timeline back to you. Invoke too eagerly and you cry wolf. Here's the standard playbook."
     >
-      <h2>The doctrine</h2>
+      <h2>The principle</h2>
       <blockquote>
         "It is better to stand it up and back down than to fail to stand it up." — best practice
       </blockquote>
       <p>
-        This is the single most quoted line in the Incident Management Plan, and it's there
-        for a reason. Standing up the IMT is reversible — the platform records a "stood down"
-        decision and the incident closes cleanly. <em>Not</em> standing up an IMT is also{" "}
-        reversible, but at the cost of a timeline the regulator will eventually read.
+        Standing up the IMT is reversible — the platform records a "stood down" decision and the
+        incident closes cleanly. <em>Not</em> standing up an IMT is also reversible, but at the
+        cost of a timeline the regulator will eventually read.
       </p>
 
       <h2>Five questions, any single Yes recommends invocation</h2>
       <p>
-        the policy doesn't enumerate these as a formal list — but they're the questions a CEO
-        runs through when their CRO calls. We've codified them below.
+        These aren't a formal checklist — they're the questions a CEO runs through when their CRO
+        calls. We&apos;ve codified them below.
       </p>
 
       <InvocationWalker />

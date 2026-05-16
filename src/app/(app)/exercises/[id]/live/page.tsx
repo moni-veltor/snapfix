@@ -195,7 +195,7 @@ export default async function LiveWorkspacePage({
       select: { id: true, label: true, hint: true },
     }),
     // Sitreps filed against any incident in this exercise — drives the
-    // cadence banner (IMP §6.4.3.1 expects regular sitreps per BU).
+    // cadence banner (regular sitreps per business unit are expected).
     prisma.sitrep.findMany({
       where: { incident: { exerciseId: exercise.id } },
       orderBy: { createdAt: "desc" },

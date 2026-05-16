@@ -84,10 +84,7 @@ export default function SevereWeatherUseCase() {
         <li>BCP activation as a joint CEO + CRO decision distinct from IMT invocation</li>
         <li>BRT mobilisation tracking — Finance, Buildings, Tech, Comms</li>
         <li>Damage assessment report template (per best practice)</li>
-        <li>
-          Staff welfare protocol references built into the after-action retrospective (BCPlans
-          §6.6.1 R-4)
-        </li>
+        <li>Staff welfare protocol references built into the after-action retrospective</li>
       </ul>
     </UseCaseLayout>
   );

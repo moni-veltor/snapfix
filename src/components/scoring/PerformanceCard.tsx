@@ -41,7 +41,7 @@ export default function PerformanceCard({ score }: Props) {
             Incident {score.shortCode}
           </h2>
           <p className="mt-1 text-xs text-muted">
-            Scored against the the IMP / ORP / BCP doctrine. Each finding cites the policy clause.
+            Scored against operational-resilience best practice and the regulator clocks for your jurisdiction.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -56,7 +56,7 @@ export default function PerformanceCard({ score }: Props) {
           <div className="text-xs">
             <div className="text-muted">out of 100</div>
             <div className="mt-1 max-w-[160px] text-soft">
-              Average of nine doctrine-aligned metrics.
+              Average of nine best-practice metrics.
             </div>
           </div>
         </div>
@@ -71,7 +71,7 @@ export default function PerformanceCard({ score }: Props) {
               : `${score.metrics.invocationLatencyMin} min`
           }
           subtle="from first signal"
-          rubric="Minutes between the first inbound inject and the IMP invocation timestamp. IMP §6.2 expects invocation within 15 min of a credible signal — every additional 15 min is one score band."
+          rubric="Minutes between the first inbound inject and the moment the incident was invoked. Best practice expects invocation within 15 min of a credible signal — every additional 15 min is one score band."
         />
         <Metric
           label="Time to severity"
@@ -81,7 +81,7 @@ export default function PerformanceCard({ score }: Props) {
               : `${score.metrics.severityLatencyMin} min`
           }
           subtle="post-invocation"
-          rubric="Minutes between IMP invocation and the CRO classifying severity. The clock for regulator notifications (FCA / PRA 4h on High) only starts ticking when severity is set — slow classification compresses the notification window."
+          rubric="Minutes between incident invocation and the CRO classifying severity. The clock for regulator notifications (FCA / PRA 4h on High) only starts ticking when severity is set — slow classification compresses the notification window."
         />
         <Metric
           label="Decisions logged"
@@ -93,13 +93,13 @@ export default function PerformanceCard({ score }: Props) {
           label="Sitreps filed"
           value={String(score.metrics.sitrepsLogged)}
           subtle="per business unit"
-          rubric="IMP §6.4.3.1 expects an opening sitrep from each affected BU within 15 min and regular updates thereafter on the cadence each sitrep promised. Counts every sitrep filed against the incident."
+          rubric="An opening sitrep from each affected business unit is expected within 15 min of invocation, with regular updates thereafter on the cadence each sitrep promised. Counts every sitrep filed against the incident."
         />
         <Metric
           label="IMT meetings"
           value={String(score.metrics.imtMeetingsLogged)}
           subtle="standing agenda"
-          rubric="IMT meetings recorded with the standing agenda (situation/decisions/actions/risks/next-meeting). IMP §6.2.5 expects regular cadence — 60-90 min in early phase, longer once stable."
+          rubric="IMT meetings recorded with the standing agenda (situation/decisions/actions/risks/next-meeting). Best practice expects regular cadence — 60-90 min in early phase, longer once stable."
         />
         <Metric
           label="Regulator breaches"

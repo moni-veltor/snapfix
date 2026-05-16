@@ -17,9 +17,10 @@ const STORAGE_PREFIX = "snapfix-role-briefing-";
 
 /**
  * Short briefing shown the first time a user holds a particular seat in an
- * exercise. Captures the doctrine for that role's first-ten-minutes — what
- * they own, what's expected, how they're scored. Dismissable; persists per
- * seat in localStorage so it doesn't keep re-firing.
+ * exercise. Captures the standard playbook for that role's first ten
+ * minutes — what they own, what's expected, how they're scored.
+ * Dismissable; persists per seat in localStorage so it doesn't keep
+ * re-firing.
  */
 export default function RoleBriefing({
   seatId,

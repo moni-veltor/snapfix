@@ -5,8 +5,8 @@ import { prisma } from "@/lib/prisma";
  * Performance scoring derived from the data captured during an exercise.
  *
  * The framing: this is a *simulator* — the score isn't a punishment, it's
- * feedback. Each metric maps to a specific the policy clause (best practice,
- * §6.3.0, §6.3.1.2, §6.4.1) so coaching is concrete, not vibes.
+ * feedback. Each metric maps to an operational-resilience best-practice
+ * principle so coaching is concrete, not vibes.
  *
  * Scoring is per-incident and aggregates at the exercise level.
  */
@@ -47,9 +47,9 @@ export type IncidentScore = {
 
 /**
  * The "first signal" is the earliest released event/inject. The "stand-up
- * latency" is the gap between first signal and IMT invocation. Per IMP
- * §6.2.2, "it is better to stand it up and back down than to fail to stand
- * it up" — so we reward fast invocation.
+ * latency" is the gap between first signal and IMT invocation. Best
+ * practice: "it is better to stand it up and back down than to fail to
+ * stand it up" — so we reward fast invocation.
  */
 const INVOCATION_THRESHOLDS = { good: 5, ok: 15, warn: 30 };
 

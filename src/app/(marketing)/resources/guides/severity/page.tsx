@@ -93,7 +93,7 @@ export default function SeverityGuide() {
         next supervisory visit.
       </p>
       <p>
-        The the doctrine's coaching tip is direct:
+        The standard coaching tip is direct:
       </p>
       <blockquote>
         "It is better to stand it up and back down than to fail to stand it up." — best practice
