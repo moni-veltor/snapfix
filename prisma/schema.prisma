@@ -49,6 +49,7 @@ model Organization {
   roles         OrganizationRole[]
   techSystems   TechSystem[]
   departments   Department[]
+  decisionTypes OrgDecisionType[]
 }
 
 /// Departmental org-chart node — a business unit / team / function. Separate
@@ -1106,8 +1107,46 @@ model DecisionRecord {
   triggeredByInjectId String?
   triggeredByInject   Inject? @relation("DecisionTriggerInject", fields: [triggeredByInjectId], references: [id], onDelete: SetNull)
 
+  /// When set, this decision was logged against a custom org-defined
+  /// preset (OrgDecisionType) rather than a built-in DecisionType.
+  /// decisionType is still set to OTHER for backwards-compatibility.
+  orgDecisionTypeId String?
+  orgDecisionType   OrgDecisionType? @relation(fields: [orgDecisionTypeId], references: [id], onDelete: SetNull)
+
   dDayTime  String
   createdAt DateTime @default(now())
+}
+
+/// Per-org customizable decision presets. Different firms have different
+/// IMT vocabulary — a bank "Halt outbound payments" vs an insurer
+/// "Pause new business" — and forcing the built-in DecisionType enum on
+/// every org makes the dropdown either too long or wrong. Org admins
+/// add their own presets here; they appear in the live decision form
+/// alongside the built-ins under an "Org-specific" optgroup.
+model OrgDecisionType {
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// Short stable code (kebab-case) used in audit logs. Unique per org.
+  code  String
+  /// User-facing label shown in the dropdown.
+  label String
+  /// Roles whose approval policy expects for this decision. Same shape
+  /// as DecisionRecord.approverRolesRequired.
+  approverRoles String[]
+  /// Optional one-line guidance shown as a tooltip on the option.
+  hint      String?
+  archived  Boolean  @default(false)
+  sortOrder Int      @default(0)
+
+  decisions DecisionRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, code])
+  @@index([orgId, archived, sortOrder])
 }
 
 /// Canonical decision templates from incident-management doctrine. UI offers these as a

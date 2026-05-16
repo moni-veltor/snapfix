@@ -14,12 +14,20 @@ type RecentInject = {
   summary: string;
 };
 
+type OrgDecisionPreset = {
+  id: string;
+  label: string;
+  hint: string | null;
+};
+
 type Props = {
   exerciseId: string;
   incidentId: string | null;
   dDayHHMM: string;
   /** Injects released within ~last hour — offered as decision-trigger picks. */
   recentInjects?: RecentInject[];
+  /** Org-defined custom decision presets — shown alongside built-ins. */
+  orgDecisionPresets?: OrgDecisionPreset[];
 };
 
 type Tab = "LOG" | "DECISION" | "SITREP" | "MEETING" | "COMMS";
@@ -29,6 +37,7 @@ export default function IncidentCapturePanel({
   incidentId,
   dDayHHMM,
   recentInjects = [],
+  orgDecisionPresets = [],
 }: Props) {
   const [tab, setTab] = useState<Tab>("LOG");
   const formRef = useRef<HTMLFormElement>(null);
@@ -122,6 +131,7 @@ export default function IncidentCapturePanel({
           exerciseId={exerciseId}
           incidentId={incidentId}
           recentInjects={recentInjects}
+          orgDecisionPresets={orgDecisionPresets}
         />
       )}
       {tab === "SITREP" && incidentId && (
@@ -198,10 +208,12 @@ function DecisionForm({
   exerciseId,
   incidentId,
   recentInjects,
+  orgDecisionPresets,
 }: {
   exerciseId: string;
   incidentId: string;
   recentInjects: RecentInject[];
+  orgDecisionPresets: OrgDecisionPreset[];
 }) {
   const ref = useRef<HTMLFormElement>(null);
   // Pre-select the most recently released inject as the likely trigger.
@@ -219,25 +231,36 @@ function DecisionForm({
       <input type="hidden" name="exerciseId" value={exerciseId} />
       <input type="hidden" name="incidentId" value={incidentId} />
       <select
-        name="decisionType"
+        name="decisionPick"
         required
-        defaultValue="OTHER"
+        defaultValue="builtin:OTHER"
         className="rounded border border-line-strong px-2 py-1.5 text-sm"
       >
-        <option value="ACTIVATE_BCP">Activate BCP (CEO + CRO joint)</option>
-        <option value="DEACTIVATE_BCP">Deactivate BCP</option>
-        <option value="NOTIFY_FCA">Notify FCA (within 4h)</option>
-        <option value="NOTIFY_PRA">Notify PRA (within 4h)</option>
-        <option value="NOTIFY_ICO">Notify ICO (within 72h)</option>
-        <option value="CONVENE_ACTION_COMMITTEE">Convene Board Action Committee</option>
-        <option value="APPROVE_CRISIS_COMMS">Approve crisis communications</option>
-        <option value="APPROVE_REGULATOR_COMMS">Approve regulator notification text</option>
-        <option value="CFO_EMERGENCY_SPEND">CFO emergency spend (£100k cap)</option>
-        <option value="DRAW_CONTINGENT_LIQUIDITY">Draw contingent liquidity</option>
-        <option value="DO_NOT_PAY_RANSOM">Do not pay ransom (Board + Legal)</option>
-        <option value="INSURANCE_INVOCATION">Invoke insurance</option>
-        <option value="RECOVERY_OPTION_CHOSEN">Recovery option chosen</option>
-        <option value="OTHER">Other</option>
+        <optgroup label="Built-in IMT decisions">
+          <option value="builtin:ACTIVATE_BCP">Activate BCP (CEO + CRO joint)</option>
+          <option value="builtin:DEACTIVATE_BCP">Deactivate BCP</option>
+          <option value="builtin:NOTIFY_FCA">Notify FCA (within 4h)</option>
+          <option value="builtin:NOTIFY_PRA">Notify PRA (within 4h)</option>
+          <option value="builtin:NOTIFY_ICO">Notify ICO (within 72h)</option>
+          <option value="builtin:CONVENE_ACTION_COMMITTEE">Convene Board Action Committee</option>
+          <option value="builtin:APPROVE_CRISIS_COMMS">Approve crisis communications</option>
+          <option value="builtin:APPROVE_REGULATOR_COMMS">Approve regulator notification text</option>
+          <option value="builtin:CFO_EMERGENCY_SPEND">CFO emergency spend (£100k cap)</option>
+          <option value="builtin:DRAW_CONTINGENT_LIQUIDITY">Draw contingent liquidity</option>
+          <option value="builtin:DO_NOT_PAY_RANSOM">Do not pay ransom (Board + Legal)</option>
+          <option value="builtin:INSURANCE_INVOCATION">Invoke insurance</option>
+          <option value="builtin:RECOVERY_OPTION_CHOSEN">Recovery option chosen</option>
+          <option value="builtin:OTHER">Other</option>
+        </optgroup>
+        {orgDecisionPresets.length > 0 && (
+          <optgroup label="Org-specific">
+            {orgDecisionPresets.map((p) => (
+              <option key={p.id} value={`org:${p.id}`} title={p.hint ?? undefined}>
+                {p.label}
+              </option>
+            ))}
+          </optgroup>
+        )}
       </select>
       <input
         name="title"

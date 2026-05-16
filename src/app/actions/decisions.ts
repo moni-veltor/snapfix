@@ -44,7 +44,13 @@ const APPROVER_ROLES: Partial<Record<keyof typeof DecisionType, string[]>> = {
 const DecisionInput = z.object({
   exerciseId: z.string(),
   incidentId: z.string(),
-  decisionType: z.string(),
+  /**
+   * Encoded picker value. Either `builtin:DECISION_TYPE` for a built-in
+   * DecisionType enum entry, or `org:<OrgDecisionType.id>` for an
+   * org-defined preset. Falls back to plain enum name for backwards
+   * compatibility with any older form posts.
+   */
+  decisionPick: z.string(),
   title: z.string().min(1),
   rationale: z.string().optional(),
   triggeredByInjectId: z.string().optional(),
@@ -61,8 +67,26 @@ export async function recordDecisionAction(formData: FormData) {
   if (!incident) return;
 
   const clock = currentDDay(ctx.exercise.dDayAnchor, ctx.exercise.speedMultiplier);
-  const decisionTypeKey = data.decisionType as keyof typeof DecisionType;
-  const approvers = APPROVER_ROLES[decisionTypeKey] ?? [];
+
+  let decisionTypeKey: DecisionType = DecisionType.OTHER;
+  let orgDecisionTypeId: string | null = null;
+  let approvers: string[] = [];
+
+  if (data.decisionPick.startsWith("org:")) {
+    const id = data.decisionPick.slice(4);
+    const preset = await prisma.orgDecisionType.findFirst({
+      where: { id, orgId: ctx.me.orgId, archived: false },
+    });
+    if (!preset) return;
+    orgDecisionTypeId = preset.id;
+    approvers = preset.approverRoles;
+  } else {
+    const code = data.decisionPick.startsWith("builtin:")
+      ? data.decisionPick.slice(8)
+      : data.decisionPick;
+    decisionTypeKey = code as DecisionType;
+    approvers = APPROVER_ROLES[code as keyof typeof DecisionType] ?? [];
+  }
 
   const logEntry = await prisma.incidentLogEntry.create({
     data: {
@@ -79,12 +103,13 @@ export async function recordDecisionAction(formData: FormData) {
     data: {
       incidentId: incident.id,
       logEntryId: logEntry.id,
-      decisionType: decisionTypeKey as DecisionType,
+      decisionType: decisionTypeKey,
       title: data.title,
       rationale: data.rationale ?? null,
       authorParticipantId: ctx.participant.id,
       authorUserId: ctx.me.id,
       approverRolesRequired: approvers,
+      orgDecisionTypeId,
       triggeredByInjectId:
         data.triggeredByInjectId && data.triggeredByInjectId !== ""
           ? data.triggeredByInjectId

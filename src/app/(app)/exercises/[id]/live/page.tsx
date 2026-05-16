@@ -111,6 +111,7 @@ export default async function LiveWorkspacePage({
     orgUsers,
     myActionItems,
     recentReleases,
+    orgDecisionPresets,
   ] = await Promise.all([
     loadInbox(exercise.id, { roleTitle: participant.roleTitle, participantId: participant.id }),
     loadLiveFeed(exercise.id),
@@ -183,6 +184,13 @@ export default async function LiveWorkspacePage({
       include: {
         inject: { select: { id: true, injectNo: true, summary: true } },
       },
+    }),
+    // Active org-defined decision presets — shown in the decision form
+    // alongside the built-in IMT vocabulary.
+    prisma.orgDecisionType.findMany({
+      where: { orgId: me.orgId, archived: false },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { id: true, label: true, hint: true },
     }),
   ]);
 
@@ -386,6 +394,7 @@ export default async function LiveWorkspacePage({
               incidentId={activeIncident?.id ?? null}
               dDayHHMM={clock.hhmm}
               recentInjects={recentInjects}
+              orgDecisionPresets={orgDecisionPresets}
             />
             {activeIncident && (
               <ClosureGate
