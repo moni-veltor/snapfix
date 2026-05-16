@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Boxes, Library } from "lucide-react";
+import { Boxes, CalendarClock, Library } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
@@ -89,6 +89,13 @@ export default async function VendorsPage() {
               >
                 <Library size={14} strokeWidth={2.2} />
                 Browse library
+              </Link>
+              <Link
+                href="/vendors/contracts"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                <CalendarClock size={14} strokeWidth={2.2} />
+                Contracts
               </Link>
               <VendorDoraExportButton vendors={doraExportRows} />
               <VendorAddButton />
