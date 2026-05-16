@@ -572,4 +572,71 @@ export const BANKING_SCENARIOS: LibraryScenario[] = [
     coversDataIntegrity: true,
     durationMin: 150,
   },
+  {
+    slug: "wholesale-bank-it-incident-quarter-close",
+    title: "Wholesale-bank trading platform outage on quarter-close",
+    sectors: ["banking", "asset-wealth"],
+    category: "Technology & Data (Cyber)",
+    tier: "TIER_1",
+    background:
+      "On the afternoon of the calendar-quarter close, the wholesale-bank trading platform suffers a database failover that stalls. Traders cannot price, book or close positions. Internal P&L closing depends on this data. CFO, FCA and shareholders all need answers within hours. Recovery in 4-8 hours but reconciliation will take days.",
+    characteristics: [
+      "Quarter-close clock with shareholder-disclosure pressure",
+      "Trading-desk operational paralysis",
+      "Reconciliation lag persists beyond restoration",
+    ],
+    assumptions: [
+      "Voice / manual booking is partial fallback",
+      "FCA SUP 15 notification required same-day",
+      "Press will reach analyst-circle quickly",
+    ],
+    coversTechnology: true,
+    coversDataIntegrity: true,
+    coversDataAvailability: true,
+    durationMin: 180,
+  },
+  {
+    slug: "bank-prudential-stress-test-fail",
+    title: "Bank of England stress-test result is borderline; capital plan needed",
+    sectors: ["banking"],
+    category: "Geopolitical & Macro",
+    tier: "TIER_1",
+    background:
+      "The annual Bank-of-England stress-test results are about to be published. Internal modelling suggests the firm will be the weakest performer that's still above the hurdle rate. PRA and PR teams must coordinate the capital-plan-response narrative without spooking depositors. Sell-side analysts will publish models within hours.",
+    characteristics: [
+      "Regulator-scheduled disclosure with weak-link headline risk",
+      "Comms-and-capital-plan response in parallel",
+      "Depositor-confidence dimension",
+    ],
+    assumptions: [
+      "Result is publishable as-is; not a failure",
+      "Capital-plan-strengthening is supportable but expensive",
+      "Press cycle multi-day, analyst-led",
+    ],
+    coversDataIntegrity: true,
+    coversThirdParty: true,
+    durationMin: 150,
+  },
+  {
+    slug: "neobank-fca-section-55-action",
+    title: "FCA section 55 supervisory action restricts new-customer onboarding",
+    sectors: ["banking", "payments-fintech"],
+    category: "Geopolitical & Macro",
+    tier: "TIER_3",
+    background:
+      "Following AML / financial-crime concerns, the FCA issues a s55 variation restricting the neobank's permissions: no new customer onboarding until remediation is complete. Existing customers unaffected operationally but reputation damage immediate. Investor confidence wavers. Remediation programme 6-12 months.",
+    characteristics: [
+      "FCA-imposed business restriction",
+      "Reputational damage with investor implications",
+      "Multi-month compliance remediation",
+    ],
+    assumptions: [
+      "Existing-customer service continues",
+      "Investor-relations briefing within hours",
+      "Remediation costs are material",
+    ],
+    coversDataIntegrity: true,
+    coversPeople: true,
+    durationMin: 150,
+  },
 ];

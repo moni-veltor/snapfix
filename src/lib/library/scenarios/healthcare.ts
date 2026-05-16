@@ -255,6 +255,27 @@ export const HEALTHCARE_SCENARIOS: LibraryScenario[] = [
     durationMin: 150,
   },
   {
+    slug: "blood-supply-shortage",
+    title: "National blood-supply shortage triggers elective-surgery deferrals",
+    sectors: ["healthcare"],
+    category: "Third Party",
+    background:
+      "NHSBT issues an amber-shortage alert across the trust's region for O-negative and platelet supply. Elective surgeries needing blood-product cover are deferred; emergency cover prioritised. Clinical-leadership decisions on prioritisation, customer-comms (patients), and mutual-aid all in parallel.",
+    characteristics: [
+      "Critical-supply shortage with patient-safety primacy",
+      "Multi-week prioritisation programme",
+      "Patient / family communication at scale",
+    ],
+    assumptions: [
+      "NHSBT recovery is 2-6 weeks",
+      "Emergency cover protected; electives slip",
+      "Trust-and-trust mutual aid via the ICB",
+    ],
+    coversPeople: true,
+    coversThirdParty: true,
+    durationMin: 150,
+  },
+  {
     slug: "gp-network-outage",
     title: "Federated GP-IT supplier outage across an ICB",
     sectors: ["healthcare"],

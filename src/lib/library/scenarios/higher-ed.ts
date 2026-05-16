@@ -184,6 +184,29 @@ export const HIGHER_ED_SCENARIOS: LibraryScenario[] = [
     durationMin: 150,
   },
   {
+    slug: "results-day-ucas-outage",
+    title: "Clearing-hotline + admissions portal collapse on A-level results day",
+    sectors: ["higher-ed"],
+    category: "Technology & Data (Cyber)",
+    tier: "TIER_2",
+    background:
+      "A-level results day. The university's admissions portal and clearing-hotline both fail under load at 09:00. ~14,000 anxious students cannot confirm offers or call clearing. UCAS calling; OfS calling. Recovery in 1-3 hours feasible but every hour is a slot lost to a competitor university.",
+    characteristics: [
+      "Once-a-year peak event — no second chance",
+      "Vulnerable cohort (18-year-olds on a life-defining day)",
+      "Competitive-student-market real-time loss",
+    ],
+    assumptions: [
+      "Recovery within 1-3 hours",
+      "Manual processing supplements but doesn't replace",
+      "Press coverage immediate and severe",
+    ],
+    coversTechnology: true,
+    coversPeople: true,
+    coversThirdParty: true,
+    durationMin: 120,
+  },
+  {
     slug: "international-student-visa-pause",
     title: "Home Office pauses sponsor licence for international-student visas",
     sectors: ["higher-ed", "government"],

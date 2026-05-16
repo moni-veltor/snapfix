@@ -182,6 +182,27 @@ export const MANUFACTURING_SCENARIOS: LibraryScenario[] = [
     durationMin: 150,
   },
   {
+    slug: "food-contamination-allergen",
+    title: "Undeclared allergen recall: school-meal customers exposed",
+    sectors: ["manufacturing", "healthcare"],
+    category: "Property",
+    background:
+      "A supplier ingredient-change introduces an undeclared allergen (sesame / soy) into the firm's school-meal-supply product. ~80 schools in the supply chain. FSA notification mandatory and rapid. Some children with known allergies have already consumed the product. Health-and-safety + customer-comms + recall logistics in parallel.",
+    characteristics: [
+      "Child-safety primacy with statutory recall framework",
+      "Supplier-driven incident with first-party liability",
+      "Press cycle severe and emotional",
+    ],
+    assumptions: [
+      "FSA expects same-day notification",
+      "Affected schools can be reached fast",
+      "Some children have reactions; medical-treatment cost recoverable",
+    ],
+    coversPeople: true,
+    coversThirdParty: true,
+    durationMin: 180,
+  },
+  {
     slug: "automotive-emissions-recall",
     title: "Emissions software finding triggers a fleet-wide recall",
     sectors: ["manufacturing"],

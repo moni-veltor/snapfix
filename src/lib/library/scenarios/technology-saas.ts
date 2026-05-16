@@ -179,6 +179,28 @@ export const TECHNOLOGY_SAAS_SCENARIOS: LibraryScenario[] = [
     durationMin: 60,
   },
   {
+    slug: "saas-billing-engine-failure",
+    title: "SaaS billing engine fails on monthly subscription cycle",
+    sectors: ["technology-saas"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "The subscription-billing engine fails on the first-of-the-month batch. ~14,000 customers don't get billed; revenue recognition is delayed; auditor-warning if it persists past quarter-end. Recovery is feasible but takes 4-8 hours. Stripe webhooks need to be replayed. Customer-success teams field 'where's my invoice' tickets.",
+    characteristics: [
+      "Revenue-cycle-critical batch failure",
+      "Webhook-replay operational complexity",
+      "Audit / period-close pressure",
+    ],
+    assumptions: [
+      "Stripe webhook replays are idempotent",
+      "Customer-success can field tickets at scale",
+      "Auditor will accept a one-cycle delay",
+    ],
+    coversTechnology: true,
+    coversDataIntegrity: true,
+    coversThirdParty: true,
+    durationMin: 90,
+  },
+  {
     slug: "saas-genai-data-leak",
     title: "Customer data accidentally trained into shared model",
     sectors: ["technology-saas"],

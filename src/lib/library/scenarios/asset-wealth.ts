@@ -253,4 +253,25 @@ export const ASSET_WEALTH_SCENARIOS: LibraryScenario[] = [
       impactScale: "Multiple retail-FX brokers insolvent within hours",
     },
   },
+  {
+    slug: "esg-greenwashing-allegation",
+    title: "Investigative journalists allege ESG-fund greenwashing",
+    sectors: ["asset-wealth"],
+    category: "Geopolitical & Macro",
+    background:
+      "A long-read alleges the firm's flagship ESG fund holds material exposure to tobacco / fossil-fuel / arms suppliers via opaque structuring. FCA's anti-greenwashing rules apply. Retail-investor exodus risk; class-action firms organising. Investor-comms, fund-restructuring and regulator-response all in parallel.",
+    characteristics: [
+      "ESG-marketing integrity attack with regulator overlay",
+      "Multi-channel investor-trust impact",
+      "Long-tail commercial damage",
+    ],
+    assumptions: [
+      "Some allegations are accurate; others are framing",
+      "FCA anti-greenwashing rules apply since May 2024",
+      "Press cycle is sustained",
+    ],
+    coversDataIntegrity: true,
+    coversThirdParty: true,
+    durationMin: 180,
+  },
 ];

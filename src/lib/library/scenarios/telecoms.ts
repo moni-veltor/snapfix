@@ -259,6 +259,28 @@ export const TELECOMS_SCENARIOS: LibraryScenario[] = [
     durationMin: 150,
   },
   {
+    slug: "geomagnetic-storm-comms-degradation",
+    title: "Geomagnetic storm degrades satellite-backhaul on rural routes",
+    sectors: ["telecoms"],
+    category: "Climate & Environment",
+    background:
+      "A severe geomagnetic storm degrades satellite-backhaul links serving rural areas. ~80,000 customers lose connectivity for 36-72 hours. Some areas have terrestrial fallback at lower capacity, some have nothing. Customer-vulnerable cohort (telecare, alarm-monitoring) prioritised. Ofcom and DCMS engaged.",
+    characteristics: [
+      "Space-weather-driven CNI degradation",
+      "Vulnerable-customer prioritisation",
+      "Rural-versus-urban differential impact",
+    ],
+    assumptions: [
+      "Recovery 36-72 hours based on storm-decay forecasts",
+      "Telecare welfare visits coordinated with local authorities",
+      "Press cycle is sympathetic but persistent",
+    ],
+    coversProperty: true,
+    coversTechnology: true,
+    coversPeople: true,
+    durationMin: 150,
+  },
+  {
     slug: "submarine-cable-fault",
     title: "Multiple submarine-cable fault degrades international traffic",
     sectors: ["telecoms"],

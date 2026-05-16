@@ -265,6 +265,33 @@ export const AVIATION_TRANSPORT_SCENARIOS: LibraryScenario[] = [
     durationMin: 180,
   },
   {
+    slug: "airport-baggage-system-collapse",
+    title: "Airport baggage-handling system collapses on a peak-summer Saturday",
+    sectors: ["aviation-transport"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "The hub airport's baggage-handling system fails at 09:30 on a peak-Saturday-summer day. ~80% of outbound bags fail to make their flights. Aircraft depart unaccompanied; arrivals queue. Reuniting passengers with bags will take weeks. Press is severe.",
+    characteristics: [
+      "Mass-passenger-and-luggage chaos on a peak day",
+      "Multi-week reunification operation",
+      "Airline / handler / airport-operator three-way blame",
+    ],
+    assumptions: [
+      "Manual baggage-sorting at 1/10 throughput",
+      "EU261/UK261 compensation triggers",
+      "Press coverage compares to Heathrow T5 (2008) and Schiphol",
+    ],
+    coversTechnology: true,
+    coversPeople: true,
+    coversThirdParty: true,
+    durationMin: 150,
+    caseStudy: {
+      title: "Heathrow Terminal 5 baggage chaos (March 2008)",
+      causation: "Baggage system + staff-training issues",
+      impactScale: "20,000 bags lost, hundreds of flights cancelled",
+    },
+  },
+  {
     slug: "weather-disruption-rail",
     title: "Severe-weather rail disruption: heat / flood / leaves-on-line",
     sectors: ["aviation-transport"],

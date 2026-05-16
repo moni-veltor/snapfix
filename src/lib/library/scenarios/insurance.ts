@@ -215,6 +215,48 @@ export const INSURANCE_SCENARIOS: LibraryScenario[] = [
     durationMin: 120,
   },
   {
+    slug: "telematics-pricing-controversy",
+    title: "Telematics-pricing finding sparks discrimination complaint and FCA review",
+    sectors: ["insurance"],
+    category: "Geopolitical & Macro",
+    background:
+      "An investigative-journalism piece alleges the firm's telematics-based pricing systematically disadvantages young drivers in certain postcodes — and the postcodes correlate with ethnicity. FCA Consumer Duty engaged; the Equality Act questions raised. Internal review needs to be fast, transparent and defensible.",
+    characteristics: [
+      "Algorithmic-pricing fairness allegation",
+      "Equality Act / discrimination overlay",
+      "Press cycle multi-week",
+    ],
+    assumptions: [
+      "Internal data-science review can reproduce the finding",
+      "FCA expects a credible remediation plan within 30 days",
+      "Customer-facing language matters as much as the technical fix",
+    ],
+    coversPeople: true,
+    coversDataIntegrity: true,
+    durationMin: 180,
+  },
+  {
+    slug: "annuity-purchase-system-fail",
+    title: "Annuity-purchase platform outage on the last day of the tax year",
+    sectors: ["insurance", "asset-wealth"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "On 5 April afternoon, the annuity-purchase platform fails. Hundreds of retirees attempting to lock in rates before the tax-year close cannot transact. HMRC, FCA and customer complaints all converge. Some customers will miss the deadline and lose money.",
+    characteristics: [
+      "Tax-year-deadline regulatory clock",
+      "Vulnerable-customer cohort (retirees)",
+      "Direct financial harm if not resolved fast",
+    ],
+    assumptions: [
+      "Recovery in 2-6 hours feasible",
+      "Some customers can be quoted by phone in parallel",
+      "Press cycle: 'retirees lose out as insurer crashes'",
+    ],
+    coversTechnology: true,
+    coversPeople: true,
+    durationMin: 120,
+  },
+  {
     slug: "guidewire-cloud-outage",
     title: "Core PAS vendor (Guidewire / Duck Creek) cloud outage",
     sectors: ["insurance"],

@@ -210,6 +210,28 @@ export const LOGISTICS_SCENARIOS: LibraryScenario[] = [
     durationMin: 90,
   },
   {
+    slug: "ev-fleet-battery-fire",
+    title: "EV-fleet battery fire grounds the entire fleet for safety inspection",
+    sectors: ["logistics"],
+    category: "Property",
+    background:
+      "A delivery van's battery catches fire at a depot overnight. Fleet-wide safety inspection imposed by the manufacturer; ~400 EV vans grounded for 5-10 days. Operations fall back on hire / contractor capacity. Press coverage of EV-safety concerns amplifies.",
+    characteristics: [
+      "Manufacturer-driven safety grounding",
+      "Multi-week operational impact",
+      "EV-safety press narrative",
+    ],
+    assumptions: [
+      "Hire capacity covers 60% of fleet at premium",
+      "Manufacturer inspection 5-10 days",
+      "Insurance covers some of the cost",
+    ],
+    coversProperty: true,
+    coversTechnology: true,
+    coversThirdParty: true,
+    durationMin: 120,
+  },
+  {
     slug: "container-mass-theft",
     title: "Organised container theft from a UK distribution hub",
     sectors: ["logistics"],

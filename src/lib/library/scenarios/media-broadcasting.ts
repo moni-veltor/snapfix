@@ -202,6 +202,27 @@ export const MEDIA_BROADCASTING_SCENARIOS: LibraryScenario[] = [
     durationMin: 120,
   },
   {
+    slug: "election-coverage-misinformation",
+    title: "Election-night coverage broadcasts incorrect projection on-air",
+    sectors: ["media-broadcasting"],
+    category: "People",
+    background:
+      "On a UK general election night, the firm's broadcast operation incorrectly calls a constituency seat 90 minutes before counting finishes — and the call is wrong. Social media amplifies before retraction. Ofcom Broadcasting Code engaged. Election Commission interest. Public-trust hit during a moment of national focus.",
+    characteristics: [
+      "Editorial-integrity failure at maximum visibility",
+      "Statutory broadcaster-impartiality obligation",
+      "Multi-stakeholder accountability",
+    ],
+    assumptions: [
+      "On-air retraction can happen within 15 minutes",
+      "Ofcom investigation will follow",
+      "Press coverage and Parliamentary scrutiny sustained",
+    ],
+    coversPeople: true,
+    coversDataIntegrity: true,
+    durationMin: 120,
+  },
+  {
     slug: "rights-management-breach",
     title: "Rights-management metadata breach during peak-season",
     sectors: ["media-broadcasting"],

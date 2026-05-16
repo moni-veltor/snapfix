@@ -251,6 +251,49 @@ export const PAYMENTS_FINTECH_SCENARIOS: LibraryScenario[] = [
     durationMin: 150,
   },
   {
+    slug: "bnpl-affordability-finding",
+    title: "BNPL provider's affordability model produces FCA-troubling outcomes",
+    sectors: ["payments-fintech"],
+    category: "Geopolitical & Macro",
+    background:
+      "FCA's review of the firm's BNPL affordability decisioning finds a 4% cohort of approved customers who default within 90 days — and a chunk of those are flagged as vulnerable. Consumer Duty implications, model-governance review, customer-redress sizing all in parallel. Press cycle is sustained.",
+    characteristics: [
+      "Algorithmic-credit-decisioning finding",
+      "Vulnerable-customer harm dimension",
+      "FCA Consumer Duty remediation",
+    ],
+    assumptions: [
+      "Model can be retuned in 4-8 weeks",
+      "Customer redress sizing is contested",
+      "Press cycle compares to historic Klarna / FCA tensions",
+    ],
+    coversPeople: true,
+    coversDataIntegrity: true,
+    durationMin: 150,
+  },
+  {
+    slug: "rt-payments-rail-launch",
+    title: "Real-time payments scheme cutover lands worse than planned",
+    sectors: ["payments-fintech", "banking"],
+    category: "Third Party",
+    background:
+      "The firm participates in a Pay.UK / NPA-style real-time payments scheme cutover. Migration weekend reveals reconciliation gaps; ~30,000 customer payments are in 'pending' for over 24 hours. Customers calling, regulator and scheme operator on the bridge. Other participating firms have similar problems.",
+    characteristics: [
+      "Industry-wide scheme cutover with shared failure mode",
+      "Reconciliation gap across multiple firms",
+      "Multi-firm coordination via scheme operator",
+    ],
+    assumptions: [
+      "Roll-back is not feasible at this point — scheme has cut over",
+      "Reconciliation can be patched within 72 hours",
+      "Customer redress for missed-payment harm is required",
+    ],
+    coversTechnology: true,
+    coversThirdParty: true,
+    coversDataIntegrity: true,
+    durationMin: 180,
+  },
+  {
     slug: "ato-credential-stuffing",
     title: "Credential-stuffing wave triggers mass account takeovers",
     sectors: ["payments-fintech", "banking", "retail-ecommerce"],

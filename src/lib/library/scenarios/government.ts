@@ -260,6 +260,29 @@ export const GOVERNMENT_SCENARIOS: LibraryScenario[] = [
     durationMin: 180,
   },
   {
+    slug: "gov-uk-one-login-outage",
+    title: "GOV.UK One Login outage blocks citizens from cross-service access",
+    sectors: ["government"],
+    category: "Technology & Data (Cyber)",
+    tier: "TIER_1",
+    background:
+      "GOV.UK One Login (the cross-government identity service) suffers an outage. Citizens can't access HMRC, DVLA, Passport Office or DWP services through their unified account. Cabinet Office and GDS coordinate. Identity-fallback exists for some services but not all. Press cycle picks up the dependency-concentration question.",
+    characteristics: [
+      "Cross-government identity-concentration realised",
+      "Multi-service citizen impact",
+      "GDS / Cabinet Office coordination",
+    ],
+    assumptions: [
+      "Recovery is hours not days",
+      "Some legacy auth paths still work",
+      "Identity-concentration question hits Parliament",
+    ],
+    coversTechnology: true,
+    coversThirdParty: true,
+    coversDataAvailability: true,
+    durationMin: 150,
+  },
+  {
     slug: "council-tax-billing-error",
     title: "Council-tax billing error mis-bills 240,000 households",
     sectors: ["government"],

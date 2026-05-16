@@ -256,6 +256,27 @@ export const ENERGY_UTILITIES_SCENARIOS: LibraryScenario[] = [
     durationMin: 150,
   },
   {
+    slug: "ofgem-price-cap-passthrough-error",
+    title: "Price-cap pass-through error overcharges 600,000 customers",
+    sectors: ["energy-utilities"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "A wholesale-cost pass-through calculation has been wrong for three months — affecting 600,000 customers' standing charges. Ofgem licence-condition breach. Mass-refund + retrospective bill-correction operation needed. Press is already on it; Citizens Advice referring complainants in volume.",
+    characteristics: [
+      "Mass-customer overcharge with regulator-licence implications",
+      "Multi-month accumulated error",
+      "Press / consumer-rights amplification",
+    ],
+    assumptions: [
+      "Re-billing technically feasible in 5 working days",
+      "Refund plus interest is the customer-fair outcome",
+      "Ofgem will impose redress order",
+    ],
+    coversDataIntegrity: true,
+    coversPeople: true,
+    durationMin: 150,
+  },
+  {
     slug: "balancing-mechanism-bug",
     title: "Algorithmic-bidding bug triggers £4M of balancing-mechanism loss",
     sectors: ["energy-utilities"],
