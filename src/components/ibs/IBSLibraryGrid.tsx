@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   Building,
+  Check,
   CheckCircle2,
   Boxes,
   Database,
@@ -10,6 +11,7 @@ import {
   Users,
   Wifi,
   Plus,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { addLibraryIBSAction } from "@/app/actions/ibs";
@@ -19,7 +21,13 @@ import {
   type IBSCategory,
   type LibraryIBS,
 } from "@/lib/ibs-library";
-import { SECTORS, SECTOR_SHORT_LABEL, SECTOR_TONE, type Sector } from "@/lib/library/sectors";
+import {
+  SECTORS,
+  SECTOR_GROUPS,
+  SECTOR_SHORT_LABEL,
+  SECTOR_TONE,
+  type Sector,
+} from "@/lib/library/sectors";
 
 const TIER_LABEL: Record<string, string> = {
   TIER_1: "Tier 1",
@@ -81,14 +89,33 @@ export default function IBSLibraryGrid({
     orgTier ?? "all",
   );
   const [categoryFilter, setCategoryFilter] = useState<"all" | IBSCategory>("all");
-  const [sectorFilter, setSectorFilter] = useState<"all" | Sector>("all");
+  /** Multi-select sector set. Empty = "all sectors". */
+  const [selectedSectors, setSelectedSectors] = useState<Set<Sector>>(new Set());
   const [query, setQuery] = useState("");
+
+  function toggleSector(s: Sector) {
+    setSelectedSectors((prev) => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
+      return next;
+    });
+  }
+  function applyGroup(sectors: Sector[]) {
+    setSelectedSectors(new Set(sectors));
+  }
+  function clearSectors() {
+    setSelectedSectors(new Set());
+  }
 
   const filtered = useMemo(() => {
     return library.filter((l) => {
       if (tierFilter !== "all" && !l.tiers.includes(tierFilter)) return false;
       if (categoryFilter !== "all" && l.category !== categoryFilter) return false;
-      if (sectorFilter !== "all" && !(l.sectors ?? []).includes(sectorFilter)) return false;
+      if (selectedSectors.size > 0) {
+        const hasMatch = (l.sectors ?? []).some((s) => selectedSectors.has(s));
+        if (!hasMatch) return false;
+      }
       const q = query.trim().toLowerCase();
       if (q) {
         const hay = `${l.name} ${l.outcome} ${l.category}`.toLowerCase();
@@ -96,7 +123,7 @@ export default function IBSLibraryGrid({
       }
       return true;
     });
-  }, [library, tierFilter, categoryFilter, sectorFilter, query]);
+  }, [library, tierFilter, categoryFilter, selectedSectors, query]);
 
   const categoryCounts = useMemo(() => {
     const out: Record<string, number> = { all: library.length };
@@ -112,86 +139,148 @@ export default function IBSLibraryGrid({
     return out;
   }, [library]);
 
+  /** Detect if the current selection exactly matches a known group. */
+  const activeGroupId = useMemo(() => {
+    if (selectedSectors.size === 0) return null;
+    for (const g of SECTOR_GROUPS) {
+      if (g.sectors.length !== selectedSectors.size) continue;
+      if (g.sectors.every((s) => selectedSectors.has(s))) return g.id;
+    }
+    return null;
+  }, [selectedSectors]);
+
+  const hasActiveFilter =
+    selectedSectors.size > 0 ||
+    categoryFilter !== "all" ||
+    tierFilter !== (orgTier ?? "all") ||
+    query.trim().length > 0;
+
   return (
     <section className="space-y-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, outcome, category…"
-          className="min-w-[220px] flex-1 rounded-md border border-line bg-surface-0 px-3 py-1.5 text-sm text-ink placeholder:text-soft focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-        />
-        <div role="tablist" className="flex flex-wrap gap-1">
-          {(["all", "TIER_1", "TIER_2", "TIER_3"] as const).map((t) => {
-            const active = tierFilter === t;
+      {/* Sticky filter bar */}
+      <div className="sticky top-0 z-10 -mx-2 space-y-3 bg-surface-0/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-surface-0/80">
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, outcome, category…"
+            className="min-w-[220px] flex-1 rounded-md border border-line bg-surface-0 px-3 py-1.5 text-sm text-ink placeholder:text-soft focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+          />
+          <div role="tablist" className="flex flex-wrap gap-1">
+            {(["all", "TIER_1", "TIER_2", "TIER_3"] as const).map((t) => {
+              const active = tierFilter === t;
+              return (
+                <button
+                  key={t}
+                  role="tab"
+                  type="button"
+                  aria-selected={active}
+                  onClick={() => setTierFilter(t)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                    active
+                      ? "bg-slate-900 text-white dark:bg-indigo-500"
+                      : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
+                  }`}
+                >
+                  {t === "all" ? "All tiers" : TIER_LABEL[t]}
+                </button>
+              );
+            })}
+          </div>
+          {hasActiveFilter && (
+            <button
+              type="button"
+              onClick={() => {
+                clearSectors();
+                setCategoryFilter("all");
+                setTierFilter(orgTier ?? "all");
+                setQuery("");
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-1 px-2.5 py-1.5 text-xs font-medium text-muted hover:bg-surface-2 hover:text-ink"
+            >
+              <X size={11} />
+              Clear all
+            </button>
+          )}
+        </div>
+
+        {/* Quick-pick group buttons */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-soft">
+            Quick picks
+          </span>
+          {SECTOR_GROUPS.map((g) => {
+            const active = activeGroupId === g.id;
             return (
               <button
-                key={t}
-                role="tab"
+                key={g.id}
                 type="button"
-                aria-selected={active}
-                onClick={() => setTierFilter(t)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
+                onClick={() => applyGroup(g.sectors)}
+                className={`inline-flex items-center rounded-md border px-2.5 py-1 text-[11px] font-medium transition-all ${
                   active
-                    ? "bg-slate-900 text-white dark:bg-indigo-500"
-                    : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
+                    ? "border-indigo-400 bg-accent-soft text-indigo-700 dark:border-indigo-700 dark:text-indigo-200"
+                    : "border-line bg-surface-1 text-muted hover:border-line-strong hover:bg-surface-2 hover:text-ink"
                 }`}
               >
-                {t === "all" ? "All tiers" : TIER_LABEL[t]}
+                {g.label}
               </button>
             );
           })}
         </div>
-      </div>
 
-      <div role="tablist" className="flex flex-wrap gap-1.5">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={sectorFilter === "all"}
-          onClick={() => setSectorFilter("all")}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
-            sectorFilter === "all"
-              ? "bg-slate-900 text-white dark:bg-indigo-500"
-              : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
-          }`}
-        >
-          All sectors
-          <span
-            className={`rounded-full px-1.5 py-0 text-[9px] font-semibold ${
-              sectorFilter === "all" ? "bg-white/30 dark:bg-black/30" : "bg-surface-2 text-soft"
+        {/* Multi-select sector chip row */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={clearSectors}
+            aria-pressed={selectedSectors.size === 0}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
+              selectedSectors.size === 0
+                ? "bg-slate-900 text-white dark:bg-indigo-500"
+                : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
             }`}
           >
-            {sectorCounts.all}
-          </span>
-        </button>
-        {SECTORS.map((s) => {
-          const count = sectorCounts[s] ?? 0;
-          if (count === 0) return null;
-          const active = sectorFilter === s;
-          return (
-            <button
-              key={s}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setSectorFilter(s)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
-                active ? SECTOR_TONE[s] : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
+            All sectors
+            <span
+              className={`rounded-full px-1.5 py-0 text-[9px] font-semibold ${
+                selectedSectors.size === 0
+                  ? "bg-white/30 dark:bg-black/30"
+                  : "bg-surface-2 text-soft"
               }`}
             >
-              {SECTOR_SHORT_LABEL[s]}
-              <span
-                className={`rounded-full px-1.5 py-0 text-[9px] font-semibold ${
-                  active ? "bg-white/30 dark:bg-black/30" : "bg-surface-2 text-soft"
+              {sectorCounts.all}
+            </span>
+          </button>
+          {SECTORS.map((s) => {
+            const count = sectorCounts[s] ?? 0;
+            if (count === 0) return null;
+            const selected = selectedSectors.has(s);
+            return (
+              <button
+                key={s}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleSector(s)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
+                  selected
+                    ? SECTOR_TONE[s]
+                    : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
                 }`}
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+                {selected && <Check size={10} strokeWidth={3} />}
+                {SECTOR_SHORT_LABEL[s]}
+                <span
+                  className={`rounded-full px-1.5 py-0 text-[9px] font-semibold ${
+                    selected ? "bg-white/40 dark:bg-black/40" : "bg-surface-2 text-soft"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div role="tablist" className="flex flex-wrap gap-1.5">
@@ -247,6 +336,15 @@ export default function IBSLibraryGrid({
 
       <p className="text-[11px] text-soft">
         {filtered.length} of {library.length} library IBSs shown
+        {selectedSectors.size > 0 && (
+          <>
+            {" "}
+            · filtered to{" "}
+            {Array.from(selectedSectors)
+              .map((s) => SECTOR_SHORT_LABEL[s])
+              .join(", ")}
+          </>
+        )}
       </p>
 
       {filtered.length === 0 ? (
