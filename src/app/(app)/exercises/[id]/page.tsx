@@ -7,6 +7,7 @@ import { startExerciseAction, transitionToReadyAction } from "@/app/actions/exer
 import ArtefactList from "@/components/ArtefactList";
 import ArtefactUpload from "@/components/ArtefactUpload";
 import PageHero from "@/components/ui/PageHero";
+import RoleBriefingPreview from "@/components/exercises/RoleBriefingPreview";
 
 export default async function ExerciseOverviewPage({
   params,
@@ -65,6 +66,16 @@ export default async function ExerciseOverviewPage({
 
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
   const unassigned = exercise.participants.filter((p) => !p.teamId);
+
+  // Pre-live role briefing preview — let the participant prepare for the
+  // role they'll be playing before the clock starts.
+  const myParticipant = exercise.participants.find((p) => p.user && p.userId === me.id);
+  const myRole = myParticipant?.roleTitle
+    ? await prisma.organizationRole.findFirst({
+        where: { orgId: me.orgId, abbreviation: myParticipant.roleTitle },
+        select: { responsibility: true, isSMF: true, deputyOfRoleId: true },
+      })
+    : null;
   const facilitatorCount = exercise.participants.filter((p) => p.exerciseRole === "FACILITATOR").length;
   const readyChecks = [
     {
@@ -129,6 +140,15 @@ export default async function ExerciseOverviewPage({
           ) : undefined
         }
       />
+
+      {myParticipant && (
+        <RoleBriefingPreview
+          roleTitle={myParticipant.roleTitle}
+          isSMF={myRole?.isSMF ?? false}
+          isDeputy={!!myRole?.deputyOfRoleId}
+          responsibility={myRole?.responsibility ?? null}
+        />
+      )}
 
       {/* Sticky transition bar — visible only when a transition is available */}
       {canManage && (exercise.status === "PLANNING" || exercise.status === "READY") && (

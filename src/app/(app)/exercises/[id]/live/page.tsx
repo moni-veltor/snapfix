@@ -36,6 +36,7 @@ import LiveTabs from "@/components/live/LiveTabs";
 import LivePoller from "@/components/live/LivePoller";
 import InjectArrivalNotifier from "@/components/live/InjectArrivalNotifier";
 import FirstTimeLiveTour from "@/components/live/FirstTimeLiveTour";
+import SitrepCadenceBanner from "@/components/live/SitrepCadenceBanner";
 
 export default async function LiveWorkspacePage({
   params,
@@ -112,6 +113,7 @@ export default async function LiveWorkspacePage({
     myActionItems,
     recentReleases,
     orgDecisionPresets,
+    recentSitreps,
   ] = await Promise.all([
     loadInbox(exercise.id, { roleTitle: participant.roleTitle, participantId: participant.id }),
     loadLiveFeed(exercise.id),
@@ -192,6 +194,21 @@ export default async function LiveWorkspacePage({
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       select: { id: true, label: true, hint: true },
     }),
+    // Sitreps filed against any incident in this exercise — drives the
+    // cadence banner (IMP §6.4.3.1 expects regular sitreps per BU).
+    prisma.sitrep.findMany({
+      where: { incident: { exerciseId: exercise.id } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        businessUnit: true,
+        status: true,
+        nextUpdateDDayTime: true,
+        dDayTime: true,
+        createdAt: true,
+      },
+    }),
   ]);
 
   const incidentForBanner = activeIncident
@@ -223,6 +240,13 @@ export default async function LiveWorkspacePage({
     injectNo: r.inject.injectNo,
     summary: r.inject.summary,
   }));
+
+  const minutesSinceLastSitrep = recentSitreps.length
+    ? Math.floor(
+        // eslint-disable-next-line react-hooks/purity
+        (Date.now() - recentSitreps[0].createdAt.getTime()) / 60_000,
+      )
+    : null;
 
   // Live performance score — only meaningful once an incident has been invoked.
   const liveScore = activeIncident ? await scoreIncident(activeIncident.id) : null;
@@ -320,6 +344,12 @@ export default async function LiveWorkspacePage({
                 isDeputy={mySeat.isDeputy}
               />
             )}
+            <SitrepCadenceBanner
+              sitreps={recentSitreps}
+              dDayHHMM={clock.hhmm}
+              minutesSinceLastSitrep={minutesSinceLastSitrep}
+              incidentActive={!!activeIncident}
+            />
             <MyExerciseActionItems
               items={myActionItems}
               nowIso={new Date().toISOString()}
