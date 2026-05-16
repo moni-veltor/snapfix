@@ -184,4 +184,73 @@ export const ASSET_WEALTH_SCENARIOS: LibraryScenario[] = [
     coversThirdParty: true,
     durationMin: 150,
   },
+  {
+    slug: "platform-tax-reporting-fail",
+    title: "Year-end CGT tax-reporting pipeline produces wrong cost-bases",
+    sectors: ["asset-wealth"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "The annual capital-gains-tax statements sent to retail investors include wrong cost-bases for ~80,000 customers. HMRC self-assessment deadline is 4 weeks out. Customers calling, accountants escalating. Re-issue across the whole book is operationally complex; partial re-issue risks visible inequity.",
+    characteristics: [
+      "Tax-reporting-pipeline integrity event",
+      "Customer financial-impact (potentially over or under tax)",
+      "HMRC and FCA both interested",
+    ],
+    assumptions: [
+      "Reproduction of correct cost-bases takes days",
+      "Mass communication needs to be precise and reassuring",
+      "Accountant relationships will amplify the story",
+    ],
+    coversDataIntegrity: true,
+    coversThirdParty: true,
+    durationMin: 150,
+  },
+  {
+    slug: "depo-corporate-action-misprocessed",
+    title: "Corporate action mis-processed across multiple funds",
+    sectors: ["asset-wealth"],
+    category: "Third Party",
+    background:
+      "A scrip-dividend corporate action is mis-applied across multiple funds — some investors receive cash where they elected scrip, some vice versa. Custodian and asset-manager point at each other. ~£14M of incorrect entitlements need to be reversed and re-processed. FCA Best-Execution and operational-risk reviews follow.",
+    characteristics: [
+      "Custodian-vs-IM accountability question",
+      "Multi-fund retrospective remediation",
+      "Investor trust impact",
+    ],
+    assumptions: [
+      "Reversal is operationally feasible but slow",
+      "Investor-comms needs to make whole, not just inform",
+      "FCA expects materiality assessment",
+    ],
+    coversDataIntegrity: true,
+    coversThirdParty: true,
+    durationMin: 120,
+  },
+  {
+    slug: "platform-margin-call-cascade",
+    title: "CFD platform margin-call cascade during a volatile market",
+    sectors: ["asset-wealth"],
+    category: "Geopolitical & Macro",
+    background:
+      "An overnight commodity move triggers a wave of margin calls on the firm's CFD / spread-betting platform. Some retail customers face losses larger than their account balances (negative-balance event). Liability question + complaint surge + ESMA/FCA scrutiny on retail-leveraged products.",
+    characteristics: [
+      "Market-volatility-event with retail-customer-harm primacy",
+      "Negative-balance protection vs. firm-liability trade-off",
+      "Regulator scrutiny on retail-leveraged-product model",
+    ],
+    assumptions: [
+      "Negative-balance protection applies under ESMA / FCA rules",
+      "Liquidity to absorb the protection cost is available",
+      "Press coverage compares to historic CHF / Swiss-franc episode",
+    ],
+    coversTechnology: true,
+    coversPeople: true,
+    coversDataIntegrity: true,
+    durationMin: 150,
+    caseStudy: {
+      title: "CHF de-pegging (January 2015)",
+      causation: "SNB removed EUR/CHF peg, FX crashed",
+      impactScale: "Multiple retail-FX brokers insolvent within hours",
+    },
+  },
 ];

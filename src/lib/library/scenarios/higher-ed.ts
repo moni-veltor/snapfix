@@ -139,4 +139,69 @@ export const HIGHER_ED_SCENARIOS: LibraryScenario[] = [
     coversProperty: true,
     durationMin: 150,
   },
+  {
+    slug: "research-grant-funder-data-incident",
+    title: "Research data lost from a major UKRI-funded project",
+    sectors: ["higher-ed"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "A ransomware infection on a research-group's local file-share encrypts 4 months of un-backed-up experimental data from a £2.4M UKRI-funded clinical-trial-adjacent project. Funder may withhold next tranche pending integrity assurance. PI is named on the grant; reputational cost is personal. Research-ethics committee involvement.",
+    characteristics: [
+      "Research-group data-loss with funder-relationship impact",
+      "Personal-PI accountability dimension",
+      "Research-ethics review",
+    ],
+    assumptions: [
+      "Some data recoverable from collaborator copies (~30%)",
+      "Funder will pause not cancel",
+      "Backups would have prevented this; central-IT vs research-IT tension renewed",
+    ],
+    coversTechnology: true,
+    coversDataIntegrity: true,
+    coversDataAvailability: true,
+    durationMin: 150,
+  },
+  {
+    slug: "halls-of-residence-fire-safety",
+    title: "Fire safety defect found across multiple halls of residence",
+    sectors: ["higher-ed"],
+    category: "Property",
+    background:
+      "A routine inspection identifies a fire-safety cladding defect across three halls of residence housing ~2,400 students. Local Fire Authority issues an enforcement notice. Re-housing thousands of students mid-term while remediation is underway is the practical challenge. Parent-and-press response is intense.",
+    characteristics: [
+      "Mass student re-housing under regulator-enforced deadline",
+      "Multi-week / multi-month remediation",
+      "Parent / press / regulator multi-stakeholder coordination",
+    ],
+    assumptions: [
+      "Hotel accommodation can be sourced at premium cost",
+      "Some students refuse to move; legal and welfare cases follow",
+      "Insurance covers most of the remediation",
+    ],
+    coversPeople: true,
+    coversProperty: true,
+    coversThirdParty: true,
+    durationMin: 150,
+  },
+  {
+    slug: "international-student-visa-pause",
+    title: "Home Office pauses sponsor licence for international-student visas",
+    sectors: ["higher-ed", "government"],
+    category: "Geopolitical & Macro",
+    background:
+      "Following a routine audit, the Home Office places the university's Tier-4 sponsor licence under suspension pending review. New CAS issuance halts. ~4,000 prospective international students for the autumn cohort are in limbo. Comms, legal, and admissions-replanning all in parallel. Revenue exposure £40-90M.",
+    characteristics: [
+      "Regulator-imposed pause with autumn-recruitment cliff",
+      "Multi-tens-of-millions revenue exposure",
+      "International-applicant trust crisis",
+    ],
+    assumptions: [
+      "Suspension typically 4-12 weeks",
+      "Some applicants will accept offers elsewhere",
+      "Internal compliance gap is real and remediable",
+    ],
+    coversPeople: true,
+    coversThirdParty: true,
+    durationMin: 180,
+  },
 ];

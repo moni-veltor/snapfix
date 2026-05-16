@@ -136,4 +136,67 @@ export const TECHNOLOGY_SAAS_SCENARIOS: LibraryScenario[] = [
     coversDataIntegrity: true,
     durationMin: 120,
   },
+  {
+    slug: "saas-sso-provider-outage",
+    title: "Enterprise SSO provider outage locks customers out of the SaaS",
+    sectors: ["technology-saas"],
+    category: "Third Party",
+    background:
+      "Okta / Microsoft Entra suffers a global outage. Enterprise customers cannot sign into the firm's SaaS platform. Local-account fallback exists but is disabled for those customers by their own policy. Customer-success teams field hundreds of calls. The firm has no operational levers.",
+    characteristics: [
+      "Identity-provider concentration realised",
+      "No operational levers, only comms",
+      "Customer-success surge",
+    ],
+    assumptions: [
+      "Identity-provider recovery 30 minutes to 4 hours",
+      "Some customers can enable local-account exception",
+      "SLA-credit obligations apply per contract",
+    ],
+    coversTechnology: true,
+    coversThirdParty: true,
+    durationMin: 90,
+  },
+  {
+    slug: "saas-llm-vendor-rate-limit",
+    title: "LLM API rate-limited during a peak product-launch demo",
+    sectors: ["technology-saas"],
+    category: "Third Party",
+    background:
+      "The firm's AI-features depend on an LLM API (OpenAI / Anthropic / Bedrock). During a high-profile product-launch demo to a major customer, the API hits per-minute rate limits. Customer experience degrades visibly during the call. Decisions on retry-and-back-off, fallback model, and customer-comms in parallel.",
+    characteristics: [
+      "Vendor rate-limit in a high-stakes moment",
+      "Multi-vendor fallback complexity",
+      "Customer-success damage control",
+    ],
+    assumptions: [
+      "Rate-limit increase request takes hours",
+      "Fallback to a different LLM is technically feasible but degrades quality",
+      "Customer will remember this even if recovery is fast",
+    ],
+    coversTechnology: true,
+    coversThirdParty: true,
+    durationMin: 60,
+  },
+  {
+    slug: "saas-genai-data-leak",
+    title: "Customer data accidentally trained into shared model",
+    sectors: ["technology-saas"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "An engineering error causes customer prompts to be included in a model-training run that powers the firm's shared product features. Investigation suggests ~40,000 prompts containing customer business data may have been used. Customer-trust impact is acute even if downstream model leakage is unproven.",
+    characteristics: [
+      "GenAI training-data contamination",
+      "Customer-trust impact with limited technical mitigation",
+      "ICO and customer DPA review",
+    ],
+    assumptions: [
+      "Model can be retrained without the data within weeks",
+      "Affected-customer notification at scale takes 5-7 days",
+      "Contractual DPA review with every affected customer",
+    ],
+    coversDataIntegrity: true,
+    coversThirdParty: true,
+    durationMin: 180,
+  },
 ];

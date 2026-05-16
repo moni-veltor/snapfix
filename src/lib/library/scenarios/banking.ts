@@ -507,4 +507,69 @@ export const BANKING_SCENARIOS: LibraryScenario[] = [
     coversThirdParty: true,
     durationMin: 150,
   },
+  {
+    slug: "mortgage-portfolio-rate-mistake",
+    title: "Mortgage tracker-rate calculation flips against customers for 48 hours",
+    sectors: ["banking"],
+    category: "Technology & Data (Cyber)",
+    tier: "TIER_2",
+    background:
+      "A configuration update to the rate-engine flips the sign on a tracker-margin field for ~210,000 mortgage customers. Direct debits collected at the wrong rate for 48 hours. FCA Consumer Duty applies. Customer-redress at scale plus interest is required. Internal-controls deficiency apparent.",
+    characteristics: [
+      "Mass-customer financial-impact via banking-direct-debit",
+      "FCA Consumer Duty primacy",
+      "Internal-controls post-mortem",
+    ],
+    assumptions: [
+      "Re-billing technically feasible within 3 working days",
+      "Plus-interest top-up needed for genuine financial harm",
+      "Press cycle is 'bank overcharges mortgage holders'",
+    ],
+    coversDataIntegrity: true,
+    coversPeople: true,
+    durationMin: 150,
+  },
+  {
+    slug: "wholesale-clearing-house-default",
+    title: "Wholesale clearing-house member default cascades",
+    sectors: ["banking", "asset-wealth"],
+    category: "Geopolitical & Macro",
+    tier: "TIER_1",
+    background:
+      "A clearing-house member defaults during volatile trading. The CCP invokes loss-mutualisation — the firm's contribution is called upon. Treasury and risk model real exposure; the answer is uncomfortably large. Bank-of-England engagement; press inferring contagion. Concurrent intra-day liquidity decisions.",
+    characteristics: [
+      "Counter-party-credit-event with mutualised loss",
+      "Multi-CCP exposure aggregation question",
+      "BoE / PRA prudential dialogue",
+    ],
+    assumptions: [
+      "Loss waterfall is well-defined but expensive",
+      "PRA stress-tests have anticipated some of this",
+      "Press will speculate on contagion regardless",
+    ],
+    coversDataIntegrity: true,
+    coversThirdParty: true,
+    durationMin: 180,
+  },
+  {
+    slug: "wealth-relationship-manager-rogue",
+    title: "Rogue wealth-RM advises clients into unauthorised investments",
+    sectors: ["banking", "asset-wealth"],
+    category: "People",
+    background:
+      "Routine quality-assurance flags a wealth-management RM advising clients into unsuitable / unauthorised investments. ~80 clients affected, ~£20M of unsuitable advice. FCA expects SUP 15 notification. Skilled-person review imminent. Some clients are HNW with media leverage.",
+    characteristics: [
+      "Individual-misconduct under SMCR",
+      "Mass-client redress, HNW concentration",
+      "Skilled-person review and reputation cost",
+    ],
+    assumptions: [
+      "Redress will likely run to eight figures",
+      "RM is suspended pending investigation",
+      "Press cycle is sustained and HNW-source-driven",
+    ],
+    coversPeople: true,
+    coversDataIntegrity: true,
+    durationMin: 150,
+  },
 ];

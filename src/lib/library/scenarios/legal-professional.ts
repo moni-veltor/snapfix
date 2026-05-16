@@ -95,4 +95,47 @@ export const LEGAL_PROFESSIONAL_SCENARIOS: LibraryScenario[] = [
     coversDataIntegrity: true,
     durationMin: 150,
   },
+  {
+    slug: "law-firm-court-filing-system-fail",
+    title: "Court e-filing system fails before a statutory deadline",
+    sectors: ["legal-professional"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "HMCTS / CE-File goes down on the afternoon of a deadline that several of the firm's matters need to hit. Paper-filing back-up is possible but slow and queues are forming. Risk of missing deadlines = client liability claims against the firm. Coordination with court clerks and opposing counsel needed in parallel.",
+    characteristics: [
+      "Third-party government-service failure on a regulatory clock",
+      "Per-matter risk: paper filings may not arrive in time",
+      "Professional-indemnity exposure if deadlines are missed",
+    ],
+    assumptions: [
+      "HMCTS will likely extend deadlines if outage is significant — but in writing only",
+      "Paper-filing queues 1-3 hours at affected court",
+      "Some matters can be filed by email under specific PD rules",
+    ],
+    coversTechnology: true,
+    coversThirdParty: true,
+    coversPeople: true,
+    durationMin: 120,
+  },
+  {
+    slug: "consultancy-knowledge-management-leak",
+    title: "Consultancy knowledge-management system leaks competitor case studies",
+    sectors: ["legal-professional"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "The consultancy's knowledge-management system (sharing past case studies internally) is accidentally configured to allow alumni / former-employee accounts read access. ~300 sensitive client case studies are downloadable for 3 weeks before discovery. Competitor recruitment of alumni amplifies the risk. Client-notification, ICO assessment and access-control overhaul all in parallel.",
+    characteristics: [
+      "Privileged-access misconfiguration with long dwell time",
+      "Alumni / competitor recruitment dimension",
+      "Bulk client-notification at sensitive trust level",
+    ],
+    assumptions: [
+      "Logs identify which alumni accessed what",
+      "Some former employees are now at competitors",
+      "ICO Tier-2 notification likely",
+    ],
+    coversDataIntegrity: true,
+    coversPeople: true,
+    durationMin: 150,
+  },
 ];

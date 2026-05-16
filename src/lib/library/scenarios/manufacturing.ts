@@ -139,4 +139,68 @@ export const MANUFACTURING_SCENARIOS: LibraryScenario[] = [
     coversThirdParty: true,
     durationMin: 180,
   },
+  {
+    slug: "ot-network-segregation-fail",
+    title: "OT network segregation gap exploited from corporate IT",
+    sectors: ["manufacturing"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "An attacker who phished a finance team member moves laterally from corporate IT into the OT segment via a misconfigured firewall rule. They reach a SCADA workstation but are detected before issuing process changes. Patch out, integrity-verify, post-incident review all required. NCSC and HSE engaged for safety-criticality review.",
+    characteristics: [
+      "IT-to-OT lateral movement intercepted just in time",
+      "Safety-of-life dimension averted",
+      "Firewall change-control failure",
+    ],
+    assumptions: [
+      "Detection happened pre-impact via OT-IDS",
+      "Forensic-scope across OT segment is multi-day",
+      "Insurance treats this as covered (no production loss)",
+    ],
+    coversTechnology: true,
+    coversDataIntegrity: true,
+    coversThirdParty: true,
+    durationMin: 180,
+  },
+  {
+    slug: "supply-chain-tariff-shock",
+    title: "Trade-policy tariff shock reprices components overnight",
+    sectors: ["manufacturing", "logistics", "retail-ecommerce"],
+    category: "Geopolitical & Macro",
+    background:
+      "A government announces 25% tariffs on a category of components used in the firm's main product line. Margin compression is immediate. Pre-tariff stock buffers the impact for 4-6 weeks; after that, prices rise or margins collapse. Decisions on alternative sourcing, pricing pass-through and inventory hoarding in parallel.",
+    characteristics: [
+      "Geopolitical-event multi-quarter impact",
+      "Pricing-and-procurement strategy under pressure",
+      "Customer relationship implications (price increases)",
+    ],
+    assumptions: [
+      "Buffer stock 4-6 weeks",
+      "Alternative sourcing 8-14 weeks",
+      "Customers will accept some price increase but not all",
+    ],
+    coversThirdParty: true,
+    durationMin: 150,
+  },
+  {
+    slug: "automotive-emissions-recall",
+    title: "Emissions software finding triggers a fleet-wide recall",
+    sectors: ["manufacturing"],
+    category: "Geopolitical & Macro",
+    background:
+      "A regulator's emissions test on an in-market vehicle reveals software-related compliance gap across ~250,000 units. Recall, fines, share-price impact and class-action exposure all converge. Decisions on technical fix, customer comms and litigation defence run in parallel.",
+    characteristics: [
+      "Regulator-driven recall with criminal-prosecution potential",
+      "Multi-billion liability exposure",
+      "Long-term reputational damage",
+    ],
+    assumptions: [
+      "Software fix is feasible but takes months to deploy",
+      "Government regulator demands transparent timeline",
+      "Class-action firms organising immediately",
+    ],
+    coversTechnology: true,
+    coversThirdParty: true,
+    coversDataIntegrity: true,
+    durationMin: 180,
+  },
 ];

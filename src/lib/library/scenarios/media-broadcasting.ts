@@ -180,4 +180,46 @@ export const MEDIA_BROADCASTING_SCENARIOS: LibraryScenario[] = [
     coversThirdParty: true,
     durationMin: 120,
   },
+  {
+    slug: "subtitling-vendor-failure",
+    title: "Captioning / subtitling vendor failure breaches Ofcom accessibility quota",
+    sectors: ["media-broadcasting"],
+    category: "Third Party",
+    background:
+      "The firm's captioning / subtitling vendor — used to meet Ofcom's accessibility quotas — suffers a multi-day systems failure. Compliance with statutory quotas at risk if recovery isn't fast. Alternative vendors exist but onboarding takes 5-7 days. Press / disability-advocacy attention significant.",
+    characteristics: [
+      "Statutory-accessibility quota at risk",
+      "Vendor-dependency without quick fallback",
+      "Disability-advocacy press dimension",
+    ],
+    assumptions: [
+      "Ofcom will accept a credible remediation plan",
+      "Alternative vendors at premium-cost emergency rates",
+      "Some live programming can't be captioned manually at scale",
+    ],
+    coversPeople: true,
+    coversThirdParty: true,
+    durationMin: 120,
+  },
+  {
+    slug: "rights-management-breach",
+    title: "Rights-management metadata breach during peak-season",
+    sectors: ["media-broadcasting"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "A misconfiguration in the rights-management metadata service incorrectly grants the firm's streaming platform broadcast rights for titles it doesn't actually license. Hundreds of episodes go live to subscribers for ~14 hours before discovery. Rights-holders escalate; some demand financial settlement. Reputation damage in the rights-acquisition market.",
+    characteristics: [
+      "Rights-management integrity failure",
+      "Multi-rights-holder commercial fallout",
+      "Long-term commercial-relationship damage",
+    ],
+    assumptions: [
+      "Episodes can be unpublished within an hour",
+      "Settlement negotiations vary by rights-holder",
+      "Insurance covers some but not all of the cost",
+    ],
+    coversDataIntegrity: true,
+    coversThirdParty: true,
+    durationMin: 150,
+  },
 ];

@@ -188,4 +188,47 @@ export const LOGISTICS_SCENARIOS: LibraryScenario[] = [
       impactScale: "6-day blockage, $54B daily trade impact",
     },
   },
+  {
+    slug: "tms-routing-error",
+    title: "Transport-management system mis-routes 6,000 shipments overnight",
+    sectors: ["logistics"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "A configuration error in the TMS overnight routes ~6,000 shipments to wrong distribution centres. Discovery happens at 06:30 as drivers begin loading. Mass-rerouting is feasible but adds 4-8 hours per shipment. Customer-promise breaches across multiple client retailers. SLA-credit exposure significant.",
+    characteristics: [
+      "Internal-system configuration error",
+      "Multi-client SLA impact",
+      "Time-critical recovery window",
+    ],
+    assumptions: [
+      "Re-routing logic can be applied centrally within 2 hours",
+      "Some shipments will miss promised delivery window regardless",
+      "SLA credits across all affected clients = mid-six-figures",
+    ],
+    coversTechnology: true,
+    coversThirdParty: true,
+    durationMin: 90,
+  },
+  {
+    slug: "container-mass-theft",
+    title: "Organised container theft from a UK distribution hub",
+    sectors: ["logistics"],
+    category: "People",
+    background:
+      "An organised gang penetrates the perimeter of a major UK distribution hub overnight and removes 14 containers including high-value electronics shipments. Insurance, police, security-review and client-comms all in parallel. Trade-press picks up the story; client confidence damaged.",
+    characteristics: [
+      "Physical-security event with criminal-investigation overlay",
+      "Insurance and police coordination",
+      "Trade-press reputational impact",
+    ],
+    assumptions: [
+      "Police investigation is multi-month",
+      "Insurance covers most of the loss subject to security-control review",
+      "Client-facing security audit will be requested",
+    ],
+    coversPeople: true,
+    coversProperty: true,
+    coversThirdParty: true,
+    durationMin: 120,
+  },
 ];

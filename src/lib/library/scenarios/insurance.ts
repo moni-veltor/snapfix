@@ -194,6 +194,27 @@ export const INSURANCE_SCENARIOS: LibraryScenario[] = [
     durationMin: 120,
   },
   {
+    slug: "pet-insurance-vet-network",
+    title: "Direct-claim vet network refuses to process — payment terms dispute",
+    sectors: ["insurance"],
+    category: "Third Party",
+    background:
+      "A nationwide vet chain that processes ~30% of the insurer's pet-claims via direct-claim arrangement withdraws from the agreement citing payment-term delays. Customers are now caught at the till: pay-and-claim rather than direct-claim. Customer experience and the network-relationship are both at stake.",
+    characteristics: [
+      "Channel-partner relationship breakdown",
+      "Customer point-of-sale impact",
+      "Press / customer-trust dimension",
+    ],
+    assumptions: [
+      "Alternative vet network exists but at lower coverage",
+      "Pay-and-claim adds friction but works",
+      "Settlement of payment-terms dispute will resolve, eventually",
+    ],
+    coversPeople: true,
+    coversThirdParty: true,
+    durationMin: 120,
+  },
+  {
     slug: "guidewire-cloud-outage",
     title: "Core PAS vendor (Guidewire / Duck Creek) cloud outage",
     sectors: ["insurance"],

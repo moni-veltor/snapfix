@@ -91,6 +91,45 @@ export const SECTOR_TONE: Record<Sector, string> = {
 };
 
 /**
+ * Quick-pick groupings used by library grid filter bars. Each group is a
+ * one-click way to filter to a cluster of related sectors. The library
+ * filter switches into "multi-select" mode when a group is applied —
+ * each underlying sector chip becomes a togglable refinement.
+ */
+export const SECTOR_GROUPS: Array<{ id: string; label: string; sectors: Sector[] }> = [
+  {
+    id: "financial-services",
+    label: "Financial services",
+    sectors: ["banking", "insurance", "asset-wealth", "payments-fintech"],
+  },
+  {
+    id: "cni",
+    label: "Critical national infrastructure",
+    sectors: ["energy-utilities", "telecoms", "aviation-transport", "healthcare"],
+  },
+  {
+    id: "public-sector",
+    label: "Public sector",
+    sectors: ["government", "healthcare", "higher-ed"],
+  },
+  {
+    id: "consumer",
+    label: "Consumer-facing",
+    sectors: ["retail-ecommerce", "media-broadcasting"],
+  },
+  {
+    id: "industrial",
+    label: "Industrial & supply chain",
+    sectors: ["manufacturing", "logistics"],
+  },
+  {
+    id: "tech-professional",
+    label: "Tech & professional services",
+    sectors: ["technology-saas", "legal-professional"],
+  },
+];
+
+/**
  * Sectors that lean on similar regulators / threat models — used by the
  * grid to suggest "if you're in X, also consider Y" filter chips.
  */

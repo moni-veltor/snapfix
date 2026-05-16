@@ -219,4 +219,48 @@ export const RETAIL_ECOMMERCE_SCENARIOS: LibraryScenario[] = [
     coversThirdParty: true,
     durationMin: 120,
   },
+  {
+    slug: "epos-firmware-bricks-tills",
+    title: "EPOS firmware update bricks ~40% of tills mid-Saturday",
+    sectors: ["retail-ecommerce", "payments-fintech"],
+    category: "Technology & Data (Cyber)",
+    background:
+      "A vendor-pushed firmware update to chip-and-PIN terminals bricks ~40% of units across the firm's estate during peak Saturday lunchtime. Cash-only operation in affected lanes; queues form; revenue drops. Vendor's remote rescue capability is partial; many units need engineer visits. Multi-day recovery.",
+    characteristics: [
+      "Vendor-firmware bricking event with field-engineering remediation",
+      "Estate-wide visibility on a peak day",
+      "Customer queues and abandonment",
+    ],
+    assumptions: [
+      "Engineer-visit capacity 200 units / day",
+      "Cash floats can be expanded but not infinitely",
+      "Vendor liability under contract is meaningful but capped",
+    ],
+    coversTechnology: true,
+    coversProperty: true,
+    coversThirdParty: true,
+    durationMin: 120,
+  },
+  {
+    slug: "marketplace-counterfeit-injunction",
+    title: "Court injunction demands marketplace removes 800 listings within 48 hours",
+    sectors: ["retail-ecommerce"],
+    category: "Geopolitical & Macro",
+    background:
+      "A luxury IP-holder obtains a court injunction requiring removal of ~800 counterfeit listings within 48 hours, banning the implicated sellers and freezing their balances. Trust-and-safety scrambles. Some flagged listings are false-positives. Legal-and-operational pressure simultaneous.",
+    characteristics: [
+      "Court-ordered takedown with hard deadline",
+      "Rights-holder over-blocking risk",
+      "Seller-relationship management at scale",
+    ],
+    assumptions: [
+      "Court deadline is firm; contempt-of-court risk",
+      "Some flagged listings are genuine",
+      "Press cycle is either 'counterfeits sold' or 'innocent sellers banned'",
+    ],
+    coversPeople: true,
+    coversThirdParty: true,
+    coversDataIntegrity: true,
+    durationMin: 120,
+  },
 ];
