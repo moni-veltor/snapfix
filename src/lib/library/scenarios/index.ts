@@ -3,6 +3,10 @@ import { BANKING_SCENARIOS } from "./banking";
 import { INSURANCE_SCENARIOS } from "./insurance";
 import { PAYMENTS_FINTECH_SCENARIOS } from "./payments-fintech";
 import { RETAIL_ECOMMERCE_SCENARIOS } from "./retail-ecommerce";
+import { TELECOMS_SCENARIOS } from "./telecoms";
+import { ENERGY_UTILITIES_SCENARIOS } from "./energy-utilities";
+import { HEALTHCARE_SCENARIOS } from "./healthcare";
+import { GOVERNMENT_SCENARIOS } from "./government";
 
 /**
  * Flattened catalogue of all library scenarios across sectors. Authored
@@ -16,6 +20,10 @@ export const LIBRARY_SCENARIOS: LibraryScenario[] = [
   ...INSURANCE_SCENARIOS,
   ...PAYMENTS_FINTECH_SCENARIOS,
   ...RETAIL_ECOMMERCE_SCENARIOS,
+  ...TELECOMS_SCENARIOS,
+  ...ENERGY_UTILITIES_SCENARIOS,
+  ...HEALTHCARE_SCENARIOS,
+  ...GOVERNMENT_SCENARIOS,
 ];
 
 export function libraryScenarioBySlug(slug: string): LibraryScenario | null {
