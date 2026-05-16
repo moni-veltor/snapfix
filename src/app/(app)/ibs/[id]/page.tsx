@@ -140,8 +140,16 @@ export default async function IBSDetailPage({
             </div>
             {ibs.outcome && <p className="mt-2 text-ink">{ibs.outcome}</p>}
           </div>
-          {canManage && (
-            <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/ibs/${ibs.id}/evidence-pack`}
+              className="rounded-md border border-line bg-surface-1 px-3 py-1.5 text-sm hover:border-line-strong hover:bg-surface-2"
+              title="Generate a regulator-ready evidence pack for this IBS — printable to PDF."
+            >
+              Evidence pack
+            </Link>
+            {canManage && (
+              <>
               <Link
                 href={`/ibs/${ibs.id}?edit=1`}
                 className="rounded-md border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-1"
@@ -182,8 +190,9 @@ export default async function IBSDetailPage({
                 <input type="hidden" name="id" value={ibs.id} />
                 <SubmitButton tone="danger" size="md">Delete</SubmitButton>
               </ToastForm>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </header>
 
