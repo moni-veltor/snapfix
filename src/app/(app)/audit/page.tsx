@@ -11,7 +11,7 @@ export default async function AuditPage() {
   const entries = await prisma.auditLogEntry.findMany({
     where: { orgId: me.orgId },
     orderBy: { createdAt: "desc" },
-    take: 500,
+    take: 2000,
     include: { actor: { select: { name: true, email: true } } },
   });
 
@@ -21,7 +21,7 @@ export default async function AuditPage() {
         eyebrow="Trace"
         icon={ScrollText}
         title="Audit log"
-        pitch={`Last ${entries.length} events. Surfaced for regulator and internal-audit traceability — filter by action, search by summary or actor.`}
+        pitch={`Last ${entries.length} events. Filter by action, actor or date range; export the filtered view as CSV for internal-audit and regulator submissions.`}
       />
       <AuditLogView entries={entries} />
     </div>
