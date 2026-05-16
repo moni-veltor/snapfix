@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Library } from "lucide-react";
+import { CalendarRange, FileText, Library } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import EmptyState from "@/components/EmptyState";
@@ -36,6 +36,13 @@ export default async function ScenariosPage() {
               >
                 <Library size={14} strokeWidth={2.2} />
                 Browse library
+              </Link>
+              <Link
+                href="/scenarios/programme"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                <CalendarRange size={14} strokeWidth={2.2} />
+                Programme
               </Link>
               <ScenarioAddButton />
             </div>

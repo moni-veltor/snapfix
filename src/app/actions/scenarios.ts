@@ -35,6 +35,59 @@ function coerceBool(v: FormDataEntryValue | null): boolean {
   return v === "on" || v === "true" || v === "1";
 }
 
+const ProgrammeSchema = z.object({
+  id: z.string().min(1),
+  programmeYear: z.coerce.number().int().min(2000).max(2100).optional().or(z.nan()),
+  programmeQuarter: z.coerce.number().int().min(1).max(4).optional().or(z.nan()),
+  regulatoryReq: z.string().max(500).optional(),
+  mandatoryUntil: z.string().optional(),
+});
+
+function nanToNull(v: number | undefined): number | null {
+  if (v === undefined) return null;
+  if (Number.isNaN(v)) return null;
+  return v;
+}
+
+/**
+ * Update a scenario's annual-programme slot. Used by the /scenarios/programme
+ * view to drag a scenario into a specific year + quarter, tag it with a
+ * regulatory commitment, or set a mandatory-by date.
+ */
+export async function updateScenarioProgrammeAction(formData: FormData) {
+  const user = await requireOrgRole("OWNER", "ADMIN");
+  const parsed = ProgrammeSchema.safeParse({
+    id: formData.get("id"),
+    programmeYear: formData.get("programmeYear") || undefined,
+    programmeQuarter: formData.get("programmeQuarter") || undefined,
+    regulatoryReq: formData.get("regulatoryReq") || undefined,
+    mandatoryUntil: formData.get("mandatoryUntil") || undefined,
+  });
+  if (!parsed.success) return;
+  const { id } = parsed.data;
+
+  const scenario = await prisma.scenario.findFirst({
+    where: { id, orgId: user.orgId },
+    select: { id: true },
+  });
+  if (!scenario) return;
+
+  await prisma.scenario.update({
+    where: { id },
+    data: {
+      programmeYear: nanToNull(parsed.data.programmeYear),
+      programmeQuarter: nanToNull(parsed.data.programmeQuarter),
+      regulatoryReq: parsed.data.regulatoryReq?.trim() || null,
+      mandatoryUntil: parsed.data.mandatoryUntil
+        ? new Date(parsed.data.mandatoryUntil)
+        : null,
+    },
+  });
+
+  revalidatePath(`/scenarios/${id}`);
+  revalidatePath("/scenarios/programme");
+}
+
 export async function createScenarioAction(formData: FormData) {
   const user = await requireOrgRole("OWNER", "ADMIN");
   const parsed = ScenarioInput.parse({

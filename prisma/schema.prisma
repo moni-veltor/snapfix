@@ -243,6 +243,13 @@ model Scenario {
   stressVariables       Json?
   caseStudy             Json? // { title, causation, impactScale, duration, sourceUrl? }
 
+  // Annual programme planning — which year + quarter this scenario is
+  // slotted into, and whether it satisfies a named regulatory commitment.
+  programmeYear     Int? // 2026
+  programmeQuarter  Int? // 1..4
+  regulatoryReq     String? // free text: "FCA SS1/21 annual cyber exercise", "BoE SSE 2026", etc.
+  mandatoryUntil    DateTime? // if set, the scenario must be exercised by this date
+
   // 6-box Risk Coverage matrix from the DSL
   coversPeople           Boolean @default(false)
   coversProperty         Boolean @default(false)
