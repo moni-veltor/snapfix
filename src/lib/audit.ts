@@ -8,6 +8,7 @@ export type AuditAction =
   | "team.added" | "team.removed"
   | "event.released" | "inject.released"
   | "ibs.created" | "ibs.updated" | "ibs.approved" | "ibs.deprecated" | "ibs.deleted" | "ibs.added-from-library"
+  | "ibs.attestation.requested" | "ibs.attestation.attested" | "ibs.attestation.rejected"
   | "vendor.added-from-library"
   | "system.added-from-library"
   | "scenario.added-from-library"

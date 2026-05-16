@@ -162,6 +162,7 @@ model User {
   bcpActivations          BCPActivation[]         @relation("BCPActivator")
   bcpDeactivations        BCPActivation[]         @relation("BCPDeactivator")
   defaultRoleHoldings     OrganizationRole[]      @relation("RoleDefaultHolder")
+  ibsAttestationsReviewed IBSAttestation[]        @relation("AttestationReviewer")
   heldSeats               ExerciseSeat[]          @relation("SeatHolder")
   chatMessages            ChatMessage[]           @relation("ChatAuthor")
   reactions               Reaction[]              @relation("ReactionAuthor")
@@ -790,6 +791,10 @@ model OrganizationIBS {
   ownerDepartmentId  String?
   ownerDepartment    Department? @relation("IBSOwnerDepartment", fields: [ownerDepartmentId], references: [id], onDelete: SetNull)
 
+  // Annual self-attestation chain (FCA SS1/21 expects an annual review
+  // signed by 1st-line, 2nd-line, and the executive accountable.)
+  attestations IBSAttestation[]
+
   // Methodology
   customerJourneys String[]
   productsCovered  String[]
@@ -839,6 +844,44 @@ model OrganizationIBS {
   vendorLinks   VendorIBSLink[]
 
   @@unique([orgId, code])
+}
+
+/// Three-line-of-defence attestation entry for an IBS. Each annual review
+/// produces one record per line that signs off — typically FIRST_LINE
+/// (process owner), SECOND_LINE (operational risk / oversight),
+/// EXECUTIVE (the SMF accountable executive). Read sequentially as a
+/// chain to determine the IBS's current attestation status.
+enum AttestationLine {
+  FIRST_LINE
+  SECOND_LINE
+  EXECUTIVE
+}
+
+enum AttestationStatus {
+  REQUESTED
+  ATTESTED
+  REJECTED
+}
+
+model IBSAttestation {
+  id     String          @id @default(cuid())
+  ibsId  String
+  ibs    OrganizationIBS @relation(fields: [ibsId], references: [id], onDelete: Cascade)
+  orgId  String // denormalised for cross-IBS queries
+  cycle  String // human label for the attestation cycle e.g. "2025-Q1", "2025-FY"
+  line   AttestationLine
+  status AttestationStatus @default(REQUESTED)
+
+  reviewerId String? // who attested / rejected — null for REQUESTED
+  reviewer   User?   @relation("AttestationReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  reviewedAt DateTime? // when the reviewer signed off / rejected
+  comment    String?
+  createdAt  DateTime  @default(now())
+
+  @@index([ibsId])
+  @@index([orgId, status])
+  @@unique([ibsId, cycle, line])
 }
 
 /// Which org-level IBSs an exercise is testing.

@@ -12,6 +12,7 @@ import DependencyMap from "@/components/ibs/DependencyMap";
 import ToleranceTester from "@/components/ibs/ToleranceTester";
 import HarmTypeLibrary from "@/components/ibs/HarmTypeLibrary";
 import IBSDetailTabs from "@/components/ibs/IBSDetailTabs";
+import IBSAttestationPanel from "@/components/ibs/IBSAttestationPanel";
 import ToastForm from "@/components/ui/ToastForm";
 import SubmitButton from "@/components/ui/SubmitButton";
 
@@ -34,6 +35,10 @@ export default async function IBSDetailPage({
       },
       processOwnerUser: { select: { name: true, email: true } },
       createdBy: { select: { name: true, email: true } },
+      attestations: {
+        orderBy: [{ cycle: "desc" }, { line: "asc" }],
+        include: { reviewer: { select: { name: true, email: true } } },
+      },
     },
   });
   if (!ibs) notFound();
@@ -195,6 +200,21 @@ export default async function IBSDetailPage({
           </div>
         </div>
       </header>
+
+      <IBSAttestationPanel
+        ibsId={ibs.id}
+        ibsCode={ibs.code}
+        canManage={canManage}
+        attestations={ibs.attestations.map((a) => ({
+          id: a.id,
+          cycle: a.cycle,
+          line: a.line,
+          status: a.status,
+          reviewer: a.reviewer,
+          reviewedAt: a.reviewedAt ? a.reviewedAt.toISOString() : null,
+          comment: a.comment,
+        }))}
+      />
 
       <IBSDetailTabs
         ibsId={ibs.id}
