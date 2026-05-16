@@ -7,6 +7,14 @@ import { TELECOMS_SCENARIOS } from "./telecoms";
 import { ENERGY_UTILITIES_SCENARIOS } from "./energy-utilities";
 import { HEALTHCARE_SCENARIOS } from "./healthcare";
 import { GOVERNMENT_SCENARIOS } from "./government";
+import { AVIATION_TRANSPORT_SCENARIOS } from "./aviation-transport";
+import { LOGISTICS_SCENARIOS } from "./logistics";
+import { ASSET_WEALTH_SCENARIOS } from "./asset-wealth";
+import { MEDIA_BROADCASTING_SCENARIOS } from "./media-broadcasting";
+import { HIGHER_ED_SCENARIOS } from "./higher-ed";
+import { MANUFACTURING_SCENARIOS } from "./manufacturing";
+import { TECHNOLOGY_SAAS_SCENARIOS } from "./technology-saas";
+import { LEGAL_PROFESSIONAL_SCENARIOS } from "./legal-professional";
 
 /**
  * Flattened catalogue of all library scenarios across sectors. Authored
@@ -24,6 +32,14 @@ export const LIBRARY_SCENARIOS: LibraryScenario[] = [
   ...ENERGY_UTILITIES_SCENARIOS,
   ...HEALTHCARE_SCENARIOS,
   ...GOVERNMENT_SCENARIOS,
+  ...AVIATION_TRANSPORT_SCENARIOS,
+  ...LOGISTICS_SCENARIOS,
+  ...ASSET_WEALTH_SCENARIOS,
+  ...MEDIA_BROADCASTING_SCENARIOS,
+  ...HIGHER_ED_SCENARIOS,
+  ...MANUFACTURING_SCENARIOS,
+  ...TECHNOLOGY_SAAS_SCENARIOS,
+  ...LEGAL_PROFESSIONAL_SCENARIOS,
 ];
 
 export function libraryScenarioBySlug(slug: string): LibraryScenario | null {
