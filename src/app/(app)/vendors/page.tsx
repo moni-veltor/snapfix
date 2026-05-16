@@ -6,6 +6,9 @@ import PageHero from "@/components/ui/PageHero";
 import DORAInsights from "@/components/vendors/DORAInsights";
 import VendorGrid from "@/components/vendors/VendorGrid";
 import VendorAddButton from "@/components/vendors/VendorAddButton";
+import VendorDoraExportButton, {
+  type DoraExportRow,
+} from "@/components/vendors/VendorDoraExportButton";
 import type { VendorLite } from "@/lib/dora";
 
 export default async function VendorsPage() {
@@ -26,6 +29,28 @@ export default async function VendorsPage() {
     }),
   ]);
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
+
+  const doraExportRows: DoraExportRow[] = vendors.map((v) => ({
+    id: v.id,
+    name: v.name,
+    description: v.description,
+    serviceKind: v.serviceKind,
+    tier: v.tier,
+    isDoraCritical: v.isDoraCritical,
+    doraIctTier: v.doraIctTier,
+    hyperscaler: v.hyperscaler,
+    region: v.region,
+    assuranceKind: v.assuranceKind,
+    assuranceExpiryAt: v.assuranceExpiryAt,
+    contractStartAt: v.contractStartAt,
+    contractEndAt: v.contractEndAt,
+    contractRenewalNoticeDays: v.contractRenewalNoticeDays,
+    contractAnnualValueGBP: v.contractAnnualValueGBP,
+    exitPlanReviewedAt: v.exitPlanReviewedAt,
+    exitPlanRTOMin: v.exitPlanRTOMin,
+    fourthParties: v.fourthParties,
+    ibsLinks: v.ibsLinks.map((l) => ({ ibs: { code: l.ibs.code, name: l.ibs.name } })),
+  }));
 
   const vendorsLite: VendorLite[] = vendors.map((v) => ({
     id: v.id,
@@ -57,7 +82,7 @@ export default async function VendorsPage() {
         pitch="Vendors that support your IBSs. Link each to the services it underpins so a vendor outage instantly surfaces the affected IBSs — and capture DORA fields below so the Register of Information stays current."
         actions={
           canManage ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/vendors/library"
                 className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
@@ -65,6 +90,7 @@ export default async function VendorsPage() {
                 <Library size={14} strokeWidth={2.2} />
                 Browse library
               </Link>
+              <VendorDoraExportButton vendors={doraExportRows} />
               <VendorAddButton />
             </div>
           ) : undefined
