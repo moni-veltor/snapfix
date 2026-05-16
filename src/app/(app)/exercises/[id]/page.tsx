@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { CheckCircle2, Target, XCircle } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { startExerciseAction, transitionToReadyAction } from "@/app/actions/exercises";
 import ArtefactList from "@/components/ArtefactList";
 import ArtefactUpload from "@/components/ArtefactUpload";
+import PageHero from "@/components/ui/PageHero";
 
 export default async function ExerciseOverviewPage({
   params,
@@ -84,62 +86,102 @@ export default async function ExerciseOverviewPage({
   ];
   const canMarkReady = readyChecks.every((c) => c.ok) && exercise.status === "PLANNING";
 
+  const readyCompleted = readyChecks.filter((c) => c.ok).length;
+  const readyTotal = readyChecks.length;
+
+  const heroMeta = (
+    <>
+      <span className="rounded-full bg-surface-2 px-2 py-0.5 font-medium text-ink">
+        {exercise.status}
+      </span>
+      {exercise.plannedDate && (
+        <> · Planned {exercise.plannedDate.toISOString().slice(0, 16).replace("T", " ")}</>
+      )}
+      {exercise.location && <> · {exercise.location}</>}
+      {" · "}Facilitator: {exercise.facilitator?.name ?? exercise.facilitator?.email ?? "—"}
+    </>
+  );
+
   return (
-    <div className="space-y-10">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted">
-            {exercise.scenario.title}
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{exercise.title}</h1>
-          {exercise.description && (
-            <p className="mt-2 max-w-2xl text-sm text-muted">{exercise.description}</p>
-          )}
-          <p className="mt-3 text-xs text-muted">
-            <span className="rounded-full bg-surface-2 px-2 py-0.5">{exercise.status}</span>
-            {exercise.plannedDate && (
-              <> · Planned {exercise.plannedDate.toISOString().slice(0, 16).replace("T", " ")}</>
+    <div className="space-y-6">
+      <PageHero
+        eyebrow={exercise.scenario.title}
+        icon={Target}
+        title={exercise.title}
+        pitch={
+          <>
+            {exercise.description && (
+              <span className="block">{exercise.description}</span>
             )}
-            {exercise.location && <> · {exercise.location}</>}
-            {" · "}Facilitator: {exercise.facilitator?.name ?? exercise.facilitator?.email ?? "—"}
-          </p>
-        </div>
-        {canManage && (
-          <div className="flex flex-col items-end gap-2">
+            <span className={`mt-1 block text-[11px] text-soft ${exercise.description ? "" : "mt-0"}`}>
+              {heroMeta}
+            </span>
+          </>
+        }
+        actions={
+          canManage ? (
             <Link
               href={`/exercises/${exercise.id}/team`}
-              className="rounded-md border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-1"
+              className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
             >
               Manage teams & people
             </Link>
+          ) : undefined
+        }
+      />
+
+      {/* Sticky transition bar — visible only when a transition is available */}
+      {canManage && (exercise.status === "PLANNING" || exercise.status === "READY") && (
+        <div className="sticky top-0 z-20 -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-elev/95 p-3 px-3 shadow-[var(--shadow-card)] backdrop-blur supports-[backdrop-filter]:bg-surface-elev/85">
+          <div className="flex items-center gap-3 text-xs">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 font-semibold uppercase tracking-wider text-muted">
+              {exercise.status}
+            </span>
             {exercise.status === "PLANNING" && (
-              <form action={transitionToReadyAction}>
-                <input type="hidden" name="id" value={exercise.id} />
-                <button
-                  disabled={!canMarkReady}
-                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm text-white disabled:bg-slate-300"
-                >
-                  Mark as Ready
-                </button>
-              </form>
+              <span className="text-muted">
+                <span className="font-medium text-ink">
+                  {readyCompleted} of {readyTotal}
+                </span>{" "}
+                readiness checks complete
+              </span>
             )}
             {exercise.status === "READY" && (
-              <form action={startExerciseAction} className="flex items-center gap-2">
-                <input type="hidden" name="id" value={exercise.id} />
-                <select name="speed" defaultValue="1" className="rounded border border-line-strong px-2 py-1 text-sm">
-                  <option value="1">×1 real-time</option>
-                  <option value="5">×5</option>
-                  <option value="15">×15</option>
-                  <option value="60">×60 (1 min = 1 D-Day hr)</option>
-                </select>
-                <button className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
-                  Start exercise
-                </button>
-              </form>
+              <span className="text-muted">All readiness checks passed — ready to go live.</span>
             )}
           </div>
-        )}
-      </header>
+          {exercise.status === "PLANNING" && (
+            <form action={transitionToReadyAction}>
+              <input type="hidden" name="id" value={exercise.id} />
+              <button
+                disabled={!canMarkReady}
+                className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white shadow-[var(--shadow-card)] hover:bg-emerald-500 disabled:bg-surface-2 disabled:text-soft disabled:shadow-none"
+              >
+                <CheckCircle2 size={14} />
+                Mark as Ready
+              </button>
+            </form>
+          )}
+          {exercise.status === "READY" && (
+            <form action={startExerciseAction} className="flex items-center gap-2">
+              <input type="hidden" name="id" value={exercise.id} />
+              <select
+                name="speed"
+                defaultValue="1"
+                className="rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-xs"
+              >
+                <option value="1">×1 real-time</option>
+                <option value="5">×5</option>
+                <option value="15">×15</option>
+                <option value="60">×60 (1 min = 1 D-Day hr)</option>
+              </select>
+              <button className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white shadow-[var(--shadow-card)] hover:-translate-y-px hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">
+                <Target size={14} />
+                Start exercise
+              </button>
+            </form>
+          )}
+        </div>
+      )}
 
       <section className="grid gap-6 md:grid-cols-3">
         <Stat label="Important Business Services" value={exercise.scenario._count.ibsList} />
@@ -178,17 +220,31 @@ export default async function ExerciseOverviewPage({
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Readiness checklist</h2>
+        <header className="flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold">Readiness checklist</h2>
+          <span className="text-xs text-muted">
+            <span className="font-medium text-ink">
+              {readyCompleted} of {readyTotal}
+            </span>{" "}
+            complete
+          </span>
+        </header>
         <ul className="grid gap-2 sm:grid-cols-2">
           {readyChecks.map((c) => (
             <li
               key={c.label}
-              className="flex items-center gap-2 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm"
+              className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${
+                c.ok
+                  ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/30"
+                  : "border-line bg-surface-1"
+              }`}
             >
-              <span
-                className={`inline-block h-3 w-3 rounded-full ${c.ok ? "bg-emerald-500" : "bg-slate-300"}`}
-              />
-              {c.label}
+              {c.ok ? (
+                <CheckCircle2 size={14} className="shrink-0 text-emerald-600 dark:text-emerald-300" />
+              ) : (
+                <XCircle size={14} className="shrink-0 text-soft" />
+              )}
+              <span className={c.ok ? "text-ink" : "text-muted"}>{c.label}</span>
             </li>
           ))}
         </ul>
