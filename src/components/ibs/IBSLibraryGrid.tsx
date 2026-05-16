@@ -19,6 +19,7 @@ import {
   type IBSCategory,
   type LibraryIBS,
 } from "@/lib/ibs-library";
+import { SECTORS, SECTOR_SHORT_LABEL, SECTOR_TONE, type Sector } from "@/lib/library/sectors";
 
 const TIER_LABEL: Record<string, string> = {
   TIER_1: "Tier 1",
@@ -35,6 +36,8 @@ const HARM_ICONS: { key: keyof LibraryIBS; label: string; icon: LucideIcon }[] =
   { key: "coversThirdParty", label: "3rd", icon: Boxes },
 ];
 
+const ACTIVE_FALLBACK_TONE = "bg-slate-900 text-white dark:bg-indigo-500";
+
 const CATEGORY_TONE: Record<string, string> = {
   Payments: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200",
   "Customer access": "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200",
@@ -46,6 +49,19 @@ const CATEGORY_TONE: Record<string, string> = {
   Support: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200",
   "Branch & cash": "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
   Treasury: "bg-violet-100 text-violet-800 dark:bg-violet-950/40 dark:text-violet-200",
+  // Cross-sector categories
+  "Energy supply": "bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200",
+  "Water supply": "bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200",
+  "Telecoms service": "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+  "Healthcare delivery": "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200",
+  "Government service": "bg-slate-200 text-slate-800 dark:bg-slate-800/60 dark:text-slate-200",
+  "Transport service": "bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200",
+  "Retail commerce": "bg-pink-100 text-pink-800 dark:bg-pink-950/40 dark:text-pink-200",
+  Logistics: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200",
+  "Education delivery": "bg-lime-100 text-lime-800 dark:bg-lime-950/40 dark:text-lime-200",
+  Manufacturing: "bg-stone-200 text-stone-800 dark:bg-stone-800/60 dark:text-stone-200",
+  "Media delivery": "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-200",
+  "Professional services": "bg-zinc-200 text-zinc-800 dark:bg-zinc-800/60 dark:text-zinc-200",
 };
 
 type Props = {
@@ -65,12 +81,14 @@ export default function IBSLibraryGrid({
     orgTier ?? "all",
   );
   const [categoryFilter, setCategoryFilter] = useState<"all" | IBSCategory>("all");
+  const [sectorFilter, setSectorFilter] = useState<"all" | Sector>("all");
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
     return library.filter((l) => {
       if (tierFilter !== "all" && !l.tiers.includes(tierFilter)) return false;
       if (categoryFilter !== "all" && l.category !== categoryFilter) return false;
+      if (sectorFilter !== "all" && !(l.sectors ?? []).includes(sectorFilter)) return false;
       const q = query.trim().toLowerCase();
       if (q) {
         const hay = `${l.name} ${l.outcome} ${l.category}`.toLowerCase();
@@ -78,11 +96,19 @@ export default function IBSLibraryGrid({
       }
       return true;
     });
-  }, [library, tierFilter, categoryFilter, query]);
+  }, [library, tierFilter, categoryFilter, sectorFilter, query]);
 
   const categoryCounts = useMemo(() => {
     const out: Record<string, number> = { all: library.length };
     for (const l of library) out[l.category] = (out[l.category] ?? 0) + 1;
+    return out;
+  }, [library]);
+
+  const sectorCounts = useMemo(() => {
+    const out: Record<string, number> = { all: library.length };
+    for (const l of library) {
+      for (const s of l.sectors ?? []) out[s] = (out[s] ?? 0) + 1;
+    }
     return out;
   }, [library]);
 
@@ -123,6 +149,55 @@ export default function IBSLibraryGrid({
         <button
           type="button"
           role="tab"
+          aria-selected={sectorFilter === "all"}
+          onClick={() => setSectorFilter("all")}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
+            sectorFilter === "all"
+              ? "bg-slate-900 text-white dark:bg-indigo-500"
+              : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
+          }`}
+        >
+          All sectors
+          <span
+            className={`rounded-full px-1.5 py-0 text-[9px] font-semibold ${
+              sectorFilter === "all" ? "bg-white/30 dark:bg-black/30" : "bg-surface-2 text-soft"
+            }`}
+          >
+            {sectorCounts.all}
+          </span>
+        </button>
+        {SECTORS.map((s) => {
+          const count = sectorCounts[s] ?? 0;
+          if (count === 0) return null;
+          const active = sectorFilter === s;
+          return (
+            <button
+              key={s}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setSectorFilter(s)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all ${
+                active ? SECTOR_TONE[s] : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
+              }`}
+            >
+              {SECTOR_SHORT_LABEL[s]}
+              <span
+                className={`rounded-full px-1.5 py-0 text-[9px] font-semibold ${
+                  active ? "bg-white/30 dark:bg-black/30" : "bg-surface-2 text-soft"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div role="tablist" className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          role="tab"
           aria-selected={categoryFilter === "all"}
           onClick={() => setCategoryFilter("all")}
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
@@ -152,7 +227,9 @@ export default function IBSLibraryGrid({
               aria-selected={active}
               onClick={() => setCategoryFilter(c)}
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                active ? CATEGORY_TONE[c] : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
+                active
+                  ? CATEGORY_TONE[c] ?? ACTIVE_FALLBACK_TONE
+                  : "bg-surface-1 text-muted hover:bg-surface-2 hover:text-ink"
               }`}
             >
               {c}
