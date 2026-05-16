@@ -125,8 +125,15 @@
   --shadow-card-lg: var(--shadow-lg);
   --shadow-card-glow: var(--shadow-glow);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Three-font system. next/font provides each as --font-*-primary; the
+     Tailwind tokens compose them with system fallbacks so a font-load
+     failure degrades to native UI instead of Times New Roman.
+       - font-sans    → body, labels, buttons        (General Sans)
+       - font-display → page heroes, severity badges (Space Grotesk)
+       - font-mono    → clocks, IDs, scores, audit   (JetBrains Mono) */
+  --font-sans: var(--font-sans-primary), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-display-primary), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-mono-primary), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 /* Semantic page-family zones. Each zone swaps `--accent` + `--accent-soft`
@@ -182,7 +189,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

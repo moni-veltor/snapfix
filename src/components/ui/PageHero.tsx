@@ -37,7 +37,7 @@ export default function PageHero({ eyebrow, title, pitch, icon: Icon, actions, c
               {eyebrow && <span>{eyebrow}</span>}
             </div>
           )}
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-ink">{title}</h1>
+          <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-ink">{title}</h1>
           {pitch && <p className="mt-2 max-w-2xl text-sm text-muted">{pitch}</p>}
         </div>
         {actions && <div className="shrink-0">{actions}</div>}

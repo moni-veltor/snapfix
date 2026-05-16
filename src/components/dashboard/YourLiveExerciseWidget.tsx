@@ -66,7 +66,7 @@ export default function YourLiveExerciseWidget({
                 </span>
                 Your exercise is live
               </p>
-              <h2 className="mt-2 text-xl font-semibold text-rose-900 dark:text-rose-100">
+              <h2 className="mt-2 font-display text-xl font-semibold text-rose-900 dark:text-rose-100">
                 {liveExercise.title}
               </h2>
               <p className="mt-1 text-sm text-rose-800 dark:text-rose-200">
