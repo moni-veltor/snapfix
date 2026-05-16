@@ -9,7 +9,6 @@ import {
   Database,
   HardDriveDownload,
   Layers,
-  X,
 } from "lucide-react";
 import { upsertTechSystemAction } from "@/app/actions/tech-recovery";
 import { withToast } from "@/lib/toast-action";
@@ -69,33 +68,20 @@ export default function SystemAddWizard({ onDone }: { onDone: () => void }) {
   });
 
   return (
-    <section className="space-y-4 rounded-xl border-2 border-dashed border-indigo-300 bg-surface-1 p-5 dark:border-indigo-700">
-      <header className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
-            Add a system
-          </p>
-          <h2 className="mt-0.5 text-base font-semibold text-ink">
-            {STEPS[step].label} · step {step + 1} of {STEPS.length}
-          </h2>
-          <p className="mt-1 text-xs text-muted">{STEPS[step].blurb}</p>
-        </div>
-        <button
-          type="button"
-          onClick={onDone}
-          aria-label="Cancel wizard"
-          className="rounded-md p-1 text-soft hover:bg-surface-2 hover:text-ink"
-        >
-          <X size={14} />
-        </button>
-      </header>
+    <div className="space-y-4">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
+          {STEPS[step].label} · step {step + 1} of {STEPS.length}
+        </p>
+        <p className="mt-1 text-xs text-muted">{STEPS[step].blurb}</p>
+      </div>
 
       <StepRail step={step} setStep={setStep} />
 
       <form
         action={async (fd) => {
-          await action(fd);
           onDone();
+          await action(fd);
         }}
         className="space-y-4 text-sm"
       >
@@ -142,7 +128,7 @@ export default function SystemAddWizard({ onDone }: { onDone: () => void }) {
           )}
         </footer>
       </form>
-    </section>
+    </div>
   );
 }
 

@@ -6,11 +6,8 @@ import {
   ArrowRight,
   Building2,
   Check,
-  ChevronDown,
-  ChevronUp,
   ClipboardCheck,
   FileSignature,
-  Plus,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -58,13 +55,13 @@ const STEPS: StepDef[] = [
 ];
 
 /**
- * Five-step add-vendor wizard. All fields render in the DOM (visually
- * hidden for inactive steps) so a single form submission carries every
- * value to `upsertVendorAction`. Back/Next are `type="button"` so they
- * never accidentally submit; only the final "Save" is a real submit.
+ * Five-step add-vendor wizard, designed to live inside a Modal. All
+ * fields render in the DOM (visually hidden for inactive steps) so a
+ * single form submission carries every value to `upsertVendorAction`.
+ * Back/Next are `type="button"`; only the final "Save" is a real submit.
+ * Parent owns open/close — we close on submit by calling `onDone()`.
  */
-export default function VendorAddWizard() {
-  const [open, setOpen] = useState(false);
+export default function VendorAddWizard({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
 
   const action = withToast(upsertVendorAction, {
@@ -73,57 +70,24 @@ export default function VendorAddWizard() {
     error: "Couldn't save vendor",
   });
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-line bg-surface-1 p-4 text-left transition-all hover:-translate-y-px hover:border-line-strong hover:bg-surface-2 hover:shadow-[var(--shadow-card-md)]"
-      >
-        <span className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-soft text-indigo-600 dark:text-indigo-300">
-            <Plus size={16} />
-          </span>
-          <span>
-            <span className="block text-sm font-semibold text-ink">Add a vendor manually</span>
-            <span className="block text-xs text-muted">
-              Five-step wizard — basics, DORA, contract, assurance, exit plan.
-            </span>
-          </span>
-        </span>
-        <ChevronDown size={14} className="text-soft" />
-      </button>
-    );
-  }
-
   return (
-    <section className="space-y-4 rounded-xl border border-line bg-surface-1 p-5">
-      <header className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
-            Add a vendor
-          </p>
-          <h2 className="mt-0.5 text-base font-semibold text-ink">
-            {STEPS[step].label} · step {step + 1} of {STEPS.length}
-          </h2>
-          <p className="mt-1 text-xs text-muted">{STEPS[step].blurb}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            setOpen(false);
-            setStep(0);
-          }}
-          aria-label="Collapse wizard"
-          className="rounded-md p-1 text-soft hover:bg-surface-2 hover:text-ink"
-        >
-          <ChevronUp size={14} />
-        </button>
-      </header>
+    <div className="space-y-4">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted">
+          {STEPS[step].label} · step {step + 1} of {STEPS.length}
+        </p>
+        <p className="mt-1 text-xs text-muted">{STEPS[step].blurb}</p>
+      </div>
 
       <StepRail step={step} setStep={setStep} />
 
-      <form action={action} className="space-y-4 text-sm">
+      <form
+        action={async (fd) => {
+          onDone();
+          await action(fd);
+        }}
+        className="space-y-4 text-sm"
+      >
         <div className={step === 0 ? "" : "hidden"}>
           <BasicsStep />
         </div>
@@ -170,7 +134,7 @@ export default function VendorAddWizard() {
           )}
         </footer>
       </form>
-    </section>
+    </div>
   );
 }
 

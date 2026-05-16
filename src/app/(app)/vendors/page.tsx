@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import DORAInsights from "@/components/vendors/DORAInsights";
 import VendorGrid from "@/components/vendors/VendorGrid";
-import VendorAddWizard from "@/components/vendors/VendorAddWizard";
+import VendorAddButton from "@/components/vendors/VendorAddButton";
 import type { VendorLite } from "@/lib/dora";
 
 export default async function VendorsPage() {
@@ -57,13 +57,16 @@ export default async function VendorsPage() {
         pitch="Vendors that support your IBSs. Link each to the services it underpins so a vendor outage instantly surfaces the affected IBSs — and capture DORA fields below so the Register of Information stays current."
         actions={
           canManage ? (
-            <Link
-              href="/vendors/library"
-              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-            >
-              <Library size={13} />
-              Browse vendor library
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/vendors/library"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                <Library size={14} strokeWidth={2.2} />
+                Browse library
+              </Link>
+              <VendorAddButton />
+            </div>
           ) : undefined
         }
       />
@@ -74,7 +77,7 @@ export default async function VendorsPage() {
         <div className="rounded-xl border border-dashed border-line-strong bg-surface-1 p-8 text-center text-sm text-muted">
           No vendors yet.{" "}
           {canManage
-            ? "Start from the library above — or add one manually with the wizard below."
+            ? "Start from the library — or use the Add vendor button up top."
             : "Ask an admin to add the firm's critical third parties."}
         </div>
       ) : (
@@ -104,8 +107,6 @@ export default async function VendorsPage() {
           canManage={canManage}
         />
       )}
-
-      {canManage && <VendorAddWizard />}
     </div>
   );
 }

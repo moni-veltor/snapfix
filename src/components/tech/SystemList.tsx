@@ -11,14 +11,12 @@ import {
   Server,
   ShieldAlert,
   Trash2,
-  X,
 } from "lucide-react";
 import {
   deleteTechSystemAction,
   logDRTestAction,
   upsertTechSystemAction,
 } from "@/app/actions/tech-recovery";
-import SystemAddWizard from "@/components/tech/SystemAddWizard";
 import {
   FAILOVER_LABEL,
   SYSTEM_KIND_LABEL,
@@ -45,7 +43,6 @@ const TIER_FILTERS: { id: TierFilter; label: string }[] = [
 ];
 
 export default function SystemList({ systems, canManage }: Props) {
-  const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [logging, setLogging] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -77,19 +74,6 @@ export default function SystemList({ systems, canManage }: Props) {
     <section className="space-y-3">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-ink">Systems</h2>
-        {canManage && (
-          <button
-            type="button"
-            onClick={() => {
-              setCreating((v) => !v);
-              setEditingId(null);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-          >
-            {creating ? <X size={12} /> : <Plus size={12} />}
-            {creating ? "Cancel" : "Add system"}
-          </button>
-        )}
       </header>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -131,8 +115,6 @@ export default function SystemList({ systems, canManage }: Props) {
         </div>
       </div>
 
-      {creating && <SystemAddWizard onDone={() => setCreating(false)} />}
-
       {filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line bg-surface-1 p-8 text-center text-sm text-muted">
           No systems match this view.
@@ -150,10 +132,7 @@ export default function SystemList({ systems, canManage }: Props) {
                   expanded={expandedId === s.id}
                   logging={logging === s.id}
                   onToggle={() => setExpandedId(expandedId === s.id ? null : s.id)}
-                  onEdit={() => {
-                    setEditingId(s.id);
-                    setCreating(false);
-                  }}
+                  onEdit={() => setEditingId(s.id)}
                   onLogOpen={() => setLogging(s.id)}
                   onLogClose={() => setLogging(null)}
                 />
