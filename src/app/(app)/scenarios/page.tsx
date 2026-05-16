@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Library, Plus } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import EmptyState from "@/components/EmptyState";
@@ -28,13 +28,22 @@ export default async function ScenariosPage() {
         pitch="Your authored scenarios — the MSEL events and injects that get played out in an exercise. Clone one from the CMORG library or author your own."
         actions={
           isFacilitator && (
-            <Link
-              href="/scenarios/new"
-              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
-            >
-              <Plus size={14} strokeWidth={2.4} />
-              New scenario
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/scenarios/library"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                <Library size={14} strokeWidth={2.2} />
+                Browse library
+              </Link>
+              <Link
+                href="/scenarios/new"
+                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
+              >
+                <Plus size={14} strokeWidth={2.4} />
+                New scenario
+              </Link>
+            </div>
           )
         }
       />
