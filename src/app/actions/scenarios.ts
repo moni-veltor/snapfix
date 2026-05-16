@@ -14,7 +14,26 @@ const ScenarioInput = z.object({
   agenda: z.string().optional(),
   dDayDate: z.string().min(1),
   durationMin: z.coerce.number().int().min(15).max(60 * 24),
+  // Optional CMORG framing — populated by the rich wizard, omitted by the
+  // legacy form. The action accepts both.
+  category: z.string().optional(),
+  tier: z.enum(["TIER_1", "TIER_2", "TIER_3"]).optional(),
+  characteristics: z.string().optional(), // newline-separated
+  assumptions: z.string().optional(), // newline-separated
+  takeaways: z.string().optional(),
 });
+
+function splitLines(s?: string): string[] {
+  if (!s) return [];
+  return s
+    .split(/[\n,]/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+function coerceBool(v: FormDataEntryValue | null): boolean {
+  return v === "on" || v === "true" || v === "1";
+}
 
 export async function createScenarioAction(formData: FormData) {
   const user = await requireOrgRole("OWNER", "ADMIN");
@@ -24,13 +43,32 @@ export async function createScenarioAction(formData: FormData) {
     agenda: formData.get("agenda") || undefined,
     dDayDate: formData.get("dDayDate"),
     durationMin: formData.get("durationMin"),
+    category: formData.get("category") || undefined,
+    tier: formData.get("tier") || undefined,
+    characteristics: formData.get("characteristics") || undefined,
+    assumptions: formData.get("assumptions") || undefined,
+    takeaways: formData.get("takeaways") || undefined,
   });
   const scenario = await prisma.scenario.create({
     data: {
-      ...parsed,
+      title: parsed.title,
+      background: parsed.background,
+      agenda: parsed.agenda ?? null,
       dDayDate: new Date(parsed.dDayDate),
+      durationMin: parsed.durationMin,
       orgId: user.orgId,
       createdById: user.id,
+      category: parsed.category ?? null,
+      tier: parsed.tier ?? null,
+      characteristics: splitLines(parsed.characteristics),
+      assumptions: splitLines(parsed.assumptions),
+      takeaways: parsed.takeaways ?? null,
+      coversPeople: coerceBool(formData.get("coversPeople")),
+      coversProperty: coerceBool(formData.get("coversProperty")),
+      coversTechnology: coerceBool(formData.get("coversTechnology")),
+      coversDataAvailability: coerceBool(formData.get("coversDataAvailability")),
+      coversDataIntegrity: coerceBool(formData.get("coversDataIntegrity")),
+      coversThirdParty: coerceBool(formData.get("coversThirdParty")),
     },
   });
   redirect(`/scenarios/${scenario.id}`);

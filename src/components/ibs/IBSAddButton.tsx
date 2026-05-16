@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import IBSForm from "@/components/IBSForm";
@@ -30,6 +31,13 @@ export default function IBSAddButton({
   label = "Add IBS",
 }: Props) {
   const [open, setOpen] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // External-state bridge — see comment in ScenarioAddButton.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (searchParams.get("new") === "1") setOpen(true);
+  }, [searchParams]);
 
   const cls =
     variant === "primary"

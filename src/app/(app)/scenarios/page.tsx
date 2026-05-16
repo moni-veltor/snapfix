@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { FileText, Library, Plus } from "lucide-react";
+import { FileText, Library } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import EmptyState from "@/components/EmptyState";
 import PageHero from "@/components/ui/PageHero";
 import { ScenariosIllustration } from "@/components/illustrations/Illustrations";
 import ScenarioGrid from "@/components/scenarios/ScenarioGrid";
+import ScenarioAddButton from "@/components/scenarios/ScenarioAddButton";
 
 export default async function ScenariosPage() {
   const user = await requireOrgUser();
@@ -36,13 +37,7 @@ export default async function ScenariosPage() {
                 <Library size={14} strokeWidth={2.2} />
                 Browse library
               </Link>
-              <Link
-                href="/scenarios/new"
-                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
-              >
-                <Plus size={14} strokeWidth={2.4} />
-                New scenario
-              </Link>
+              <ScenarioAddButton />
             </div>
           )
         }
@@ -58,7 +53,7 @@ export default async function ScenariosPage() {
           }
           ctaHref={isFacilitator ? "/templates" : undefined}
           ctaLabel={isFacilitator ? "Open library" : undefined}
-          secondaryHref={isFacilitator ? "/scenarios/new" : undefined}
+          secondaryHref={isFacilitator ? "/scenarios?new=1" : undefined}
           secondaryLabel={isFacilitator ? "Author from scratch" : undefined}
         />
       ) : (

@@ -1,24 +1,37 @@
-import Link from "next/link";
-import { Target, Plus } from "lucide-react";
+import { Target } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import EmptyState from "@/components/EmptyState";
 import PageHero from "@/components/ui/PageHero";
 import { ExercisesIllustration } from "@/components/illustrations/Illustrations";
 import ExerciseGrid from "@/components/exercises/ExerciseGrid";
+import ExerciseAddButton from "@/components/exercises/ExerciseAddButton";
 
 export default async function ExercisesPage() {
   const user = await requireOrgUser();
-  const exercises = await prisma.exercise.findMany({
-    where: { orgId: user.orgId },
-    orderBy: [{ status: "asc" }, { plannedDate: "asc" }, { createdAt: "desc" }],
-    include: {
-      scenario: { select: { title: true } },
-      facilitator: { select: { name: true, email: true } },
-      _count: { select: { participants: true, teams: true } },
-    },
-  });
+  const [exercises, scenarios] = await Promise.all([
+    prisma.exercise.findMany({
+      where: { orgId: user.orgId },
+      orderBy: [{ status: "asc" }, { plannedDate: "asc" }, { createdAt: "desc" }],
+      include: {
+        scenario: { select: { title: true } },
+        facilitator: { select: { name: true, email: true } },
+        _count: { select: { participants: true, teams: true } },
+      },
+    }),
+    prisma.scenario.findMany({
+      where: { orgId: user.orgId, isTemplate: false },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true, dDayDate: true },
+    }),
+  ]);
   const canCreate = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
+
+  const scenarioOptions = scenarios.map((s) => ({
+    id: s.id,
+    title: s.title,
+    dDayDate: s.dDayDate.toISOString(),
+  }));
 
   return (
     <div className="space-y-6">
@@ -27,17 +40,7 @@ export default async function ExercisesPage() {
         icon={Target}
         title="Exercises"
         pitch="Where scenarios meet your team. Plan it, run it live with a D-Day clock, debrief honestly, learn fast."
-        actions={
-          canCreate && (
-            <Link
-              href="/exercises/new"
-              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
-            >
-              <Plus size={14} strokeWidth={2.4} />
-              Plan an exercise
-            </Link>
-          )
-        }
+        actions={canCreate && <ExerciseAddButton scenarios={scenarioOptions} />}
       />
       {exercises.length === 0 ? (
         <EmptyState
@@ -48,7 +51,7 @@ export default async function ExercisesPage() {
               ? "Pick a scenario, set a date, assemble the team. The platform handles the D-Day clock, the addressed inbox and the read-receipt grid."
               : "Your team hasn't planned an exercise yet. When they do, you'll see it here."
           }
-          ctaHref={canCreate ? "/exercises/new" : undefined}
+          ctaHref={canCreate ? "/exercises?new=1" : undefined}
           ctaLabel={canCreate ? "Plan an exercise" : undefined}
           secondaryHref={canCreate ? "/templates" : undefined}
           secondaryLabel={canCreate ? "Browse scenarios" : undefined}

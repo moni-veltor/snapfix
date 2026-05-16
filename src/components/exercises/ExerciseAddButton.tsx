@@ -2,17 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus } from "lucide-react";
+import { CalendarPlus } from "lucide-react";
 import Modal from "@/components/ui/Modal";
-import SystemAddWizard from "@/components/tech/SystemAddWizard";
+import ExerciseAddWizard from "@/components/exercises/ExerciseAddWizard";
+
+type Scenario = { id: string; title: string; dDayDate: string };
+
+type Props = {
+  scenarios: Scenario[];
+};
 
 /**
- * Top-right "Add system" entry point used in the /tech-recovery hero.
- * Opens the 4-step SystemAddWizard inside a modal; the wizard closes
- * itself on submit via the onDone callback. Auto-opens when `?new=1`
- * is in the URL so deep-links from the Compose menu land directly on it.
+ * Top-right "Plan exercise" entry point used in the /exercises hero.
+ * Auto-opens when `?new=1` is present so deep-links from the global
+ * Compose menu land directly on the modal.
  */
-export default function SystemAddButton() {
+export default function ExerciseAddButton({ scenarios }: Props) {
   const [open, setOpen] = useState(false);
   const searchParams = useSearchParams();
 
@@ -29,17 +34,17 @@ export default function SystemAddButton() {
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
       >
-        <Plus size={14} strokeWidth={2.4} />
-        Add system
+        <CalendarPlus size={14} strokeWidth={2.4} />
+        Plan exercise
       </button>
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Add a system"
-        subtitle="Four-step wizard — basics, objectives, failover, backups."
+        title="Plan a new exercise"
+        subtitle="Three-step wizard — scenario, schedule, details."
         size="lg"
       >
-        <SystemAddWizard onDone={() => setOpen(false)} />
+        <ExerciseAddWizard scenarios={scenarios} onDone={() => setOpen(false)} />
       </Modal>
     </>
   );

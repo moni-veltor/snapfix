@@ -4,20 +4,21 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import Modal from "@/components/ui/Modal";
-import SystemAddWizard from "@/components/tech/SystemAddWizard";
+import ScenarioAddWizard from "@/components/scenarios/ScenarioAddWizard";
 
 /**
- * Top-right "Add system" entry point used in the /tech-recovery hero.
- * Opens the 4-step SystemAddWizard inside a modal; the wizard closes
- * itself on submit via the onDone callback. Auto-opens when `?new=1`
- * is in the URL so deep-links from the Compose menu land directly on it.
+ * Top-right "New scenario" entry point used in the /scenarios hero.
+ * Auto-opens when `?new=1` is present so deep-links from the global
+ * Compose menu land directly on the modal.
  */
-export default function SystemAddButton() {
+export default function ScenarioAddButton() {
   const [open, setOpen] = useState(false);
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // External-state bridge — see comment in ScenarioAddButton.
+    // One-shot URL → local-state sync on mount and on URL change. The
+    // setState lint rule is conservative here: this is an external-state
+    // bridge, not a derived-state cascade.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (searchParams.get("new") === "1") setOpen(true);
   }, [searchParams]);
@@ -30,16 +31,16 @@ export default function SystemAddButton() {
         className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
       >
         <Plus size={14} strokeWidth={2.4} />
-        Add system
+        New scenario
       </button>
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Add a system"
-        subtitle="Four-step wizard — basics, objectives, failover, backups."
+        title="Create a new scenario"
+        subtitle="Three-step wizard — identity, CMORG framing, risk coverage."
         size="lg"
       >
-        <SystemAddWizard onDone={() => setOpen(false)} />
+        <ScenarioAddWizard onDone={() => setOpen(false)} />
       </Modal>
     </>
   );
