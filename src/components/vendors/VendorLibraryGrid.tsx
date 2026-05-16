@@ -16,6 +16,7 @@ import {
   type LibraryVendor,
   type VendorCategory,
 } from "@/lib/vendor-library";
+import { SECTORS, SECTOR_SHORT_LABEL, SECTOR_TONE, type Sector } from "@/lib/library/sectors";
 
 const TIER_LABEL: Record<string, string> = {
   TIER_1: "Tier 1",
@@ -37,6 +38,18 @@ const CATEGORY_TONE: Record<VendorCategory, string> = {
   Communications: "bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200",
   "Customer & CRM": "bg-lime-100 text-lime-800 dark:bg-lime-950/40 dark:text-lime-200",
   Treasury: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-200",
+  "Energy & utilities": "bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200",
+  "Telecoms infra": "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+  "Healthcare IT": "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200",
+  "Retail & ecommerce": "bg-pink-100 text-pink-800 dark:bg-pink-950/40 dark:text-pink-200",
+  "Transport & travel": "bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200",
+  "Logistics & shipping": "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200",
+  "Government IT": "bg-slate-200 text-slate-800 dark:bg-slate-800/60 dark:text-slate-200",
+  "Education tech": "bg-lime-100 text-lime-800 dark:bg-lime-950/40 dark:text-lime-200",
+  "Media & broadcast": "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-200",
+  "Manufacturing & industrial": "bg-stone-200 text-stone-800 dark:bg-stone-800/60 dark:text-stone-200",
+  Cybersecurity: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-200",
+  "Productivity & HR": "bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-200",
 };
 
 const ASSURANCE_LABEL: Record<string, string> = {
@@ -59,6 +72,7 @@ export default function VendorLibraryGrid({
 }: Props) {
   const [tierFilter, setTierFilter] = useState<"all" | "TIER_1" | "TIER_2" | "TIER_3">("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | VendorCategory>("all");
+  const [sectorFilter, setSectorFilter] = useState<"all" | Sector>("all");
   const [doraOnly, setDoraOnly] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -66,6 +80,7 @@ export default function VendorLibraryGrid({
     return library.filter((v) => {
       if (tierFilter !== "all" && v.suggestedTier !== tierFilter) return false;
       if (categoryFilter !== "all" && v.category !== categoryFilter) return false;
+      if (sectorFilter !== "all" && !(v.sectors ?? []).includes(sectorFilter)) return false;
       if (doraOnly && !v.isDoraCritical) return false;
       const q = query.trim().toLowerCase();
       if (q) {
@@ -74,11 +89,19 @@ export default function VendorLibraryGrid({
       }
       return true;
     });
-  }, [library, tierFilter, categoryFilter, doraOnly, query]);
+  }, [library, tierFilter, categoryFilter, sectorFilter, doraOnly, query]);
 
   const categoryCounts = useMemo(() => {
     const out: Record<string, number> = { all: library.length };
     for (const v of library) out[v.category] = (out[v.category] ?? 0) + 1;
+    return out;
+  }, [library]);
+
+  const sectorCounts = useMemo(() => {
+    const out: Record<string, number> = { all: library.length };
+    for (const v of library) {
+      for (const s of v.sectors ?? []) out[s] = (out[s] ?? 0) + 1;
+    }
     return out;
   }, [library]);
 
@@ -123,6 +146,29 @@ export default function VendorLibraryGrid({
           <Shield size={11} />
           DORA-critical only
         </label>
+      </div>
+
+      <div role="tablist" className="flex flex-wrap gap-1.5">
+        <CategoryChip
+          label="All sectors"
+          count={sectorCounts.all}
+          active={sectorFilter === "all"}
+          onClick={() => setSectorFilter("all")}
+        />
+        {SECTORS.map((s) => {
+          const count = sectorCounts[s] ?? 0;
+          if (count === 0) return null;
+          return (
+            <CategoryChip
+              key={s}
+              label={SECTOR_SHORT_LABEL[s]}
+              count={count}
+              active={sectorFilter === s}
+              tone={SECTOR_TONE[s]}
+              onClick={() => setSectorFilter(s)}
+            />
+          );
+        })}
       </div>
 
       <div role="tablist" className="flex flex-wrap gap-1.5">
