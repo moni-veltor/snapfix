@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Crown, Users as UsersIcon } from "lucide-react";
+import { Building2, Crown, Users as UsersIcon } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
@@ -62,6 +62,13 @@ export default async function OrgPage() {
         actions={
           canManage ? (
             <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/org/departments"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                <Building2 size={14} strokeWidth={2.2} />
+                Departments
+              </Link>
               <Link
                 href="/org/roles"
                 className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"

@@ -48,6 +48,45 @@ model Organization {
   vendors       Vendor[]
   roles         OrganizationRole[]
   techSystems   TechSystem[]
+  departments   Department[]
+}
+
+/// Departmental org-chart node — a business unit / team / function. Separate
+/// from the IMT role catalogue (`OrganizationRole`): roles are *who sits in
+/// the war-room during an exercise*; departments are *where you sit in the
+/// org chart day-to-day*. An IBS can be owned end-to-end by a department;
+/// a user can sit in a department. Nestable via parentId for true org-chart
+/// hierarchy.
+model Department {
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  name        String // "Retail Banking Technology"
+  abbreviation String? // "RBT"
+  description String? // 1-line purpose statement
+  orderIdx    Int    @default(0)
+
+  // Hierarchy — null parent = top-level department
+  parentId String?
+  parent   Department?  @relation("DepartmentTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Department[] @relation("DepartmentTree")
+
+  // Lead — the named director / head accountable for the department.
+  leadId String?
+  lead   User?   @relation("DepartmentLead", fields: [leadId], references: [id], onDelete: SetNull)
+
+  // Members of this department.
+  members User[] @relation("DepartmentMember")
+
+  // IBSs owned end-to-end by this department.
+  ownedIBS OrganizationIBS[] @relation("IBSOwnerDepartment")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, name])
+  @@index([orgId])
 }
 
 model Invitation {
@@ -89,6 +128,11 @@ model User {
   orgId   String?
   org     Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
   orgRole OrgRole?
+
+  // Departmental org-chart membership (optional, separate from IMT roles).
+  departmentId String?
+  department   Department? @relation("DepartmentMember", fields: [departmentId], references: [id], onDelete: SetNull)
+  ledDepartments Department[] @relation("DepartmentLead")
 
   accounts Account[]
   sessions Session[]
@@ -741,6 +785,10 @@ model OrganizationIBS {
   secondLineReviewer String?
   approvedAt         DateTime?
   reviewDueAt        DateTime?
+
+  // Departmental ownership — which business unit owns this IBS end-to-end.
+  ownerDepartmentId  String?
+  ownerDepartment    Department? @relation("IBSOwnerDepartment", fields: [ownerDepartmentId], references: [id], onDelete: SetNull)
 
   // Methodology
   customerJourneys String[]
