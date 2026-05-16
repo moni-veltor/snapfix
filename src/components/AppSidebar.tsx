@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
-  BookMarked,
   FileText,
   Target,
   Calendar,
@@ -51,7 +50,6 @@ type NavItem = {
 
 const PRIMARY: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/templates", label: "Library", icon: BookMarked },
   { href: "/scenarios", label: "Scenarios", icon: FileText },
   { href: "/exercises", label: "Exercises", icon: Target },
   { href: "/calendar", label: "Calendar", icon: Calendar },
@@ -104,6 +102,8 @@ export default function AppSidebar({
   useEffect(() => {
     try {
       const stored = localStorage.getItem("snapfix.sidebar.collapsed");
+      // External-state bridge — one-shot hydration on mount.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (stored === "1") setCollapsed(true);
     } catch {
       /* localStorage unavailable */
