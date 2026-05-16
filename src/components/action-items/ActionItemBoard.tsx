@@ -66,8 +66,14 @@ const STATUS_TONE: Record<string, string> = {
   WONT_FIX: "bg-surface-2 text-muted",
 };
 
-export default function ActionItemBoard({ items }: { items: ActionItemRow[] }) {
-  const [filter, setFilter] = useState<Filter>("open");
+export default function ActionItemBoard({
+  items,
+  defaultFilter = "open",
+}: {
+  items: ActionItemRow[];
+  defaultFilter?: Filter;
+}) {
+  const [filter, setFilter] = useState<Filter>(defaultFilter);
   const [query, setQuery] = useState("");
   // Stable "now" — captured once at mount, not on every render.
   const [now] = useState(() => Date.now());
