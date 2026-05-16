@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { BarChart3 } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import PageHero from "@/components/ui/PageHero";
 import IBSCoverageHeatmap from "@/components/analytics/IBSCoverageHeatmap";
 
 export const metadata = { title: "Coverage Analytics — SnapFix" };
@@ -149,13 +151,13 @@ export default async function AnalyticsPage() {
   const untestedIBS = ibsRegister.filter((i) => i._count.exerciseLinks === 0);
 
   return (
-    <div className="space-y-10">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Coverage analytics</h1>
-        <p className="mt-1 text-sm text-muted">
-          What your scenario library can test vs. what you've actually exercised.
-        </p>
-      </header>
+    <div className="space-y-8">
+      <PageHero
+        eyebrow="Programme"
+        icon={BarChart3}
+        title="Coverage analytics"
+        pitch="What your scenario library can test vs. what you've actually exercised. Spot the gaps a regulator will ask about."
+      />
 
       <Section
         title="IBS × risk-dimension coverage"

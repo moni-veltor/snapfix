@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Crown } from "lucide-react";
+import { Crown, Users as UsersIcon } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import InviteForm from "./InviteForm";
+import PageHero from "@/components/ui/PageHero";
+import OrgInviteButton from "./OrgInviteButton";
 import {
   changeRoleAction,
   removeMemberAction,
@@ -46,32 +47,32 @@ export default async function OrgPage() {
   ]);
 
   return (
-    <div className="space-y-10">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{org.name}</h1>
-          <p className="mt-1 text-sm text-muted">
+    <div className="space-y-6">
+      <PageHero
+        eyebrow="Admin"
+        icon={UsersIcon}
+        title={org.name}
+        pitch={
+          <>
             {members.length} {members.length === 1 ? "member" : "members"} · You are{" "}
             <span className="font-medium text-ink">{me.orgRole}</span>
-          </p>
-        </div>
-        {canManage && (
-          <Link
-            href="/org/roles"
-            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-1.5 text-xs font-medium text-ink hover:border-line-strong hover:bg-surface-2"
-          >
-            <Crown size={12} />
-            Manage role catalogue
-          </Link>
-        )}
-      </header>
-
-      {canManage && (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Invite a teammate</h2>
-          <InviteForm />
-        </section>
-      )}
+          </>
+        }
+        actions={
+          canManage ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/org/roles"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                <Crown size={14} strokeWidth={2.2} />
+                Role catalogue
+              </Link>
+              <OrgInviteButton />
+            </div>
+          ) : undefined
+        }
+      />
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Members</h2>

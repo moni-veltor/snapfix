@@ -86,7 +86,7 @@ export default function ComposeMenu({ canManage }: Props) {
           {canManage && (
             <Group label="People">
               <Item href="/org/roles" icon={Users} label="Add role" />
-              <Item href="/org" icon={UserPlus} label="Invite teammate" />
+              <Item href="/org?invite=1" icon={UserPlus} label="Invite teammate" />
               <Item href="/exercises?new=1" icon={CalendarPlus} label="Schedule exercise" />
             </Group>
           )}
