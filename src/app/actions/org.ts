@@ -173,6 +173,174 @@ const ChangeRoleSchema = z.object({
   role: z.enum(["OWNER", "ADMIN", "MEMBER"]),
 });
 
+// ─── Bulk CSV invite ────────────────────────────────────────────────────────
+
+export type BulkInviteRowResult =
+  | { row: number; email: string; status: "created" | "updated" | "skipped"; reason?: string }
+  | { row: number; email: string; status: "error"; reason: string };
+
+export type BulkInviteResult =
+  | {
+      ok: true;
+      total: number;
+      created: number;
+      updated: number;
+      skipped: number;
+      errors: number;
+      rows: BulkInviteRowResult[];
+    }
+  | { ok: false; error: string };
+
+const BulkInviteRowSchema = z.object({
+  email: z.email().transform((v) => v.toLowerCase()),
+  role: z.enum(["ADMIN", "MEMBER"]),
+});
+
+/**
+ * Bulk-invite members from a CSV payload. Expected format:
+ *
+ *   email,role
+ *   alice@bank.com,ADMIN
+ *   bob@bank.com,MEMBER
+ *
+ * Header row is optional but recommended. Role column accepts ADMIN / MEMBER
+ * (case-insensitive); blank or invalid roles default to MEMBER.
+ *
+ * Emails are upserted into Invitation just like the single-invite action.
+ * Emails belonging to existing org members are skipped (not errored).
+ * Emails belonging to a user in another org are flagged as errors.
+ *
+ * No email is sent per row — the result returns the accept URLs so the admin
+ * can choose to email them individually or paste into their own broadcast.
+ * (Keeps the action well under serverless time limits for big imports.)
+ */
+export async function bulkInviteMembersAction(
+  _prev: BulkInviteResult | undefined,
+  formData: FormData,
+): Promise<BulkInviteResult> {
+  const user = await requireOrgRole("OWNER", "ADMIN");
+
+  const raw = String(formData.get("csv") ?? "").trim();
+  if (!raw) return { ok: false, error: "Paste at least one row of CSV." };
+
+  const lines = raw
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return { ok: false, error: "No usable rows in the input." };
+
+  // Detect header row — if the first row has "email" in it, skip it.
+  const startIdx = /^email/i.test(lines[0]) ? 1 : 0;
+  if (lines.length - startIdx === 0) {
+    return { ok: false, error: "Only a header row was provided — add at least one member." };
+  }
+
+  if (lines.length - startIdx > 500) {
+    return {
+      ok: false,
+      error: "Bulk import is capped at 500 rows per batch. Split your CSV.",
+    };
+  }
+
+  const rows: BulkInviteRowResult[] = [];
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+  let errors = 0;
+
+  for (let i = startIdx; i < lines.length; i++) {
+    const row = i - startIdx + 1;
+    const cells = lines[i].split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+    const rawEmail = cells[0] ?? "";
+    const rawRole = (cells[1] ?? "MEMBER").toUpperCase();
+
+    const parsed = BulkInviteRowSchema.safeParse({
+      email: rawEmail,
+      role: rawRole === "ADMIN" ? "ADMIN" : "MEMBER",
+    });
+    if (!parsed.success) {
+      errors++;
+      rows.push({
+        row,
+        email: rawEmail,
+        status: "error",
+        reason: parsed.error.issues.map((e) => e.message).join("; "),
+      });
+      continue;
+    }
+    const { email, role } = parsed.data;
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { orgId: true },
+    });
+    if (existingUser?.orgId === user.orgId) {
+      skipped++;
+      rows.push({ row, email, status: "skipped", reason: "already a member of this org" });
+      continue;
+    }
+    if (existingUser?.orgId) {
+      errors++;
+      rows.push({
+        row,
+        email,
+        status: "error",
+        reason: "belongs to a different organisation",
+      });
+      continue;
+    }
+
+    const token = randomBytes(32).toString("base64url");
+    const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+
+    const existing = await prisma.invitation.findUnique({
+      where: { orgId_email: { orgId: user.orgId, email } },
+      select: { id: true },
+    });
+
+    await prisma.invitation.upsert({
+      where: { orgId_email: { orgId: user.orgId, email } },
+      create: {
+        orgId: user.orgId,
+        email,
+        role,
+        token,
+        invitedById: user.id,
+        expiresAt,
+      },
+      update: {
+        role,
+        token,
+        invitedById: user.id,
+        expiresAt,
+        acceptedAt: null,
+        revokedAt: null,
+      },
+    });
+
+    if (existing) {
+      updated++;
+      rows.push({ row, email, status: "updated", reason: "refreshed existing pending invite" });
+    } else {
+      created++;
+      rows.push({ row, email, status: "created" });
+    }
+  }
+
+  revalidatePath("/org");
+
+  return {
+    ok: true,
+    total: lines.length - startIdx,
+    created,
+    updated,
+    skipped,
+    errors,
+    rows,
+  };
+}
+
 export async function changeRoleAction(formData: FormData) {
   const user = await requireOrgRole("OWNER", "ADMIN");
   const parsed = ChangeRoleSchema.safeParse({

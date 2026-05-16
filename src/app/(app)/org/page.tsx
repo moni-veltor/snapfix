@@ -4,6 +4,7 @@ import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import OrgInviteButton from "./OrgInviteButton";
+import OrgBulkImportButton from "./OrgBulkImportButton";
 import {
   changeRoleAction,
   removeMemberAction,
@@ -60,7 +61,7 @@ export default async function OrgPage() {
         }
         actions={
           canManage ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/org/roles"
                 className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
@@ -68,6 +69,7 @@ export default async function OrgPage() {
                 <Crown size={14} strokeWidth={2.2} />
                 Role catalogue
               </Link>
+              <OrgBulkImportButton />
               <OrgInviteButton />
             </div>
           ) : undefined
