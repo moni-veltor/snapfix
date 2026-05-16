@@ -12,6 +12,7 @@ import IncidentBanner from "@/components/IncidentBanner";
 import IncidentCapturePanel from "@/components/IncidentCapturePanel";
 import RegulatorClocks from "@/components/RegulatorClocks";
 import CommsCascadePanel from "@/components/CommsCascadePanel";
+import MyCommsDraftsPanel from "@/components/live/MyCommsDraftsPanel";
 import BCPPanel from "@/components/BCPPanel";
 import ClosureGate from "@/components/ClosureGate";
 import Pill from "@/components/ui/Pill";
@@ -376,6 +377,22 @@ export default async function LiveWorkspacePage({
         }
         comms={
           <div className="space-y-4">
+            <MyCommsDraftsPanel
+              drafts={commsDrafts
+                .filter((d) => d.authorId === me.id)
+                .map((d) => ({
+                  id: d.id,
+                  stakeholder: d.stakeholder,
+                  subject: d.subject,
+                  body: d.body,
+                  status: d.status,
+                  approver: d.approver?.name ?? d.approver?.email ?? null,
+                  approvedAt: d.approvedAt,
+                  sentAt: d.sentAt,
+                  rejectionReason: d.rejectionReason,
+                  createdAt: d.createdAt,
+                }))}
+            />
             <CommsCascadePanel
               exerciseId={exercise.id}
               drafts={commsDrafts.map((d) => ({
