@@ -71,6 +71,7 @@ export default function PerformanceCard({ score }: Props) {
               : `${score.metrics.invocationLatencyMin} min`
           }
           subtle="from first signal"
+          rubric="Minutes between the first inbound inject and the IMP invocation timestamp. IMP §6.2 expects invocation within 15 min of a credible signal — every additional 15 min is one score band."
         />
         <Metric
           label="Time to severity"
@@ -80,43 +81,51 @@ export default function PerformanceCard({ score }: Props) {
               : `${score.metrics.severityLatencyMin} min`
           }
           subtle="post-invocation"
+          rubric="Minutes between IMP invocation and the CRO classifying severity. The clock for regulator notifications (FCA / PRA 4h on High) only starts ticking when severity is set — slow classification compresses the notification window."
         />
         <Metric
           label="Decisions logged"
           value={String(score.metrics.decisionsLogged)}
           subtle="structured records"
+          rubric="Count of structured DecisionRecord entries (with rationale + approver). Decisions in chat or only in free-text log don't count. Target: 1+ per significant turn of the incident."
         />
         <Metric
           label="Sitreps filed"
           value={String(score.metrics.sitrepsLogged)}
           subtle="per business unit"
+          rubric="IMP §6.4.3.1 expects an opening sitrep from each affected BU within 15 min and regular updates thereafter on the cadence each sitrep promised. Counts every sitrep filed against the incident."
         />
         <Metric
           label="IMT meetings"
           value={String(score.metrics.imtMeetingsLogged)}
           subtle="standing agenda"
+          rubric="IMT meetings recorded with the standing agenda (situation/decisions/actions/risks/next-meeting). IMP §6.2.5 expects regular cadence — 60-90 min in early phase, longer once stable."
         />
         <Metric
           label="Regulator breaches"
           value={String(score.metrics.regulatorBreaches)}
           subtle="clocks past due"
           tone={score.metrics.regulatorBreaches > 0 ? "critical" : "neutral"}
+          rubric="Count of regulator notification clocks that ran past due without a notification being filed (FCA / PRA 4h, ICO 72h). Any breach is a critical finding — it goes to the Board and the regulator."
         />
         <Metric
           label="Read coverage"
           value={`${score.metrics.readCoveragePct}%`}
           subtle="addressed messages read"
+          rubric="Percentage of injects addressed to participants that were actually opened (read receipt fired). Low coverage signals seats were unmobilised or participants were buried in chat instead of reading their inbox."
         />
         <Metric
           label="Mobilisation"
           value={`${score.metrics.mobilisationCoveragePct}%`}
           subtle="of the roster mobilised"
+          rubric="Percentage of ExerciseParticipants whose mobilisationStatus is MOBILISED or DEPUTY_STEPPED_UP (not UNCALLED / UNREACHABLE). Sub-80% means the IMT was thin on the bench — vulnerable to single-points-of-failure."
         />
         <Metric
           label="Cascade violations"
           value={String(score.metrics.cascadeViolations)}
           subtle="rejected comms"
           tone={score.metrics.cascadeViolations > 0 ? "warn" : "neutral"}
+          rubric="Customer / regulator drafts rejected by the approver (typically because the cascade order was violated — sending external before internal, or skipping CRO/legal sign-off). Indicates comms discipline gaps."
         />
       </dl>
 
@@ -159,11 +168,13 @@ function Metric({
   value,
   subtle,
   tone = "neutral",
+  rubric,
 }: {
   label: string;
   value: string;
   subtle?: string;
   tone?: "neutral" | "warn" | "critical";
+  rubric?: string;
 }) {
   const valueColor =
     tone === "critical"
@@ -176,6 +187,14 @@ function Metric({
       <dt className="text-[10px] font-semibold uppercase tracking-wider text-muted">{label}</dt>
       <dd className={`mt-1 text-lg font-semibold ${valueColor}`}>{value}</dd>
       {subtle && <span className="text-[10px] text-soft">{subtle}</span>}
+      {rubric && (
+        <details className="mt-2 text-[10px] text-soft">
+          <summary className="cursor-pointer text-indigo-700 hover:underline dark:text-indigo-300">
+            How&apos;s this scored?
+          </summary>
+          <p className="mt-1 leading-relaxed text-muted">{rubric}</p>
+        </details>
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "@/app/actions/action-items";
 import { saveRetrospectiveAction } from "@/app/actions/closure";
 import PostIncidentReportForm from "@/components/debrief/PostIncidentReportForm";
+import DebriefAnswerCompare from "@/components/debrief/DebriefAnswerCompare";
 import { prisma } from "@/lib/prisma";
 import { scoreIncident } from "@/lib/scoring";
 import PerformanceCard from "@/components/scoring/PerformanceCard";
@@ -27,6 +28,10 @@ export default async function DebriefPage({
   const exercise = await loadExerciseWithScenario(id, user.orgId);
   if (!exercise) notFound();
   const isFacilitator = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
+
+  const participantCount = await prisma.exerciseParticipant.count({
+    where: { exerciseId: exercise.id },
+  });
 
   const actionItems = await prisma.exerciseActionItem.findMany({
     where: { exerciseId: exercise.id },
@@ -81,35 +86,57 @@ export default async function DebriefPage({
       {highlights.length > 0 && <HighlightReel highlights={highlights} />}
 
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Debrief questions</h2>
-        {exercise.scenario.debriefQuestions.length === 0 && (
-          <p className="text-sm text-muted">No debrief questions defined for this scenario.</p>
-        )}
-        <ul className="space-y-3">
-          {exercise.scenario.debriefQuestions.map((q) => {
-            const answers = answersByQuestion.get(q.id) ?? [];
-            return (
-              <li key={q.id} className="rounded-md border border-line bg-surface-1 p-4 text-sm">
-                <div className="text-xs uppercase tracking-wide text-muted">{q.category}</div>
-                <div className="mt-1 font-medium">{q.text}</div>
-                <ul className="mt-2 space-y-1">
-                  {answers.map((a) => (
-                    <li key={a.id} className="rounded bg-surface-0 px-3 py-2">
-                      <div className="text-xs text-muted">{a.author?.name ?? a.author?.email ?? "—"}</div>
-                      <p className="whitespace-pre-wrap text-ink">{a.body}</p>
-                    </li>
-                  ))}
-                </ul>
+        <header className="flex items-baseline justify-between">
+          <h2 className="text-lg font-semibold">Debrief questions</h2>
+          <p className="text-xs text-muted">
+            {exercise.scenario.debriefQuestions.length} question
+            {exercise.scenario.debriefQuestions.length === 1 ? "" : "s"} · expand to compare
+            answers across the team
+          </p>
+        </header>
+        <DebriefAnswerCompare
+          questions={exercise.scenario.debriefQuestions.map((q) => ({
+            id: q.id,
+            text: q.text,
+            category: q.category,
+            answers: (answersByQuestion.get(q.id) ?? []).map((a) => ({
+              id: a.id,
+              body: a.body,
+              author: a.author
+                ? { name: a.author.name ?? null, email: a.author.email }
+                : null,
+            })),
+          }))}
+          participantCount={participantCount}
+        />
+
+        <details className="rounded-md border border-line bg-surface-1 p-3 text-sm">
+          <summary className="cursor-pointer font-medium text-ink">Add your own answer</summary>
+          <ul className="mt-3 space-y-3">
+            {exercise.scenario.debriefQuestions.map((q) => (
+              <li key={`answer-${q.id}`} className="rounded-md border border-line bg-surface-0 p-3">
+                <p className="text-xs text-muted">
+                  <span className="font-semibold uppercase tracking-wider">{q.category}</span>
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-ink">{q.text}</p>
                 <form action={answerDebriefAction} className="mt-2 flex gap-2">
                   <input type="hidden" name="exerciseId" value={exercise.id} />
                   <input type="hidden" name="questionId" value={q.id} />
-                  <textarea name="body" required rows={2} placeholder="Your answer…" className="flex-1 rounded border border-line-strong px-2 py-1" />
-                  <button className="self-start rounded-md bg-slate-900 px-3 py-1.5 text-white">Submit</button>
+                  <textarea
+                    name="body"
+                    required
+                    rows={2}
+                    placeholder="Your answer…"
+                    className="flex-1 rounded border border-line-strong bg-surface-1 px-2 py-1 text-xs"
+                  />
+                  <button className="self-start rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white dark:bg-indigo-500">
+                    Submit
+                  </button>
                 </form>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        </details>
       </section>
 
       <section className="space-y-3">
