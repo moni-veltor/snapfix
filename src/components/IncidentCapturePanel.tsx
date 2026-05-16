@@ -8,15 +8,28 @@ import {
 } from "@/app/actions/decisions";
 import { addLogEntryAction, createCommsDraftAction } from "@/app/actions/exercises";
 
+type RecentInject = {
+  id: string;
+  injectNo: number;
+  summary: string;
+};
+
 type Props = {
   exerciseId: string;
   incidentId: string | null;
   dDayHHMM: string;
+  /** Injects released within ~last hour — offered as decision-trigger picks. */
+  recentInjects?: RecentInject[];
 };
 
 type Tab = "LOG" | "DECISION" | "SITREP" | "MEETING" | "COMMS";
 
-export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM }: Props) {
+export default function IncidentCapturePanel({
+  exerciseId,
+  incidentId,
+  dDayHHMM,
+  recentInjects = [],
+}: Props) {
   const [tab, setTab] = useState<Tab>("LOG");
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -105,7 +118,11 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
       )}
 
       {tab === "DECISION" && incidentId && (
-        <DecisionForm exerciseId={exerciseId} incidentId={incidentId} />
+        <DecisionForm
+          exerciseId={exerciseId}
+          incidentId={incidentId}
+          recentInjects={recentInjects}
+        />
       )}
       {tab === "SITREP" && incidentId && (
         <SitrepForm exerciseId={exerciseId} incidentId={incidentId} />
@@ -177,8 +194,19 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
   );
 }
 
-function DecisionForm({ exerciseId, incidentId }: { exerciseId: string; incidentId: string }) {
+function DecisionForm({
+  exerciseId,
+  incidentId,
+  recentInjects,
+}: {
+  exerciseId: string;
+  incidentId: string;
+  recentInjects: RecentInject[];
+}) {
   const ref = useRef<HTMLFormElement>(null);
+  // Pre-select the most recently released inject as the likely trigger.
+  // Authors can override or clear it before submitting.
+  const suggestedTriggerId = recentInjects[0]?.id ?? "";
   return (
     <form
       ref={ref}
@@ -223,6 +251,28 @@ function DecisionForm({ exerciseId, incidentId }: { exerciseId: string; incident
         placeholder="Why this decision? (rationale for the audit trail)"
         className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
       />
+      {recentInjects.length > 0 && (
+        <label className="col-span-2 flex flex-col gap-1 text-[11px] text-muted">
+          <span>
+            Triggered by inject{" "}
+            <span className="text-soft">
+              (auto-suggested from the most recent release — clear if not applicable)
+            </span>
+          </span>
+          <select
+            name="triggeredByInjectId"
+            defaultValue={suggestedTriggerId}
+            className="rounded border border-line-strong px-2 py-1.5 text-sm text-ink"
+          >
+            <option value="">— none —</option>
+            {recentInjects.map((i) => (
+              <option key={i.id} value={i.id}>
+                #{i.injectNo} · {i.summary.length > 70 ? `${i.summary.slice(0, 70)}…` : i.summary}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <button className="col-span-2 rounded-md bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-500">
         Record decision
       </button>

@@ -354,10 +354,11 @@ model Inject {
   toRoleTitles    String[]
   ccRoleTitles    String[]
 
-  artefacts Artefact[]
-  releases  InjectRelease[]
-  responses ParticipantResponse[]
-  receipts  InjectReceipt[]
+  artefacts        Artefact[]
+  releases         InjectRelease[]
+  responses        ParticipantResponse[]
+  receipts         InjectReceipt[]
+  triggeredDecisions DecisionRecord[] @relation("DecisionTriggerInject")
 
   createdAt DateTime @default(now())
 
@@ -1098,6 +1099,12 @@ model DecisionRecord {
   approverUserId        String?
   approverUser          User?                @relation("DecisionApproverUser", fields: [approverUserId], references: [id], onDelete: SetNull)
   approvedAt            DateTime?
+
+  /// Optional link to the inject that triggered this decision. Captured
+  /// in the live decision form (defaulting to the most recently released
+  /// inject) so the post-incident review can reconstruct cause→effect.
+  triggeredByInjectId String?
+  triggeredByInject   Inject? @relation("DecisionTriggerInject", fields: [triggeredByInjectId], references: [id], onDelete: SetNull)
 
   dDayTime  String
   createdAt DateTime @default(now())

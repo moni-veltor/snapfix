@@ -47,6 +47,7 @@ const DecisionInput = z.object({
   decisionType: z.string(),
   title: z.string().min(1),
   rationale: z.string().optional(),
+  triggeredByInjectId: z.string().optional(),
 });
 
 export async function recordDecisionAction(formData: FormData) {
@@ -84,6 +85,10 @@ export async function recordDecisionAction(formData: FormData) {
       authorParticipantId: ctx.participant.id,
       authorUserId: ctx.me.id,
       approverRolesRequired: approvers,
+      triggeredByInjectId:
+        data.triggeredByInjectId && data.triggeredByInjectId !== ""
+          ? data.triggeredByInjectId
+          : null,
       dDayTime: clock.hhmm,
     },
   });

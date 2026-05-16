@@ -110,6 +110,7 @@ export default async function LiveWorkspacePage({
     bcpActivation,
     orgUsers,
     myActionItems,
+    recentReleases,
   ] = await Promise.all([
     loadInbox(exercise.id, { roleTitle: participant.roleTitle, participantId: participant.id }),
     loadLiveFeed(exercise.id),
@@ -167,6 +168,22 @@ export default async function LiveWorkspacePage({
         createdAt: true,
       },
     }),
+    // Injects released in the last hour — offered as the likely trigger
+    // when the participant records a decision. Decisions made shortly
+    // after an inject lands are almost always caused by it; capturing
+    // the link makes the post-incident timeline reconstructable.
+    prisma.injectRelease.findMany({
+      where: {
+        exerciseId: exercise.id,
+        // eslint-disable-next-line react-hooks/purity
+        releasedAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
+      },
+      orderBy: { releasedAt: "desc" },
+      take: 8,
+      include: {
+        inject: { select: { id: true, injectNo: true, summary: true } },
+      },
+    }),
   ]);
 
   const incidentForBanner = activeIncident
@@ -192,6 +209,12 @@ export default async function LiveWorkspacePage({
   const responseByInject = new Map(myResponses.map((r) => [r.injectId, r]));
   const unreadCount = inbox.filter((i) => i.unread).length;
   const clock = currentDDay(exercise.dDayAnchor, exercise.speedMultiplier);
+
+  const recentInjects = recentReleases.map((r) => ({
+    id: r.inject.id,
+    injectNo: r.inject.injectNo,
+    summary: r.inject.summary,
+  }));
 
   // Live performance score — only meaningful once an incident has been invoked.
   const liveScore = activeIncident ? await scoreIncident(activeIncident.id) : null;
@@ -362,6 +385,7 @@ export default async function LiveWorkspacePage({
               exerciseId={exercise.id}
               incidentId={activeIncident?.id ?? null}
               dDayHHMM={clock.hhmm}
+              recentInjects={recentInjects}
             />
             {activeIncident && (
               <ClosureGate
