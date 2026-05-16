@@ -8,7 +8,8 @@ import {
   deleteActionItemAction,
   updateActionItemStatusAction,
 } from "@/app/actions/action-items";
-import { savePIRAction, saveRetrospectiveAction } from "@/app/actions/closure";
+import { saveRetrospectiveAction } from "@/app/actions/closure";
+import PostIncidentReportForm from "@/components/debrief/PostIncidentReportForm";
 import { prisma } from "@/lib/prisma";
 import { scoreIncident } from "@/lib/scoring";
 import PerformanceCard from "@/components/scoring/PerformanceCard";
@@ -140,7 +141,7 @@ export default async function DebriefPage({
         <h2 className="text-lg font-semibold">Action items</h2>
         {actionItems.length === 0 ? (
           <p className="text-sm text-muted">
-            No action items yet. Capture follow-up actions below so they don't get lost.
+            No action items yet. Capture follow-up actions below so they don&apos;t get lost.
           </p>
         ) : (
           <ul className="space-y-2 text-sm">
@@ -248,26 +249,22 @@ export default async function DebriefPage({
                 : `Due ${closedIncident.postIncidentReport.dueAt.toISOString().slice(0, 10)} · best practice (10 business days)`}
             </p>
           </div>
-          <form
-            action={savePIRAction}
-            className="space-y-3 rounded-md border border-line bg-surface-1 p-4"
-          >
-            <input type="hidden" name="exerciseId" value={exercise.id} />
-            <input type="hidden" name="incidentId" value={closedIncident.id} />
-            <TextArea label="Incident summary" name="incidentSummary" defaultValue={closedIncident.postIncidentReport.incidentSummary ?? ""} />
-            <TextArea label="Timeline" name="timeline" defaultValue={closedIncident.postIncidentReport.timeline ?? ""} />
-            <TextArea label="Root cause" name="rootCause" defaultValue={closedIncident.postIncidentReport.rootCause ?? ""} />
-            <TextArea label="Customer impact" name="customerImpact" defaultValue={closedIncident.postIncidentReport.customerImpact ?? ""} />
-            <TextArea label="Regulatory impact" name="regulatoryImpact" defaultValue={closedIncident.postIncidentReport.regulatoryImpact ?? ""} />
-            <TextArea label="Control failures" name="controlFailures" defaultValue={closedIncident.postIncidentReport.controlFailures ?? ""} />
-            <TextArea label="What worked well" name="whatWorkedWell" defaultValue={closedIncident.postIncidentReport.whatWorkedWell ?? ""} />
-            <TextArea label="Remediation commitments" name="remediationCommitments" defaultValue={closedIncident.postIncidentReport.remediationCommitments ?? ""} />
-            <label className="flex items-center gap-2 text-xs">
-              <input type="checkbox" name="submit" />
-              Mark as submitted (tables into the next ERCC then BRCC)
-            </label>
-            <button className="rounded-md bg-slate-900 px-3 py-1.5 text-white">Save PIR</button>
-          </form>
+          <PostIncidentReportForm
+            exerciseId={exercise.id}
+            incidentId={closedIncident.id}
+            alreadySubmitted={!!closedIncident.postIncidentReport.submittedAt}
+            defaults={{
+              incidentSummary: closedIncident.postIncidentReport.incidentSummary ?? "",
+              timeline: closedIncident.postIncidentReport.timeline ?? "",
+              rootCause: closedIncident.postIncidentReport.rootCause ?? "",
+              customerImpact: closedIncident.postIncidentReport.customerImpact ?? "",
+              regulatoryImpact: closedIncident.postIncidentReport.regulatoryImpact ?? "",
+              controlFailures: closedIncident.postIncidentReport.controlFailures ?? "",
+              whatWorkedWell: closedIncident.postIncidentReport.whatWorkedWell ?? "",
+              remediationCommitments:
+                closedIncident.postIncidentReport.remediationCommitments ?? "",
+            }}
+          />
         </section>
       )}
 
