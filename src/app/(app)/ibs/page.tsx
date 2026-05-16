@@ -1,24 +1,74 @@
 import Link from "next/link";
-import { Building2, Flame, Library, Plus, Server } from "lucide-react";
+import { Building2, Flame, Library, Server } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import IBSRegisterGrid from "@/components/ibs/IBSRegisterGrid";
+import IBSAddButton from "@/components/ibs/IBSAddButton";
 
 export const metadata = { title: "IBS Register — SnapFix" };
+
+const COMMON_INFORMATION = [
+  "Customer PII",
+  "KYC documentation",
+  "Account balances",
+  "Transaction history",
+  "Payment instructions",
+  "Authentication credentials",
+  "Risk-scoring features",
+  "Regulatory reports",
+];
+
+const COMMON_PROCESSES = [
+  "Identity verification",
+  "AML screening",
+  "Account creation",
+  "Payment authorisation",
+  "Fraud review",
+  "Customer onboarding",
+  "Application underwriting",
+  "Customer-comms cascade",
+];
 
 export default async function IBSListPage() {
   const me = await requireOrgUser();
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
 
-  const items = await prisma.organizationIBS.findMany({
-    where: { orgId: me.orgId },
-    orderBy: [{ status: "asc" }, { code: "asc" }],
-    include: {
-      _count: { select: { exerciseLinks: true } },
-      processOwnerUser: { select: { name: true, email: true } },
-    },
-  });
+  const [items, systems, vendors] = await Promise.all([
+    prisma.organizationIBS.findMany({
+      where: { orgId: me.orgId },
+      orderBy: [{ status: "asc" }, { code: "asc" }],
+      include: {
+        _count: { select: { exerciseLinks: true } },
+        processOwnerUser: { select: { name: true, email: true } },
+      },
+    }),
+    canManage
+      ? prisma.techSystem.findMany({
+          where: { orgId: me.orgId },
+          orderBy: { name: "asc" },
+          select: { name: true },
+        })
+      : Promise.resolve([]),
+    canManage
+      ? prisma.vendor.findMany({
+          where: { orgId: me.orgId },
+          orderBy: { name: "asc" },
+          select: { name: true },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const techSuggestions = systems.map((s) => ({ value: s.name, source: "system" as const }));
+  const vendorSuggestions = vendors.map((v) => ({ value: v.name, source: "vendor" as const }));
+  const informationSuggestions = COMMON_INFORMATION.map((value) => ({
+    value,
+    source: "library" as const,
+  }));
+  const processSuggestions = COMMON_PROCESSES.map((value) => ({
+    value,
+    source: "library" as const,
+  }));
 
   const rows = items.map((i) => ({
     id: i.id,
@@ -63,13 +113,12 @@ export default async function IBSListPage() {
                 <Library size={14} strokeWidth={2.2} />
                 Browse library
               </Link>
-              <Link
-                href="/ibs/new"
-                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
-              >
-                <Plus size={14} strokeWidth={2.4} />
-                Add IBS
-              </Link>
+              <IBSAddButton
+                techSuggestions={techSuggestions}
+                vendorSuggestions={vendorSuggestions}
+                informationSuggestions={informationSuggestions}
+                processSuggestions={processSuggestions}
+              />
             </div>
           )
         }
@@ -87,13 +136,16 @@ export default async function IBSListPage() {
               : "Ask an admin to start the register."}
           </p>
           {canManage && (
-            <Link
-              href="/ibs/new"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-            >
-              <Plus size={12} />
-              Start the wizard
-            </Link>
+            <div className="mt-4 inline-flex">
+              <IBSAddButton
+                techSuggestions={techSuggestions}
+                vendorSuggestions={vendorSuggestions}
+                informationSuggestions={informationSuggestions}
+                processSuggestions={processSuggestions}
+                variant="ghost"
+                label="Start the wizard"
+              />
+            </div>
           )}
         </div>
       ) : (
