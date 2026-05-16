@@ -13,6 +13,7 @@ import IncidentCapturePanel from "@/components/IncidentCapturePanel";
 import RegulatorClocks from "@/components/RegulatorClocks";
 import CommsCascadePanel from "@/components/CommsCascadePanel";
 import MyCommsDraftsPanel from "@/components/live/MyCommsDraftsPanel";
+import MyExerciseActionItems from "@/components/live/MyExerciseActionItems";
 import BCPPanel from "@/components/BCPPanel";
 import ClosureGate from "@/components/ClosureGate";
 import Pill from "@/components/ui/Pill";
@@ -107,6 +108,7 @@ export default async function LiveWorkspacePage({
     commsDrafts,
     bcpActivation,
     orgUsers,
+    myActionItems,
   ] = await Promise.all([
     loadInbox(exercise.id, { roleTitle: participant.roleTitle, participantId: participant.id }),
     loadLiveFeed(exercise.id),
@@ -143,6 +145,26 @@ export default async function LiveWorkspacePage({
       where: { orgId: me.orgId },
       orderBy: { name: "asc" },
       select: { id: true, name: true, email: true },
+    }),
+    prisma.exerciseActionItem.findMany({
+      where: {
+        exerciseId: exercise.id,
+        ownerUserId: me.id,
+      },
+      orderBy: [
+        { status: "asc" },
+        { priority: "desc" },
+        { dueAt: "asc" },
+      ],
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        priority: true,
+        status: true,
+        dueAt: true,
+        createdAt: true,
+      },
     }),
   ]);
 
@@ -265,6 +287,10 @@ export default async function LiveWorkspacePage({
                 isDeputy={mySeat.isDeputy}
               />
             )}
+            <MyExerciseActionItems
+              items={myActionItems}
+              nowIso={new Date().toISOString()}
+            />
             <NudgePanel nudges={nudges} />
             <Scratchpad
               exerciseId={exercise.id}
