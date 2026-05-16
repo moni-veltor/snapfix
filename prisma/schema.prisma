@@ -163,6 +163,7 @@ model User {
   bcpDeactivations        BCPActivation[]         @relation("BCPDeactivator")
   defaultRoleHoldings     OrganizationRole[]      @relation("RoleDefaultHolder")
   ibsAttestationsReviewed IBSAttestation[]        @relation("AttestationReviewer")
+  drTestsAttested         DRTest[]                @relation("DRTestAttester")
   heldSeats               ExerciseSeat[]          @relation("SeatHolder")
   chatMessages            ChatMessage[]           @relation("ChatAuthor")
   reactions               Reaction[]              @relation("ReactionAuthor")
@@ -1543,6 +1544,12 @@ model TechSystem {
   backupRetentionDays   Int?
   lastBackupValidatedAt DateTime?
 
+  // DR testing schedule + cadence. nextDrTestDueAt drives the "due-soon"
+  // dashboard widget; drTestCadenceMonths is the firm-policy interval
+  // (e.g. tier-1 systems tested every 3 months).
+  drTestCadenceMonths Int?
+  nextDrTestDueAt     DateTime?
+
   notes String?
 
   drTests DRTest[]
@@ -1567,6 +1574,12 @@ model DRTest {
   rpoActualMin Int?
   participants String? // free text who ran the test
   notes        String?
+
+  // Tech-lead sign-off — the named accountable owner attests the result is
+  // valid and any gap-to-target has been recorded for remediation.
+  attestedById String?
+  attestedBy   User?     @relation("DRTestAttester", fields: [attestedById], references: [id], onDelete: SetNull)
+  attestedAt   DateTime?
 
   createdAt DateTime @default(now())
 

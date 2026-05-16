@@ -100,6 +100,82 @@ export async function deleteTechSystemAction(formData: FormData) {
   revalidatePath("/tech-recovery");
 }
 
+/**
+ * Update a system's DR-testing schedule — cadence (months) and the next
+ * due date. Either can be set independently.
+ */
+export async function updateDRScheduleAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const systemId = String(formData.get("systemId") ?? "");
+  const sys = await prisma.techSystem.findFirst({
+    where: { id: systemId, orgId: me.orgId },
+    select: { id: true, name: true },
+  });
+  if (!sys) return;
+  await prisma.techSystem.update({
+    where: { id: sys.id },
+    data: {
+      drTestCadenceMonths: optInt(formData.get("drTestCadenceMonths")),
+      nextDrTestDueAt: optDate(formData.get("nextDrTestDueAt")),
+    },
+  });
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "dr_test.schedule_updated",
+    targetType: "tech-system",
+    targetId: sys.id,
+    summary: `Updated DR-test schedule for ${sys.name}`,
+  });
+  revalidatePath("/tech-recovery");
+  revalidatePath("/tech-recovery/schedule");
+}
+
+/**
+ * Attest a DR test result — the named tech-lead signs off the outcome
+ * is valid and any gap-to-target has been recorded for remediation.
+ * Also advances nextDrTestDueAt by drTestCadenceMonths if both are set.
+ */
+export async function attestDRTestAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const testId = String(formData.get("testId") ?? "");
+  const test = await prisma.dRTest.findFirst({
+    where: { id: testId, system: { orgId: me.orgId } },
+    include: { system: { select: { id: true, name: true, drTestCadenceMonths: true } } },
+  });
+  if (!test) return;
+
+  await prisma.dRTest.update({
+    where: { id: test.id },
+    data: {
+      attestedById: me.id,
+      attestedAt: new Date(),
+    },
+  });
+
+  // Advance the next due date by the cadence (if set).
+  if (test.system.drTestCadenceMonths) {
+    const next = new Date(test.testedAt);
+    next.setUTCMonth(next.getUTCMonth() + test.system.drTestCadenceMonths);
+    await prisma.techSystem.update({
+      where: { id: test.system.id },
+      data: { nextDrTestDueAt: next },
+    });
+  }
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "dr_test.attested",
+    targetType: "tech-system",
+    targetId: test.system.id,
+    summary: `Attested DR test for ${test.system.name} (${test.testedAt.toISOString().slice(0, 10)})`,
+  });
+
+  revalidatePath("/tech-recovery");
+  revalidatePath("/tech-recovery/schedule");
+}
+
 export async function logDRTestAction(formData: FormData) {
   const me = await requireOrgRole("OWNER", "ADMIN");
   const systemId = String(formData.get("systemId") ?? "");

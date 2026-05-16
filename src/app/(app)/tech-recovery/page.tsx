@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Library, Server } from "lucide-react";
+import { CalendarClock, Library, Server } from "lucide-react";
 import PageHero from "@/components/ui/PageHero";
 import { ProgressRing, Bar } from "@/components/ui/charts";
 import { postureScore, type SystemWithTests } from "@/lib/tech-recovery";
@@ -47,13 +47,20 @@ export default async function TechRecoveryPage() {
         pitch="The systems behind your IBSs — recovery objectives, failover topology, backup posture, and the DR-test ledger that proves you can actually meet your RTOs."
         actions={
           canManage ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/tech-recovery/library"
                 className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
               >
                 <Library size={14} strokeWidth={2.2} />
                 Browse library
+              </Link>
+              <Link
+                href="/tech-recovery/schedule"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                <CalendarClock size={14} strokeWidth={2.2} />
+                DR schedule
               </Link>
               <SystemAddButton />
             </div>

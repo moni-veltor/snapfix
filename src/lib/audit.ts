@@ -11,6 +11,7 @@ export type AuditAction =
   | "ibs.attestation.requested" | "ibs.attestation.attested" | "ibs.attestation.rejected"
   | "vendor.added-from-library"
   | "system.added-from-library"
+  | "dr_test.attested" | "dr_test.schedule_updated"
   | "scenario.added-from-library"
   | "action_item.created" | "action_item.updated" | "action_item.closed"
   | "member.added" | "member.removed" | "member.role_changed" | "member.department_changed"
