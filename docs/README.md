@@ -17,6 +17,7 @@ It is **not** a Jira-style ticket tracker. The unit of work is an *exercise*, no
 * Touching auth or permissions? Read **Architecture → [Auth & permissions](architecture/auth-and-permissions.md)** first.
 * Adding a feature that takes form data? See **Conventions → [Forms, actions & toasts](conventions/forms-and-actions.md)** — there are project-specific primitives you should use.
 * Touching the curated catalogues (scenarios, IBSs, vendors, tech systems)? See **Curated libraries → [Overview](libraries/overview.md)**.
+* Designing or restyling? See **Design system → [Overview](design-system/overview.md)** — palette, tokens, primitives and patterns.
 
 ## House rules
 

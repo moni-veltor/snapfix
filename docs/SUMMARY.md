@@ -32,6 +32,17 @@
 * [Tech-system library](libraries/tech-systems.md)
 * [Sector taxonomy](libraries/sector-taxonomy.md)
 
+## Design system
+
+* [Overview](design-system/overview.md)
+* [Palette](design-system/palette.md)
+* [Surfaces & text](design-system/surfaces-and-text.md)
+* [Elevation & effects](design-system/elevation-and-effects.md)
+* [Primitives](design-system/primitives.md)
+* [Patterns](design-system/patterns.md)
+* [Charts & stats](design-system/charts.md)
+* [Per-org theming](design-system/per-org-theming.md)
+
 ## Conventions
 
 * [Code style](conventions/code-style.md)
