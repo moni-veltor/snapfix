@@ -124,6 +124,11 @@ model User {
   outOfHoursPhone String? // explicit OOH escalation number
   bio             String? // free text — skills, certifications, qualifications
 
+  /// When this user last confirmed their contact details + role briefing
+  /// ahead of an upcoming exercise. Drives the pre-exercise readiness
+  /// banner ("Exercise X in 3 days — confirm details").
+  lastReadinessCheckAt DateTime?
+
   // Tenant membership (one user → one org)
   orgId   String?
   org     Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)

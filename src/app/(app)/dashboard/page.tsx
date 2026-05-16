@@ -37,6 +37,7 @@ import { postureScore, type SystemWithTests } from "@/lib/tech-recovery";
 import { MiniHeatmap, ProgressRing, Sparkline } from "@/components/ui/charts";
 import FeaturedCard from "@/components/ui/FeaturedCard";
 import DailyTipCard from "@/components/fun/DailyTipCard";
+import YourLiveExerciseWidget from "@/components/dashboard/YourLiveExerciseWidget";
 
 export default async function Home() {
   const session = await auth();
@@ -47,6 +48,7 @@ export default async function Home() {
     session.user.orgRole === "OWNER" || session.user.orgRole === "ADMIN";
   return (
     <Dashboard
+      userId={session.user.id}
       userName={session.user.name ?? session.user.email}
       orgId={session.user.orgId}
       canManage={canManage}
@@ -55,10 +57,12 @@ export default async function Home() {
 }
 
 async function Dashboard({
+  userId,
   userName,
   orgId,
   canManage,
 }: {
+  userId: string;
   userName: string;
   orgId: string;
   canManage: boolean;
@@ -223,6 +227,57 @@ async function Dashboard({
       orderBy: { createdAt: "desc" },
       take: 4,
       select: { id: true, title: true, createdAt: true },
+    }),
+  ]);
+
+  // ─── Participant personalisation ────────────────────────────────────────
+  // "Your live exercise" + "Your next exercise" — drives the top widget.
+  const [myLiveParticipation, myNextParticipation, meRow] = await Promise.all([
+    prisma.exerciseParticipant.findFirst({
+      where: {
+        userId,
+        exercise: { orgId, status: { in: ["IN_PROGRESS", "PAUSED"] } },
+      },
+      orderBy: { exercise: { startedAt: "desc" } },
+      include: {
+        exercise: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            plannedDate: true,
+            startedAt: true,
+            scenario: { select: { title: true } },
+          },
+        },
+      },
+    }),
+    prisma.exerciseParticipant.findFirst({
+      where: {
+        userId,
+        exercise: {
+          orgId,
+          status: { in: ["PLANNING", "READY"] },
+          plannedDate: { gte: now },
+        },
+      },
+      orderBy: { exercise: { plannedDate: "asc" } },
+      include: {
+        exercise: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            plannedDate: true,
+            startedAt: true,
+            scenario: { select: { title: true } },
+          },
+        },
+      },
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { lastReadinessCheckAt: true },
     }),
   ]);
 
@@ -397,6 +452,44 @@ async function Dashboard({
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, 8);
 
+  // Build widget props for participant personalisation.
+  const liveExercise = myLiveParticipation
+    ? {
+        id: myLiveParticipation.exercise.id,
+        title: myLiveParticipation.exercise.title,
+        status: myLiveParticipation.exercise.status,
+        plannedDate: myLiveParticipation.exercise.plannedDate,
+        startedAt: myLiveParticipation.exercise.startedAt,
+        scenarioTitle: myLiveParticipation.exercise.scenario.title,
+        roleTitle: myLiveParticipation.roleTitle,
+      }
+    : null;
+  const nextExercise = myNextParticipation
+    ? {
+        id: myNextParticipation.exercise.id,
+        title: myNextParticipation.exercise.title,
+        status: myNextParticipation.exercise.status,
+        plannedDate: myNextParticipation.exercise.plannedDate,
+        startedAt: myNextParticipation.exercise.startedAt,
+        scenarioTitle: myNextParticipation.exercise.scenario.title,
+        roleTitle: myNextParticipation.roleTitle,
+      }
+    : null;
+  const daysUntilNext = nextExercise?.plannedDate
+    ? Math.floor(
+        (nextExercise.plannedDate.getTime() - now.getTime()) / 86_400_000,
+      )
+    : null;
+  // Show the readiness banner if exercise is < 14 days out and the user
+  // hasn't stamped a readiness check in the last 7 days.
+  const sevenDaysAgo = now.getTime() - 7 * 86_400_000;
+  const needsReadinessCheck =
+    !!nextExercise &&
+    daysUntilNext !== null &&
+    daysUntilNext <= 14 &&
+    (!meRow?.lastReadinessCheckAt ||
+      meRow.lastReadinessCheckAt.getTime() < sevenDaysAgo);
+
   return (
     <div className="space-y-5">
       <StatusBar
@@ -408,6 +501,14 @@ async function Dashboard({
         openCount={openActionItems}
         pulse={pulse.total}
         pulseGrade={pulse.grade}
+      />
+
+      <YourLiveExerciseWidget
+        liveExercise={liveExercise}
+        nextExercise={nextExercise}
+        needsReadinessCheck={needsReadinessCheck}
+        daysUntilNext={daysUntilNext}
+        userId={userId}
       />
 
       <HeadlineBanner headline={headline} />

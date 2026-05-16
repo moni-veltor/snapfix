@@ -238,6 +238,20 @@ const ChangeRoleSchema = z.object({
   role: z.enum(["OWNER", "ADMIN", "MEMBER"]),
 });
 
+/**
+ * Stamp the current user's readiness-check timestamp. Triggered when a
+ * user clicks "Confirm I'm ready" on the pre-exercise readiness banner.
+ */
+export async function confirmReadinessAction() {
+  const user = await requireOrgRole("OWNER", "ADMIN", "MEMBER");
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastReadinessCheckAt: new Date() },
+  });
+  revalidatePath("/dashboard");
+  revalidatePath(`/org/${user.id}`);
+}
+
 // ─── Bulk CSV invite ────────────────────────────────────────────────────────
 
 export type BulkInviteRowResult =
