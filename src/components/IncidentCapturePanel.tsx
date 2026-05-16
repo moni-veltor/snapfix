@@ -68,15 +68,29 @@ export default function IncidentCapturePanel({ exerciseId, incidentId, dDayHHMM 
         >
           <input type="hidden" name="exerciseId" value={exerciseId} />
           <input type="hidden" name="dDayTime" value={dDayHHMM} />
-          <select name="kind" required className="rounded border border-line-strong px-2 py-1.5 text-sm">
-            <option value="OBSERVATION">Observation</option>
-            <option value="ACTION">Action</option>
-            <option value="RISK">Risk</option>
-            <option value="ASK">Ask</option>
-            <option value="EVIDENCE">Evidence</option>
-            <option value="CHALLENGE">Challenge</option>
-            <option value="RESOURCE">Resource</option>
-            <option value="NOTE">Note</option>
+          <select
+            name="kind"
+            required
+            title={
+              "Observation — what you saw\n" +
+              "Action — what you did\n" +
+              "Risk — what could go wrong\n" +
+              "Ask — what you need from someone else\n" +
+              "Evidence — a screenshot, artefact or fact\n" +
+              "Challenge — push-back on an assumption\n" +
+              "Resource — a system, doc or person referenced\n" +
+              "Note — general working memo"
+            }
+            className="rounded border border-line-strong px-2 py-1.5 text-sm"
+          >
+            <option value="OBSERVATION">Observation — what you saw</option>
+            <option value="ACTION">Action — what you did</option>
+            <option value="RISK">Risk — what could go wrong</option>
+            <option value="ASK">Ask — need from someone else</option>
+            <option value="EVIDENCE">Evidence — artefact / screenshot</option>
+            <option value="CHALLENGE">Challenge — push-back / disagreement</option>
+            <option value="RESOURCE">Resource — system / doc / person</option>
+            <option value="NOTE">Note — general memo</option>
           </select>
           <input
             name="body"
@@ -298,7 +312,7 @@ function MeetingForm({
       <input type="hidden" name="exerciseId" value={exerciseId} />
       <input type="hidden" name="incidentId" value={incidentId} />
       <p className="col-span-2 text-[11px] text-muted">
-        Standing agenda — next meeting time is required as the meeting's
+        Standing agenda — next meeting time is required as the meeting&apos;s
         formal output.
       </p>
       <textarea

@@ -40,12 +40,23 @@ export default function LiveQuickCapture({ exerciseId, dDayHHMM }: Props) {
         >
           <input type="hidden" name="exerciseId" value={exerciseId} />
           <input type="hidden" name="dDayTime" value={dDayHHMM} />
-          <select name="kind" required className="rounded border border-line-strong px-2 py-1.5 text-sm">
-            <option value="DECISION">Decision</option>
-            <option value="ACTION">Action</option>
-            <option value="CHALLENGE">Challenge</option>
-            <option value="RESOURCE">Resource</option>
-            <option value="NOTE">Note</option>
+          <select
+            name="kind"
+            required
+            title={
+              "Decision — formal decision taken\n" +
+              "Action — what you did\n" +
+              "Challenge — push-back / disagreement\n" +
+              "Resource — system / doc / person referenced\n" +
+              "Note — general working memo"
+            }
+            className="rounded border border-line-strong px-2 py-1.5 text-sm"
+          >
+            <option value="DECISION">Decision — formal decision taken</option>
+            <option value="ACTION">Action — what you did</option>
+            <option value="CHALLENGE">Challenge — push-back / disagreement</option>
+            <option value="RESOURCE">Resource — system / doc / person</option>
+            <option value="NOTE">Note — general memo</option>
           </select>
           <input
             name="body"

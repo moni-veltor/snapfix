@@ -142,6 +142,7 @@ export default async function MemberProfilePage({
               icon={<Mail size={12} />}
               label="Primary email"
               value={user.email}
+              href={`mailto:${user.email}`}
               copyable
             />
             {user.altEmail && (
@@ -149,6 +150,7 @@ export default async function MemberProfilePage({
                 icon={<Mail size={12} />}
                 label="Alternate email"
                 value={user.altEmail}
+                href={`mailto:${user.altEmail}`}
                 copyable
               />
             )}
@@ -157,28 +159,34 @@ export default async function MemberProfilePage({
                 icon={<Phone size={12} />}
                 label="Primary phone"
                 value={user.phone}
+                href={`tel:${user.phone.replace(/\s/g, "")}`}
                 copyable
               />
             )}
-            {user.outOfHoursPhone && (
+            {user.outOfHoursPhone ? (
               <ContactRow
-                icon={<PhoneCall size={12} />}
+                icon={<PhoneCall size={14} />}
                 label="Out of hours"
                 value={user.outOfHoursPhone}
+                href={`tel:${user.outOfHoursPhone.replace(/\s/g, "")}`}
                 copyable
                 tone="critical"
               />
-            )}
-            {!user.altEmail && !user.phone && !user.outOfHoursPhone && (
-              <p className="text-xs text-soft">
-                No additional contact details captured.{" "}
-                {canEdit && (
-                  <span className="text-muted">
-                    Use the edit button to add a primary phone and out-of-hours number — vital
-                    for real-incident response.
-                  </span>
-                )}
-              </p>
+            ) : (
+              <div className="rounded-md border border-dashed border-rose-200 bg-rose-50 px-3 py-2 text-xs dark:border-rose-800/60 dark:bg-rose-950/30">
+                <div className="flex items-start gap-2">
+                  <PhoneCall size={14} className="mt-0.5 text-rose-700 dark:text-rose-300" />
+                  <div>
+                    <p className="font-semibold text-rose-700 dark:text-rose-300">
+                      No out-of-hours phone set
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-rose-800/80 dark:text-rose-200/80">
+                      Required for incident escalation — IMT can&apos;t reach this person at 3am
+                      without it. {canEdit && "Use Edit profile to add."}
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
@@ -333,24 +341,40 @@ function ContactRow({
   label,
   value,
   tone,
+  href,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   copyable?: boolean;
   tone?: "critical";
+  href?: string;
 }) {
+  const wrapperCls =
+    tone === "critical"
+      ? "rounded-md border border-rose-200 bg-rose-50 px-3 py-2 dark:border-rose-800/60 dark:bg-rose-950/30"
+      : "";
   const labelCls =
-    tone === "critical" ? "text-rose-600 dark:text-rose-300" : "text-soft";
-  return (
+    tone === "critical"
+      ? "font-semibold text-rose-700 dark:text-rose-300"
+      : "text-soft";
+  const valueCls =
+    tone === "critical"
+      ? "font-mono text-sm font-semibold text-rose-900 dark:text-rose-100"
+      : "font-mono text-[12px] text-ink";
+  const iconCls = tone === "critical" ? "text-rose-700 dark:text-rose-300" : "text-soft";
+  const inner = (
     <div className="flex items-start gap-2">
-      <span className="mt-0.5 text-soft">{icon}</span>
+      <span className={`mt-0.5 ${iconCls}`}>{icon}</span>
       <div className="min-w-0 flex-1">
-        <div className={`text-[10px] uppercase tracking-wider ${labelCls}`}>{label}</div>
-        <div className="truncate font-mono text-[12px] text-ink">{value}</div>
+        <div className={`text-[10px] uppercase tracking-wider ${labelCls}`}>
+          {tone === "critical" ? `${label} — call first during incidents` : label}
+        </div>
+        <div className={`truncate ${valueCls}`}>{value}</div>
       </div>
     </div>
   );
+  return <div className={wrapperCls}>{href ? <a href={href} className="block">{inner}</a> : inner}</div>;
 }
 
 function StatTile({
