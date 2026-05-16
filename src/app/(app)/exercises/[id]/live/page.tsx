@@ -35,6 +35,7 @@ import RoleBriefing from "@/components/live/RoleBriefing";
 import LiveTabs from "@/components/live/LiveTabs";
 import LivePoller from "@/components/live/LivePoller";
 import InjectArrivalNotifier from "@/components/live/InjectArrivalNotifier";
+import FirstTimeLiveTour from "@/components/live/FirstTimeLiveTour";
 
 export default async function LiveWorkspacePage({
   params,
@@ -221,6 +222,7 @@ export default async function LiveWorkspacePage({
 
   return (
     <div className="space-y-4">
+      <FirstTimeLiveTour />
       {/* Top stripe — incident state is always at the top */}
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
