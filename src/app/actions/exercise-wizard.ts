@@ -228,3 +228,191 @@ function parseObjectives(text: string | undefined): string[] {
     .filter(Boolean)
     .slice(0, 10);
 }
+
+// ─── Step 3 (Team) wizard actions ────────────────────────────────────────────
+
+async function loadDraftExercise(exerciseId: string) {
+  const user = await requireOrgRole("OWNER", "ADMIN");
+  const exercise = await prisma.exercise.findFirst({
+    where: { id: exerciseId, orgId: user.orgId },
+    select: { id: true, status: true, regulatorMode: true },
+  });
+  if (!exercise) return null;
+  // Once the exercise is past PLANNING, regulator-mode locks edits.
+  if (exercise.regulatorMode && exercise.status !== "PLANNING") return null;
+  return { user, exercise };
+}
+
+/** Set or clear the backup facilitator. Null = no co-facilitator. */
+export async function setCoFacilitatorAction(formData: FormData) {
+  const exerciseId = String(formData.get("exerciseId"));
+  const coFacilitatorIdRaw = formData.get("coFacilitatorId");
+  const ctx = await loadDraftExercise(exerciseId);
+  if (!ctx) return;
+
+  let coFacilitatorId: string | null = null;
+  if (typeof coFacilitatorIdRaw === "string" && coFacilitatorIdRaw !== "") {
+    const candidate = await prisma.user.findFirst({
+      where: { id: coFacilitatorIdRaw, orgId: ctx.user.orgId },
+      select: { id: true },
+    });
+    coFacilitatorId = candidate?.id ?? null;
+  }
+
+  await prisma.exercise.update({
+    where: { id: exerciseId },
+    data: { coFacilitatorId },
+  });
+
+  // Ensure the co-facilitator is on the roster as a FACILITATOR.
+  if (coFacilitatorId) {
+    await prisma.exerciseParticipant.upsert({
+      where: { exerciseId_userId: { exerciseId, userId: coFacilitatorId } },
+      create: {
+        exerciseId,
+        userId: coFacilitatorId,
+        roleTitle: "Co-Facilitator",
+        exerciseRole: "FACILITATOR",
+      },
+      update: { exerciseRole: "FACILITATOR" },
+    });
+  }
+
+  revalidatePath(`/exercises/new?step=3&id=${exerciseId}`);
+}
+
+/** Link / unlink a deputy participant to a primary participant. */
+export async function setDeputyAction(formData: FormData) {
+  const exerciseId = String(formData.get("exerciseId"));
+  const participantId = String(formData.get("participantId"));
+  const deputyIdRaw = formData.get("deputyParticipantId");
+  const ctx = await loadDraftExercise(exerciseId);
+  if (!ctx) return;
+
+  const deputyId =
+    typeof deputyIdRaw === "string" && deputyIdRaw !== "" && deputyIdRaw !== participantId
+      ? deputyIdRaw
+      : null;
+
+  await prisma.exerciseParticipant.updateMany({
+    where: { id: participantId, exerciseId },
+    data: { deputyParticipantId: deputyId },
+  });
+
+  revalidatePath(`/exercises/new?step=3&id=${exerciseId}`);
+}
+
+const VendorInviteSchema = z.object({
+  exerciseId: z.string(),
+  vendorId: z.string(),
+  contactName: z.string().min(1).max(120),
+  contactEmail: z.string().email(),
+  scope: z.enum(["OBSERVER_ONLY", "RESPONDER_ROLE", "FULL_PARTICIPANT"]),
+});
+
+export async function inviteVendorParticipantAction(formData: FormData) {
+  const parsed = VendorInviteSchema.parse(Object.fromEntries(formData));
+  const ctx = await loadDraftExercise(parsed.exerciseId);
+  if (!ctx) return;
+
+  const vendor = await prisma.vendor.findFirst({
+    where: { id: parsed.vendorId, orgId: ctx.user.orgId },
+    select: { id: true },
+  });
+  if (!vendor) return;
+
+  // Generate a one-time access token (32 hex chars). Expires 24h after the
+  // planned exercise end or 7 days from now, whichever is later. The token
+  // is what the vendor uses to access their scoped view at /vendor-portal/<token>.
+  const accessToken = generateAccessToken();
+  const tokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  await prisma.exerciseVendorParticipant.create({
+    data: {
+      exerciseId: parsed.exerciseId,
+      vendorId: parsed.vendorId,
+      contactName: parsed.contactName,
+      contactEmail: parsed.contactEmail,
+      scope: parsed.scope,
+      accessToken,
+      tokenExpiresAt,
+    },
+  });
+
+  revalidatePath(`/exercises/new?step=3&id=${parsed.exerciseId}`);
+}
+
+export async function removeVendorParticipantAction(formData: FormData) {
+  const exerciseId = String(formData.get("exerciseId"));
+  const vendorParticipantId = String(formData.get("vendorParticipantId"));
+  const ctx = await loadDraftExercise(exerciseId);
+  if (!ctx) return;
+  await prisma.exerciseVendorParticipant.deleteMany({
+    where: { id: vendorParticipantId, exerciseId },
+  });
+  revalidatePath(`/exercises/new?step=3&id=${exerciseId}`);
+}
+
+/**
+ * CSV roster import. Expects rows of `email,roleTitle[,teamName]`.
+ * Header row optional. Skips users not in the org. Upserts participants.
+ */
+export async function importRosterCsvAction(formData: FormData) {
+  const exerciseId = String(formData.get("exerciseId"));
+  const csv = String(formData.get("csv") ?? "");
+  const ctx = await loadDraftExercise(exerciseId);
+  if (!ctx) return;
+
+  const rows = csv
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !line.toLowerCase().startsWith("email,"));
+
+  if (rows.length === 0) return;
+
+  // Resolve all org users by email upfront.
+  const emails = Array.from(
+    new Set(rows.map((r) => r.split(",")[0]?.trim().toLowerCase()).filter(Boolean)),
+  );
+  const orgUsers = await prisma.user.findMany({
+    where: { email: { in: emails }, orgId: ctx.user.orgId },
+    select: { id: true, email: true },
+  });
+  const emailToId = new Map(orgUsers.map((u) => [u.email.toLowerCase(), u.id]));
+
+  const teams = await prisma.exerciseTeam.findMany({
+    where: { exerciseId },
+    select: { id: true, name: true },
+  });
+  const teamByName = new Map(teams.map((t) => [t.name.toLowerCase(), t.id]));
+
+  for (const row of rows) {
+    const [emailRaw, roleTitle, teamName] = row.split(",").map((s) => s.trim());
+    const userId = emailToId.get(emailRaw.toLowerCase());
+    if (!userId || !roleTitle) continue;
+    const teamId = teamName ? teamByName.get(teamName.toLowerCase()) ?? null : null;
+
+    await prisma.exerciseParticipant.upsert({
+      where: { exerciseId_userId: { exerciseId, userId } },
+      create: {
+        exerciseId,
+        userId,
+        roleTitle,
+        teamId,
+        exerciseRole: "PARTICIPANT",
+      },
+      update: { roleTitle, ...(teamId ? { teamId } : {}) },
+    });
+  }
+
+  revalidatePath(`/exercises/new?step=3&id=${exerciseId}`);
+}
+
+function generateAccessToken(): string {
+  // 32 hex chars from crypto random bytes (Node 19+ has crypto.randomUUID/randomBytes).
+  // Using Web Crypto for edge compatibility.
+  const arr = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
+}

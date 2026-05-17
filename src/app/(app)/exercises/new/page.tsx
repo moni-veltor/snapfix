@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import WizardShell from "@/components/exercises/wizard/WizardShell";
 import StepBasics from "./StepBasics";
 import StepScenarios, { type ScenarioOption } from "./StepScenarios";
+import StepTeam from "./StepTeam";
 import { computeDifficulty, recentTeamDifficulty } from "@/lib/scenario-difficulty";
 import { doraApplies as doraAppliesFn, previewDoraForScenario } from "@/lib/dora-thresholds";
 import type { Jurisdiction } from "@/lib/dora-thresholds";
@@ -118,35 +119,143 @@ export default async function NewExerciseWizardPage({
     );
   }
 
-  // ─── Steps 3-5: Placeholder until the next commits land ─────────────────
+  // ─── Steps 3-5: require an existing draft Exercise ─────────────────────
   const idRaw = Array.isArray(sp.id) ? sp.id[0] : sp.id;
   if (!idRaw) redirect("/exercises/new?step=1");
   const exercise = await prisma.exercise.findFirst({
     where: { id: idRaw, orgId: user.orgId },
-    select: { id: true, title: true, status: true },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      facilitatorId: true,
+      coFacilitatorId: true,
+      plannedDate: true,
+    },
   });
   if (!exercise) redirect("/exercises/new?step=1");
 
+  // ─── Step 3: Team (seat map + co-facilitator + vendors + CSV import) ──
+  if (step === 3) {
+    const [orgUsers, orgRoles, orgVendors, participants, vendorParticipants] = await Promise.all([
+      prisma.user.findMany({
+        where: { orgId: user.orgId },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, email: true },
+      }),
+      prisma.organizationRole.findMany({
+        where: { orgId: user.orgId },
+        orderBy: [{ isSMF: "desc" }, { orderIdx: "asc" }, { abbreviation: "asc" }],
+        select: {
+          id: true,
+          abbreviation: true,
+          title: true,
+          isSMF: true,
+          defaultHolderId: true,
+        },
+      }),
+      prisma.vendor.findMany({
+        where: { orgId: user.orgId },
+        orderBy: [{ isDoraCritical: "desc" }, { name: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          tier: true,
+          isDoraCritical: true,
+          contactName: true,
+          contactEmail: true,
+        },
+      }),
+      prisma.exerciseParticipant.findMany({
+        where: { exerciseId: exercise.id },
+        orderBy: { joinedAt: "asc" },
+        include: { user: { select: { id: true, name: true, email: true } } },
+      }),
+      prisma.exerciseVendorParticipant.findMany({
+        where: { exerciseId: exercise.id },
+        orderBy: { invitedAt: "asc" },
+        include: { vendor: { select: { name: true } } },
+      }),
+    ]);
+
+    // Conflict warning: participants on another exercise within ±7 days.
+    const conflictWindow = exercise.plannedDate
+      ? {
+          gte: new Date(exercise.plannedDate.getTime() - 7 * 24 * 60 * 60 * 1000),
+          lte: new Date(exercise.plannedDate.getTime() + 7 * 24 * 60 * 60 * 1000),
+        }
+      : null;
+    let conflictUserIds = new Set<string>();
+    if (conflictWindow) {
+      const userIdsOnRoster = participants.map((p) => p.userId);
+      if (userIdsOnRoster.length > 0) {
+        const otherExercises = await prisma.exerciseParticipant.findMany({
+          where: {
+            userId: { in: userIdsOnRoster },
+            exerciseId: { not: exercise.id },
+            exercise: {
+              orgId: user.orgId,
+              plannedDate: conflictWindow,
+              status: { in: ["PLANNING", "READY", "IN_PROGRESS"] },
+            },
+          },
+          select: { userId: true },
+        });
+        conflictUserIds = new Set(otherExercises.map((o) => o.userId));
+      }
+    }
+
+    return (
+      <WizardShell currentStep={3} carryParams={carry} draftTitle={exercise.title}>
+        <StepTeam
+          exerciseId={exercise.id}
+          orgUsers={orgUsers}
+          orgRoles={orgRoles}
+          orgVendors={orgVendors}
+          participants={participants.map((p) => ({
+            id: p.id,
+            userId: p.userId,
+            userName: p.user.name ?? p.user.email,
+            userEmail: p.user.email,
+            roleTitle: p.roleTitle,
+            exerciseRole: p.exerciseRole,
+            deputyParticipantId: p.deputyParticipantId,
+          }))}
+          vendorParticipants={vendorParticipants.map((vp) => ({
+            id: vp.id,
+            vendorName: vp.vendor.name,
+            contactName: vp.contactName,
+            contactEmail: vp.contactEmail,
+            scope: vp.scope,
+          }))}
+          facilitatorId={exercise.facilitatorId}
+          coFacilitatorId={exercise.coFacilitatorId}
+          conflictUserIds={conflictUserIds}
+        />
+      </WizardShell>
+    );
+  }
+
+  // ─── Steps 4-5: still placeholder until next commits ────────────────────
   return (
     <WizardShell currentStep={step} carryParams={carry} draftTitle={exercise.title}>
       <section className="rounded-xl border border-dashed border-line bg-surface-1 p-6 text-sm">
         <p className="font-semibold text-ink">Step {step} arrives in the next commits</p>
         <p className="mt-1 text-muted">
-          The wizard chrome and Steps 1-2 are live. Steps 3-5 (Team, Injects, Pre-flight) ship in
-          commits C-G of the Plan-an-Exercise rollout.
+          Steps 1-3 are live. Step 4 (Injects) lands in Commit E, Step 5 (Pre-flight) in Commit G.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Link
+            href={`/exercises/new?step=3&id=${exercise.id}`}
+            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+          >
+            Back to Team
+          </Link>
           <Link
             href={`/exercises/${exercise.id}`}
             className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
           >
             Open this draft &rarr;
-          </Link>
-          <Link
-            href="/exercises"
-            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
-          >
-            Back to exercises
           </Link>
         </div>
       </section>
