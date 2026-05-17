@@ -4,7 +4,10 @@ import { requireOrgRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import WizardShell from "@/components/exercises/wizard/WizardShell";
 import StepBasics from "./StepBasics";
-import StepScenarioMinimal from "./StepScenarioMinimal";
+import StepScenarios, { type ScenarioOption } from "./StepScenarios";
+import { computeDifficulty, recentTeamDifficulty } from "@/lib/scenario-difficulty";
+import { doraApplies as doraAppliesFn, previewDoraForScenario } from "@/lib/dora-thresholds";
+import type { Jurisdiction } from "@/lib/dora-thresholds";
 
 export const metadata = { title: "Plan an exercise — SnapFix" };
 
@@ -34,24 +37,64 @@ export default async function NewExerciseWizardPage({
     );
   }
 
-  // ─── Step 2: Pick the primary scenario, create the Exercise ─────────────
+  // ─── Step 2: Scenarios (primary + chained + IBS + objectives + DORA) ──
   if (step === 2) {
-    if (!carry.title) {
-      // Came directly to Step 2 without basics — bounce back.
-      redirect("/exercises/new?step=1");
-    }
-    const scenarios = await prisma.scenario.findMany({
-      where: { OR: [{ orgId: user.orgId }, { orgId: null, isTemplate: true }] },
-      orderBy: [{ isTemplate: "asc" }, { createdAt: "desc" }],
-      select: {
-        id: true,
-        title: true,
-        category: true,
-        durationMin: true,
-        isTemplate: true,
-        _count: { select: { events: true, injects: true, ibsList: true } },
-      },
-    });
+    if (!carry.title) redirect("/exercises/new?step=1");
+
+    const [rawScenarios, teamMaturity] = await Promise.all([
+      prisma.scenario.findMany({
+        where: { OR: [{ orgId: user.orgId }, { orgId: null, isTemplate: true }] },
+        orderBy: [{ isTemplate: "asc" }, { createdAt: "desc" }],
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          durationMin: true,
+          isTemplate: true,
+          difficultyCognitive: true,
+          difficultyTimePressure: true,
+          difficultyAmbiguity: true,
+          difficultyStakeholders: true,
+          coversTechnology: true,
+          coversDataAvailability: true,
+          coversDataIntegrity: true,
+          coversThirdParty: true,
+          _count: { select: { events: true, injects: true, ibsList: true } },
+          ibsList: {
+            select: {
+              id: true,
+              name: true,
+              criticality: true,
+            },
+          },
+        },
+      }),
+      recentTeamDifficulty(user.orgId),
+    ]);
+
+    const scenarios: ScenarioOption[] = rawScenarios.map((s) => ({
+      id: s.id,
+      title: s.title,
+      category: s.category,
+      durationMin: s.durationMin,
+      isTemplate: s.isTemplate,
+      injectCount: s._count.injects,
+      eventCount: s._count.events,
+      ibsCount: s._count.ibsList,
+      difficulty: computeDifficulty(s),
+      doraPreview: previewDoraForScenario({
+        coversTechnology: s.coversTechnology,
+        coversDataAvailability: s.coversDataAvailability,
+        coversDataIntegrity: s.coversDataIntegrity,
+        coversThirdParty: s.coversThirdParty,
+        durationMin: s.durationMin,
+      }),
+      ibsList: s.ibsList.map((i) => ({
+        id: i.id,
+        name: i.name,
+        tierLabel: i.criticality ?? null,
+      })),
+    }));
 
     const backParams = new URLSearchParams();
     backParams.set("step", "1");
@@ -59,12 +102,17 @@ export default async function NewExerciseWizardPage({
       if (k === "step") continue;
       if (v) backParams.set(k, v);
     }
+
+    const jurisdiction = (carry.jurisdiction as Jurisdiction | undefined) ?? "UK";
+
     return (
       <WizardShell currentStep={2} carryParams={carry} draftTitle={carry.title}>
-        <StepScenarioMinimal
+        <StepScenarios
           scenarios={scenarios}
           basics={carry}
           backHref={`/exercises/new?${backParams.toString()}`}
+          teamMaturity={teamMaturity}
+          doraApplies={doraAppliesFn(jurisdiction)}
         />
       </WizardShell>
     );

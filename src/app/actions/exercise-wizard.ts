@@ -70,27 +70,82 @@ export async function submitStep1BasicsAction(formData: FormData) {
 
 /**
  * Step 2 submit. Creates the Exercise row from accumulated Step 1 query
- * params + the picked scenario, seeds default teams, adds the creator as
- * Facilitator, and redirects to Step 3.
+ * params + the picked scenario(s) + objectives + IBSs, seeds default teams,
+ * adds the creator as Facilitator, writes ExerciseScenarioLink rows for
+ * primary + chained scenarios, links aggregated IBSs, and redirects to Step 3.
  */
 const Step2Input = Step1QueryParams.extend({
   scenarioId: z.string().min(1),
+  /** Encoded as "<scenarioId>:<offsetMin>:<label?>" entries, one per chained scenario. */
+  chainedScenario: z.union([z.string(), z.array(z.string())]).optional(),
+  /** One <textarea name="objective"> per line — split on newlines. */
+  objectivesText: z.string().max(2000).optional(),
+  /** Comma-separated IBS ids the facilitator wants this exercise linked to
+   *  (defaults to the aggregated scenarios' IBSs if blank). */
+  ibsIds: z.string().optional(),
 });
 
 export async function submitStep2ScenarioAction(formData: FormData) {
   const user = await requireOrgRole("OWNER", "ADMIN");
 
-  const raw: Record<string, string> = {};
-  for (const [k, v] of formData.entries()) {
-    if (typeof v === "string" && v !== "") raw[k] = v;
+  const raw: Record<string, string | string[]> = {};
+  for (const k of new Set(formData.keys())) {
+    const values = formData.getAll(k).filter((v): v is string => typeof v === "string" && v !== "");
+    if (values.length === 0) continue;
+    raw[k] = values.length === 1 ? values[0] : values;
   }
   const parsed = Step2Input.parse(raw);
 
+  // Validate primary scenario belongs to org or is a public template.
   const scenario = await prisma.scenario.findFirst({
     where: { id: parsed.scenarioId, OR: [{ orgId: user.orgId }, { orgId: null }] },
     select: { id: true },
   });
   if (!scenario) redirect("/scenarios");
+
+  // Parse chained scenarios: "<id>:<offsetMin>:<label>" entries.
+  const chainedEntries = parseChainedScenarios(parsed.chainedScenario);
+
+  // Validate chained scenarios all belong to the org / are templates.
+  const chainedIds = chainedEntries.map((c) => c.scenarioId);
+  if (chainedIds.length > 0) {
+    const accessible = await prisma.scenario.findMany({
+      where: { id: { in: chainedIds }, OR: [{ orgId: user.orgId }, { orgId: null }] },
+      select: { id: true },
+    });
+    const accessibleIds = new Set(accessible.map((s) => s.id));
+    for (const id of chainedIds) {
+      if (!accessibleIds.has(id)) redirect("/scenarios");
+    }
+  }
+
+  // Parse objectives (one per non-empty line, max 10).
+  const objectives = parseObjectives(parsed.objectivesText);
+
+  // Parse IBS ids (comma-separated; can be empty → aggregate from scenarios).
+  const explicitIbsIds = (parsed.ibsIds ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  // Determine final IBS set: explicit selection wins, else aggregate from
+  // primary + chained scenarios.
+  let ibsIdsToLink: string[];
+  if (explicitIbsIds.length > 0) {
+    const ownedByOrg = await prisma.importantBusinessService.findMany({
+      where: { id: { in: explicitIbsIds }, scenario: { OR: [{ orgId: user.orgId }, { orgId: null }] } },
+      select: { id: true },
+    });
+    ibsIdsToLink = ownedByOrg.map((i) => i.id);
+  } else {
+    const scenariosWithIbs = await prisma.scenario.findMany({
+      where: { id: { in: [parsed.scenarioId, ...chainedIds] } },
+      select: { ibsList: { select: { id: true } } },
+    });
+    ibsIdsToLink = Array.from(
+      new Set(scenariosWithIbs.flatMap((s) => s.ibsList.map((i) => i.id))),
+    );
+  }
 
   const exercise = await prisma.exercise.create({
     data: {
@@ -114,6 +169,7 @@ export async function submitStep2ScenarioAction(formData: FormData) {
       regulatorMode: parsed.regulatorMode ?? false,
       regulatorAudience: parsed.regulatorAudience ?? null,
       recurrenceRule: parsed.recurrenceRule ?? null,
+      objectives,
       teams: { create: DEFAULT_TEAMS.map((t, i) => ({ ...t, orderIdx: i })) },
       participants: {
         create: {
@@ -122,9 +178,53 @@ export async function submitStep2ScenarioAction(formData: FormData) {
           exerciseRole: "FACILITATOR",
         },
       },
+      // Primary scenario + chained scenarios as link rows
+      chainedScenarios: {
+        create: [
+          { scenarioId: parsed.scenarioId, sequence: 0, offsetMin: 0, label: null },
+          ...chainedEntries.map((c, idx) => ({
+            scenarioId: c.scenarioId,
+            sequence: idx + 1,
+            offsetMin: c.offsetMin,
+            label: c.label,
+          })),
+        ],
+      },
+      ibsLinks: {
+        create: ibsIdsToLink.map((ibsId) => ({ ibsId })),
+      },
     },
   });
 
   revalidatePath("/exercises");
   redirect(`/exercises/new?step=3&id=${exercise.id}`);
+}
+
+function parseChainedScenarios(
+  raw: string | string[] | undefined,
+): { scenarioId: string; offsetMin: number; label: string | null }[] {
+  if (!raw) return [];
+  const arr = Array.isArray(raw) ? raw : [raw];
+  return arr
+    .map((entry) => {
+      const [id, offsetStr, label] = entry.split(":");
+      if (!id) return null;
+      const offsetMin = parseInt(offsetStr ?? "0", 10);
+      return {
+        scenarioId: id,
+        offsetMin: Number.isFinite(offsetMin) ? offsetMin : 0,
+        label: label && label.length > 0 ? label : null,
+      };
+    })
+    .filter((c): c is { scenarioId: string; offsetMin: number; label: string | null } => c !== null)
+    .slice(0, 3);
+}
+
+function parseObjectives(text: string | undefined): string[] {
+  if (!text) return [];
+  return text
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 10);
 }
