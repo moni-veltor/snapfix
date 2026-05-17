@@ -34,6 +34,12 @@ model Organization {
   /// Hex accent colour ("#4f46e5") — overrides the brand --accent token
   /// across the app shell. Null = default indigo.
   accentHex    String?
+  /// Default fully-loaded hourly cost per IMT role abbreviation, used to
+  /// estimate exercise cost. JSON shape: { "CEO": 500, "CRO": 400, ... }
+  /// in major currency units (GBP/EUR/USD). Null = use sector defaults.
+  defaultExerciseRates Json?
+  /// ISO 4217 currency code for cost surfacing (GBP / EUR / USD).
+  exerciseCostCurrency String  @default("GBP")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -145,6 +151,9 @@ model User {
 
   createdScenarios        Scenario[]              @relation("ScenarioCreator")
   facilitatedExercises    Exercise[]              @relation("ExerciseFacilitator")
+  coFacilitatedExercises  Exercise[]              @relation("ExerciseCoFacilitator")
+  exerciseApprovalsGiven  ExerciseApproval[]      @relation("ExerciseApprover")
+  classifiedReadsByMe     ExerciseClassifiedReader[] @relation("ClassifiedReadReader")
   exerciseParticipations  ExerciseParticipant[]
   incidentLogEntries      IncidentLogEntry[]
   responses               ParticipantResponse[]
@@ -264,6 +273,17 @@ model Scenario {
   coversDataIntegrity    Boolean @default(false)
   coversThirdParty       Boolean @default(false)
 
+  // ─── Difficulty rating (1-5 per axis) ─────────────────────────────────────
+  /// 1 = single failure with clear cascade.
+  /// 5 = multiple simultaneous failures, cognitive overload.
+  difficultyCognitive    Int?
+  /// 1 = relaxed timeline.  5 = highly compressed regulator clocks.
+  difficultyTimePressure Int?
+  /// 1 = facts are clear.   5 = high "we don't know" content, conflicting signals.
+  difficultyAmbiguity    Int?
+  /// 1 = single team.       5 = many external parties (regulators, vendors, customers, media).
+  difficultyStakeholders Int?
+
   ibsList              ImportantBusinessService[]
   events               Event[]
   injects              Inject[]
@@ -271,6 +291,7 @@ model Scenario {
   debriefQuestions     DebriefQuestion[]
   exercises            Exercise[]
   artefacts            Artefact[]
+  chainedFromExercises ExerciseScenarioLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -360,6 +381,7 @@ model Inject {
   responses        ParticipantResponse[]
   receipts         InjectReceipt[]
   triggeredDecisions DecisionRecord[] @relation("DecisionTriggerInject")
+  exerciseOverrides ExerciseInjectOverride[]
 
   createdAt DateTime @default(now())
 
@@ -419,6 +441,49 @@ enum ExerciseStatus {
   ABANDONED
 }
 
+enum ExerciseType {
+  TABLETOP
+  LIVE
+  WALKTHROUGH
+}
+
+enum Confidentiality {
+  OPEN
+  RESTRICTED
+}
+
+enum Jurisdiction {
+  UK
+  EU
+  UK_AND_EU
+  US
+  GLOBAL
+}
+
+enum Classification {
+  PUBLIC
+  INTERNAL
+  CONFIDENTIAL
+  SECRET
+}
+
+enum ExerciseMode {
+  PRODUCTION
+  DRY_RUN
+}
+
+enum VendorParticipantScope {
+  OBSERVER_ONLY
+  RESPONDER_ROLE
+  FULL_PARTICIPANT
+}
+
+enum ExerciseApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum ExerciseRole {
   FACILITATOR
   LEAD
@@ -434,12 +499,89 @@ model Exercise {
   scenario      Scenario     @relation(fields: [scenarioId], references: [id])
   facilitatorId String?
   facilitator   User?        @relation("ExerciseFacilitator", fields: [facilitatorId], references: [id])
+  /// Optional backup facilitator. Single-facilitator design is anti-resilience;
+  /// a named co-facilitator can take over if the primary becomes unavailable
+  /// (and is the first port-of-call for participant questions during the live run).
+  coFacilitatorId String?
+  coFacilitator   User?   @relation("ExerciseCoFacilitator", fields: [coFacilitatorId], references: [id])
 
   title       String
   description String?
   plannedDate DateTime?
   location    String?
   status      ExerciseStatus @default(PLANNING)
+
+  // ─── Wizard-era planning fields ───────────────────────────────────────────
+  /// LIVE = real-time war-room; TABLETOP = facilitated discussion;
+  /// WALKTHROUGH = explanatory tour, lowest realism.
+  exerciseType   ExerciseType    @default(TABLETOP)
+  /// Planned wall-clock duration in minutes. Used to size the briefing email,
+  /// cost estimate, calendar invite, and pre-flight summary.
+  durationMin    Int?
+  /// IANA time-zone string (e.g. "Europe/London"). When set, D-Day is interpreted
+  /// in this zone; participants in other zones see localised times. Null defaults
+  /// to UTC interpretation.
+  timeZone       String?
+  /// OPEN = whole org sees the exercise in lists; RESTRICTED = only roster +
+  /// explicit observers see it.
+  confidentiality Confidentiality @default(OPEN)
+  /// 1-5 short outcome statements the exercise is intended to test
+  /// (e.g. "Test 4h FCA notification path under cyber pressure"). Scored
+  /// against in the debrief.
+  objectives     String[]
+  /// Optional jurisdictional scope. Drives which regulator-clock thresholds
+  /// and notification helpers apply during severity classification.
+  jurisdiction   Jurisdiction    @default(UK)
+  /// Information-security classification. SECRET / CONFIDENTIAL enable
+  /// watermarking and per-exercise restricted reader lists.
+  classification Classification  @default(INTERNAL)
+  /// Optional one-line classification caveat (e.g. "MNPI", "DEAL-RELATED",
+  /// "INSIDER LIST"). Surfaced in the page-header pill.
+  classificationCaveat String?
+  /// PRODUCTION exercises generate evidence and count toward annual obligations.
+  /// DRY_RUN exercises are private facilitator rehearsals — purged after 30 days,
+  /// excluded from regulator evidence packs, do not satisfy annual testing.
+  mode           ExerciseMode    @default(PRODUCTION)
+  /// When set, this exercise was cloned from another exercise's design
+  /// (template). Lets the programme view show "X used as template by N others".
+  templateOfId   String?
+  templateOf     Exercise?  @relation("ExerciseTemplate", fields: [templateOfId], references: [id], onDelete: SetNull)
+  templateClones Exercise[] @relation("ExerciseTemplate")
+  /// RFC 5545 RRULE string for recurring exercises (e.g. quarterly cyber drill).
+  /// Null = one-off.
+  recurrenceRule String?
+
+  // ─── Briefing tracking ────────────────────────────────────────────────────
+  briefingSentAt         DateTime?
+  /// Reason given when the facilitator skipped the pre-read briefing email
+  /// (e.g. "Verbal brief in person at kickoff").
+  briefingSkippedReason  String?
+
+  // ─── Cost (snapshot, GBP minor units / pence) ─────────────────────────────
+  /// Estimated cost computed at planning time from roster × duration × role rates.
+  /// Snapshot so rate changes don't retroactively alter past evidence.
+  estimatedCostMinor     Int?
+  /// Actual cost computed at closure from attended-time × role rates.
+  actualCostMinor        Int?
+
+  // ─── Regulator-evidence mode ──────────────────────────────────────────────
+  /// When true, all post-kickoff edits are locked, all decisions require an
+  /// approver, comms require explicit sign-off, closure gates are strict-no-waivers,
+  /// audit log writes are chained for tamper-evidence, and closure auto-generates
+  /// a regulator evidence pack.
+  regulatorMode          Boolean  @default(false)
+  /// Free-text label of the audience this evidence is being prepared for
+  /// (e.g. "PRA SS1/21", "FCA SYSC 15A", "BoE FMI", "DORA Art. 25").
+  regulatorAudience      String?
+  /// URL to the generated evidence pack (Vercel Blob), set on closure when
+  /// regulatorMode is true.
+  regulatorEvidencePackUrl String?
+
+  // ─── Real-incident abort path ─────────────────────────────────────────────
+  /// Set when the exercise was aborted because a real incident took over.
+  /// Distinguishes ABANDONED-for-real-incident from ABANDONED-because-no-show.
+  abortedAt    DateTime?
+  abortReason  String?
 
   startedAt       DateTime?
   pausedAt        DateTime?
@@ -466,9 +608,21 @@ model Exercise {
   seats          ExerciseSeat[]
   chatMessages   ChatMessage[]
   scratchpad     ExerciseScratchpad?
+  // ─── Wizard-era relations ─────────────────────────────────────────────────
+  chainedScenarios ExerciseScenarioLink[]
+  vendorParticipants ExerciseVendorParticipant[]
+  approvals        ExerciseApproval[]
+  injectOverrides  ExerciseInjectOverride[]
+  hotWash          ExerciseHotWash?
+  wellbeingChecks  ExerciseWellbeingCheck[]
+  classifiedReads  ExerciseClassifiedReader[]
+  auditHashChain   ExerciseAuditHashEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([orgId, status])
+  @@index([orgId, plannedDate])
 }
 
 model ExerciseTeam {
@@ -529,6 +683,21 @@ model ExerciseParticipant {
   mobilisationStatus  MobilisationStatus    @default(UNCALLED)
   mobilisedAt         DateTime?
 
+  /// When the participant actually first joined the live war room.
+  /// Used for actual-cost computation (vs estimated cost) and for
+  /// the "X arrived 12 min late" coaching finding.
+  attendedFromAt   DateTime?
+  /// When the participant left or the exercise closed for them.
+  attendedUntilAt  DateTime?
+  /// Set when the participant clicks "I've read the pre-read & I'm ready".
+  /// Drives the pre-flight summary's "10/12 acked" counter.
+  preReadAckedAt   DateTime?
+  /// Observer = sees everything read-only, no inbox / no decisions / no comms.
+  /// Stakeholder = sees only the executive-summary view (status + closure + PIR).
+  /// These flags don't replace exerciseRole; they layer scope on top of it.
+  isObserver       Boolean   @default(false)
+  isStakeholder    Boolean   @default(false)
+
   eventReceipts  EventReceipt[]
   injectReceipts InjectReceipt[]
 
@@ -536,6 +705,7 @@ model ExerciseParticipant {
   decisionsApproved  DecisionRecord[] @relation("DecisionApprover")
   sitrepsAuthored    Sitrep[]
   imtMeetingsChaired IMTMeeting[]     @relation("IMTMeetingChair")
+  wellbeingChecks    ExerciseWellbeingCheck[]
 
   @@unique([exerciseId, userId])
 }
@@ -1338,7 +1508,8 @@ model Vendor {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ibsLinks VendorIBSLink[]
+  ibsLinks                VendorIBSLink[]
+  exerciseParticipations  ExerciseVendorParticipant[]
 
   @@unique([orgId, name])
 }
@@ -1642,4 +1813,192 @@ model DRTest {
   createdAt DateTime @default(now())
 
   @@index([systemId])
+}
+
+// ─── Plan-an-Exercise wizard models ──────────────────────────────────────────
+
+/// Chained scenarios on a single exercise. Lets a realistic exercise compose
+/// multiple scenarios that fire concurrently or in sequence
+/// (e.g. cyber breach → triggers vendor escalation at +90m → triggers BCP
+/// walkthrough at +180m). Exercise.scenarioId remains the *primary* scenario
+/// for backwards compatibility; this table adds the others.
+model ExerciseScenarioLink {
+  id          String   @id @default(cuid())
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  scenarioId  String
+  scenario    Scenario @relation(fields: [scenarioId], references: [id])
+  /// 0 = primary (mirror of Exercise.scenarioId); 1+ = chained in order
+  sequence    Int
+  /// Offset in minutes from exercise D-Day start. 0 = fires concurrently;
+  /// > 0 = fires later in the timeline.
+  offsetMin   Int      @default(0)
+  /// Optional facilitator label shown in the timeline so participants
+  /// understand the source ("this inject is from the vendor-loss
+  /// scenario, not the cyber one").
+  label       String?
+
+  createdAt   DateTime @default(now())
+
+  @@unique([exerciseId, sequence])
+  @@index([exerciseId])
+}
+
+/// External vendor / third-party representative invited to participate in an
+/// exercise. Scoped, time-bounded access via signed token URL. Every page
+/// view logged for evidence.
+model ExerciseVendorParticipant {
+  id           String   @id @default(cuid())
+  exerciseId   String
+  exercise     Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  vendorId     String
+  vendor       Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  contactName  String
+  contactEmail String
+  /// One-time-use signed URL token used to access the exercise without
+  /// requiring a SnapFix login. Expires at tokenExpiresAt.
+  accessToken    String    @unique
+  tokenExpiresAt DateTime
+  scope          VendorParticipantScope
+  invitedAt      DateTime  @default(now())
+  joinedAt       DateTime?
+  leftAt         DateTime?
+  /// Number of audited reads — incremented per page view by the vendor.
+  readCount      Int       @default(0)
+
+  @@index([exerciseId])
+  @@index([vendorId])
+}
+
+/// Per-exercise inject customization. Sparse table — only rows for injects
+/// added, hidden, or retimed for this specific exercise. Scenario.injects
+/// remains the canonical template; this layers on overrides.
+model ExerciseInjectOverride {
+  id          String   @id @default(cuid())
+  exerciseId  String
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  /// Null = brand-new inject custom to this exercise.
+  /// Non-null = override of the scenario inject with this id.
+  injectId    String?
+  inject      Inject?  @relation(fields: [injectId], references: [id], onDelete: Cascade)
+  /// When true, suppress the underlying scenario inject from this exercise's run.
+  hidden      Boolean  @default(false)
+  /// Override the scenario's scheduledTime (HH:MM on D-Day).
+  scheduledTime String?
+  // ── Custom-inject fields (mirror Inject when injectId is null) ────────────
+  summary         String?
+  description     String?
+  kind            InjectKind?
+  senderRoleTitle String?
+  toRoleTitles    String[]
+  ccRoleTitles    String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([exerciseId])
+  @@index([injectId])
+}
+
+/// Sign-off captured before a high-cost / high-classification / regulator-mode
+/// exercise can transition from PLANNING to READY. Append-only audit record.
+model ExerciseApproval {
+  id           String   @id @default(cuid())
+  exerciseId   String
+  exercise     Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  approverUserId String
+  approverUser   User   @relation("ExerciseApprover", fields: [approverUserId], references: [id], onDelete: Cascade)
+  /// Snapshot of approver's name + role at the time, so later renames
+  /// don't rewrite the evidence trail.
+  approverNameSnapshot String
+  approverRoleSnapshot String?
+  status   ExerciseApprovalStatus @default(PENDING)
+  comment  String?
+  signedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([exerciseId])
+}
+
+/// 15-minute structured "hot-wash" captured immediately at end of exercise,
+/// before the team disperses. Distinct from the formal Retrospective (5 days
+/// later) and the AfterActionReport (publish-grade summary).
+model ExerciseHotWash {
+  id           String   @id @default(cuid())
+  exerciseId   String   @unique
+  exercise     Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  heldAt       DateTime @default(now())
+  /// Quick summary written live by the facilitator while the team is still in the room.
+  summary          String?
+  /// The 1-3 things that hurt most during this run.
+  immediateGaps    String?
+  /// The 1-3 things that worked surprisingly well.
+  immediateWins    String?
+  /// Raw bullet-list of next-actions (later promoted to ExerciseActionItem).
+  nextActionsRaw   String?
+  capturedByUserId String?
+
+  createdAt DateTime @default(now())
+}
+
+/// Anonymous one-question wellbeing check shown to participants at the end
+/// of an exercise. Aggregates feed a programme-level burnout indicator.
+model ExerciseWellbeingCheck {
+  id            String   @id @default(cuid())
+  exerciseId    String
+  exercise      Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  /// Nullable for anonymous submission (default). When non-null, identifies
+  /// the participant who chose to attribute their response.
+  participantId String?
+  participant   ExerciseParticipant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  /// 1 = energising; 5 = severely draining.
+  stressLevel   Int
+  note          String?
+  createdAt     DateTime @default(now())
+
+  @@index([exerciseId])
+}
+
+/// Audit row written every time a user reads a CONFIDENTIAL or SECRET
+/// exercise. Captured separately from the general AuditLogEntry so the
+/// insider list / regulator can see exactly who saw what when.
+model ExerciseClassifiedReader {
+  id           String   @id @default(cuid())
+  exerciseId   String
+  exercise     Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  readerUserId String
+  readerUser   User     @relation("ClassifiedReadReader", fields: [readerUserId], references: [id], onDelete: Cascade)
+  /// What surface they accessed (e.g. "exercise.overview", "exercise.injects",
+  /// "exercise.evidence-pack"). Free-text, indexed for query.
+  surface      String
+  /// IP captured from request headers, best-effort. Null when unavailable.
+  ipAddress    String?
+  /// User-agent captured from request headers, best-effort.
+  userAgent    String?
+  readAt       DateTime @default(now())
+
+  @@index([exerciseId, readAt])
+  @@index([readerUserId, readAt])
+}
+
+/// Tamper-evident audit hash chain. Each entry includes the SHA-256 of the
+/// previous entry, so any retroactive edit is detectable. Written only when
+/// the exercise is in regulator-evidence mode; otherwise standard AuditLogEntry
+/// is sufficient.
+model ExerciseAuditHashEntry {
+  id              String   @id @default(cuid())
+  exerciseId      String
+  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  sequence        Int
+  /// SHA-256 hex of: prevHash || canonical(payload) || timestamp.
+  hash            String
+  /// SHA-256 hex of the previous entry, or 64 zero-chars for sequence 0.
+  prevHash        String
+  /// Canonical JSON payload of the audited event.
+  payload         Json
+  /// Monotonic timestamp; used in hash input.
+  occurredAt      DateTime @default(now())
+
+  @@unique([exerciseId, sequence])
+  @@index([exerciseId])
 }
