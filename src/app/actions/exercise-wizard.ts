@@ -530,6 +530,43 @@ function csvToArr(s: string | undefined): string[] {
     .filter(Boolean);
 }
 
+// ─── Permissions: observer / stakeholder toggles (Commit N) ─────────────────
+
+const SetScopeSchema = z.object({
+  exerciseId: z.string(),
+  participantId: z.string(),
+  isObserver: z.string().optional(),
+  isStakeholder: z.string().optional(),
+});
+
+/**
+ * Set the observer/stakeholder scope flags for a participant. These layer on
+ * top of exerciseRole — they don't replace it. Observers see read-only of
+ * everything; stakeholders see only the executive-summary view (status +
+ * closure + PIR + cost).
+ */
+export async function setParticipantScopeAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const parsed = SetScopeSchema.parse(Object.fromEntries(formData));
+
+  const exercise = await prisma.exercise.findFirst({
+    where: { id: parsed.exerciseId, orgId: me.orgId },
+    select: { id: true },
+  });
+  if (!exercise) return;
+
+  await prisma.exerciseParticipant.updateMany({
+    where: { id: parsed.participantId, exerciseId: parsed.exerciseId },
+    data: {
+      isObserver: parsed.isObserver === "on",
+      isStakeholder: parsed.isStakeholder === "on",
+    },
+  });
+
+  revalidatePath(`/exercises/new?step=3&id=${parsed.exerciseId}`);
+  revalidatePath(`/exercises/${parsed.exerciseId}/team`);
+}
+
 // ─── Dry-run mode (Commit K) ─────────────────────────────────────────────────
 
 /**

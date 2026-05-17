@@ -282,6 +282,8 @@ export default async function NewExerciseWizardPage({
             roleTitle: p.roleTitle,
             exerciseRole: p.exerciseRole,
             deputyParticipantId: p.deputyParticipantId,
+            isObserver: p.isObserver,
+            isStakeholder: p.isStakeholder,
           }))}
           vendorParticipants={vendorParticipants.map((vp) => ({
             id: vp.id,

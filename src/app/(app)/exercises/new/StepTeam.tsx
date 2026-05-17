@@ -24,6 +24,7 @@ import {
   removeVendorParticipantAction,
   setCoFacilitatorAction,
   setDeputyAction,
+  setParticipantScopeAction,
 } from "@/app/actions/exercise-wizard";
 
 type OrgUser = { id: string; name: string | null; email: string };
@@ -50,6 +51,8 @@ type Participant = {
   roleTitle: string;
   exerciseRole: string;
   deputyParticipantId: string | null;
+  isObserver: boolean;
+  isStakeholder: boolean;
 };
 type VendorParticipant = {
   id: string;
@@ -172,6 +175,59 @@ export default function StepTeam({
               );
             })}
           </div>
+        )}
+      </Section>
+
+      {/* ─── Observer + stakeholder scopes ────────────────────────────── */}
+      <Section
+        icon={Users}
+        title="Observer / stakeholder access"
+        hint="Observers see everything read-only (no decisions, no comms send). Stakeholders see only the executive summary — status + closure + score + cost. Layered on top of the participant's role, not a replacement."
+      >
+        {participants.length === 0 ? (
+          <p className="text-[11px] text-soft">Assign people in the seat map above first.</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {participants.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface-0 p-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-ink">{p.userName}</p>
+                  <p className="text-[10px] text-soft">
+                    <span className="font-mono">{p.roleTitle}</span> · {p.exerciseRole}
+                  </p>
+                </div>
+                <form
+                  action={setParticipantScopeAction}
+                  className="flex flex-wrap items-center gap-2"
+                >
+                  <input type="hidden" name="exerciseId" value={exerciseId} />
+                  <input type="hidden" name="participantId" value={p.id} />
+                  <label className="inline-flex items-center gap-1 text-[10px] text-muted">
+                    <input
+                      type="checkbox"
+                      name="isObserver"
+                      defaultChecked={p.isObserver}
+                    />
+                    Observer
+                  </label>
+                  <label className="inline-flex items-center gap-1 text-[10px] text-muted">
+                    <input
+                      type="checkbox"
+                      name="isStakeholder"
+                      defaultChecked={p.isStakeholder}
+                    />
+                    Stakeholder
+                  </label>
+                  <button className="rounded-md bg-indigo-600 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-indigo-500">
+                    Save
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
         )}
       </Section>
 

@@ -56,6 +56,15 @@ export default async function ExerciseOverviewPage({
   });
   if (!exercise) notFound();
 
+  // Stakeholders see only the executive summary view, regardless of status.
+  // Owners / admins always see the full operational view.
+  const myEnrolment = exercise.participants.find((p) => p.userId === me.id);
+  const isStakeholder = myEnrolment?.isStakeholder ?? false;
+  const canManageScope = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
+  if (isStakeholder && !canManageScope) {
+    redirect(`/exercises/${exercise.id}/exec`);
+  }
+
   // Redirect to live pages when IN_PROGRESS
   if (exercise.status === "IN_PROGRESS" || exercise.status === "PAUSED") {
     if (me.orgRole === "OWNER" || me.orgRole === "ADMIN") {
