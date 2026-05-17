@@ -530,6 +530,95 @@ function csvToArr(s: string | undefined): string[] {
     .filter(Boolean);
 }
 
+// ─── Dry-run mode (Commit K) ─────────────────────────────────────────────────
+
+/**
+ * Clones a DRY_RUN exercise as a fresh PRODUCTION exercise so the user can
+ * "graduate" a successful rehearsal into the real run. Same design copy as
+ * cloneExerciseAction but flips mode to PRODUCTION.
+ */
+export async function promoteDryRunToProductionAction(formData: FormData) {
+  const user = await requireOrgRole("OWNER", "ADMIN");
+  const sourceId = String(formData.get("sourceExerciseId"));
+
+  const source = await prisma.exercise.findFirst({
+    where: { id: sourceId, orgId: user.orgId, mode: "DRY_RUN" },
+    include: {
+      chainedScenarios: true,
+      participants: true,
+      ibsLinks: true,
+      vendorParticipants: true,
+    },
+  });
+  if (!source) redirect("/exercises");
+
+  const created = await prisma.exercise.create({
+    data: {
+      orgId: user.orgId,
+      scenarioId: source.scenarioId,
+      facilitatorId: user.id,
+      title: source.title.replace(/\s*\[DRY-RUN\]\s*$/, "").trim() || source.title,
+      description: source.description,
+      location: source.location,
+      status: "PLANNING",
+      exerciseType: source.exerciseType,
+      durationMin: source.durationMin,
+      timeZone: source.timeZone,
+      speedMultiplier: source.speedMultiplier,
+      confidentiality: source.confidentiality,
+      jurisdiction: source.jurisdiction,
+      classification: source.classification,
+      classificationCaveat: source.classificationCaveat,
+      mode: "PRODUCTION",
+      regulatorMode: source.regulatorMode,
+      regulatorAudience: source.regulatorAudience,
+      recurrenceRule: source.recurrenceRule,
+      objectives: source.objectives,
+      templateOfId: source.id,
+      teams: { create: DEFAULT_TEAMS.map((t, i) => ({ ...t, orderIdx: i })) },
+      chainedScenarios: {
+        create: source.chainedScenarios.map((c) => ({
+          scenarioId: c.scenarioId,
+          sequence: c.sequence,
+          offsetMin: c.offsetMin,
+          label: c.label,
+        })),
+      },
+      ibsLinks: { create: source.ibsLinks.map((l) => ({ ibsId: l.ibsId })) },
+      vendorParticipants: {
+        create: source.vendorParticipants.map((vp) => ({
+          vendorId: vp.vendorId,
+          contactName: vp.contactName,
+          contactEmail: vp.contactEmail,
+          scope: vp.scope,
+          accessToken: generateAccessToken(),
+          tokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        })),
+      },
+      participants: {
+        create: [{ userId: user.id, roleTitle: "Facilitator", exerciseRole: "FACILITATOR" }],
+      },
+    },
+    select: { id: true },
+  });
+
+  const otherParticipants = source.participants.filter((p) => p.userId !== user.id);
+  if (otherParticipants.length > 0) {
+    await prisma.exerciseParticipant.createMany({
+      data: otherParticipants.map((p) => ({
+        exerciseId: created.id,
+        userId: p.userId,
+        roleTitle: p.roleTitle,
+        exerciseRole: p.exerciseRole,
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  revalidatePath("/exercises");
+  redirect(`/exercises/new?step=1&id=${created.id}`);
+}
+
 // ─── Templates + clone (Commit H) ────────────────────────────────────────────
 
 /**

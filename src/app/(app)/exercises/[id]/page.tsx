@@ -8,6 +8,9 @@ import ArtefactList from "@/components/ArtefactList";
 import ArtefactUpload from "@/components/ArtefactUpload";
 import PageHero from "@/components/ui/PageHero";
 import RoleBriefingPreview from "@/components/exercises/RoleBriefingPreview";
+import { DryRunBanner } from "@/components/exercises/DryRunBadge";
+import { promoteDryRunToProductionAction } from "@/app/actions/exercise-wizard";
+import { TestTube2 } from "lucide-react";
 
 export default async function ExerciseOverviewPage({
   params,
@@ -115,6 +118,7 @@ export default async function ExerciseOverviewPage({
 
   return (
     <div className="space-y-6">
+      {exercise.mode === "DRY_RUN" && <DryRunBanner />}
       <PageHero
         eyebrow={exercise.scenario.title}
         icon={Target}
@@ -131,12 +135,23 @@ export default async function ExerciseOverviewPage({
         }
         actions={
           canManage ? (
-            <Link
-              href={`/exercises/${exercise.id}/team`}
-              className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
-            >
-              Manage teams & people
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              {exercise.mode === "DRY_RUN" && (
+                <form action={promoteDryRunToProductionAction}>
+                  <input type="hidden" name="sourceExerciseId" value={exercise.id} />
+                  <button className="inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-500">
+                    <TestTube2 size={14} />
+                    Promote to production
+                  </button>
+                </form>
+              )}
+              <Link
+                href={`/exercises/${exercise.id}/team`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                Manage teams & people
+              </Link>
+            </div>
           ) : undefined
         }
       />

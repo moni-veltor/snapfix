@@ -187,6 +187,7 @@ export default async function NewExerciseWizardPage({
       facilitatorId: true,
       coFacilitatorId: true,
       plannedDate: true,
+      mode: true,
     },
   });
   if (!exercise) redirect("/exercises/new?step=1");
@@ -262,7 +263,12 @@ export default async function NewExerciseWizardPage({
     }
 
     return (
-      <WizardShell currentStep={3} carryParams={carry} draftTitle={exercise.title}>
+      <WizardShell
+        currentStep={3}
+        carryParams={carry}
+        draftTitle={exercise.title}
+        isDryRun={exercise.mode === "DRY_RUN"}
+      >
         <StepTeam
           exerciseId={exercise.id}
           orgUsers={orgUsers}
@@ -307,7 +313,12 @@ export default async function NewExerciseWizardPage({
     const preReadAckedCount = participants.filter((p) => p.preReadAckedAt !== null).length;
 
     return (
-      <WizardShell currentStep={4} carryParams={carry} draftTitle={exercise.title}>
+      <WizardShell
+        currentStep={4}
+        carryParams={carry}
+        draftTitle={exercise.title}
+        isDryRun={exercise.mode === "DRY_RUN"}
+      >
         <StepInjects
           exerciseId={exercise.id}
           injects={injects}
@@ -323,7 +334,12 @@ export default async function NewExerciseWizardPage({
 
   // ─── Step 5: Pre-flight + readiness gate + go-live ──────────────────────
   return (
-    <WizardShell currentStep={5} carryParams={carry} draftTitle={exercise.title}>
+    <WizardShell
+      currentStep={5}
+      carryParams={carry}
+      draftTitle={exercise.title}
+      isDryRun={exercise.mode === "DRY_RUN"}
+    >
       <StepPreflight exerciseId={exercise.id} />
     </WizardShell>
   );

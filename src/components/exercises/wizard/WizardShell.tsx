@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Target } from "lucide-react";
 import StepIndicator from "./StepIndicator";
 import PageHero from "@/components/ui/PageHero";
+import { DryRunBanner } from "@/components/exercises/DryRunBadge";
 
 type Props = {
   currentStep: number;
@@ -12,6 +13,8 @@ type Props = {
   children: ReactNode;
   /** When set, surfaces an "Editing draft: <title>" hint in the header. */
   draftTitle?: string;
+  /** When true, render the dry-run banner above the steps. */
+  isDryRun?: boolean;
 };
 
 /**
@@ -20,7 +23,13 @@ type Props = {
  * components own their own form / next-button so they can submit to
  * step-specific server actions.
  */
-export default function WizardShell({ currentStep, carryParams = {}, children, draftTitle }: Props) {
+export default function WizardShell({
+  currentStep,
+  carryParams = {},
+  children,
+  draftTitle,
+  isDryRun = false,
+}: Props) {
   return (
     <div className="space-y-6">
       <PageHero
@@ -40,6 +49,8 @@ export default function WizardShell({ currentStep, carryParams = {}, children, d
       />
 
       <StepIndicator current={currentStep} carryParams={carryParams} />
+
+      {isDryRun && <DryRunBanner />}
 
       {children}
     </div>
