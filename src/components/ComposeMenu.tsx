@@ -68,7 +68,7 @@ export default function ComposeMenu({ canManage }: Props) {
           className="absolute left-0 top-full z-50 mt-1.5 w-64 overflow-hidden rounded-xl border border-line bg-surface-elev shadow-[var(--shadow-card-lg)]"
         >
           <Group label="Plan & run">
-            <Item href="/exercises?new=1" icon={Target} label="Plan an exercise" />
+            <Item href="/exercises/new" icon={Target} label="Plan an exercise" />
             <Item href="/scenarios?new=1" icon={FileText} label="New scenario" />
             <Item href="/scenarios/library" icon={Library} label="Sector scenario library" />
             <Item href="/templates" icon={Library} label="CMORG templates" />
@@ -87,7 +87,7 @@ export default function ComposeMenu({ canManage }: Props) {
             <Group label="People">
               <Item href="/org/roles" icon={Users} label="Add role" />
               <Item href="/org?invite=1" icon={UserPlus} label="Invite teammate" />
-              <Item href="/exercises?new=1" icon={CalendarPlus} label="Schedule exercise" />
+              <Item href="/exercises/new" icon={CalendarPlus} label="Schedule exercise" />
             </Group>
           )}
         </div>

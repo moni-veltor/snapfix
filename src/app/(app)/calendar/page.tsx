@@ -11,24 +11,17 @@ export default async function CalendarPage() {
   const me = await requireOrgUser();
   const canCreate = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
 
-  const [exercises, scenarios] = await Promise.all([
-    prisma.exercise.findMany({
-      where: {
-        orgId: me.orgId,
-        OR: [{ plannedDate: { not: null } }, { startedAt: { not: null } }],
-      },
-      orderBy: [{ plannedDate: "asc" }, { startedAt: "asc" }],
-      include: {
-        scenario: { select: { title: true } },
-        facilitator: { select: { name: true, email: true } },
-      },
-    }),
-    prisma.scenario.findMany({
-      where: { orgId: me.orgId, isTemplate: false },
-      orderBy: { createdAt: "desc" },
-      select: { id: true, title: true, dDayDate: true },
-    }),
-  ]);
+  const exercises = await prisma.exercise.findMany({
+    where: {
+      orgId: me.orgId,
+      OR: [{ plannedDate: { not: null } }, { startedAt: { not: null } }],
+    },
+    orderBy: [{ plannedDate: "asc" }, { startedAt: "asc" }],
+    include: {
+      scenario: { select: { title: true } },
+      facilitator: { select: { name: true, email: true } },
+    },
+  });
 
   const exerciseDots = exercises.map((ex) => {
     const d = ex.plannedDate ?? ex.startedAt ?? ex.createdAt;
@@ -42,12 +35,6 @@ export default async function CalendarPage() {
     };
   });
 
-  const scenarioOptions = scenarios.map((s) => ({
-    id: s.id,
-    title: s.title,
-    dDayDate: s.dDayDate.toISOString(),
-  }));
-
   return (
     <div className="space-y-6">
       <PageHero
@@ -59,7 +46,7 @@ export default async function CalendarPage() {
             ? "No exercises planned yet. Click Plan exercise to add the first one."
             : `${exercises.length} ${exercises.length === 1 ? "exercise" : "exercises"} with planned or started dates.`
         }
-        actions={canCreate && <ExerciseAddButton scenarios={scenarioOptions} />}
+        actions={canCreate && <ExerciseAddButton />}
       />
 
       <CalendarMonthGrid exercises={exerciseDots} />
