@@ -15,6 +15,8 @@ import RunSheet from "@/components/facilitator/RunSheet";
 import FacilitatorPanels from "@/components/facilitator/FacilitatorPanels";
 import InjectComposerModal from "@/components/scenario/InjectComposerModal";
 import { loadReadReceipts } from "@/lib/read-receipts";
+import FacilitatorRuntimeControls from "@/components/live/FacilitatorRuntimeControls";
+import { prisma } from "@/lib/prisma";
 
 export default async function FacilitatorPage({
   params,
@@ -27,6 +29,12 @@ export default async function FacilitatorPage({
   if (!exercise) notFound();
   const { clock, events, injects } = computeVisibility(exercise);
   const receipts = await loadReadReceipts(exercise.id);
+  const rosterRoles = await prisma.exerciseParticipant.findMany({
+    where: { exerciseId: exercise.id },
+    select: { roleTitle: true },
+    distinct: ["roleTitle"],
+  });
+  const rosterRoleTitles = rosterRoles.map((r) => r.roleTitle).sort();
 
   const overdueBeats =
     events.filter((e) => !e.released).length +
@@ -135,6 +143,12 @@ export default async function FacilitatorPage({
           dDayHHMM={clock.hhmm}
         />
       )}
+
+      <FacilitatorRuntimeControls
+        exerciseId={exercise.id}
+        status={exercise.status}
+        rosterRoleTitles={rosterRoleTitles}
+      />
 
       {/* Two-pane: tabbed run sheet on the left, sticky live incident log on the right. */}
       <div className="grid gap-4 lg:grid-cols-12">

@@ -11,6 +11,7 @@ import {
 import { saveRetrospectiveAction } from "@/app/actions/closure";
 import PostIncidentReportForm from "@/components/debrief/PostIncidentReportForm";
 import DebriefAnswerCompare from "@/components/debrief/DebriefAnswerCompare";
+import HotWashForm from "@/components/debrief/HotWashForm";
 import { prisma } from "@/lib/prisma";
 import { scoreIncident } from "@/lib/scoring";
 import PerformanceCard from "@/components/scoring/PerformanceCard";
@@ -43,9 +44,10 @@ export default async function DebriefPage({
     orderBy: { closedAt: "desc" },
     include: { postIncidentReport: true },
   });
-  const retrospective = await prisma.retrospective.findFirst({
-    where: { exerciseId: exercise.id },
-  });
+  const [retrospective, hotWash] = await Promise.all([
+    prisma.retrospective.findFirst({ where: { exerciseId: exercise.id } }),
+    prisma.exerciseHotWash.findUnique({ where: { exerciseId: exercise.id } }),
+  ]);
 
   // Score any invoked incident (closed or in-flight) for the performance card.
   const scoredIncident = await prisma.incident.findFirst({
@@ -293,6 +295,23 @@ export default async function DebriefPage({
             }}
           />
         </section>
+      )}
+
+      {isFacilitator && (
+        <HotWashForm
+          exerciseId={exercise.id}
+          defaults={
+            hotWash
+              ? {
+                  summary: hotWash.summary,
+                  immediateGaps: hotWash.immediateGaps,
+                  immediateWins: hotWash.immediateWins,
+                  nextActionsRaw: hotWash.nextActionsRaw,
+                  heldAt: hotWash.heldAt,
+                }
+              : null
+          }
+        />
       )}
 
       {retrospective && (
