@@ -239,6 +239,12 @@ export async function startExerciseAction(formData: FormData) {
       speedMultiplier: speed,
     },
   });
+  const { appendAuditEntry } = await import("@/lib/audit-hash-chain");
+  await appendAuditEntry(id, {
+    action: "EXERCISE_STARTED",
+    actorUserId: me.id,
+    speedMultiplier: speed,
+  });
   revalidatePath(`/exercises/${id}`);
   revalidatePath(`/exercises/${id}/facilitator`);
   revalidatePath(`/exercises/${id}/live`);
@@ -255,11 +261,26 @@ export async function pauseExerciseAction(formData: FormData) {
 }
 
 export async function completeExerciseAction(formData: FormData) {
-  await requireOrgRole("OWNER", "ADMIN");
+  const me = await requireOrgRole("OWNER", "ADMIN");
   const id = String(formData.get("id"));
   await prisma.exercise.update({
     where: { id },
     data: { status: "COMPLETED", completedAt: new Date() },
+  });
+  // Snapshot actual cost at closure for regulator-mode evidence.
+  const { actualExerciseCost } = await import("@/lib/exercise-cost");
+  const actual = await actualExerciseCost(id);
+  if (actual) {
+    await prisma.exercise.update({
+      where: { id },
+      data: { actualCostMinor: actual.totalMinor },
+    });
+  }
+  const { appendAuditEntry } = await import("@/lib/audit-hash-chain");
+  await appendAuditEntry(id, {
+    action: "EXERCISE_COMPLETED",
+    actorUserId: me.id,
+    actualCostMinor: actual?.totalMinor ?? null,
   });
   revalidatePath(`/exercises/${id}`);
 }

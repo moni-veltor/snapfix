@@ -698,6 +698,14 @@ export async function transitionDraftToReadyAction(formData: FormData) {
     },
   });
 
+  // Tamper-evident audit chain write — only fires when regulatorMode=true.
+  const { appendAuditEntry } = await import("@/lib/audit-hash-chain");
+  await appendAuditEntry(exerciseId, {
+    action: "TRANSITION_TO_READY",
+    actorUserId: ctx.user.id,
+    estimatedCostMinor: cost?.totalMinor ?? null,
+  });
+
   revalidatePath("/exercises");
   revalidatePath(`/exercises/${exerciseId}`);
   redirect(`/exercises/${exerciseId}`);
