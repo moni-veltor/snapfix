@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Layers, ListChecks, Settings as SettingsIcon } from "lucide-react";
+import { Coins, Layers, ListChecks, Settings as SettingsIcon } from "lucide-react";
 import { requireOrgRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
@@ -140,6 +140,25 @@ export default async function SettingsPage() {
               <p className="text-xs text-muted">
                 Add your firm&apos;s own war-room decisions (e.g. &quot;Halt outbound payments&quot;)
                 alongside the built-in IMT vocabulary.
+              </p>
+            </div>
+          </div>
+          <span className="text-xs text-muted">Open →</span>
+        </Link>
+
+        <Link
+          href="/settings/exercise-rates"
+          className="flex items-center justify-between gap-3 rounded-md border border-line bg-surface-1 p-5 transition-all hover:-translate-y-px hover:border-line-strong hover:shadow-[var(--shadow-card-md)]"
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent-soft text-indigo-600 dark:text-indigo-300">
+              <Coins size={16} />
+            </span>
+            <div>
+              <h2 className="text-sm font-semibold text-ink">Exercise cost rates</h2>
+              <p className="text-xs text-muted">
+                Per-role hourly loaded cost used to estimate and report exercise cost on the
+                pre-flight summary and at closure.
               </p>
             </div>
           </div>
