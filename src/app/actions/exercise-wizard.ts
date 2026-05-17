@@ -530,6 +530,113 @@ function csvToArr(s: string | undefined): string[] {
     .filter(Boolean);
 }
 
+// ─── Templates + clone (Commit H) ────────────────────────────────────────────
+
+/**
+ * Creates a fresh PLANNING exercise pre-filled from the design of an existing
+ * one. Copies basics, classifications, chained scenarios, objectives, teams,
+ * roster + roles (not deputy chain), vendor invites (without tokens — they're
+ * regenerated), and IBS links. Does NOT copy: runtime state, audit, scoring,
+ * incidents, decisions, comms, sitreps, retrospective, AAR, hot-wash.
+ */
+export async function cloneExerciseAction(formData: FormData) {
+  const user = await requireOrgRole("OWNER", "ADMIN");
+  const sourceId = String(formData.get("sourceExerciseId"));
+  const newTitle = String(formData.get("newTitle") ?? "").trim();
+
+  const source = await prisma.exercise.findFirst({
+    where: { id: sourceId, orgId: user.orgId },
+    include: {
+      chainedScenarios: true,
+      participants: { include: { user: { select: { id: true } } } },
+      ibsLinks: true,
+      vendorParticipants: true,
+    },
+  });
+  if (!source) redirect("/exercises");
+
+  const created = await prisma.exercise.create({
+    data: {
+      orgId: user.orgId,
+      scenarioId: source.scenarioId,
+      facilitatorId: user.id,
+      title: newTitle || `${source.title} (copy)`,
+      description: source.description,
+      // plannedDate intentionally left null so user picks a new date
+      location: source.location,
+      status: "PLANNING",
+      exerciseType: source.exerciseType,
+      durationMin: source.durationMin,
+      timeZone: source.timeZone,
+      speedMultiplier: source.speedMultiplier,
+      confidentiality: source.confidentiality,
+      jurisdiction: source.jurisdiction,
+      classification: source.classification,
+      classificationCaveat: source.classificationCaveat,
+      mode: source.mode,
+      regulatorMode: source.regulatorMode,
+      regulatorAudience: source.regulatorAudience,
+      recurrenceRule: source.recurrenceRule,
+      objectives: source.objectives,
+      templateOfId: source.id,
+      teams: {
+        // Default team set always recreated for fresh exercise
+        create: DEFAULT_TEAMS.map((t, i) => ({ ...t, orderIdx: i })),
+      },
+      chainedScenarios: {
+        create: source.chainedScenarios.map((c) => ({
+          scenarioId: c.scenarioId,
+          sequence: c.sequence,
+          offsetMin: c.offsetMin,
+          label: c.label,
+        })),
+      },
+      ibsLinks: {
+        create: source.ibsLinks.map((l) => ({ ibsId: l.ibsId })),
+      },
+      vendorParticipants: {
+        create: source.vendorParticipants.map((vp) => ({
+          vendorId: vp.vendorId,
+          contactName: vp.contactName,
+          contactEmail: vp.contactEmail,
+          scope: vp.scope,
+          accessToken: generateAccessToken(),
+          tokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        })),
+      },
+      participants: {
+        create: [
+          {
+            userId: user.id,
+            roleTitle: "Facilitator",
+            exerciseRole: "FACILITATOR",
+          },
+        ],
+      },
+    },
+    select: { id: true },
+  });
+
+  // Copy other participants (excluding the cloner since they're already added
+  // as facilitator). Skip if the original participant is the cloner.
+  const otherParticipants = source.participants.filter((p) => p.userId !== user.id);
+  if (otherParticipants.length > 0) {
+    await prisma.exerciseParticipant.createMany({
+      data: otherParticipants.map((p) => ({
+        exerciseId: created.id,
+        userId: p.userId,
+        teamId: null,
+        roleTitle: p.roleTitle,
+        exerciseRole: p.exerciseRole,
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  revalidatePath("/exercises");
+  redirect(`/exercises/new?step=1&id=${created.id}`);
+}
+
 // ─── Step 5 (Pre-flight) wizard actions ──────────────────────────────────────
 
 export async function markBriefingSentAction(formData: FormData) {

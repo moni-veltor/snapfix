@@ -7,6 +7,8 @@ import StepScenarios, { type ScenarioOption } from "./StepScenarios";
 import StepTeam from "./StepTeam";
 import StepInjects from "./StepInjects";
 import StepPreflight from "./StepPreflight";
+import CloneFromPastPanel from "@/components/exercises/CloneFromPastPanel";
+import { scoreIncident } from "@/lib/scoring";
 import {
   findCoverageGaps,
   findDensityHotspots,
@@ -37,9 +39,57 @@ export default async function NewExerciseWizardPage({
 
   // ─── Step 1: Basics ─────────────────────────────────────────────────────
   if (step === 1) {
+    const pastExercisesRaw = await prisma.exercise.findMany({
+      where: {
+        orgId: user.orgId,
+        status: { in: ["READY", "IN_PROGRESS", "COMPLETED", "ABANDONED"] },
+      },
+      orderBy: [{ completedAt: "desc" }, { plannedDate: "desc" }, { createdAt: "desc" }],
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        plannedDate: true,
+        exerciseType: true,
+        classification: true,
+        regulatorMode: true,
+        scenario: { select: { title: true } },
+        _count: { select: { participants: true } },
+        incidents: {
+          where: { invokedAt: { not: null } },
+          orderBy: { invokedAt: "desc" },
+          take: 1,
+          select: { id: true },
+        },
+      },
+    });
+
+    const pastExercises = await Promise.all(
+      pastExercisesRaw.map(async (e) => {
+        const incident = e.incidents[0];
+        const score = incident ? await scoreIncident(incident.id) : null;
+        return {
+          id: e.id,
+          title: e.title,
+          status: e.status,
+          plannedDate: e.plannedDate,
+          exerciseType: e.exerciseType,
+          classification: e.classification,
+          regulatorMode: e.regulatorMode,
+          scenarioTitle: e.scenario.title,
+          participantCount: e._count.participants,
+          overallScore: score?.overall ?? null,
+        };
+      }),
+    );
+
     return (
       <WizardShell currentStep={1} carryParams={carry}>
-        <StepBasics defaults={carry} />
+        <div className="space-y-6">
+          <StepBasics defaults={carry} />
+          <CloneFromPastPanel pastExercises={pastExercises} />
+        </div>
       </WizardShell>
     );
   }
