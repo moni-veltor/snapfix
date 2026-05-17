@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireOrgRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -7,6 +6,7 @@ import StepBasics from "./StepBasics";
 import StepScenarios, { type ScenarioOption } from "./StepScenarios";
 import StepTeam from "./StepTeam";
 import StepInjects from "./StepInjects";
+import StepPreflight from "./StepPreflight";
 import {
   findCoverageGaps,
   findDensityHotspots,
@@ -271,30 +271,10 @@ export default async function NewExerciseWizardPage({
     );
   }
 
-  // ─── Step 5: still placeholder until Commit G ───────────────────────────
+  // ─── Step 5: Pre-flight + readiness gate + go-live ──────────────────────
   return (
-    <WizardShell currentStep={step} carryParams={carry} draftTitle={exercise.title}>
-      <section className="rounded-xl border border-dashed border-line bg-surface-1 p-6 text-sm">
-        <p className="font-semibold text-ink">Step 5 arrives in Commit G</p>
-        <p className="mt-1 text-muted">
-          Pre-flight summary, readiness gate, briefing email draft and .ics generator land in
-          Commit G of the Plan-an-Exercise rollout.
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Link
-            href={`/exercises/new?step=4&id=${exercise.id}`}
-            className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
-          >
-            Back to Injects
-          </Link>
-          <Link
-            href={`/exercises/${exercise.id}`}
-            className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
-          >
-            Open this draft &rarr;
-          </Link>
-        </div>
-      </section>
+    <WizardShell currentStep={5} carryParams={carry} draftTitle={exercise.title}>
+      <StepPreflight exerciseId={exercise.id} />
     </WizardShell>
   );
 }

@@ -128,23 +128,18 @@ export async function submitStep2ScenarioAction(formData: FormData) {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  // Determine final IBS set: explicit selection wins, else aggregate from
-  // primary + chained scenarios.
-  let ibsIdsToLink: string[];
+  // Determine final IBS set: only explicit org-register selection creates
+  // ExerciseIBSLink rows (those link to OrganizationIBS, not scenario IBSs).
+  // The scenario-aggregated display in Step 2 is informational; mapping
+  // scenario IBSs back to org IBSs happens in a later commit when the user
+  // picks them explicitly.
+  let ibsIdsToLink: string[] = [];
   if (explicitIbsIds.length > 0) {
-    const ownedByOrg = await prisma.importantBusinessService.findMany({
-      where: { id: { in: explicitIbsIds }, scenario: { OR: [{ orgId: user.orgId }, { orgId: null }] } },
+    const ownedByOrg = await prisma.organizationIBS.findMany({
+      where: { id: { in: explicitIbsIds }, orgId: user.orgId },
       select: { id: true },
     });
     ibsIdsToLink = ownedByOrg.map((i) => i.id);
-  } else {
-    const scenariosWithIbs = await prisma.scenario.findMany({
-      where: { id: { in: [parsed.scenarioId, ...chainedIds] } },
-      select: { ibsList: { select: { id: true } } },
-    });
-    ibsIdsToLink = Array.from(
-      new Set(scenariosWithIbs.flatMap((s) => s.ibsList.map((i) => i.id))),
-    );
   }
 
   const exercise = await prisma.exercise.create({
@@ -533,6 +528,72 @@ function csvToArr(s: string | undefined): string[] {
     .split(",")
     .map((x) => x.trim())
     .filter(Boolean);
+}
+
+// ─── Step 5 (Pre-flight) wizard actions ──────────────────────────────────────
+
+export async function markBriefingSentAction(formData: FormData) {
+  const exerciseId = String(formData.get("exerciseId"));
+  const ctx = await loadDraftExercise(exerciseId);
+  if (!ctx) return;
+  await prisma.exercise.update({
+    where: { id: exerciseId },
+    data: { briefingSentAt: new Date(), briefingSkippedReason: null },
+  });
+  revalidatePath(`/exercises/new?step=5&id=${exerciseId}`);
+}
+
+const SkipBriefingInput = z.object({
+  exerciseId: z.string(),
+  reason: z.string().min(1).max(200),
+});
+
+export async function markBriefingSkippedAction(formData: FormData) {
+  const parsed = SkipBriefingInput.parse(Object.fromEntries(formData));
+  const ctx = await loadDraftExercise(parsed.exerciseId);
+  if (!ctx) return;
+  await prisma.exercise.update({
+    where: { id: parsed.exerciseId },
+    data: { briefingSkippedReason: parsed.reason, briefingSentAt: null },
+  });
+  revalidatePath(`/exercises/new?step=5&id=${parsed.exerciseId}`);
+}
+
+/**
+ * Wizard-aware transition to READY. Re-evaluates the full readiness report
+ * server-side and only flips the status if every required check passes.
+ * Snapshots the estimated cost at this moment so later rate changes don't
+ * retroactively alter past evidence.
+ */
+export async function transitionDraftToReadyAction(formData: FormData) {
+  const exerciseId = String(formData.get("exerciseId"));
+  const ctx = await loadDraftExercise(exerciseId);
+  if (!ctx) return;
+
+  // Late-bound import to avoid pulling server-only lib into this module's top
+  // when other wizard actions don't need it.
+  const { evaluateReadiness } = await import("@/lib/exercise-readiness");
+  const { estimateExerciseCost } = await import("@/lib/exercise-cost");
+
+  const report = await evaluateReadiness(exerciseId);
+  if (!report || !report.canGoReady) {
+    // Bounce back to Step 5 — the UI will show the failed checks.
+    redirect(`/exercises/new?step=5&id=${exerciseId}`);
+  }
+
+  const cost = await estimateExerciseCost(exerciseId);
+
+  await prisma.exercise.update({
+    where: { id: exerciseId },
+    data: {
+      status: "READY",
+      estimatedCostMinor: cost?.totalMinor ?? null,
+    },
+  });
+
+  revalidatePath("/exercises");
+  revalidatePath(`/exercises/${exerciseId}`);
+  redirect(`/exercises/${exerciseId}`);
 }
 
 function generateAccessToken(): string {
