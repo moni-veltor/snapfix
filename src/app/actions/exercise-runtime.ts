@@ -126,6 +126,91 @@ export async function abortExerciseAction(formData: FormData) {
   redirect(`/exercises/${parsed.exerciseId}`);
 }
 
+// ─── Wellbeing check (anonymous end-of-exercise stress capture) ──────────────
+
+const WellbeingSchema = z.object({
+  exerciseId: z.string(),
+  stressLevel: z.coerce.number().int().min(1).max(5),
+  note: z.string().max(500).optional(),
+  attributed: z.string().optional(), // when "on", attribute to participant
+});
+
+export async function submitWellbeingCheckAction(formData: FormData) {
+  const me = await requireOrgUser();
+  const parsed = WellbeingSchema.parse(Object.fromEntries(formData));
+
+  const exercise = await prisma.exercise.findFirst({
+    where: { id: parsed.exerciseId, orgId: me.orgId },
+    select: { id: true },
+  });
+  if (!exercise) return;
+
+  let participantId: string | null = null;
+  if (parsed.attributed === "on") {
+    const participant = await prisma.exerciseParticipant.findFirst({
+      where: { exerciseId: exercise.id, userId: me.id },
+      select: { id: true },
+    });
+    participantId = participant?.id ?? null;
+  }
+
+  await prisma.exerciseWellbeingCheck.create({
+    data: {
+      exerciseId: exercise.id,
+      participantId,
+      stressLevel: parsed.stressLevel,
+      note: parsed.note ?? null,
+    },
+  });
+
+  revalidatePath(`/exercises/${parsed.exerciseId}/debrief`);
+}
+
+// ─── Promote a debrief answer to an action item ──────────────────────────────
+
+const PromoteAnswerSchema = z.object({
+  exerciseId: z.string(),
+  debriefAnswerId: z.string(),
+  title: z.string().min(1).max(200),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
+});
+
+/**
+ * Lifts a debrief answer into an ExerciseActionItem so the finding gets a
+ * persistent owner + due date + status — closes the loop the regulator
+ * looks for ("you said X — what did you do about it?").
+ */
+export async function promoteDebriefAnswerToActionAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const parsed = PromoteAnswerSchema.parse(Object.fromEntries(formData));
+
+  const [exercise, answer] = await Promise.all([
+    prisma.exercise.findFirst({
+      where: { id: parsed.exerciseId, orgId: me.orgId },
+      select: { id: true, orgId: true },
+    }),
+    prisma.debriefAnswer.findFirst({
+      where: { id: parsed.debriefAnswerId, exerciseId: parsed.exerciseId },
+      select: { body: true, author: { select: { name: true, email: true } } },
+    }),
+  ]);
+  if (!exercise || !answer) return;
+
+  await prisma.exerciseActionItem.create({
+    data: {
+      orgId: exercise.orgId,
+      exerciseId: exercise.id,
+      title: parsed.title,
+      description: `Promoted from debrief answer by ${answer.author?.name ?? answer.author?.email ?? "anonymous"}:\n\n${answer.body}`,
+      priority: parsed.priority,
+      status: "OPEN",
+      createdById: me.id,
+    },
+  });
+
+  revalidatePath(`/exercises/${parsed.exerciseId}/debrief`);
+}
+
 // ─── Hot-wash (immediate end-of-exercise debrief) ────────────────────────────
 
 const HotWashSchema = z.object({

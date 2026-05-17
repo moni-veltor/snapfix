@@ -12,6 +12,10 @@ import { saveRetrospectiveAction } from "@/app/actions/closure";
 import PostIncidentReportForm from "@/components/debrief/PostIncidentReportForm";
 import DebriefAnswerCompare from "@/components/debrief/DebriefAnswerCompare";
 import HotWashForm from "@/components/debrief/HotWashForm";
+import WellbeingCheckForm from "@/components/debrief/WellbeingCheckForm";
+import { evaluateToleranceBreaches } from "@/lib/rto-rpo-check";
+import { promoteDebriefAnswerToActionAction } from "@/app/actions/exercise-runtime";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { scoreIncident } from "@/lib/scoring";
 import PerformanceCard from "@/components/scoring/PerformanceCard";
@@ -56,6 +60,11 @@ export default async function DebriefPage({
     select: { id: true },
   });
   const score = scoredIncident ? await scoreIncident(scoredIncident.id) : null;
+
+  const closedIncidentId = closedIncident?.id ?? scoredIncident?.id ?? null;
+  const toleranceBreaches = closedIncidentId
+    ? await evaluateToleranceBreaches(closedIncidentId)
+    : [];
   const highlights = await buildHighlightReel(exercise.id);
   const answersByQuestion = new Map<string, typeof exercise.debriefAnswers>();
   for (const a of exercise.debriefAnswers) {
@@ -294,6 +303,101 @@ export default async function DebriefPage({
                 closedIncident.postIncidentReport.remediationCommitments ?? "",
             }}
           />
+        </section>
+      )}
+
+      {toleranceBreaches.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">IBS impact tolerance</h2>
+          <ul className="space-y-1.5 text-sm">
+            {toleranceBreaches.map((tb) => (
+              <li
+                key={tb.ibsName}
+                className={`rounded-md border p-3 ${
+                  tb.isBreached
+                    ? "border-rose-300 bg-rose-50 dark:border-rose-700 dark:bg-rose-950/40"
+                    : "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40"
+                }`}
+              >
+                <p className="flex items-center gap-1.5 font-medium">
+                  {tb.isBreached ? (
+                    <AlertTriangle size={13} className="text-rose-700 dark:text-rose-300" />
+                  ) : (
+                    <CheckCircle2 size={13} className="text-emerald-700 dark:text-emerald-300" />
+                  )}
+                  {tb.ibsName}
+                </p>
+                <p className="mt-1 text-xs text-muted">{tb.summary}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <WellbeingCheckForm exerciseId={exercise.id} />
+
+      {isFacilitator && exercise.debriefAnswers.length > 0 && (
+        <section className="space-y-2 rounded-xl border border-line bg-surface-1 p-5">
+          <header>
+            <h2 className="text-lg font-semibold">Promote a lesson to an action item</h2>
+            <p className="mt-0.5 text-[11px] text-soft">
+              Close the loop the regulator looks for: lift any debrief answer into a tracked
+              action with an owner + status.
+            </p>
+          </header>
+          <form
+            action={promoteDebriefAnswerToActionAction}
+            className="grid gap-2 sm:grid-cols-2"
+          >
+            <input type="hidden" name="exerciseId" value={exercise.id} />
+            <label className="text-[11px] sm:col-span-2">
+              <span className="text-muted">Source answer</span>
+              <select
+                name="debriefAnswerId"
+                required
+                defaultValue=""
+                className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+              >
+                <option value="" disabled>
+                  — pick an answer to promote —
+                </option>
+                {exercise.debriefAnswers.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.author?.name ?? a.author?.email ?? "anonymous"}: {a.body.slice(0, 80)}
+                    {a.body.length > 80 && "…"}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-[11px]">
+              <span className="text-muted">Action title</span>
+              <input
+                name="title"
+                required
+                maxLength={200}
+                placeholder="What we'll do about it"
+                className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+              />
+            </label>
+            <label className="text-[11px]">
+              <span className="text-muted">Priority</span>
+              <select
+                name="priority"
+                defaultValue="MEDIUM"
+                className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+              >
+                <option value="LOW">LOW</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="HIGH">HIGH</option>
+                <option value="CRITICAL">CRITICAL</option>
+              </select>
+            </label>
+            <div className="sm:col-span-2 flex justify-end">
+              <button className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">
+                Promote to action item
+              </button>
+            </div>
+          </form>
         </section>
       )}
 
