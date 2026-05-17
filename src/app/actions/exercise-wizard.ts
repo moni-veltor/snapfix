@@ -409,6 +409,132 @@ export async function importRosterCsvAction(formData: FormData) {
   revalidatePath(`/exercises/new?step=3&id=${exerciseId}`);
 }
 
+// ─── Step 4 (Injects) wizard actions ─────────────────────────────────────────
+
+const CustomInjectInput = z.object({
+  exerciseId: z.string(),
+  summary: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  scheduledTime: z
+    .string()
+    .regex(/^\d{1,2}:\d{2}$/, "HH:MM format expected"),
+  kind: z.string().optional(),
+  senderRoleTitle: z.string().max(120).optional(),
+  toRoleTitlesCsv: z.string().max(500).optional(),
+  ccRoleTitlesCsv: z.string().max(500).optional(),
+});
+
+export async function addCustomInjectAction(formData: FormData) {
+  const parsed = CustomInjectInput.parse(Object.fromEntries(formData));
+  const ctx = await loadDraftExercise(parsed.exerciseId);
+  if (!ctx) return;
+
+  await prisma.exerciseInjectOverride.create({
+    data: {
+      exerciseId: parsed.exerciseId,
+      injectId: null,
+      summary: parsed.summary,
+      description: parsed.description ?? "",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      kind: (parsed.kind as any) ?? null,
+      scheduledTime: parsed.scheduledTime,
+      senderRoleTitle: parsed.senderRoleTitle ?? null,
+      toRoleTitles: csvToArr(parsed.toRoleTitlesCsv),
+      ccRoleTitles: csvToArr(parsed.ccRoleTitlesCsv),
+    },
+  });
+
+  revalidatePath(`/exercises/new?step=4&id=${parsed.exerciseId}`);
+}
+
+export async function removeCustomInjectAction(formData: FormData) {
+  const exerciseId = String(formData.get("exerciseId"));
+  const overrideId = String(formData.get("overrideId"));
+  const ctx = await loadDraftExercise(exerciseId);
+  if (!ctx) return;
+  await prisma.exerciseInjectOverride.deleteMany({
+    where: { id: overrideId, exerciseId, injectId: null },
+  });
+  revalidatePath(`/exercises/new?step=4&id=${exerciseId}`);
+}
+
+const RetimeInjectInput = z.object({
+  exerciseId: z.string(),
+  injectId: z.string(),
+  scheduledTime: z.string().regex(/^\d{1,2}:\d{2}$/),
+});
+
+export async function retimeScenarioInjectAction(formData: FormData) {
+  const parsed = RetimeInjectInput.parse(Object.fromEntries(formData));
+  const ctx = await loadDraftExercise(parsed.exerciseId);
+  if (!ctx) return;
+
+  await prisma.exerciseInjectOverride.upsert({
+    where: {
+      // Compound find via existing override row; if not found we'll create.
+      id: await findOrSentinel(parsed.exerciseId, parsed.injectId),
+    },
+    update: { scheduledTime: parsed.scheduledTime },
+    create: {
+      exerciseId: parsed.exerciseId,
+      injectId: parsed.injectId,
+      scheduledTime: parsed.scheduledTime,
+      summary: null,
+      description: null,
+      kind: null,
+      toRoleTitles: [],
+      ccRoleTitles: [],
+    },
+  });
+
+  revalidatePath(`/exercises/new?step=4&id=${parsed.exerciseId}`);
+}
+
+export async function toggleHideScenarioInjectAction(formData: FormData) {
+  const exerciseId = String(formData.get("exerciseId"));
+  const injectId = String(formData.get("injectId"));
+  const ctx = await loadDraftExercise(exerciseId);
+  if (!ctx) return;
+
+  const existing = await prisma.exerciseInjectOverride.findFirst({
+    where: { exerciseId, injectId },
+  });
+  if (existing) {
+    await prisma.exerciseInjectOverride.update({
+      where: { id: existing.id },
+      data: { hidden: !existing.hidden },
+    });
+  } else {
+    await prisma.exerciseInjectOverride.create({
+      data: {
+        exerciseId,
+        injectId,
+        hidden: true,
+        toRoleTitles: [],
+        ccRoleTitles: [],
+      },
+    });
+  }
+
+  revalidatePath(`/exercises/new?step=4&id=${exerciseId}`);
+}
+
+async function findOrSentinel(exerciseId: string, injectId: string): Promise<string> {
+  const existing = await prisma.exerciseInjectOverride.findFirst({
+    where: { exerciseId, injectId },
+    select: { id: true },
+  });
+  return existing?.id ?? "non-existent-sentinel";
+}
+
+function csvToArr(s: string | undefined): string[] {
+  if (!s) return [];
+  return s
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
 function generateAccessToken(): string {
   // 32 hex chars from crypto random bytes (Node 19+ has crypto.randomUUID/randomBytes).
   // Using Web Crypto for edge compatibility.

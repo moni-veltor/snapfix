@@ -6,6 +6,12 @@ import WizardShell from "@/components/exercises/wizard/WizardShell";
 import StepBasics from "./StepBasics";
 import StepScenarios, { type ScenarioOption } from "./StepScenarios";
 import StepTeam from "./StepTeam";
+import StepInjects from "./StepInjects";
+import {
+  findCoverageGaps,
+  findDensityHotspots,
+  loadAggregatedInjects,
+} from "@/lib/exercise-injects";
 import { computeDifficulty, recentTeamDifficulty } from "@/lib/scenario-difficulty";
 import { doraApplies as doraAppliesFn, previewDoraForScenario } from "@/lib/dora-thresholds";
 import type { Jurisdiction } from "@/lib/dora-thresholds";
@@ -236,20 +242,50 @@ export default async function NewExerciseWizardPage({
     );
   }
 
-  // ─── Steps 4-5: still placeholder until next commits ────────────────────
+  // ─── Step 4: Injects timeline + coverage + custom-inject CRUD + pre-read ─
+  if (step === 4) {
+    const [injects, participants] = await Promise.all([
+      loadAggregatedInjects(exercise.id),
+      prisma.exerciseParticipant.findMany({
+        where: { exerciseId: exercise.id },
+        select: { roleTitle: true, preReadAckedAt: true },
+      }),
+    ]);
+    const rosterRoleTitles = new Set(participants.map((p) => p.roleTitle));
+    const coverageGaps = findCoverageGaps(injects, rosterRoleTitles);
+    const densityHotspots = findDensityHotspots(injects);
+    const preReadAckedCount = participants.filter((p) => p.preReadAckedAt !== null).length;
+
+    return (
+      <WizardShell currentStep={4} carryParams={carry} draftTitle={exercise.title}>
+        <StepInjects
+          exerciseId={exercise.id}
+          injects={injects}
+          coverageGaps={coverageGaps}
+          densityHotspots={densityHotspots}
+          rosterRoleTitles={Array.from(rosterRoleTitles).sort()}
+          totalParticipants={participants.length}
+          preReadAckedCount={preReadAckedCount}
+        />
+      </WizardShell>
+    );
+  }
+
+  // ─── Step 5: still placeholder until Commit G ───────────────────────────
   return (
     <WizardShell currentStep={step} carryParams={carry} draftTitle={exercise.title}>
       <section className="rounded-xl border border-dashed border-line bg-surface-1 p-6 text-sm">
-        <p className="font-semibold text-ink">Step {step} arrives in the next commits</p>
+        <p className="font-semibold text-ink">Step 5 arrives in Commit G</p>
         <p className="mt-1 text-muted">
-          Steps 1-3 are live. Step 4 (Injects) lands in Commit E, Step 5 (Pre-flight) in Commit G.
+          Pre-flight summary, readiness gate, briefing email draft and .ics generator land in
+          Commit G of the Plan-an-Exercise rollout.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Link
-            href={`/exercises/new?step=3&id=${exercise.id}`}
+            href={`/exercises/new?step=4&id=${exercise.id}`}
             className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
           >
-            Back to Team
+            Back to Injects
           </Link>
           <Link
             href={`/exercises/${exercise.id}`}
