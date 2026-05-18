@@ -8,7 +8,8 @@ import {
   deprecateIBSAction,
   deleteIBSAction,
 } from "@/app/actions/ibs";
-import DependencyMap from "@/components/ibs/DependencyMap";
+import ResourceMapEditor from "@/components/ibs/ResourceMapEditor";
+import { fanOutLegacyResourcesAction } from "@/app/actions/ibs-resources";
 import ToleranceTester from "@/components/ibs/ToleranceTester";
 import HarmTypeLibrary from "@/components/ibs/HarmTypeLibrary";
 import IBSDetailTabs from "@/components/ibs/IBSDetailTabs";
@@ -27,6 +28,10 @@ export default async function IBSDetailPage({
   const { id } = await params;
   const sp = await searchParams;
 
+  // Lazy migration: fan out the legacy 6 string-array fields into IBSResource
+  // rows on first view, if and only if the IBS has zero IBSResource rows.
+  await fanOutLegacyResourcesAction(id);
+
   const ibs = await prisma.organizationIBS.findFirst({
     where: { id, orgId: me.orgId },
     include: {
@@ -39,45 +44,44 @@ export default async function IBSDetailPage({
         orderBy: [{ cycle: "desc" }, { line: "asc" }],
         include: { reviewer: { select: { name: true, email: true } } },
       },
+      resources: {
+        orderBy: [{ kind: "asc" }, { orderIdx: "asc" }],
+        include: {
+          vendor: { select: { id: true, name: true } },
+          techSystem: { select: { id: true, name: true, tier: true } },
+          department: { select: { id: true, name: true } },
+        },
+      },
     },
   });
   if (!ibs) notFound();
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
   const editing = canManage && sp.edit === "1";
 
-  // Compute shared-dependency map — for every dependency item this IBS uses,
-  // find which OTHER IBSs in the org list the same item.
-  const peers = await prisma.organizationIBS.findMany({
-    where: { orgId: me.orgId, id: { not: ibs.id } },
+  // Cross-IBS shared-dependency join using IBSResource.label (case-insensitive).
+  const peerResources = await prisma.iBSResource.findMany({
+    where: { ibs: { orgId: me.orgId, id: { not: ibs.id } } },
     select: {
-      id: true,
-      code: true,
-      name: true,
-      technology: true,
-      thirdParties: true,
-      information: true,
-      processes: true,
+      label: true,
+      ibs: { select: { id: true, code: true, name: true } },
     },
   });
   const sharedBy: Record<string, { id: string; code: string; name: string }[]> = {};
-  const allItems = [
-    ...ibs.technology,
-    ...ibs.thirdParties,
-    ...ibs.information,
-    ...ibs.processes,
-  ];
-  for (const item of allItems) {
-    const list = peers
-      .filter(
-        (p) =>
-          p.technology.includes(item) ||
-          p.thirdParties.includes(item) ||
-          p.information.includes(item) ||
-          p.processes.includes(item),
-      )
-      .map((p) => ({ id: p.id, code: p.code, name: p.name }));
-    sharedBy[item] = list;
+  for (const pr of peerResources) {
+    const key = pr.label.toLowerCase();
+    const arr = sharedBy[key] ?? [];
+    if (!arr.some((x) => x.id === pr.ibs.id)) arr.push(pr.ibs);
+    sharedBy[key] = arr;
   }
+
+  // Autocomplete sources for the new editor.
+  const [orgVendors, orgTechSystems, orgDepartments] = canManage
+    ? await Promise.all([
+        prisma.vendor.findMany({ where: { orgId: me.orgId }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+        prisma.techSystem.findMany({ where: { orgId: me.orgId }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+        prisma.department.findMany({ where: { orgId: me.orgId }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      ])
+    : [[], [], []];
 
   if (editing) {
     // Suggestions for the resource picker — same shape as /ibs/new
@@ -222,16 +226,27 @@ export default async function IBSDetailPage({
         panels={{
           overview: (
             <div className="space-y-5">
-              <DependencyMap
+              <ResourceMapEditor
+                ibsId={ibs.id}
                 ibsCode={ibs.code}
                 ibsName={ibs.name}
-                technology={ibs.technology}
-                thirdParties={ibs.thirdParties}
-                information={ibs.information}
-                processes={ibs.processes}
-                peopleNotes={ibs.peopleNotes}
-                facilities={ibs.facilities}
+                resources={ibs.resources.map((r) => ({
+                  id: r.id,
+                  kind: r.kind,
+                  label: r.label,
+                  criticality: r.criticality,
+                  vendor: r.vendor ? { id: r.vendor.id, name: r.vendor.name } : null,
+                  techSystem: r.techSystem
+                    ? { id: r.techSystem.id, name: r.techSystem.name, tier: r.techSystem.tier ?? null }
+                    : null,
+                  department: r.department ? { id: r.department.id, name: r.department.name } : null,
+                  note: r.note,
+                }))}
                 sharedBy={sharedBy}
+                vendors={orgVendors}
+                techSystems={orgTechSystems}
+                departments={orgDepartments}
+                canEdit={canManage}
               />
               <ToleranceTester
                 ibsCode={ibs.code}
@@ -243,14 +258,6 @@ export default async function IBSDetailPage({
           ),
           resources: (
             <div className="space-y-5">
-              <Card title="Resource map">
-                <Block label="Technology" list={ibs.technology} />
-                <Block label="3rd parties" list={ibs.thirdParties} />
-                <Block label="Information" list={ibs.information} />
-                <Block label="Processes" list={ibs.processes} />
-                {ibs.peopleNotes && <Block label="People" body={ibs.peopleNotes} />}
-                {ibs.facilities && <KV k="Facilities" v={ibs.facilities} />}
-              </Card>
               <Card title="Methodology">
                 <Block label="Customer journeys" list={ibs.customerJourneys} />
                 <Block label="Products covered" list={ibs.productsCovered} />
