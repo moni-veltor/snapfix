@@ -1,0 +1,847 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import {
+  AlertOctagon,
+  CalendarClock,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Crown,
+  Edit3,
+  Globe,
+  Layers,
+  Mail,
+  Save,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Trash2,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { assignMemberAction, removeExerciseMemberAction } from "@/app/actions/exercises";
+import {
+  markBriefingSentAction,
+  markBriefingSkippedAction,
+  setCoFacilitatorAction,
+  transitionDraftToReadyAction,
+} from "@/app/actions/exercise-wizard";
+import {
+  setExerciseIbsLinksAction,
+  setExerciseObjectivesAction,
+  setExerciseScheduleAction,
+  setRegulatorAudienceAction,
+} from "@/app/actions/exercise-quick";
+
+type OrgUser = { id: string; name: string | null; email: string };
+type OrgIBS = { id: string; name: string; criticality: string | null };
+type OrgRole = { id: string; abbreviation: string; title: string; isSMF: boolean; defaultHolderId: string | null };
+
+type Participant = {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  roleTitle: string;
+  exerciseRole: string;
+  deputyParticipantId: string | null;
+};
+
+type Readiness = {
+  checks: { id: string; label: string; why: string; ok: boolean; required: boolean; fixHref?: string }[];
+  canGoReady: boolean;
+  strict: boolean;
+};
+
+type ExerciseSnapshot = {
+  id: string;
+  title: string;
+  status: string;
+  plannedDate: Date | null;
+  durationMin: number | null;
+  timeZone: string | null;
+  speedMultiplier: number;
+  location: string | null;
+  classification: string;
+  regulatorMode: boolean;
+  regulatorAudience: string | null;
+  objectives: string[];
+  facilitatorId: string | null;
+  coFacilitatorId: string | null;
+  briefingSentAt: Date | null;
+  briefingSkippedReason: string | null;
+  ibsIds: string[];
+  scenarioTitle: string;
+  totalInjects: number;
+  visibleInjects: number;
+};
+
+type Props = {
+  exercise: ExerciseSnapshot;
+  readiness: Readiness;
+  participants: Participant[];
+  orgUsers: OrgUser[];
+  orgRoles: OrgRole[];
+  orgIBSs: OrgIBS[];
+  canEdit: boolean;
+};
+
+const TZ_PRESETS = ["Europe/London", "Europe/Dublin", "Europe/Paris", "America/New_York", "Asia/Singapore"];
+const DURATION_PRESETS = [60, 90, 120, 180, 240, 480];
+
+export default function PlanningWorkspace({
+  exercise,
+  readiness,
+  participants,
+  orgUsers,
+  orgRoles,
+  orgIBSs,
+  canEdit,
+}: Props) {
+  const pct = readiness.checks.length === 0
+    ? 100
+    : Math.round((readiness.checks.filter((c) => c.ok).length / readiness.checks.length) * 100);
+  const failedRequired = readiness.checks.filter((c) => !c.ok && (c.required || readiness.strict));
+  const tone =
+    readiness.canGoReady ? "bg-emerald-500" : pct >= 60 ? "bg-amber-500" : "bg-rose-500";
+
+  return (
+    <div className="space-y-5">
+      {/* ─── Live readiness gauge ─────────────────────────────────────── */}
+      <section className="sticky top-2 z-10 rounded-xl border border-line bg-surface-1/95 p-4 shadow-[var(--shadow-card)] backdrop-blur">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+              <ShieldCheck size={14} className="text-indigo-600 dark:text-indigo-300" />
+              Planning · {pct}% ready
+              {readiness.strict && (
+                <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white">
+                  Strict
+                </span>
+              )}
+            </p>
+            <p className="text-[11px] text-soft">
+              {readiness.checks.filter((c) => c.ok).length} of {readiness.checks.length} checks pass
+              {failedRequired.length > 0 && (
+                <span className="ml-2 font-semibold text-rose-700 dark:text-rose-300">
+                  · {failedRequired.length} required failing
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-40 overflow-hidden rounded-full bg-surface-2">
+              <div className={`h-full ${tone}`} style={{ width: `${pct}%` }} />
+            </div>
+            {canEdit && exercise.status === "PLANNING" && (
+              <form action={transitionDraftToReadyAction}>
+                <input type="hidden" name="exerciseId" value={exercise.id} />
+                <button
+                  disabled={!readiness.canGoReady}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[var(--shadow-card)] hover:-translate-y-px hover:bg-emerald-500 disabled:bg-surface-2 disabled:text-soft disabled:shadow-none disabled:hover:translate-y-0"
+                >
+                  <CheckCircle2 size={12} />
+                  Mark READY
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+        {failedRequired.length > 0 && (
+          <details className="mt-2">
+            <summary className="cursor-pointer text-[11px] font-semibold text-ink">
+              Show {failedRequired.length} failing required check{failedRequired.length === 1 ? "" : "s"}
+            </summary>
+            <ul className="mt-1.5 space-y-0.5 text-[11px] text-rose-800 dark:text-rose-200">
+              {failedRequired.map((c) => (
+                <li key={c.id} className="flex items-center gap-1.5">
+                  <AlertOctagon size={10} />
+                  {c.label}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </section>
+
+      {/* ─── Schedule ─────────────────────────────────────────────────── */}
+      <ScheduleCard exercise={exercise} canEdit={canEdit} />
+
+      {/* ─── Roster ──────────────────────────────────────────────────── */}
+      <RosterCard
+        exercise={exercise}
+        participants={participants}
+        orgUsers={orgUsers}
+        orgRoles={orgRoles}
+        canEdit={canEdit}
+      />
+
+      {/* ─── Coverage (IBSs + objectives + injects summary) ──────────── */}
+      <CoverageCard
+        exercise={exercise}
+        orgIBSs={orgIBSs}
+        canEdit={canEdit}
+      />
+
+      {/* ─── Briefing ────────────────────────────────────────────────── */}
+      <BriefingCard exercise={exercise} canEdit={canEdit} />
+
+      {/* ─── Power-user link to the full wizard ─────────────────────── */}
+      {canEdit && exercise.status === "PLANNING" && (
+        <p className="text-center text-[11px] text-soft">
+          Prefer the guided 5-step wizard?{" "}
+          <Link
+            href={`/exercises/new?step=3&id=${exercise.id}`}
+            className="font-medium text-indigo-600 hover:underline dark:text-indigo-300"
+          >
+            Open it →
+          </Link>
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Schedule card
+// ────────────────────────────────────────────────────────────────────────────
+
+function ScheduleCard({ exercise, canEdit }: { exercise: ExerciseSnapshot; canEdit: boolean }) {
+  const allOk = !!exercise.plannedDate && !!exercise.durationMin;
+  const dateStr = exercise.plannedDate
+    ? exercise.plannedDate.toISOString().slice(0, 16)
+    : "";
+  return (
+    <Card icon={CalendarClock} title="Schedule" ok={allOk}>
+      <form action={setExerciseScheduleAction} className="grid gap-3 sm:grid-cols-3">
+        <input type="hidden" name="exerciseId" value={exercise.id} />
+        <Field
+          label="Planned date + time"
+          name="plannedDate"
+          type="datetime-local"
+          defaultValue={dateStr}
+          disabled={!canEdit}
+          required
+        />
+        <div>
+          <label className="block text-sm">
+            <span className="text-ink">Duration (min)</span>
+          </label>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {DURATION_PRESETS.map((d) => (
+              <DurationChip key={d} value={d} current={exercise.durationMin} />
+            ))}
+          </div>
+          <input
+            type="number"
+            name="durationMin"
+            min={15}
+            max={2880}
+            step={15}
+            defaultValue={exercise.durationMin ?? 180}
+            disabled={!canEdit}
+            className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+          />
+        </div>
+        <label className="block text-sm">
+          <span className="text-ink">Time zone</span>
+          <select
+            name="timeZone"
+            defaultValue={exercise.timeZone ?? "Europe/London"}
+            disabled={!canEdit}
+            className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+          >
+            {TZ_PRESETS.map((tz) => (
+              <option key={tz} value={tz}>
+                {tz}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-sm">
+          <span className="text-ink">Speed multiplier</span>
+          <select
+            name="speedMultiplier"
+            defaultValue={String(exercise.speedMultiplier)}
+            disabled={!canEdit}
+            className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+          >
+            <option value="1">×1 real-time</option>
+            <option value="5">×5</option>
+            <option value="15">×15</option>
+            <option value="60">×60 (1 min = 1 D-Day hr)</option>
+          </select>
+        </label>
+        <label className="block text-sm sm:col-span-2">
+          <span className="text-ink">Location</span>
+          <input
+            name="location"
+            maxLength={200}
+            defaultValue={exercise.location ?? ""}
+            disabled={!canEdit}
+            placeholder="e.g. London war-room · distributed · hybrid"
+            className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+          />
+        </label>
+        {exercise.regulatorMode && (
+          <div className="sm:col-span-3">
+            <RegulatorAudienceInline exercise={exercise} canEdit={canEdit} />
+          </div>
+        )}
+        {canEdit && (
+          <div className="sm:col-span-3 flex justify-end">
+            <button className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500">
+              <Save size={11} />
+              Save schedule
+            </button>
+          </div>
+        )}
+      </form>
+    </Card>
+  );
+}
+
+function RegulatorAudienceInline({
+  exercise,
+  canEdit,
+}: {
+  exercise: ExerciseSnapshot;
+  canEdit: boolean;
+}) {
+  return (
+    <form action={setRegulatorAudienceAction} className="grid gap-2 sm:grid-cols-[1fr_auto] items-end">
+      <input type="hidden" name="exerciseId" value={exercise.id} />
+      <label className="block text-sm">
+        <span className="text-ink">Regulator audience (required in regulator mode)</span>
+        <input
+          name="regulatorAudience"
+          maxLength={120}
+          defaultValue={exercise.regulatorAudience ?? ""}
+          placeholder="e.g. PRA SS1/21 · FCA SYSC 15A · BoE FMI · DORA Art. 25"
+          disabled={!canEdit}
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+        />
+      </label>
+      {canEdit && (
+        <button className="self-end rounded-md border border-line bg-surface-1 px-2 py-1.5 text-[11px] text-ink hover:border-line-strong">
+          Save
+        </button>
+      )}
+    </form>
+  );
+}
+
+function DurationChip({ value, current }: { value: number; current: number | null }) {
+  const label = value < 60 ? `${value}m` : value % 60 === 0 ? `${value / 60}h` : `${Math.floor(value / 60)}h ${value % 60}m`;
+  const active = current === value;
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        const input = e.currentTarget.parentElement?.parentElement?.querySelector<HTMLInputElement>(
+          'input[name="durationMin"]',
+        );
+        if (input) input.value = String(value);
+      }}
+      className={`rounded-md border px-2 py-1 text-[11px] ${
+        active
+          ? "border-indigo-500 bg-indigo-50 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200"
+          : "border-line bg-surface-1 text-muted hover:border-line-strong hover:text-ink"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Roster card
+// ────────────────────────────────────────────────────────────────────────────
+
+function RosterCard({
+  exercise,
+  participants,
+  orgUsers,
+  orgRoles,
+  canEdit,
+}: {
+  exercise: ExerciseSnapshot;
+  participants: Participant[];
+  orgUsers: OrgUser[];
+  orgRoles: OrgRole[];
+  canEdit: boolean;
+}) {
+  const [showAdd, setShowAdd] = useState(false);
+  const ok = participants.length >= 2;
+  const smfRoles = orgRoles.filter((r) => r.isSMF);
+  const filledByAbbr = new Set(participants.map((p) => p.roleTitle));
+  const unfilledSMFs = smfRoles.filter((r) => !filledByAbbr.has(r.abbreviation));
+
+  return (
+    <Card icon={Users} title="Roster" ok={ok} subtitle={`${participants.length} on roster · ${unfilledSMFs.length} SMF seats unfilled`}>
+      <div className="space-y-3">
+        {/* Co-facilitator picker */}
+        <form action={setCoFacilitatorAction} className="grid gap-2 sm:grid-cols-[1fr_auto] items-end">
+          <input type="hidden" name="exerciseId" value={exercise.id} />
+          <label className="block text-sm">
+            <span className="flex items-center gap-1.5 text-ink">
+              <Crown size={12} className="text-amber-600" />
+              Backup facilitator (recommended)
+            </span>
+            <select
+              name="coFacilitatorId"
+              defaultValue={exercise.coFacilitatorId ?? ""}
+              disabled={!canEdit}
+              className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+            >
+              <option value="">— none —</option>
+              {orgUsers
+                .filter((u) => u.id !== exercise.facilitatorId)
+                .map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name ?? u.email}
+                  </option>
+                ))}
+            </select>
+          </label>
+          {canEdit && (
+            <button className="rounded-md border border-line bg-surface-1 px-2 py-1.5 text-[11px] text-ink hover:border-line-strong">
+              Save
+            </button>
+          )}
+        </form>
+
+        {/* Participant list */}
+        {participants.length > 0 && (
+          <ul className="space-y-1">
+            {participants.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface-0 p-2 text-xs"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-ink">{p.userName}</p>
+                  <p className="text-[10px] text-soft">
+                    <span className="font-mono">{p.roleTitle}</span> · {p.exerciseRole}
+                  </p>
+                </div>
+                {canEdit && (
+                  <form action={removeExerciseMemberAction}>
+                    <input type="hidden" name="exerciseId" value={exercise.id} />
+                    <input type="hidden" name="participantId" value={p.id} />
+                    <button className="text-soft hover:text-rose-700" title="Remove">
+                      <Trash2 size={11} />
+                    </button>
+                  </form>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Unfilled SMF roles — one-click add */}
+        {unfilledSMFs.length > 0 && canEdit && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs dark:border-amber-800/60 dark:bg-amber-950/30">
+            <p className="font-semibold text-amber-900 dark:text-amber-100">
+              SMF seats not yet filled
+            </p>
+            <p className="mt-0.5 text-[10px] text-amber-800 dark:text-amber-200">
+              Click a seat below to assign — uses the default holder when one is set.
+            </p>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {unfilledSMFs.map((r) => (
+                <SmfQuickAdd key={r.id} exerciseId={exercise.id} role={r} orgUsers={orgUsers} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Add participant */}
+        {canEdit && (
+          <>
+            {!showAdd ? (
+              <button
+                type="button"
+                onClick={() => setShowAdd(true)}
+                className="inline-flex items-center gap-1 rounded-md border border-dashed border-line bg-surface-0 px-3 py-1.5 text-xs text-muted hover:border-line-strong hover:text-ink"
+              >
+                <UserPlus size={11} />
+                Add a participant
+              </button>
+            ) : (
+              <form
+                action={async (fd) => {
+                  await assignMemberAction(fd);
+                  setShowAdd(false);
+                }}
+                className="grid gap-2 rounded-md border border-line bg-surface-0 p-2 sm:grid-cols-[2fr_1fr_auto] items-end"
+              >
+                <input type="hidden" name="exerciseId" value={exercise.id} />
+                <input type="hidden" name="exerciseRole" value="PARTICIPANT" />
+                <label className="text-[11px]">
+                  <span className="text-muted">User</span>
+                  <select
+                    name="userId"
+                    required
+                    defaultValue=""
+                    className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1 text-sm"
+                  >
+                    <option value="" disabled>
+                      — pick —
+                    </option>
+                    {orgUsers
+                      .filter((u) => !participants.some((p) => p.userId === u.id))
+                      .map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name ?? u.email}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label className="text-[11px]">
+                  <span className="text-muted">Role title</span>
+                  <input
+                    name="roleTitle"
+                    required
+                    maxLength={120}
+                    placeholder="e.g. CRO"
+                    list={`role-suggestions-${exercise.id}`}
+                    className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1 text-sm"
+                  />
+                  <datalist id={`role-suggestions-${exercise.id}`}>
+                    {orgRoles.map((r) => (
+                      <option key={r.id} value={r.abbreviation}>
+                        {r.title}
+                      </option>
+                    ))}
+                  </datalist>
+                </label>
+                <div className="flex items-center gap-1">
+                  <button className="rounded-md bg-indigo-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-indigo-500">
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdd(false)}
+                    className="text-[10px] text-soft hover:text-ink"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+          </>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function SmfQuickAdd({
+  exerciseId,
+  role,
+  orgUsers,
+}: {
+  exerciseId: string;
+  role: OrgRole;
+  orgUsers: OrgUser[];
+}) {
+  const defaultUser = role.defaultHolderId
+    ? orgUsers.find((u) => u.id === role.defaultHolderId)
+    : null;
+  return (
+    <form action={assignMemberAction}>
+      <input type="hidden" name="exerciseId" value={exerciseId} />
+      <input type="hidden" name="roleTitle" value={role.abbreviation} />
+      <input type="hidden" name="exerciseRole" value="PARTICIPANT" />
+      <input
+        type="hidden"
+        name="userId"
+        value={defaultUser?.id ?? orgUsers[0]?.id ?? ""}
+      />
+      <button
+        type="submit"
+        disabled={!defaultUser && orgUsers.length === 0}
+        title={
+          defaultUser
+            ? `Assign ${defaultUser.name ?? defaultUser.email} as ${role.abbreviation}`
+            : `No default holder set for ${role.abbreviation}`
+        }
+        className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-900 hover:bg-amber-300 dark:bg-amber-900/60 dark:text-amber-100"
+      >
+        + {role.abbreviation}
+      </button>
+    </form>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Coverage card (IBSs + objectives + injects summary)
+// ────────────────────────────────────────────────────────────────────────────
+
+function CoverageCard({
+  exercise,
+  orgIBSs,
+  canEdit,
+}: {
+  exercise: ExerciseSnapshot;
+  orgIBSs: OrgIBS[];
+  canEdit: boolean;
+}) {
+  const ok = exercise.ibsIds.length > 0 && exercise.objectives.length > 0;
+  return (
+    <Card icon={Target} title="Coverage" ok={ok}>
+      <div className="space-y-4">
+        {/* Objectives */}
+        <form action={setExerciseObjectivesAction}>
+          <input type="hidden" name="exerciseId" value={exercise.id} />
+          <label className="block text-sm">
+            <span className="flex items-center gap-1.5 text-ink">
+              <Sparkles size={12} className="text-indigo-600 dark:text-indigo-300" />
+              Objectives (one per line, 1-5)
+            </span>
+            <textarea
+              name="objectivesText"
+              rows={4}
+              maxLength={2000}
+              disabled={!canEdit}
+              defaultValue={exercise.objectives.join("\n")}
+              placeholder={"e.g.\n- Test 4h FCA notification path under cyber pressure\n- Validate CRO + CEO joint BCP-activation decision"}
+              className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+            />
+          </label>
+          {canEdit && (
+            <div className="mt-1 flex justify-end">
+              <button className="rounded-md bg-indigo-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-indigo-500">
+                Save objectives
+              </button>
+            </div>
+          )}
+        </form>
+
+        {/* IBS multi-select */}
+        <IbsMultiSelect exercise={exercise} orgIBSs={orgIBSs} canEdit={canEdit} />
+
+        {/* Injects summary + link to wizard */}
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface-0 p-2 text-xs">
+          <div>
+            <p className="flex items-center gap-1.5 font-medium text-ink">
+              <Layers size={11} />
+              {exercise.visibleInjects} injects scheduled
+            </p>
+            <p className="text-[10px] text-soft">Scenario: {exercise.scenarioTitle}</p>
+          </div>
+          {canEdit && (
+            <Link
+              href={`/exercises/new?step=4&id=${exercise.id}`}
+              className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-1 px-2 py-1 text-[11px] text-ink hover:border-line-strong"
+            >
+              <Edit3 size={11} />
+              Open inject timeline
+            </Link>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function IbsMultiSelect({
+  exercise,
+  orgIBSs,
+  canEdit,
+}: {
+  exercise: ExerciseSnapshot;
+  orgIBSs: OrgIBS[];
+  canEdit: boolean;
+}) {
+  const [picked, setPicked] = useState(new Set(exercise.ibsIds));
+  const toggle = (id: string) => {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  return (
+    <form action={setExerciseIbsLinksAction}>
+      <input type="hidden" name="exerciseId" value={exercise.id} />
+      <input type="hidden" name="ibsIdsCsv" value={Array.from(picked).join(",")} />
+      <p className="flex items-center gap-1.5 text-sm text-ink">
+        <Globe size={12} className="text-indigo-600 dark:text-indigo-300" />
+        Important Business Services tested
+      </p>
+      {orgIBSs.length === 0 ? (
+        <p className="mt-1 rounded-md border border-dashed border-line bg-surface-0 p-2 text-[11px] text-muted">
+          No IBSs in your org register yet.{" "}
+          <Link href="/ibs/new" className="font-medium text-indigo-600 underline">
+            Add one
+          </Link>
+          .
+        </p>
+      ) : (
+        <ul className="mt-1 grid gap-1 sm:grid-cols-2">
+          {orgIBSs.map((ibs) => (
+            <li key={ibs.id}>
+              <label
+                className={`flex cursor-pointer items-center gap-2 rounded-md border p-2 text-xs ${
+                  picked.has(ibs.id)
+                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40"
+                    : "border-line bg-surface-0 hover:border-line-strong"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={picked.has(ibs.id)}
+                  onChange={() => toggle(ibs.id)}
+                  disabled={!canEdit}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium text-ink">{ibs.name}</span>
+                  {ibs.criticality && (
+                    <span className="block text-[10px] text-soft">{ibs.criticality}</span>
+                  )}
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
+      {canEdit && orgIBSs.length > 0 && (
+        <div className="mt-1 flex justify-end">
+          <button className="rounded-md bg-indigo-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-indigo-500">
+            Save IBS links ({picked.size})
+          </button>
+        </div>
+      )}
+    </form>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Briefing card
+// ────────────────────────────────────────────────────────────────────────────
+
+function BriefingCard({ exercise, canEdit }: { exercise: ExerciseSnapshot; canEdit: boolean }) {
+  const ok = !!exercise.briefingSentAt || !!exercise.briefingSkippedReason;
+  return (
+    <Card icon={Mail} title="Briefing" ok={ok} subtitle={
+      exercise.briefingSentAt
+        ? `Sent ${exercise.briefingSentAt.toISOString().slice(0, 10)}`
+        : exercise.briefingSkippedReason
+          ? `Skipped: ${exercise.briefingSkippedReason}`
+          : "Pre-exercise briefing not yet sent or skipped"
+    }>
+      <div className="space-y-2">
+        <p className="text-[11px] text-soft">
+          The full draft + .ics download live on the wizard&apos;s Pre-flight step. Open it for the
+          complete pre-flight summary including cost, DORA preview, and the readiness gate.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/exercises/new?step=5&id=${exercise.id}`}
+            className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-0 px-2 py-1 text-[11px] font-medium text-ink hover:border-line-strong"
+          >
+            <Edit3 size={11} />
+            Open pre-flight + briefing draft
+          </Link>
+          <a
+            href={`/api/exercises/${exercise.id}/ics`}
+            className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-0 px-2 py-1 text-[11px] font-medium text-ink hover:border-line-strong"
+          >
+            <CalendarClock size={11} />
+            Download .ics
+          </a>
+          {canEdit && !exercise.briefingSentAt && (
+            <form action={markBriefingSentAction} className="inline">
+              <input type="hidden" name="exerciseId" value={exercise.id} />
+              <button className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-emerald-500">
+                <Send size={11} />
+                Mark briefing sent
+              </button>
+            </form>
+          )}
+          {canEdit && !exercise.briefingSkippedReason && (
+            <form action={markBriefingSkippedAction} className="inline flex items-center gap-1">
+              <input type="hidden" name="exerciseId" value={exercise.id} />
+              <input
+                name="reason"
+                required
+                maxLength={200}
+                placeholder="Reason for skipping…"
+                className="rounded-md border border-line-strong bg-surface-1 px-2 py-1 text-[11px]"
+              />
+              <button className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-1 px-2 py-1 text-[11px] text-ink hover:border-line-strong">
+                Mark skipped
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Generic card chrome
+// ────────────────────────────────────────────────────────────────────────────
+
+function Card({
+  icon: Icon,
+  title,
+  ok,
+  subtitle,
+  children,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  title: string;
+  ok: boolean;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(!ok);
+  return (
+    <section className="rounded-xl border border-line bg-surface-1">
+      <button
+        type="button"
+        onClick={() => setExpanded((x) => !x)}
+        className="flex w-full items-center justify-between gap-3 p-4 text-left"
+        aria-expanded={expanded}
+      >
+        <div className="flex items-center gap-2">
+          {ok ? (
+            <CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-300" />
+          ) : (
+            <AlertOctagon size={16} className="shrink-0 text-amber-600 dark:text-amber-300" />
+          )}
+          <Icon size={14} className="text-soft" />
+          <div>
+            <p className="text-sm font-semibold text-ink">{title}</p>
+            {subtitle && <p className="text-[11px] text-soft">{subtitle}</p>}
+          </div>
+        </div>
+        {expanded ? <ChevronDown size={14} className="text-soft" /> : <ChevronRight size={14} className="text-soft" />}
+      </button>
+      {expanded && <div className="border-t border-line p-4">{children}</div>}
+    </section>
+  );
+}
+
+function Field({
+  label,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  return (
+    <label className="block text-sm">
+      <span className="text-ink">{label}</span>
+      <input
+        {...props}
+        className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
+      />
+    </label>
+  );
+}
