@@ -319,10 +319,10 @@ function VendorCard({
           {canManage && (
             <div className="flex items-center gap-0.5">
               <Link
-                href={`/vendors?edit=${vendor.id}`}
+                href={`/vendors/${vendor.id}`}
                 className="rounded-md px-2 py-1 text-[11px] text-muted hover:bg-surface-2 hover:text-ink"
               >
-                Edit
+                Open
               </Link>
               <form action={deleteVendorAction}>
                 <input type="hidden" name="id" value={vendor.id} />
