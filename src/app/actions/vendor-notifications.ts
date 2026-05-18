@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireOrgRole } from "@/lib/auth";
-import { generateNotificationXlsx, submissionTypeLabel } from "@/lib/ps26-xlsx";
+import { generateNotificationXlsx, submissionTypeLabel } from "@/lib/mtp-xlsx";
 import { MtpSubmissionType } from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
 
@@ -19,7 +19,7 @@ const CreateSchema = z.object({
 });
 
 /**
- * Generate a PS26/2 notification XLSX + persist VendorMtpNotification.
+ * Generate a MTP notification XLSX + persist VendorMtpNotification.
  * Submission state starts as DRAFT; submitNotificationAction flips it to
  * SUBMITTED once the firm has actually filed with the regulator.
  */

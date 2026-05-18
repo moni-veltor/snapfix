@@ -3,9 +3,9 @@ import { ArrowLeft, Download, FileSignature } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
-import { MTP_SUBMISSION_TYPE_LABEL } from "@/lib/ps26-taxonomy";
+import { MTP_SUBMISSION_TYPE_LABEL } from "@/lib/mtp-taxonomy";
 
-export const metadata = { title: "PS26/2 notification history — SnapFix" };
+export const metadata = { title: "MTP notification history — SnapFix" };
 
 const STATUS_TONE: Record<string, string> = {
   DRAFT: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
@@ -34,7 +34,7 @@ export default async function VendorNotificationsPage() {
   return (
     <div className="space-y-6">
       <PageHero
-        eyebrow="PS26/2 Annex 3"
+        eyebrow="Annex 3"
         icon={FileSignature}
         title="Notification history"
         pitch="Every notification filed for any vendor — drafts, submitted, acknowledged. Click into a vendor to file a new one."

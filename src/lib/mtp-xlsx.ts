@@ -10,10 +10,10 @@ import {
   MTP_SUBMISSION_TYPE_LABEL,
   REINTEGRATION_LABEL,
   SUBSTITUTABILITY_LABEL,
-} from "@/lib/ps26-taxonomy";
+} from "@/lib/mtp-taxonomy";
 
 /**
- * Generators for the two FCA/PRA PS26/2 Annex 3 XLSX deliverables.
+ * Generators for the two FCA / PRA Annex 3 XLSX deliverables.
  *
  * We don't load and mutate the official template — too brittle when the
  * regulator publishes a new revision (and bundling 145KB of template into
@@ -199,7 +199,7 @@ function iso(d: Date | null | undefined): string {
   return d ? d.toISOString().slice(0, 10) : "";
 }
 
-/** Resolve a submission-type enum to the label PS26/2 expects. */
+/** Resolve a submission-type enum to the label the regulator expects. */
 export function submissionTypeLabel(t: string): string {
   return MTP_SUBMISSION_TYPE_LABEL[t] ?? t;
 }
@@ -213,7 +213,7 @@ type ColDef = {
   description: string;
 };
 
-/** Canonical column order matching PS26/2 Annex 3 Formatted-data sheet. */
+/** Canonical column order matching Annex 3 Formatted-data sheet. */
 const REGISTER_COLUMNS: ColDef[] = [
   { id: "2.01", refId: "2.01", label: "Contractual Arrangement Reference Number", width: 28, requirement: "Required", description: "Firm's internal reference for the contractual arrangement" },
   { id: "2.02", refId: "2.02", label: "Legal name of service provider", width: 30, requirement: "Required", description: "As stated in the contract" },

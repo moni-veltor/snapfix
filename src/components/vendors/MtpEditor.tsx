@@ -32,7 +32,7 @@ import {
   REINTEGRATION_LABEL,
   SERVICE_TYPE,
   SUBSTITUTABILITY_LABEL,
-} from "@/lib/ps26-taxonomy";
+} from "@/lib/mtp-taxonomy";
 
 type Assessment = {
   id: string;
@@ -132,7 +132,7 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
               </p>
               <p className="mt-0.5 text-[11px] text-muted">
                 When checked, this vendor appears in the annual register snapshot and the
-                full PS26/2 sections 2–5 below become required for register / notification.
+                full register sections 2–5 below become required for register / notification.
                 Materiality classification is the firm&apos;s call — we don&apos;t auto-classify.
               </p>
             </div>
@@ -427,7 +427,7 @@ function ReadinessHeader({ readiness, isMTP }: { readiness: Readiness; isMTP: bo
           Not yet marked as Material Third Party
         </p>
         <p className="mt-1 text-[11px] text-soft">
-          Tick the checkbox below to start filling out PS26/2 sections 2–5.
+          Tick the checkbox below to start filling out register sections 2–5.
         </p>
       </section>
     );
@@ -442,7 +442,7 @@ function ReadinessHeader({ readiness, isMTP }: { readiness: Readiness; isMTP: bo
             Register-ready: {readiness.passed} / {readiness.total} ({pct}%)
           </p>
           <p className="mt-0.5 text-[11px] text-muted">
-            Required fields for PS26/2 Annex 3 annual register + notification submission.
+            Required fields for Annex 3 annual register + notification submission.
           </p>
         </div>
         <div className="flex h-2 w-48 overflow-hidden rounded-full bg-white/40">
@@ -497,7 +497,7 @@ function AssessmentsPanel({
         </h2>
         <p className="mt-0.5 text-[11px] text-soft">
           Append-only. The most recent of each kind feeds the register / notification submission.
-          Risk + audit + financial DD + cyber DD are all PS26/2-required.
+          Risk + audit + financial DD + cyber DD are all regulator-required.
         </p>
       </header>
 

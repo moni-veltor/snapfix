@@ -6,7 +6,7 @@ import {
   flipNotificationStatusAction,
   generateNotificationAction,
 } from "@/app/actions/vendor-notifications";
-import { MTP_SUBMISSION_TYPE_LABEL } from "@/lib/ps26-taxonomy";
+import { MTP_SUBMISSION_TYPE_LABEL } from "@/lib/mtp-taxonomy";
 
 type Notification = {
   id: string;
@@ -55,7 +55,7 @@ export default function NotificationsPanel({
         <div>
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
             <FileSignature size={14} className="text-indigo-600 dark:text-indigo-300" />
-            PS26/2 notifications
+            MTP notifications
           </h2>
           <p className="mt-0.5 text-[11px] text-soft">
             File a contract-change / renewal / exit / breach / material-incident notification.
@@ -68,7 +68,7 @@ export default function NotificationsPanel({
             onClick={() => setOpen(true)}
             disabled={!registerReady}
             className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 disabled:bg-surface-2 disabled:text-soft"
-            title={registerReady ? "" : "Fill out PS26/2 fields above first"}
+            title={registerReady ? "" : "Fill out required fields above first"}
           >
             <Plus size={11} />
             File a notification
@@ -84,7 +84,7 @@ export default function NotificationsPanel({
 
       {isMTP && !registerReady && (
         <p className="rounded-md border border-dashed border-amber-300 bg-amber-50 p-3 text-[11px] text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-200">
-          Vendor is not register-ready. Fill out the PS26/2 fields above to 100% before filing
+          Vendor is not register-ready. Fill out the required fields above to 100% before filing
           a notification — the regulator won&apos;t accept partial submissions.
         </p>
       )}

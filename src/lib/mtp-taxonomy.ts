@@ -1,5 +1,5 @@
 /**
- * FCA/PRA PS26/2 Material Third Party Annex 3 controlled vocabularies.
+ * FCA / PRA Material Third Party Annex 3 controlled vocabularies.
  *
  * Extracted from the official Annex 3 register + notification XLSX templates
  * (Taxonomies_Register sheet). When the regulator publishes a new revision,
@@ -379,7 +379,7 @@ export type ServiceTypeValue = (typeof SERVICE_TYPE)[number];
 export type FunctionCategoryValue = (typeof FUNCTION_CATEGORY)[number];
 export type CountryValue = (typeof COUNTRY)[number];
 
-/** Label maps for our enums → official PS26/2 dropdown strings.
+/** Label maps for our enums → official regulator dropdown strings.
  *  Used by the XLSX generator (Commits C and D) so the output matches the
  *  template's "Formatted data" sheet expectations exactly. */
 
@@ -451,7 +451,7 @@ export const MTP_SUBMISSION_TYPE_LABEL: Record<string, string> = {
   MATERIAL_INCIDENT: "Material incident",
 };
 
-/** Best-effort coarse FunctionCategory enum → PS26/2 fine-grained label
+/** Best-effort coarse FunctionCategory enum → the regulator fine-grained label
  *  pick. Used as the *default* when a vendor has an enum-level category but
  *  hasn't been mapped to a specific taxonomy string yet. UI should still
  *  let the user pick the exact taxonomy string. */

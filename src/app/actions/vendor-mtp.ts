@@ -86,7 +86,7 @@ const MtpFieldsSchema = z.object({
   impactOfDiscontinuing: z.nativeEnum(ImpactDiscontinuation).optional(),
 });
 
-/** Single upsert covering PS26/2 sections 2-5 + the MTP flag. */
+/** Single upsert covering register sections 2-5 + the MTP flag. */
 export async function upsertVendorMtpFieldsAction(formData: FormData) {
   const me = await requireOrgRole("OWNER", "ADMIN");
   const raw: Record<string, string> = {};

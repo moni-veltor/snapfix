@@ -43,8 +43,8 @@ export default async function VendorDetailPage({
         title={vendor.name}
         pitch={
           vendor.isMaterialThirdParty
-            ? "PS26/2 register & notification record. All fields below feed the annual register snapshot and any contract-change notification you file."
-            : "Mark as Material Third Party (PS26/2 1.04) to unlock register + notification fields."
+            ? "the regulator register & notification record. All fields below feed the annual register snapshot and any contract-change notification you file."
+            : "Mark as Material Third Party (the regulator 1.04) to unlock register + notification fields."
         }
         actions={
           <Link

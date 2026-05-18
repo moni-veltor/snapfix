@@ -48,10 +48,10 @@ export default async function VendorRegisterPage() {
   return (
     <div className="space-y-6">
       <PageHero
-        eyebrow="PS26/2 Annex 3"
+        eyebrow="Annex 3"
         icon={ShieldCheck}
         title="Material Third Party register"
-        pitch="Annual MTP register submission. Each vendor flagged Material Third Party feeds this snapshot. Generate at the reporting date and the XLSX matches the official PS26/2 Annex 3 template."
+        pitch="Annual MTP register submission. Each vendor flagged Material Third Party feeds this snapshot. Generate at the reporting date and the XLSX matches the official Annex 3 template."
         actions={
           <Link
             href="/vendors"
@@ -93,7 +93,7 @@ export default async function VendorRegisterPage() {
           </h2>
           <p className="mt-1 text-[11px] text-soft">
             Takes a snapshot of every Material Third Party at the chosen reporting date.
-            The XLSX matches the PS26/2 Annex 3 Formatted-data column layout so the regulator&apos;s
+            The XLSX matches the Annex 3 Formatted-data column layout so the regulator&apos;s
             loader accepts it. Past snapshots are immutable.
           </p>
           <form action={generateAnnualRegisterAction} className="mt-3 flex flex-wrap items-end gap-2">

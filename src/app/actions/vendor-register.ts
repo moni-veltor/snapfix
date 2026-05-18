@@ -4,12 +4,12 @@ import { revalidatePath } from "next/cache";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireOrgRole } from "@/lib/auth";
-import { generateRegisterXlsx } from "@/lib/ps26-xlsx";
+import { generateRegisterXlsx } from "@/lib/mtp-xlsx";
 import { evaluateVendorReadiness } from "@/lib/vendor-mtp-readiness";
 import { audit } from "@/lib/audit";
 
 /**
- * Generate the annual PS26/2 MTP register snapshot. Captures an immutable
+ * Generate the annual MTP register snapshot. Captures an immutable
  * VendorRegisterSnapshot row + uploads the XLSX to Vercel Blob.
  *
  * Snapshot includes every vendor flagged isMaterialThirdParty at this moment;
@@ -44,7 +44,7 @@ export async function generateAnnualRegisterAction(formData: FormData) {
   const submissionId = (lastSnap?.submissionId ?? 0) + 1;
 
   // Resolve firm FRN from a settings field if you've got one; fall back to slug.
-  const firmFrn = ""; // PS26/2 1.05 — captured during settings later; left blank for v1.
+  const firmFrn = ""; // the regulator 1.05 — captured during settings later; left blank for v1.
 
   const xlsxBuffer = await generateRegisterXlsx({
     header: {
@@ -96,7 +96,7 @@ export async function generateAnnualRegisterAction(formData: FormData) {
     action: "vendor.register.generated",
     targetType: "VendorRegisterSnapshot",
     targetId: snapshot.id,
-    summary: `Generated PS26/2 MTP register #${submissionId} (${vendors.length} vendors)`,
+    summary: `Generated MTP register #${submissionId} (${vendors.length} vendors)`,
     metadata: {
       submissionId,
       reportingDate: reportingDate.toISOString(),

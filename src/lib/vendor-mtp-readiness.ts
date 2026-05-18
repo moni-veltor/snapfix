@@ -5,9 +5,9 @@ type Vendor = VendorModel;
 type VendorAssessment = VendorAssessmentModel;
 
 /**
- * Live MTP-readiness check for the FCA/PRA PS26/2 register + notification.
+ * Live MTP-readiness check for the FCA / PRA register + notification.
  *
- * A vendor is "register-ready" when every PS26/2-required field is populated
+ * A vendor is "register-ready" when every regulator-required field is populated
  * such that the firm could file the Annual MTP Register today without the
  * regulator bouncing the submission.
  *
@@ -17,14 +17,14 @@ type VendorAssessment = VendorAssessmentModel;
 
 export type ReadinessCheck = {
   id: string;
-  /** PS26/2 reference (e.g. "2.03"). */
+  /** section reference (e.g. "2.03"). */
   ref: string;
   label: string;
   ok: boolean;
 };
 
 export type VendorReadiness = {
-  /** Each individual check, in PS26/2 order. */
+  /** Each individual check, in section order. */
   checks: ReadinessCheck[];
   /** Number of checks passing. */
   passed: number;

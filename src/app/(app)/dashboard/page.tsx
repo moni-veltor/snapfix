@@ -230,7 +230,7 @@ async function Dashboard({
     }),
   ]);
 
-  // ─── PS26/2 MTP roll-up (cheap, used by the dashboard tile) ────────────
+  // ─── MTP roll-up (cheap, used by the dashboard tile) ────────────
   const [mtpVendorsForReadiness, mtpNotificationsByStatus] = await Promise.all([
     prisma.vendor.findMany({
       where: { orgId, isMaterialThirdParty: true },
@@ -948,7 +948,7 @@ function MtpRegisterWidget({
   const tone: "indigo" | "amber" | "rose" =
     mtpTotal === 0 ? "indigo" : pct === 100 ? "indigo" : pct >= 50 ? "amber" : "rose";
   return (
-    <Widget title="PS26/2 MTP register" icon={ShieldCheck} tone={tone} href="/vendors/register">
+    <Widget title="MTP register" icon={ShieldCheck} tone={tone} href="/vendors/register">
       <div className="flex items-baseline gap-2">
         <span className="text-2xl font-bold text-ink">
           {mtpTotal === 0 ? "—" : `${mtpReady}/${mtpTotal}`}
@@ -977,7 +977,7 @@ function MtpRegisterWidget({
         )}
       </div>
       <footer className="mt-auto border-t border-line pt-2 text-[10px] text-soft">
-        FCA / PRA PS26/2 Annex 3
+        FCA / PRA Annex 3
       </footer>
     </Widget>
   );
