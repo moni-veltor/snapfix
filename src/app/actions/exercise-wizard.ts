@@ -564,7 +564,7 @@ export async function setParticipantScopeAction(formData: FormData) {
   });
 
   revalidatePath(`/exercises/new?step=3&id=${parsed.exerciseId}`);
-  revalidatePath(`/exercises/${parsed.exerciseId}/team`);
+  revalidatePath(`/exercises/${parsed.exerciseId}`);
 }
 
 // ─── Dry-run mode (Commit K) ─────────────────────────────────────────────────

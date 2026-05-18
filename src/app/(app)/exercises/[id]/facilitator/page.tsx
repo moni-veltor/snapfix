@@ -71,8 +71,8 @@ export default async function FacilitatorPage({
               Live workspace
             </Link>
             {" · "}
-            <Link href={`/exercises/${exercise.id}/team`} className="underline">
-              Team
+            <Link href={`/exercises/${exercise.id}`} className="underline">
+              Planning
             </Link>
             {" · "}
             <Link href={`/exercises/${exercise.id}/debrief`} className="underline">

@@ -32,7 +32,7 @@ export async function classifyTeamAction(formData: FormData) {
     where: { id: data.teamId, exercise: { id: data.exerciseId, orgId: me.orgId } },
     data: { kind: data.kind as TeamKind },
   });
-  revalidatePath(`/exercises/${data.exerciseId}/team`);
+  revalidatePath(`/exercises/${data.exerciseId}`);
   revalidatePath(`/exercises/${data.exerciseId}/live`);
 }
 
@@ -50,7 +50,7 @@ export async function setDeputyAction(formData: FormData) {
     where: { id: data.participantId, exercise: { id: data.exerciseId, orgId: me.orgId } },
     data: { deputyParticipantId: data.deputyParticipantId || null },
   });
-  revalidatePath(`/exercises/${data.exerciseId}/team`);
+  revalidatePath(`/exercises/${data.exerciseId}`);
   revalidatePath(`/exercises/${data.exerciseId}/live`);
 }
 
@@ -94,6 +94,6 @@ export async function mobiliseParticipantAction(formData: FormData) {
     });
   }
 
-  revalidatePath(`/exercises/${data.exerciseId}/team`);
+  revalidatePath(`/exercises/${data.exerciseId}`);
   revalidatePath(`/exercises/${data.exerciseId}/live`);
 }

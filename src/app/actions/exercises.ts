@@ -120,7 +120,7 @@ export async function addTeamAction(formData: FormData) {
       orderIdx: nextIdx,
     },
   });
-  revalidatePath(`/exercises/${parsed.exerciseId}/team`);
+  revalidatePath(`/exercises/${parsed.exerciseId}`);
 }
 
 export async function removeTeamAction(formData: FormData) {
@@ -130,7 +130,7 @@ export async function removeTeamAction(formData: FormData) {
   await prisma.exerciseTeam.deleteMany({
     where: { id: teamId, exercise: { orgId: user.orgId, id: exerciseId } },
   });
-  revalidatePath(`/exercises/${exerciseId}/team`);
+  revalidatePath(`/exercises/${exerciseId}`);
 }
 
 const AssignMemberSchema = z.object({
@@ -177,7 +177,6 @@ export async function assignMemberAction(formData: FormData) {
       exerciseRole: parsed.exerciseRole,
     },
   });
-  revalidatePath(`/exercises/${parsed.exerciseId}/team`);
   revalidatePath(`/exercises/${parsed.exerciseId}`);
 }
 
@@ -191,27 +190,11 @@ export async function removeExerciseMemberAction(formData: FormData) {
       exercise: { id: exerciseId, orgId: me.orgId },
     },
   });
-  revalidatePath(`/exercises/${exerciseId}/team`);
   revalidatePath(`/exercises/${exerciseId}`);
 }
 
-export async function transitionToReadyAction(formData: FormData) {
-  const me = await requireOrgRole("OWNER", "ADMIN");
-  const id = String(formData.get("id"));
-  // Require at least one facilitator and at least 2 participants total
-  const exercise = await prisma.exercise.findFirst({
-    where: { id, orgId: me.orgId },
-    include: { participants: true },
-  });
-  if (!exercise) return;
-  const facilitatorCount = exercise.participants.filter((p) => p.exerciseRole === "FACILITATOR").length;
-  if (facilitatorCount < 1 || exercise.participants.length < 2) return;
-  await prisma.exercise.update({
-    where: { id },
-    data: { status: "READY" },
-  });
-  revalidatePath(`/exercises/${id}`);
-}
+// Legacy transitionToReadyAction removed — PlanningWorkspace uses
+// transitionDraftToReadyAction (full 12-check evaluator) instead.
 
 export async function startExerciseAction(formData: FormData) {
   const me = await requireOrgRole("OWNER", "ADMIN");

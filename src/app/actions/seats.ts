@@ -16,7 +16,7 @@ export async function ensureSeatsForExerciseAction(formData: FormData): Promise<
   const exerciseId = String(formData.get("exerciseId"));
   await ensureSeatsForExercise(exerciseId, me.orgId);
   revalidatePath(`/exercises/${exerciseId}/live`);
-  revalidatePath(`/exercises/${exerciseId}/team`);
+  revalidatePath(`/exercises/${exerciseId}`);
 }
 
 /** Library helper — usable from other server actions (e.g. on startExercise). */
@@ -114,7 +114,7 @@ export async function claimSeatAction(formData: FormData) {
   }
 
   revalidatePath(`/exercises/${seat.exerciseId}/live`);
-  revalidatePath(`/exercises/${seat.exerciseId}/team`);
+  revalidatePath(`/exercises/${seat.exerciseId}`);
   revalidatePath(`/exercises/${seat.exerciseId}/facilitator`);
 }
 
