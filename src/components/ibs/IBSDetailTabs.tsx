@@ -25,8 +25,8 @@ type TabDef = {
 };
 
 const TABS: TabDef[] = [
-  { key: "overview", label: "Overview", hint: "Map + tolerance tester", icon: Sparkles },
-  { key: "resources", label: "Resource map", hint: "Tech, 3rd parties, processes", icon: Layers },
+  { key: "overview", label: "Overview", hint: "Tolerance tester + methodology", icon: Sparkles },
+  { key: "resources", label: "Resource map", hint: "Interactive map · SPOF lens · network view", icon: Layers },
   { key: "tolerance", label: "Tolerance & impact", hint: "Limits, importance, harms", icon: Scale },
   { key: "governance", label: "Governance", hint: "Ownership & assurance", icon: ShieldCheck },
   { key: "history", label: "Exercise history", hint: "Where this IBS has been tested", icon: History },

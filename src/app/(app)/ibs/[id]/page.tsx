@@ -238,6 +238,20 @@ export default async function IBSDetailPage({
         panels={{
           overview: (
             <div className="space-y-5">
+              <ToleranceTester
+                ibsCode={ibs.code}
+                primaryToleranceMin={ibs.impactToleranceMin}
+                fcaToleranceMin={ibs.fcaToleranceMin}
+                praToleranceMin={ibs.praToleranceMin}
+              />
+              <Card title="Methodology">
+                <Block label="Customer journeys" list={ibs.customerJourneys} />
+                <Block label="Products covered" list={ibs.productsCovered} />
+              </Card>
+            </div>
+          ),
+          resources: (
+            <div className="space-y-5">
               <ResourceMapEditor
                 ibsId={ibs.id}
                 ibsCode={ibs.code}
@@ -273,20 +287,6 @@ export default async function IBSDetailPage({
                 departments={orgDepartments}
                 canEdit={canManage}
               />
-              <ToleranceTester
-                ibsCode={ibs.code}
-                primaryToleranceMin={ibs.impactToleranceMin}
-                fcaToleranceMin={ibs.fcaToleranceMin}
-                praToleranceMin={ibs.praToleranceMin}
-              />
-            </div>
-          ),
-          resources: (
-            <div className="space-y-5">
-              <Card title="Methodology">
-                <Block label="Customer journeys" list={ibs.customerJourneys} />
-                <Block label="Products covered" list={ibs.productsCovered} />
-              </Card>
             </div>
           ),
           tolerance: (
