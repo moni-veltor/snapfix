@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import MtpEditor from "@/components/vendors/MtpEditor";
 import { evaluateVendorReadiness } from "@/lib/vendor-mtp-readiness";
+import NotificationsPanel from "@/components/vendors/NotificationsPanel";
 
 export const metadata = { title: "Vendor — SnapFix" };
 
@@ -23,6 +24,7 @@ export default async function VendorDetailPage({
     include: {
       assessments: { orderBy: [{ kind: "asc" }, { assessedAt: "desc" }] },
       ibsLinks: { include: { ibs: { select: { id: true, name: true, criticality: true } } } },
+      notifications: { orderBy: { submissionId: "desc" } },
     },
   });
   if (!vendor) notFound();
@@ -59,6 +61,15 @@ export default async function VendorDetailPage({
         vendor={vendor}
         readiness={readiness}
         canEdit={canEdit}
+      />
+
+      <NotificationsPanel
+        vendorId={vendor.id}
+        vendorName={vendor.name}
+        isMTP={vendor.isMaterialThirdParty}
+        registerReady={readiness.isRegisterReady}
+        canEdit={canEdit}
+        notifications={vendor.notifications}
       />
     </div>
   );
