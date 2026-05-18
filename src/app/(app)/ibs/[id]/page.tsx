@@ -47,8 +47,20 @@ export default async function IBSDetailPage({
       resources: {
         orderBy: [{ kind: "asc" }, { orderIdx: "asc" }],
         include: {
-          vendor: { select: { id: true, name: true } },
-          techSystem: { select: { id: true, name: true, tier: true } },
+          vendor: { select: { id: true, name: true, statusUrl: true } },
+          techSystem: {
+            select: {
+              id: true,
+              name: true,
+              tier: true,
+              nextDrTestDueAt: true,
+              drTests: {
+                orderBy: { testedAt: "desc" },
+                take: 1,
+                select: { testedAt: true, outcome: true },
+              },
+            },
+          },
           department: { select: { id: true, name: true } },
         },
       },
@@ -235,9 +247,22 @@ export default async function IBSDetailPage({
                   kind: r.kind,
                   label: r.label,
                   criticality: r.criticality,
-                  vendor: r.vendor ? { id: r.vendor.id, name: r.vendor.name } : null,
+                  vendor: r.vendor
+                    ? { id: r.vendor.id, name: r.vendor.name, statusUrl: r.vendor.statusUrl ?? null }
+                    : null,
                   techSystem: r.techSystem
-                    ? { id: r.techSystem.id, name: r.techSystem.name, tier: r.techSystem.tier ?? null }
+                    ? {
+                        id: r.techSystem.id,
+                        name: r.techSystem.name,
+                        tier: r.techSystem.tier ?? null,
+                        lastDrTest: r.techSystem.drTests[0]
+                          ? {
+                              testedAt: r.techSystem.drTests[0].testedAt,
+                              outcome: r.techSystem.drTests[0].outcome,
+                            }
+                          : null,
+                        nextDrTestDueAt: r.techSystem.nextDrTestDueAt ?? null,
+                      }
                     : null,
                   department: r.department ? { id: r.department.id, name: r.department.name } : null,
                   note: r.note,

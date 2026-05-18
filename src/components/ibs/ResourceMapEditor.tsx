@@ -1,8 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  Activity,
   Boxes,
   Building,
   Building2,
@@ -11,8 +13,11 @@ import {
   ExternalLink,
   Eye,
   Filter,
+  GitBranch,
+  List,
   Network,
   Plus,
+  Printer,
   Server,
   ShieldAlert,
   Sparkles,
@@ -28,6 +33,15 @@ import {
   updateIBSResourceAction,
 } from "@/app/actions/ibs-resources";
 
+const ResourceNetworkView = dynamic(() => import("./ResourceNetworkView"), {
+  ssr: false,
+  loading: () => (
+    <div className="grid h-[640px] place-items-center rounded-lg border border-line bg-surface-0 text-sm text-muted">
+      Loading network…
+    </div>
+  ),
+});
+
 export type Kind = "TECHNOLOGY" | "THIRD_PARTY" | "INFORMATION" | "PROCESS" | "PEOPLE" | "FACILITY";
 export type Crit = "CRITICAL" | "IMPORTANT" | "SUPPORTING";
 
@@ -36,8 +50,15 @@ export type Resource = {
   kind: Kind;
   label: string;
   criticality: Crit;
-  vendor: { id: string; name: string } | null;
-  techSystem: { id: string; name: string; tier: string | null } | null;
+  vendor: { id: string; name: string; statusUrl?: string | null } | null;
+  techSystem: {
+    id: string;
+    name: string;
+    tier: string | null;
+    /** Most recent DR test outcome — null when no DR test has been run. */
+    lastDrTest?: { testedAt: Date; outcome: string } | null;
+    nextDrTestDueAt?: Date | null;
+  } | null;
   department: { id: string; name: string } | null;
   note: string | null;
 };
@@ -98,6 +119,7 @@ export default function ResourceMapEditor({
   const [showSharedOnly, setShowSharedOnly] = useState(false);
   const [showSpofLens, setShowSpofLens] = useState(false);
   const [addingKind, setAddingKind] = useState<Kind | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "network">("list");
 
   // Filtered & grouped resources
   const grouped = useMemo(() => {
@@ -172,27 +194,73 @@ export default function ResourceMapEditor({
           </div>
           {toolbarExtra}
         </div>
-        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-          <span className="inline-flex items-center gap-1 text-soft">
-            <Filter size={10} />
-            Filter:
-          </span>
-          <FilterChip active={showCriticalOnly} onClick={() => setShowCriticalOnly((v) => !v)}>
-            <span className={`mr-1 inline-block h-1.5 w-1.5 rounded-full ${CRIT_DOT.CRITICAL}`} />
-            Critical only ({totalCrit})
-          </FilterChip>
-          <FilterChip active={showSharedOnly} onClick={() => setShowSharedOnly((v) => !v)}>
-            <ShieldAlert size={10} className="mr-1 inline" />
-            Shared only ({totalShared})
-          </FilterChip>
-          <FilterChip active={showSpofLens} onClick={() => setShowSpofLens((v) => !v)}>
-            <Eye size={10} className="mr-1 inline" />
-            SPOF lens
-          </FilterChip>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 text-soft">
+              <Filter size={10} />
+              Filter:
+            </span>
+            <FilterChip active={showCriticalOnly} onClick={() => setShowCriticalOnly((v) => !v)}>
+              <span className={`mr-1 inline-block h-1.5 w-1.5 rounded-full ${CRIT_DOT.CRITICAL}`} />
+              Critical only ({totalCrit})
+            </FilterChip>
+            <FilterChip active={showSharedOnly} onClick={() => setShowSharedOnly((v) => !v)}>
+              <ShieldAlert size={10} className="mr-1 inline" />
+              Shared only ({totalShared})
+            </FilterChip>
+            <FilterChip active={showSpofLens} onClick={() => setShowSpofLens((v) => !v)}>
+              <Eye size={10} className="mr-1 inline" />
+              SPOF lens
+            </FilterChip>
+            {showSpofLens && (
+              <Link
+                href={`/ibs/${ibsId}/spof-brief`}
+                className="inline-flex items-center gap-0.5 rounded-full border border-line bg-surface-0 px-2 py-0.5 text-muted hover:border-line-strong hover:text-ink"
+              >
+                <Printer size={10} className="mr-1" />
+                Print brief
+              </Link>
+            )}
+          </div>
+          <div className="inline-flex overflow-hidden rounded-md border border-line">
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 ${
+                viewMode === "list"
+                  ? "bg-indigo-50 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200"
+                  : "bg-surface-0 text-muted hover:text-ink"
+              }`}
+            >
+              <List size={10} />
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("network")}
+              className={`inline-flex items-center gap-1 border-l border-line px-2 py-0.5 ${
+                viewMode === "network"
+                  ? "bg-indigo-50 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200"
+                  : "bg-surface-0 text-muted hover:text-ink"
+              }`}
+            >
+              <GitBranch size={10} />
+              Network
+            </button>
+          </div>
         </div>
       </header>
 
-      {showSpofLens ? (
+      {viewMode === "network" && !showSpofLens ? (
+        <div className="mt-4">
+          <ResourceNetworkView
+            ibsCode={ibsCode}
+            ibsName={ibsName}
+            resources={resources}
+            sharedBy={sharedBy}
+          />
+        </div>
+      ) : showSpofLens ? (
         <SpofLens rows={spofRows} ibsCode={ibsCode} />
       ) : (
         <div className="mt-4 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
@@ -367,6 +435,7 @@ function ResourceTag({
         className={`inline-block h-1.5 w-1.5 rounded-full ${CRIT_DOT[resource.criticality]}`}
         title={resource.criticality}
       />
+      <LiveIndicator resource={resource} />
       <button type="button" onClick={onSelect} className="text-left">
         {resource.label}
       </button>
@@ -666,6 +735,48 @@ function SidePanel({
       </button>
     </div>
   );
+}
+
+function LiveIndicator({ resource }: { resource: Resource }) {
+  // Vendor with a status URL → "external status available" dot (cyan link).
+  if (resource.vendor?.statusUrl) {
+    return (
+      <a
+        href={resource.vendor.statusUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={`Vendor status: ${resource.vendor.statusUrl}`}
+        className="inline-flex items-center text-cyan-600 hover:text-cyan-700 dark:text-cyan-400"
+      >
+        <Activity size={9} />
+      </a>
+    );
+  }
+  // Tech system with DR test history → green if recent + PASS, amber if older,
+  // rose if FAIL.
+  if (resource.techSystem) {
+    const last = resource.techSystem.lastDrTest;
+    if (!last) {
+      return <span className="text-rose-500" title="No DR test on record"><Activity size={9} /></span>;
+    }
+    // eslint-disable-next-line react-hooks/purity
+    const ageDays = Math.floor((Date.now() - last.testedAt.getTime()) / (24 * 60 * 60 * 1000));
+    const tone =
+      last.outcome !== "PASS"
+        ? "text-rose-500"
+        : ageDays > 365
+          ? "text-amber-500"
+          : "text-emerald-500";
+    return (
+      <span
+        className={tone}
+        title={`DR test ${last.outcome.toLowerCase()} · ${ageDays} day${ageDays === 1 ? "" : "s"} ago`}
+      >
+        <Activity size={9} />
+      </span>
+    );
+  }
+  return null;
 }
 
 function SpofLens({ rows, ibsCode }: { rows: { label: string; criticality: Crit; peers: SharedPeer[]; kinds: Kind[] }[]; ibsCode: string }) {
