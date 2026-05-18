@@ -18,7 +18,10 @@ export type AuditAction =
   | "department.created" | "department.updated" | "department.deleted"
   | "invitation.sent" | "invitation.revoked" | "invitation.accepted"
   | "settings.updated"
-  | "artefact.uploaded" | "artefact.deleted";
+  | "artefact.uploaded" | "artefact.deleted"
+  | "vendor.register.generated"
+  | "vendor.notification.generated" | "vendor.notification.submitted" | "vendor.notification.acknowledged"
+  | "vendor.mtp.updated" | "vendor.assessment.recorded";
 
 type AuditInput = {
   orgId: string;

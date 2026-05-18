@@ -230,6 +230,25 @@ async function Dashboard({
     }),
   ]);
 
+  // ─── PS26/2 MTP roll-up (cheap, used by the dashboard tile) ────────────
+  const [mtpVendorsForReadiness, mtpNotificationsByStatus] = await Promise.all([
+    prisma.vendor.findMany({
+      where: { orgId, isMaterialThirdParty: true },
+      include: { assessments: true },
+    }),
+    prisma.vendorMtpNotification.groupBy({
+      by: ["status"],
+      where: { vendor: { orgId } },
+      _count: true,
+    }),
+  ]);
+  const { evaluateVendorReadiness } = await import("@/lib/vendor-mtp-readiness");
+  const mtpReadyCount = mtpVendorsForReadiness.filter(
+    (v) => evaluateVendorReadiness(v).isRegisterReady,
+  ).length;
+  const mtpDraftCount =
+    mtpNotificationsByStatus.find((s) => s.status === "DRAFT")?._count ?? 0;
+
   // ─── Participant personalisation ────────────────────────────────────────
   // "Your live exercise" + "Your next exercise" — drives the top widget.
   const [myLiveParticipation, myNextParticipation, meRow] = await Promise.all([
@@ -549,6 +568,11 @@ async function Dashboard({
           overduePIRs={overduePIRs}
           openRegulatorNotifications={openRegulatorNotifications}
           overdueActionItems={overdueActionItems}
+        />
+        <MtpRegisterWidget
+          mtpTotal={mtpVendorsForReadiness.length}
+          mtpReady={mtpReadyCount}
+          notifDrafts={mtpDraftCount}
         />
       </section>
 
@@ -906,6 +930,54 @@ function ConcentrationWidget({
       </div>
       <footer className="mt-auto border-t border-line pt-2 text-[10px] text-soft">
         DORA register
+      </footer>
+    </Widget>
+  );
+}
+
+function MtpRegisterWidget({
+  mtpTotal,
+  mtpReady,
+  notifDrafts,
+}: {
+  mtpTotal: number;
+  mtpReady: number;
+  notifDrafts: number;
+}) {
+  const pct = mtpTotal === 0 ? 0 : Math.round((mtpReady / mtpTotal) * 100);
+  const tone: "indigo" | "amber" | "rose" =
+    mtpTotal === 0 ? "indigo" : pct === 100 ? "indigo" : pct >= 50 ? "amber" : "rose";
+  return (
+    <Widget title="PS26/2 MTP register" icon={ShieldCheck} tone={tone} href="/vendors/register">
+      <div className="flex items-baseline gap-2">
+        <span className="text-2xl font-bold text-ink">
+          {mtpTotal === 0 ? "—" : `${mtpReady}/${mtpTotal}`}
+        </span>
+        {mtpTotal > 0 && <span className="text-xs text-muted">register-ready ({pct}%)</span>}
+      </div>
+      <div className="text-xs text-muted">
+        {mtpTotal === 0 ? (
+          <>No Material Third Parties flagged yet</>
+        ) : (
+          <>
+            {mtpTotal} Material Third Part{mtpTotal === 1 ? "y" : "ies"}
+          </>
+        )}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-1 text-[10px]">
+        {notifDrafts > 0 && (
+          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+            {notifDrafts} notification draft{notifDrafts === 1 ? "" : "s"}
+          </span>
+        )}
+        {mtpReady < mtpTotal && (
+          <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+            {mtpTotal - mtpReady} incomplete
+          </span>
+        )}
+      </div>
+      <footer className="mt-auto border-t border-line pt-2 text-[10px] text-soft">
+        FCA / PRA PS26/2 Annex 3
       </footer>
     </Widget>
   );

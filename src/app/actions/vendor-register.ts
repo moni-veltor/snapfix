@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireOrgRole } from "@/lib/auth";
 import { generateRegisterXlsx } from "@/lib/ps26-xlsx";
 import { evaluateVendorReadiness } from "@/lib/vendor-mtp-readiness";
+import { audit } from "@/lib/audit";
 
 /**
  * Generate the annual PS26/2 MTP register snapshot. Captures an immutable
@@ -77,7 +78,7 @@ export async function generateAnnualRegisterAction(formData: FormData) {
     snapshotAt: new Date().toISOString(),
   }));
 
-  await prisma.vendorRegisterSnapshot.create({
+  const snapshot = await prisma.vendorRegisterSnapshot.create({
     data: {
       orgId: me.orgId,
       reportingDate,
@@ -86,6 +87,20 @@ export async function generateAnnualRegisterAction(formData: FormData) {
       xlsxBlobUrl: blob.url,
       xlsxBlobPath: filename,
       createdByUserId: me.id,
+    },
+  });
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "vendor.register.generated",
+    targetType: "VendorRegisterSnapshot",
+    targetId: snapshot.id,
+    summary: `Generated PS26/2 MTP register #${submissionId} (${vendors.length} vendors)`,
+    metadata: {
+      submissionId,
+      reportingDate: reportingDate.toISOString(),
+      vendorCount: vendors.length,
     },
   });
 

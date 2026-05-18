@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Boxes, CalendarClock, Library } from "lucide-react";
+import { Boxes, CalendarClock, FileSignature, Library, ShieldCheck } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
@@ -96,6 +96,20 @@ export default async function VendorsPage() {
               >
                 <CalendarClock size={14} strokeWidth={2.2} />
                 Contracts
+              </Link>
+              <Link
+                href="/vendors/register"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                <ShieldCheck size={14} strokeWidth={2.2} />
+                MTP register
+              </Link>
+              <Link
+                href="/vendors/notifications"
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
+              >
+                <FileSignature size={14} strokeWidth={2.2} />
+                Notifications
               </Link>
               <VendorDoraExportButton vendors={doraExportRows} />
               <VendorAddButton />

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { requireOrgRole } from "@/lib/auth";
 import { generateNotificationXlsx, submissionTypeLabel } from "@/lib/ps26-xlsx";
 import { MtpSubmissionType } from "@/generated/prisma/enums";
+import { audit } from "@/lib/audit";
 
 const CreateSchema = z.object({
   vendorId: z.string(),
@@ -72,7 +73,7 @@ export async function generateNotificationAction(formData: FormData) {
     allowOverwrite: true,
   });
 
-  await prisma.vendorMtpNotification.create({
+  const created = await prisma.vendorMtpNotification.create({
     data: {
       vendorId: vendor.id,
       submissionType: data.submissionType,
@@ -84,6 +85,21 @@ export async function generateNotificationAction(formData: FormData) {
       xlsxBlobUrl: blob.url,
       xlsxBlobPath: filename,
       createdByUserId: me.id,
+    },
+  });
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "vendor.notification.generated",
+    targetType: "VendorMtpNotification",
+    targetId: created.id,
+    summary: `Generated ${submissionTypeLabel(data.submissionType)} notification #${submissionId} for ${vendor.name}`,
+    metadata: {
+      vendorId: vendor.id,
+      submissionType: data.submissionType,
+      submissionId,
+      reportingDate: reportingDate.toISOString(),
     },
   });
 
@@ -119,6 +135,15 @@ export async function flipNotificationStatusAction(formData: FormData) {
       ...(data.status === "SUBMITTED" ? { submittedAt: now } : {}),
       ...(data.status === "ACKNOWLEDGED" ? { acknowledgedAt: now, ackReference: data.ackReference ?? null } : {}),
     },
+  });
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: data.status === "SUBMITTED" ? "vendor.notification.submitted" : "vendor.notification.acknowledged",
+    targetType: "VendorMtpNotification",
+    targetId: data.notificationId,
+    summary: `Notification ${data.status === "SUBMITTED" ? "marked submitted" : `acknowledged${data.ackReference ? ` (${data.ackReference})` : ""}`}`,
   });
 
   revalidatePath(`/vendors/${data.vendorId}`);
