@@ -110,7 +110,7 @@ export default function NotificationsPanel({
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="text-[11px]">
-              <span className="text-muted">Submission type (§1.03)</span>
+              <span className="text-muted">Submission type (1.03)</span>
               <select
                 name="submissionType"
                 required
@@ -126,7 +126,7 @@ export default function NotificationsPanel({
               </select>
             </label>
             <label className="text-[11px]">
-              <span className="text-muted">Reporting date (§1.01)</span>
+              <span className="text-muted">Reporting date (1.01)</span>
               <input
                 type="date"
                 name="reportingDate"
@@ -138,7 +138,7 @@ export default function NotificationsPanel({
           </div>
           {submissionType === "CONTRACT_RENEWAL" && (
             <label className="block text-[11px]">
-              <span className="text-muted">Significant changes (§1.07)</span>
+              <span className="text-muted">Significant changes (1.07)</span>
               <textarea
                 name="changeNarrative"
                 rows={3}

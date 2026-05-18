@@ -47,7 +47,7 @@ type VendorForEditor = {
   id: string;
   name: string;
   isMaterialThirdParty: boolean;
-  // §2
+  // 2
   contractRef: string | null;
   legalName: string | null;
   legalEntityIdentifier: string | null;
@@ -63,7 +63,7 @@ type VendorForEditor = {
   noticePeriodFirmDays: number | null;
   governingLaw: string | null;
   contractAnnualValueGBP: number | null;
-  // §3
+  // 3
   materialityReason: string | null;
   materialityAssessedAt: Date | null;
   functionCategory: string | null;
@@ -76,13 +76,13 @@ type VendorForEditor = {
   itBankFMIRegulator: string | null;
   countryDataStored: string | null;
   countryServiceDeliveredFrom: string | null;
-  // §4
+  // 4
   compliesWithRules: "YES" | "NO" | "ONGOING" | null;
   assuranceSummary: string | null;
   smfSignedOff: boolean | null;
   governanceCommittee: string | null;
   governanceApprovedAt: Date | null;
-  // §5
+  // 5
   substitutability: string | null;
   reintegrationAbility: string | null;
   impactOfDiscontinuing: string | null;
@@ -139,25 +139,25 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
           </label>
         </section>
 
-        {/* §2 Service provider */}
-        <Section icon={Building2} title="§2 Service provider">
+        {/* 2 Service provider */}
+        <Section icon={Building2} title="2 Service provider">
           <Grid>
             <Field
-              label="Contract reference (§2.01)"
+              label="Contract reference (2.01)"
               name="contractRef"
               defaultValue={vendor.contractRef}
               required={isMTP}
               hint="Your firm's internal reference for this contractual arrangement."
             />
             <Field
-              label="Legal name (§2.02)"
+              label="Legal name (2.02)"
               name="legalName"
               defaultValue={vendor.legalName}
               required={isMTP}
               hint="As stated in the contract — used consistently across notifications."
             />
             <Field
-              label="Legal Entity Identifier · LEI (§2.03)"
+              label="Legal Entity Identifier · LEI (2.03)"
               name="legalEntityIdentifier"
               defaultValue={vendor.legalEntityIdentifier}
               maxLength={20}
@@ -165,26 +165,26 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
               hint="20 alphanumeric characters, e.g. 506700GE1G29325QX363."
             />
             <BoolToggle
-              label="Outsourcing? (§2.04)"
+              label="Outsourcing? (2.04)"
               name="isOutsourcing"
               defaultValue={vendor.isOutsourcing}
               yes="Outsourcing"
               no="Non-outsourcing"
             />
             <DropdownLargeList
-              label="Type of service (§2.05)"
+              label="Type of service (2.05)"
               name="serviceTypeTaxonomy"
               defaultValue={vendor.serviceTypeTaxonomy}
               options={SERVICE_TYPE}
             />
             <Dropdown
-              label="Cloud deployment (§2.06)"
+              label="Cloud deployment (2.06)"
               name="cloudDeployment"
               defaultValue={vendor.cloudDeployment ?? ""}
               options={Object.entries(CLOUD_DEPLOYMENT_LABEL).map(([k, v]) => ({ value: k, label: v }))}
             />
             <Field
-              label="Supply-chain ranking (§2.08)"
+              label="Supply-chain ranking (2.08)"
               name="supplyChainRanking"
               type="number"
               min={0}
@@ -192,25 +192,25 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
               hint="Intra-group: 0 · Direct provider: 1 · Sub-contractor: 2..."
             />
             <Field
-              label="Contract commencement (§2.09)"
+              label="Contract commencement (2.09)"
               name="contractStartAt"
               type="date"
               defaultValue={fmtDate(vendor.contractStartAt)}
             />
             <Field
-              label="Service commencement (§2.10)"
+              label="Service commencement (2.10)"
               name="serviceCommencedAt"
               type="date"
               defaultValue={fmtDate(vendor.serviceCommencedAt)}
             />
             <Field
-              label="Renewal / end date (§2.11)"
+              label="Renewal / end date (2.11)"
               name="contractEndAt"
               type="date"
               defaultValue={fmtDate(vendor.contractEndAt)}
             />
             <Field
-              label="Notice period — vendor (§2.12)"
+              label="Notice period — vendor (2.12)"
               name="noticePeriodVendorDays"
               type="number"
               min={0}
@@ -218,7 +218,7 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
               defaultValue={vendor.noticePeriodVendorDays ?? ""}
             />
             <Field
-              label="Notice period — firm (§2.13)"
+              label="Notice period — firm (2.13)"
               name="noticePeriodFirmDays"
               type="number"
               min={0}
@@ -226,14 +226,14 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
               defaultValue={vendor.noticePeriodFirmDays ?? ""}
             />
             <DropdownLargeList
-              label="Governing law (§2.14)"
+              label="Governing law (2.14)"
               name="governingLaw"
               defaultValue={vendor.governingLaw}
               options={COUNTRY}
               hint="Jurisdiction whose laws govern the contract."
             />
             <Field
-              label="Annual contract value GBP (§3.15)"
+              label="Annual contract value GBP (3.15)"
               name="contractAnnualValueGBP"
               type="number"
               min={0}
@@ -242,36 +242,36 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
             />
           </Grid>
           <TextArea
-            label="Product / service description (§2.07)"
+            label="Product / service description (2.07)"
             name="productServiceDescription"
             rows={3}
             defaultValue={vendor.productServiceDescription ?? ""}
           />
         </Section>
 
-        {/* §3 Materiality + IBS */}
-        <Section icon={ClipboardCheck} title="§3 Materiality + IBS">
+        {/* 3 Materiality + IBS */}
+        <Section icon={ClipboardCheck} title="3 Materiality + IBS">
           <Grid>
             <Dropdown
-              label="Reason for materiality (§3.01)"
+              label="Reason for materiality (3.01)"
               name="materialityReason"
               defaultValue={vendor.materialityReason ?? ""}
               options={Object.entries(MATERIALITY_REASON_LABEL).map(([k, v]) => ({ value: k, label: v }))}
             />
             <Field
-              label="Materiality assessment date (§3.02)"
+              label="Materiality assessment date (3.02)"
               name="materialityAssessedAt"
               type="date"
               defaultValue={fmtDate(vendor.materialityAssessedAt)}
             />
             <DropdownLargeList
-              label="Function category (§3.03)"
+              label="Function category (3.03)"
               name="functionCategory"
               defaultValue={vendor.functionCategory}
               options={FUNCTION_CATEGORY}
             />
             <BoolToggle
-              label="Supports core IBS element? (§3.06)"
+              label="Supports core IBS element? (3.06)"
               name="supportsCoreIBSElement"
               defaultValue={vendor.supportsCoreIBSElement}
               onChange={setSupportsIBS}
@@ -279,13 +279,13 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
               no="Non-core"
             />
             <DropdownLargeList
-              label="Country data is stored (§3.13)"
+              label="Country data is stored (3.13)"
               name="countryDataStored"
               defaultValue={vendor.countryDataStored}
               options={COUNTRY}
             />
             <DropdownLargeList
-              label="Country service delivered from (§3.14)"
+              label="Country service delivered from (3.14)"
               name="countryServiceDeliveredFrom"
               defaultValue={vendor.countryServiceDeliveredFrom}
               options={COUNTRY}
@@ -301,32 +301,32 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
           {supportsIBS && (
             <Grid>
               <Field
-                label="IT · PRA Safety & Soundness (§3.07)"
+                label="IT · PRA Safety & Soundness (3.07)"
                 name="itPRASafetySoundness"
                 defaultValue={vendor.itPRASafetySoundness}
               />
               <Field
-                label="IT · PRA Financial Stability (§3.08)"
+                label="IT · PRA Financial Stability (3.08)"
                 name="itPRAFinancialStability"
                 defaultValue={vendor.itPRAFinancialStability}
               />
               <Field
-                label="IT · PRA Policyholder Protection (§3.09)"
+                label="IT · PRA Policyholder Protection (3.09)"
                 name="itPRAPolicyholderProtection"
                 defaultValue={vendor.itPRAPolicyholderProtection}
               />
               <Field
-                label="IT · FCA Client Harm (§3.10)"
+                label="IT · FCA Client Harm (3.10)"
                 name="itFCAClientHarm"
                 defaultValue={vendor.itFCAClientHarm}
               />
               <Field
-                label="IT · FCA Market Integrity (§3.11)"
+                label="IT · FCA Market Integrity (3.11)"
                 name="itFCAMarketIntegrity"
                 defaultValue={vendor.itFCAMarketIntegrity}
               />
               <Field
-                label="IT · Bank as FMI Regulator (§3.12)"
+                label="IT · Bank as FMI Regulator (3.12)"
                 name="itBankFMIRegulator"
                 defaultValue={vendor.itBankFMIRegulator}
               />
@@ -334,60 +334,60 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
           )}
         </Section>
 
-        {/* §4 Compliance + governance */}
-        <Section icon={Gavel} title="§4 Compliance + governance">
+        {/* 4 Compliance + governance */}
+        <Section icon={Gavel} title="4 Compliance + governance">
           <Grid>
             <Dropdown
-              label="Complies with FCA/PRA/FMI rules? (§4.10)"
+              label="Complies with FCA/PRA/FMI rules? (4.10)"
               name="compliesWithRules"
               defaultValue={vendor.compliesWithRules ?? ""}
               options={Object.entries(COMPLIANCE_LABEL).map(([k, v]) => ({ value: k, label: v }))}
             />
             <BoolToggle
-              label="Signed off by SMF / accountable person? (§4.12)"
+              label="Signed off by SMF / accountable person? (4.12)"
               name="smfSignedOff"
               defaultValue={vendor.smfSignedOff}
               yes="Yes"
               no="No"
             />
             <Field
-              label="Governance committee (§4.13)"
+              label="Governance committee (4.13)"
               name="governanceCommittee"
               defaultValue={vendor.governanceCommittee}
               hint="Used only when SMF sign-off = No."
             />
             <Field
-              label="Governance approval date (§4.14)"
+              label="Governance approval date (4.14)"
               name="governanceApprovedAt"
               type="date"
               defaultValue={fmtDate(vendor.governanceApprovedAt)}
             />
           </Grid>
           <TextArea
-            label="Assurance summary (§4.11) — required when 'No' for compliance"
+            label="Assurance summary (4.11) — required when 'No' for compliance"
             name="assuranceSummary"
             rows={3}
             defaultValue={vendor.assuranceSummary ?? ""}
           />
         </Section>
 
-        {/* §5 Exit + substitutability */}
-        <Section icon={LogOut} title="§5 Exit + substitutability">
+        {/* 5 Exit + substitutability */}
+        <Section icon={LogOut} title="5 Exit + substitutability">
           <Grid>
             <Dropdown
-              label="Substitutability (§5.01)"
+              label="Substitutability (5.01)"
               name="substitutability"
               defaultValue={vendor.substitutability ?? ""}
               options={Object.entries(SUBSTITUTABILITY_LABEL).map(([k, v]) => ({ value: k, label: v }))}
             />
             <Dropdown
-              label="Reintegration ability (§5.02)"
+              label="Reintegration ability (5.02)"
               name="reintegrationAbility"
               defaultValue={vendor.reintegrationAbility ?? ""}
               options={Object.entries(REINTEGRATION_LABEL).map(([k, v]) => ({ value: k, label: v }))}
             />
             <Dropdown
-              label="Impact of discontinuing (§5.03)"
+              label="Impact of discontinuing (5.03)"
               name="impactOfDiscontinuing"
               defaultValue={vendor.impactOfDiscontinuing ?? ""}
               options={Object.entries(IMPACT_DISCONTINUE_LABEL).map(([k, v]) => ({ value: k, label: v }))}
@@ -405,7 +405,7 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
         )}
       </form>
 
-      {/* §4 Assessment history (out-of-form because it's append-only) */}
+      {/* 4 Assessment history (out-of-form because it's append-only) */}
       <AssessmentsPanel vendorId={vendor.id} assessments={vendor.assessments} canEdit={canEdit} />
     </div>
   );
@@ -493,7 +493,7 @@ function AssessmentsPanel({
       <header>
         <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
           <FileSearch size={14} className="text-indigo-600 dark:text-indigo-300" />
-          §4 Assessment history
+          4 Assessment history
         </h2>
         <p className="mt-0.5 text-[11px] text-soft">
           Append-only. The most recent of each kind feeds the register / notification submission.

@@ -98,7 +98,7 @@ export default async function VendorRegisterPage() {
           </p>
           <form action={generateAnnualRegisterAction} className="mt-3 flex flex-wrap items-end gap-2">
             <label className="text-[11px]">
-              <span className="text-muted">Reporting date (§1.01)</span>
+              <span className="text-muted">Reporting date (1.01)</span>
               <input
                 type="date"
                 name="reportingDate"

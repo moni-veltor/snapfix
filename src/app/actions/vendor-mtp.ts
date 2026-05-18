@@ -41,7 +41,7 @@ const OptInt = z.preprocess(
 const MtpFieldsSchema = z.object({
   vendorId: z.string(),
 
-  // §2
+  // 2
   contractRef: OptStr,
   legalName: OptStr,
   legalEntityIdentifier: OptStr,
@@ -59,7 +59,7 @@ const MtpFieldsSchema = z.object({
   governingLaw: OptStr,
   contractAnnualValueGBP: OptInt,
 
-  // §3
+  // 3
   materialityReason: z.nativeEnum(MaterialityReason).optional(),
   materialityAssessedAt: OptDate,
   functionCategory: z.nativeEnum(FunctionCategory).optional(),
@@ -73,14 +73,14 @@ const MtpFieldsSchema = z.object({
   countryDataStored: OptStr,
   countryServiceDeliveredFrom: OptStr,
 
-  // §4
+  // 4
   compliesWithRules: z.nativeEnum(ComplianceStatus).optional(),
   assuranceSummary: OptStr,
   smfSignedOff: Bool,
   governanceCommittee: OptStr,
   governanceApprovedAt: OptDate,
 
-  // §5
+  // 5
   substitutability: z.nativeEnum(Substitutability).optional(),
   reintegrationAbility: z.nativeEnum(ReintegrationAbility).optional(),
   impactOfDiscontinuing: z.nativeEnum(ImpactDiscontinuation).optional(),

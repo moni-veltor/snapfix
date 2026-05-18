@@ -22,7 +22,7 @@ import {
  *   - Submission Header
  *   - Formatted data
  *   - Field Descriptions
- * Column order matches the official template (§2.01 → §5.03).
+ * Column order matches the official template (2.01 → 5.03).
  */
 
 type Vendor = VendorModel & { assessments: VendorAssessmentModel[] };
@@ -58,7 +58,7 @@ export async function generateRegisterXlsx(input: {
   // Sheet 2 — Formatted data: one row per MTP vendor
   const data = wb.addWorksheet("Formatted data (Register)");
   data.columns = REGISTER_COLUMNS.map((c) => ({ header: c.label, key: c.id, width: c.width }));
-  // Header rows: row 1 blank, row 2 the §-id, row 3 the label. Match the
+  // Header rows: row 1 blank, row 2 the -id, row 3 the label. Match the
   // official template structure so the regulator's loader doesn't trip.
   data.spliceRows(1, 0, [], REGISTER_COLUMNS.map((c) => c.refId), REGISTER_COLUMNS.map((c) => c.label));
   for (const v of input.vendors) {

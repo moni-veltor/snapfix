@@ -44,7 +44,7 @@ export async function generateAnnualRegisterAction(formData: FormData) {
   const submissionId = (lastSnap?.submissionId ?? 0) + 1;
 
   // Resolve firm FRN from a settings field if you've got one; fall back to slug.
-  const firmFrn = ""; // PS26/2 §1.05 — captured during settings later; left blank for v1.
+  const firmFrn = ""; // PS26/2 1.05 — captured during settings later; left blank for v1.
 
   const xlsxBuffer = await generateRegisterXlsx({
     header: {

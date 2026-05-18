@@ -1512,79 +1512,79 @@ model Vendor {
   // ─── FCA/PRA PS26/2 Material Third Party register fields ─────────────
   // All nullable — populated when the vendor crosses the materiality threshold.
   //
-  // §2 Service-provider primary data
-  /// Firm's internal reference for the contractual arrangement (PS26/2 §2.01)
+  // 2 Service-provider primary data
+  /// Firm's internal reference for the contractual arrangement (PS26/2 2.01)
   contractRef                  String?
-  /// Legal name of the service provider as stated in the contract (PS26/2 §2.02).
+  /// Legal name of the service provider as stated in the contract (PS26/2 2.02).
   /// Distinct from Vendor.name which is the day-to-day label.
   legalName                    String?
-  /// Legal Entity Identifier — 20 alphanumeric chars (PS26/2 §2.03)
+  /// Legal Entity Identifier — 20 alphanumeric chars (PS26/2 2.03)
   legalEntityIdentifier        String?
   /// Firm-declared MTP flag. We don't auto-classify materiality; the firm decides.
   isMaterialThirdParty         Boolean @default(false)
-  /// PS26/2 §2.04: MTP outsourcing or non-outsourcing
+  /// PS26/2 2.04: MTP outsourcing or non-outsourcing
   isOutsourcing                Boolean?
-  /// PS26/2 §2.05: enumerated type-of-service from the regulator taxonomy
+  /// PS26/2 2.05: enumerated type-of-service from the regulator taxonomy
   serviceTypeTaxonomy          String?
-  /// PS26/2 §2.06: cloud deployment model (Public/Private/Hybrid/Non-cloud)
+  /// PS26/2 2.06: cloud deployment model (Public/Private/Hybrid/Non-cloud)
   cloudDeployment              CloudDeployment?
-  /// PS26/2 §2.07: short product/service description
+  /// PS26/2 2.07: short product/service description
   productServiceDescription    String?
-  /// PS26/2 §2.08: supply-chain ranking integer (intra-group = 0, direct provider = 1, etc.)
+  /// PS26/2 2.08: supply-chain ranking integer (intra-group = 0, direct provider = 1, etc.)
   supplyChainRanking           Int?
-  /// PS26/2 §2.10: date service started (distinct from §2.09 contract start)
+  /// PS26/2 2.10: date service started (distinct from 2.09 contract start)
   serviceCommencedAt           DateTime?
-  /// PS26/2 §2.12: notice period (days) the firm must give the provider on termination
+  /// PS26/2 2.12: notice period (days) the firm must give the provider on termination
   noticePeriodVendorDays       Int?
-  /// PS26/2 §2.13: notice period (days) the provider must give the firm
+  /// PS26/2 2.13: notice period (days) the provider must give the firm
   noticePeriodFirmDays         Int?
-  /// PS26/2 §2.14: jurisdiction whose laws govern the contract
+  /// PS26/2 2.14: jurisdiction whose laws govern the contract
   governingLaw                 String?
 
-  // §3 Materiality + IBS link
-  /// PS26/2 §3.01: enumerated reason the contract is material
+  // 3 Materiality + IBS link
+  /// PS26/2 3.01: enumerated reason the contract is material
   materialityReason            MaterialityReason?
-  /// PS26/2 §3.02: date of most recent materiality assessment
+  /// PS26/2 3.02: date of most recent materiality assessment
   materialityAssessedAt        DateTime?
-  /// PS26/2 §3.03: function category from the regulator taxonomy
+  /// PS26/2 3.03: function category from the regulator taxonomy
   functionCategory             FunctionCategory?
-  /// PS26/2 §3.06: whether the vendor supports a *core* element of an IBS
+  /// PS26/2 3.06: whether the vendor supports a *core* element of an IBS
   supportsCoreIBSElement       Boolean?
-  /// PS26/2 §3.07: impact tolerance — PRA Safety & Soundness
+  /// PS26/2 3.07: impact tolerance — PRA Safety & Soundness
   itPRASafetySoundness         String?
-  /// PS26/2 §3.08: impact tolerance — PRA Financial Stability
+  /// PS26/2 3.08: impact tolerance — PRA Financial Stability
   itPRAFinancialStability      String?
-  /// PS26/2 §3.09: impact tolerance — PRA Policyholder Protection
+  /// PS26/2 3.09: impact tolerance — PRA Policyholder Protection
   itPRAPolicyholderProtection  String?
-  /// PS26/2 §3.10: impact tolerance — FCA Client Harm
+  /// PS26/2 3.10: impact tolerance — FCA Client Harm
   itFCAClientHarm              String?
-  /// PS26/2 §3.11: impact tolerance — FCA Market Integrity
+  /// PS26/2 3.11: impact tolerance — FCA Market Integrity
   itFCAMarketIntegrity         String?
-  /// PS26/2 §3.12: impact tolerance — Bank as FMI Regulator
+  /// PS26/2 3.12: impact tolerance — Bank as FMI Regulator
   itBankFMIRegulator           String?
-  /// PS26/2 §3.13: country where data is stored at rest
+  /// PS26/2 3.13: country where data is stored at rest
   countryDataStored            String?
-  /// PS26/2 §3.14: country where the service is delivered from
+  /// PS26/2 3.14: country where the service is delivered from
   countryServiceDeliveredFrom  String?
 
-  // §4 Compliance + governance (assessment history lives in VendorAssessment)
-  /// PS26/2 §4.10: does the contract comply with relevant rules (FCA SS21/3, PRA SS2/21, FMI)
+  // 4 Compliance + governance (assessment history lives in VendorAssessment)
+  /// PS26/2 4.10: does the contract comply with relevant rules (FCA SS21/3, PRA SS2/21, FMI)
   compliesWithRules            ComplianceStatus?
-  /// PS26/2 §4.11: assurance summary when compliesWithRules = NO
+  /// PS26/2 4.11: assurance summary when compliesWithRules = NO
   assuranceSummary             String?
-  /// PS26/2 §4.12: SMF / accountable person sign-off
+  /// PS26/2 4.12: SMF / accountable person sign-off
   smfSignedOff                 Boolean?
-  /// PS26/2 §4.13: governance committee name when SMF sign-off = No
+  /// PS26/2 4.13: governance committee name when SMF sign-off = No
   governanceCommittee          String?
-  /// PS26/2 §4.14: date governance approval recorded
+  /// PS26/2 4.14: date governance approval recorded
   governanceApprovedAt         DateTime?
 
-  // §5 Exit + substitutability
-  /// PS26/2 §5.01: firm's ability to substitute the service provider
+  // 5 Exit + substitutability
+  /// PS26/2 5.01: firm's ability to substitute the service provider
   substitutability             Substitutability?
-  /// PS26/2 §5.02: ability to reintegrate the service in-house
+  /// PS26/2 5.02: ability to reintegrate the service in-house
   reintegrationAbility         ReintegrationAbility?
-  /// PS26/2 §5.03: impact on firm if the contract is discontinued
+  /// PS26/2 5.03: impact on firm if the contract is discontinued
   impactOfDiscontinuing        ImpactDiscontinuation?
 
   createdAt DateTime @default(now())
@@ -1607,7 +1607,7 @@ enum VendorTier {
 
 // ─── FCA/PRA PS26/2 enums ────────────────────────────────────────────────────
 
-/// PS26/2 §2.06 cloud deployment model
+/// PS26/2 2.06 cloud deployment model
 enum CloudDeployment {
   PUBLIC
   PRIVATE
@@ -1615,7 +1615,7 @@ enum CloudDeployment {
   NON_CLOUD
 }
 
-/// PS26/2 §3.01 — reason the contract is assessed as material. The XLSX
+/// PS26/2 3.01 — reason the contract is assessed as material. The XLSX
 /// taxonomy lists ~12 reasons; we mirror them but UI also accepts free-text
 /// in materialityReasonNote (added with the editor).
 enum MaterialityReason {
@@ -1632,7 +1632,7 @@ enum MaterialityReason {
   OTHER
 }
 
-/// PS26/2 §3.03 — function category from the regulator taxonomy.
+/// PS26/2 3.03 — function category from the regulator taxonomy.
 /// Approximation of the published list; finer-grained categories live in
 /// the taxonomy constants module loaded in Commit B.
 enum FunctionCategory {
@@ -1651,21 +1651,21 @@ enum FunctionCategory {
   OTHER
 }
 
-/// PS26/2 §5.01 substitutability
+/// PS26/2 5.01 substitutability
 enum Substitutability {
   EASILY_SUBSTITUTABLE
   HIGHLY_COMPLEX_SUBSTITUTABILITY
   NOT_SUBSTITUTABLE
 }
 
-/// PS26/2 §5.02 ability to reintegrate the service
+/// PS26/2 5.02 ability to reintegrate the service
 enum ReintegrationAbility {
   EASY
   DIFFICULT
   IMPOSSIBLE
 }
 
-/// PS26/2 §5.03 impact of discontinuing the arrangement
+/// PS26/2 5.03 impact of discontinuing the arrangement
 enum ImpactDiscontinuation {
   LOW
   MEDIUM
@@ -1673,7 +1673,7 @@ enum ImpactDiscontinuation {
 }
 
 /// Outcome enum used by every assessment (risk/audit/financial/cyber) and
-/// PS26/2 §4.02 / §4.05 / §4.07 / §4.09. Maps 1:1 to the regulator dropdown.
+/// PS26/2 4.02 / 4.05 / 4.07 / 4.09. Maps 1:1 to the regulator dropdown.
 enum AssessmentOutcome {
   SATISFACTORY
   NON_SATISFACTORY
@@ -1690,14 +1690,14 @@ enum AssessmentKind {
   CYBER_DD
 }
 
-/// PS26/2 §4.10 compliance with regulatory rules
+/// PS26/2 4.10 compliance with regulatory rules
 enum ComplianceStatus {
   YES
   NO
   ONGOING
 }
 
-/// PS26/2 Submission Header §1.03 — submission type for a notification.
+/// PS26/2 Submission Header 1.03 — submission type for a notification.
 enum MtpSubmissionType {
   NEW_CONTRACT
   CONTRACT_CHANGE
@@ -2207,11 +2207,11 @@ model VendorAssessment {
   vendorId  String
   vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   kind      AssessmentKind
-  /// PS26/2 §4.01 / §4.04 / §4.06 / §4.08 — date of this assessment
+  /// PS26/2 4.01 / 4.04 / 4.06 / 4.08 — date of this assessment
   assessedAt DateTime
-  /// PS26/2 §4.02 / §4.05 / §4.07 / §4.09 — outcome
+  /// PS26/2 4.02 / 4.05 / 4.07 / 4.09 — outcome
   outcome   AssessmentOutcome
-  /// PS26/2 §4.03 — commentary (only required when outcome != Satisfactory)
+  /// PS26/2 4.03 — commentary (only required when outcome != Satisfactory)
   commentary String?
   /// User who recorded this assessment, for audit trail
   recordedByUserId String?
@@ -2230,14 +2230,14 @@ model VendorMtpNotification {
   vendorId  String
   vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
-  /// PS26/2 §1.03 — what kind of event is being notified
+  /// PS26/2 1.03 — what kind of event is being notified
   submissionType MtpSubmissionType
-  /// PS26/2 §1.02 — auto-incremented per (firm, vendor) so resubmissions can
+  /// PS26/2 1.02 — auto-incremented per (firm, vendor) so resubmissions can
   /// be tracked. Computed at create-time.
   submissionId   Int
-  /// PS26/2 §1.01 — when the notification was prepared
+  /// PS26/2 1.01 — when the notification was prepared
   reportingDate  DateTime
-  /// PS26/2 §1.07 — short narrative of changes when type=CONTRACT_RENEWAL
+  /// PS26/2 1.07 — short narrative of changes when type=CONTRACT_RENEWAL
   changeNarrative String?
   /// Free-text reason / context the firm captures alongside the XLSX
   notificationNote String?
@@ -2271,9 +2271,9 @@ model VendorRegisterSnapshot {
   orgId         String
   org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
-  /// PS26/2 §1.01 — as-of date the snapshot represents
+  /// PS26/2 1.01 — as-of date the snapshot represents
   reportingDate DateTime
-  /// PS26/2 §1.02 — auto-incremented per org
+  /// PS26/2 1.02 — auto-incremented per org
   submissionId  Int
 
   /// JSON array of { vendorId, snapshotData } — the exact frozen view of
