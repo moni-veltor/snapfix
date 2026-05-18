@@ -90,6 +90,9 @@ model Department {
   // IBSs owned end-to-end by this department.
   ownedIBS OrganizationIBS[] @relation("IBSOwnerDepartment")
 
+  // IBS resource-map links pointing at this department.
+  ibsResources IBSResource[]   @relation("IBSResourceDepartment")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -995,13 +998,21 @@ model OrganizationIBS {
   toleranceRationale String?
   criticality        ImpactLevel @default(HIGH)
 
-  // Mapping (the IBS "resource map")
+  // Legacy resource-map fields. Kept for backwards-compatibility with older
+  // exercise / artefact code paths; new code reads from IBSResource[] (below).
+  // Auto-fanned out into IBSResource rows on first edit via the resource map
+  // editor; will be dropped in a later migration once no callers remain.
   technology   String[]
   peopleNotes  String?
   facilities   String?
   thirdParties String[]
   information  String[]
   processes    String[]
+
+  // Structured resource map — each dependency is a row that can link to a
+  // first-class entity (Vendor / TechSystem / Department), carries a
+  // criticality, and groups by kind. Replaces the string-arrays above.
+  resources    IBSResource[]
 
   // Importance assessment (six standard dimensions)
   impactCustomerFinancial  ImpactLevel?
@@ -1594,6 +1605,7 @@ model Vendor {
   exerciseParticipations  ExerciseVendorParticipant[]
   assessments             VendorAssessment[]
   notifications           VendorMtpNotification[]
+  ibsResources            IBSResource[]                @relation("IBSResourceVendor")
 
   @@unique([orgId, name])
   @@index([orgId, isMaterialThirdParty])
@@ -1976,6 +1988,7 @@ model TechSystem {
   notes String?
 
   drTests DRTest[]
+  ibsResources IBSResource[] @relation("IBSResourceTechSystem")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2292,4 +2305,59 @@ model VendorRegisterSnapshot {
 
   @@unique([orgId, submissionId])
   @@index([orgId, reportingDate])
+}
+
+// ─── Structured IBS resource map ─────────────────────────────────────────────
+
+enum IBSResourceKind {
+  TECHNOLOGY
+  THIRD_PARTY
+  INFORMATION
+  PROCESS
+  PEOPLE
+  FACILITY
+}
+
+enum IBSResourceCriticality {
+  CRITICAL
+  IMPORTANT
+  SUPPORTING
+}
+
+/// One dependency this IBS relies on. Replaces the legacy 6-string-array
+/// fields. Each row carries a kind, a criticality, and optionally links to a
+/// first-class entity (Vendor / TechSystem / Department). `label` is always
+/// set — used as the display name + the shared-dependency join key across
+/// IBSs (so "AWS" linked to a vendor row is matchable with another IBS's
+/// "AWS" string).
+model IBSResource {
+  id          String                  @id @default(cuid())
+  ibsId       String
+  ibs         OrganizationIBS         @relation(fields: [ibsId], references: [id], onDelete: Cascade)
+
+  kind        IBSResourceKind
+  label       String
+  criticality IBSResourceCriticality  @default(SUPPORTING)
+
+  // Optional entity links. At most one of vendorId / techSystemId /
+  // departmentId is set on any given row. When linked, label can be derived
+  // from the entity's name.
+  vendorId      String?
+  vendor        Vendor?      @relation("IBSResourceVendor", fields: [vendorId], references: [id], onDelete: SetNull)
+  techSystemId  String?
+  techSystem    TechSystem?  @relation("IBSResourceTechSystem", fields: [techSystemId], references: [id], onDelete: SetNull)
+  departmentId  String?
+  department    Department?  @relation("IBSResourceDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+
+  /// Optional free-text annotation visible in the editor's expanded view.
+  note      String?
+  /// Ordering within (ibsId, kind) so the UI stays stable across edits.
+  orderIdx  Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ibsId, kind, orderIdx])
+  /// Lowercased label index for cross-IBS shared-dependency lookup.
+  @@index([label])
 }
