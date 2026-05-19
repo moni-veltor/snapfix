@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import AudienceTabs, { type Audience } from "@/components/analytics/AudienceTabs";
 import FilterBar from "@/components/analytics/FilterBar";
+import BoardTab from "@/components/analytics/BoardTab";
 import ProgrammeTab from "@/components/analytics/ProgrammeTab";
 import {
   parseFiltersFromSearchParams,
@@ -61,10 +62,7 @@ export default async function AnalyticsPage({
       )}
 
       {audience === "board" && (
-        <Placeholder
-          title="Board view"
-          message="Strategic KPIs + 1-page export ship in Commit B. Health composite, programme spend, coverage %, regulator-readiness, top 3 risks."
-        />
+        <BoardTab orgId={me.orgId} filters={filters} range={range} />
       )}
 
       {audience === "executive" && (
