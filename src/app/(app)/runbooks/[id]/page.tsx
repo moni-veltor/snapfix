@@ -1,52 +1,15 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  BookOpen,
-  CheckSquare,
-  Megaphone,
-  ShieldAlert,
-  Workflow,
-  Clock,
-  Archive,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeft, BookOpen, Archive, Trash2 } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
+import RunbookEditor from "@/components/runbooks/RunbookEditor";
 import {
   archiveRunbookAction,
   deleteRunbookAction,
   restoreRunbookAction,
 } from "@/app/actions/runbooks";
-import type { RunbookStepKind } from "@/generated/prisma/enums";
-
-const KIND_LABEL: Record<RunbookStepKind, string> = {
-  ACTION: "Action",
-  DECISION: "Decision",
-  NOTIFICATION: "Notification",
-  COMMS: "Comms",
-  CHECKPOINT: "Checkpoint",
-};
-
-const KIND_ICON: Record<
-  RunbookStepKind,
-  React.ComponentType<{ size?: number; className?: string }>
-> = {
-  ACTION: Workflow,
-  DECISION: CheckSquare,
-  NOTIFICATION: ShieldAlert,
-  COMMS: Megaphone,
-  CHECKPOINT: Clock,
-};
-
-const KIND_TONE: Record<RunbookStepKind, string> = {
-  ACTION: "bg-surface-2 text-ink",
-  DECISION: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200",
-  NOTIFICATION: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200",
-  COMMS: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
-  CHECKPOINT: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
-};
 
 export default async function RunbookDetailPage({
   params,
@@ -61,13 +24,31 @@ export default async function RunbookDetailPage({
     include: {
       steps: { orderBy: { orderIdx: "asc" } },
       trigger: true,
-      ibsLinks: { include: { ibs: { select: { id: true, code: true, name: true } } } },
-      scenarioLinks: { include: { scenario: { select: { id: true, title: true } } } },
+      ibsLinks: { select: { ibsId: true } },
+      scenarioLinks: { select: { scenarioId: true } },
     },
   });
   if (!runbook) notFound();
 
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
+
+  const [ibsOptions, scenarioOptions] = await Promise.all([
+    prisma.organizationIBS.findMany({
+      where: { orgId: me.orgId },
+      orderBy: { code: "asc" },
+      select: { id: true, code: true, name: true },
+    }),
+    prisma.scenario.findMany({
+      where: { orgId: me.orgId, isTemplate: false },
+      orderBy: { title: "asc" },
+      select: { id: true, title: true, category: true },
+    }),
+  ]);
+
+  const scenarioCategories = Array.from(
+    new Set(scenarioOptions.map((s) => s.category).filter((c): c is string => !!c)),
+  ).sort();
+
   const totalEstimated = runbook.steps.reduce(
     (sum, s) => sum + (s.estimatedMin ?? 0),
     0,
@@ -76,7 +57,7 @@ export default async function RunbookDetailPage({
   return (
     <div className="space-y-6">
       <PageHero
-        eyebrow={`${runbook.category.replace(/_/g, " ")} · v${runbook.version}`}
+        eyebrow={`${runbook.category.replace(/_/g, " ")}${runbook.status === "PUBLISHED" ? ` · v${runbook.version}` : ""}`}
         icon={BookOpen}
         title={runbook.title}
         pitch={
@@ -99,12 +80,12 @@ export default async function RunbookDetailPage({
         <MetaTile
           label="Estimated wall-clock"
           value={totalEstimated === 0 ? "—" : `${totalEstimated}m`}
-          sub="sum of step estimates (DAG order ignored)"
+          sub="sum of step estimates"
         />
         <MetaTile
           label="IBSs covered"
           value={String(runbook.ibsLinks.length)}
-          sub={runbook.ibsLinks.length === 0 ? "link IBSs on next commit" : undefined}
+          sub={runbook.ibsLinks.length === 0 ? "use the link panel below" : undefined}
         />
         <MetaTile
           label="Auto-activates"
@@ -117,112 +98,45 @@ export default async function RunbookDetailPage({
         />
       </section>
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-ink">Steps</h2>
-          <p className="text-[11px] text-soft">
-            Visual builder lands in the next commit. Steps below are the cloned
-            library content (or empty for a freshly-created runbook).
-          </p>
-        </div>
-
-        {runbook.steps.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-line-strong bg-surface-1 p-6 text-center text-sm text-soft">
-            No steps yet. The visual builder ships in Commit B — for now this runbook
-            is a registry entry with metadata only.
-          </div>
-        ) : (
-          <ol className="space-y-2">
-            {runbook.steps.map((s, i) => {
-              const Icon = KIND_ICON[s.kind];
-              return (
-                <li
-                  key={s.id}
-                  className="rounded-xl border border-line bg-surface-1 p-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-surface-2 font-mono text-[11px] font-semibold text-muted">
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${KIND_TONE[s.kind]}`}
-                        >
-                          <Icon size={10} />
-                          {KIND_LABEL[s.kind]}
-                        </span>
-                        <h3 className="text-sm font-semibold text-ink">{s.title}</h3>
-                        {s.ownerRoleTitle && (
-                          <span className="text-[11px] text-soft">
-                            · {s.ownerRoleTitle}
-                          </span>
-                        )}
-                        {s.estimatedMin !== null && (
-                          <span className="text-[11px] text-soft">
-                            · ~{s.estimatedMin}m
-                          </span>
-                        )}
-                      </div>
-                      {s.description && (
-                        <p className="mt-1 text-[12px] text-soft">{s.description}</p>
-                      )}
-                      {s.successCriteria && (
-                        <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-300">
-                          ✓ {s.successCriteria}
-                        </p>
-                      )}
-                      {s.blocksOrders.length > 0 && (
-                        <p className="mt-1 text-[10px] text-soft">
-                          depends on step{s.blocksOrders.length === 1 ? "" : "s"}{" "}
-                          {s.blocksOrders.map((n) => n + 1).join(", ")}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </section>
-
-      {runbook.scenarioLinks.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-base font-semibold text-ink">Tested by scenarios</h2>
-          <ul className="flex flex-wrap gap-2">
-            {runbook.scenarioLinks.map((l) => (
-              <li key={l.scenario.id}>
-                <Link
-                  href={`/scenarios/${l.scenario.id}`}
-                  className="inline-flex items-center rounded-full border border-line bg-surface-1 px-3 py-1 text-[12px] hover:bg-surface-2"
-                >
-                  {l.scenario.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {runbook.ibsLinks.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-base font-semibold text-ink">Covers IBSs</h2>
-          <ul className="flex flex-wrap gap-2">
-            {runbook.ibsLinks.map((l) => (
-              <li key={l.ibs.id}>
-                <Link
-                  href={`/ibs/${l.ibs.id}`}
-                  className="inline-flex items-center rounded-full border border-line bg-surface-1 px-3 py-1 text-[12px] hover:bg-surface-2"
-                >
-                  <span className="font-mono text-[10px] text-muted">{l.ibs.code}</span>
-                  <span className="ml-1.5">{l.ibs.name}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <RunbookEditor
+        runbook={{
+          id: runbook.id,
+          title: runbook.title,
+          description: runbook.description,
+          category: runbook.category,
+          ownerRoleTitle: runbook.ownerRoleTitle,
+          status: runbook.status,
+          version: runbook.version,
+          publishedAt: runbook.publishedAt,
+          trigger: runbook.trigger
+            ? {
+                severityAtLeast: runbook.trigger.severityAtLeast,
+                scenarioCategoryEquals: runbook.trigger.scenarioCategoryEquals,
+              }
+            : null,
+        }}
+        steps={runbook.steps.map((s) => ({
+          id: s.id,
+          orderIdx: s.orderIdx,
+          title: s.title,
+          description: s.description,
+          kind: s.kind,
+          ownerRoleTitle: s.ownerRoleTitle,
+          estimatedMin: s.estimatedMin,
+          successCriteria: s.successCriteria,
+          blocksOrders: s.blocksOrders,
+          decisionTypeCode: s.decisionTypeCode,
+          orgDecisionTypeId: s.orgDecisionTypeId,
+          regulatorTrigger: serializeJsonTrigger(s.regulatorTrigger),
+          commsTemplate: serializeJsonComms(s.commsTemplate),
+        }))}
+        ibsOptions={ibsOptions}
+        ibsSelectedIds={runbook.ibsLinks.map((l) => l.ibsId)}
+        scenarioOptions={scenarioOptions}
+        scenarioSelectedIds={runbook.scenarioLinks.map((l) => l.scenarioId)}
+        scenarioCategories={scenarioCategories}
+        canEdit={canManage}
+      />
 
       {canManage && (
         <section className="rounded-xl border border-rose-300 bg-rose-50/50 p-4 dark:border-rose-900 dark:bg-rose-950/20">
@@ -280,4 +194,32 @@ function MetaTile({ label, value, sub }: { label: string; value: string; sub?: s
       {sub && <p className="mt-1 text-[11px] text-soft">{sub}</p>}
     </div>
   );
+}
+
+function serializeJsonTrigger(
+  v: unknown,
+): { regulator: string; slaHours: number; trigger: string } | null {
+  if (!v || typeof v !== "object") return null;
+  const obj = v as Record<string, unknown>;
+  if (typeof obj.regulator !== "string" || typeof obj.slaHours !== "number") return null;
+  const trigger = typeof obj.trigger === "string" ? obj.trigger : "POST_INVOCATION";
+  return { regulator: obj.regulator, slaHours: obj.slaHours, trigger };
+}
+
+function serializeJsonComms(
+  v: unknown,
+): { stakeholder: string; subject: string; bodyTemplate: string } | null {
+  if (!v || typeof v !== "object") return null;
+  const obj = v as Record<string, unknown>;
+  if (
+    typeof obj.stakeholder !== "string" ||
+    typeof obj.subject !== "string" ||
+    typeof obj.bodyTemplate !== "string"
+  )
+    return null;
+  return {
+    stakeholder: obj.stakeholder,
+    subject: obj.subject,
+    bodyTemplate: obj.bodyTemplate,
+  };
 }

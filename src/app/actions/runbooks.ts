@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireOrgRole } from "@/lib/auth";
 import { audit } from "@/lib/audit";
-import { RunbookCategory } from "@/generated/prisma/enums";
+import { RunbookCategory, RunbookStepKind } from "@/generated/prisma/enums";
 import {
   findLibraryRunbook,
   LIBRARY_RUNBOOKS,
@@ -152,6 +152,385 @@ export async function seedAllLibraryRunbooksAction() {
     targetId: me.orgId,
     summary: "Seeded all library runbooks",
   });
+  revalidatePath("/runbooks");
+}
+
+function optInt(v: FormDataEntryValue | null): number | null {
+  if (typeof v !== "string" || v.trim() === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n) : null;
+}
+
+function parseStepKind(v: FormDataEntryValue | null): RunbookStepKind {
+  const raw = typeof v === "string" ? v : "";
+  const allowed = Object.values(RunbookStepKind);
+  return (allowed as string[]).includes(raw) ? (raw as RunbookStepKind) : "ACTION";
+}
+
+async function requireOwnedRunbook(runbookId: string, orgId: string) {
+  const runbook = await prisma.runbook.findFirst({
+    where: { id: runbookId, orgId },
+    select: { id: true, title: true, status: true },
+  });
+  if (!runbook) throw new Error("Runbook not found");
+  return runbook;
+}
+
+export async function updateRunbookMetadataAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const id = optStr(formData.get("id"));
+  if (!id) return;
+  const runbook = await requireOwnedRunbook(id, me.orgId);
+  const title = optStr(formData.get("title")) ?? runbook.title;
+  const description = optStr(formData.get("description"));
+  const ownerRoleTitle = optStr(formData.get("ownerRoleTitle"));
+  const category = parseCategory(formData.get("category"));
+
+  await prisma.runbook.update({
+    where: { id },
+    data: { title, description, ownerRoleTitle, category },
+  });
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.updated",
+    targetType: "Runbook",
+    targetId: id,
+    summary: `Updated runbook "${title}"`,
+  });
+  revalidatePath(`/runbooks/${id}`);
+  revalidatePath("/runbooks");
+}
+
+export async function addRunbookStepAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const runbookId = optStr(formData.get("runbookId"));
+  if (!runbookId) return;
+  await requireOwnedRunbook(runbookId, me.orgId);
+
+  const lastStep = await prisma.runbookStep.findFirst({
+    where: { runbookId },
+    orderBy: { orderIdx: "desc" },
+    select: { orderIdx: true },
+  });
+  const orderIdx = (lastStep?.orderIdx ?? -1) + 1;
+
+  await prisma.runbookStep.create({
+    data: {
+      runbookId,
+      orderIdx,
+      title: "New step",
+      kind: "ACTION",
+      blocksOrders: [],
+    },
+  });
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.step.added",
+    targetType: "Runbook",
+    targetId: runbookId,
+    summary: `Added step #${orderIdx + 1}`,
+  });
+  revalidatePath(`/runbooks/${runbookId}`);
+}
+
+export async function updateRunbookStepAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const stepId = optStr(formData.get("stepId"));
+  if (!stepId) return;
+
+  const step = await prisma.runbookStep.findUnique({
+    where: { id: stepId },
+    select: { id: true, runbookId: true, runbook: { select: { orgId: true } } },
+  });
+  if (!step || step.runbook.orgId !== me.orgId) return;
+
+  const title = optStr(formData.get("title")) ?? "Untitled";
+  const description = optStr(formData.get("description"));
+  const kind = parseStepKind(formData.get("kind"));
+  const ownerRoleTitle = optStr(formData.get("ownerRoleTitle"));
+  const estimatedMin = optInt(formData.get("estimatedMin"));
+  const successCriteria = optStr(formData.get("successCriteria"));
+
+  const blocksOrdersRaw = formData.getAll("blocksOrders");
+  const blocksOrders = blocksOrdersRaw
+    .map((v) => (typeof v === "string" ? Number.parseInt(v, 10) : NaN))
+    .filter((n) => Number.isFinite(n));
+
+  // Kind-specific fields
+  const decisionTypeCode =
+    kind === "DECISION" ? optStr(formData.get("decisionTypeCode")) : null;
+
+  let regulatorTrigger: { regulator: string; slaHours: number; trigger: string } | null = null;
+  if (kind === "NOTIFICATION") {
+    const regulator = optStr(formData.get("regulator"));
+    const slaHours = optInt(formData.get("slaHours"));
+    const triggerSource =
+      optStr(formData.get("regTriggerSource")) ?? "POST_INVOCATION";
+    if (regulator && slaHours !== null) {
+      regulatorTrigger = { regulator, slaHours, trigger: triggerSource };
+    }
+  }
+
+  let commsTemplate: { stakeholder: string; subject: string; bodyTemplate: string } | null = null;
+  if (kind === "COMMS") {
+    const stakeholder = optStr(formData.get("commsStakeholder"));
+    const subject = optStr(formData.get("commsSubject"));
+    const bodyTemplate = optStr(formData.get("commsBody"));
+    if (stakeholder && subject && bodyTemplate) {
+      commsTemplate = { stakeholder, subject, bodyTemplate };
+    }
+  }
+
+  await prisma.runbookStep.update({
+    where: { id: stepId },
+    data: {
+      title,
+      description,
+      kind,
+      ownerRoleTitle,
+      estimatedMin,
+      successCriteria,
+      blocksOrders,
+      decisionTypeCode,
+      regulatorTrigger: regulatorTrigger ?? undefined,
+      commsTemplate: commsTemplate ?? undefined,
+    },
+  });
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.step.updated",
+    targetType: "RunbookStep",
+    targetId: stepId,
+    summary: `Updated step "${title}"`,
+  });
+  revalidatePath(`/runbooks/${step.runbookId}`);
+}
+
+export async function deleteRunbookStepAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const stepId = optStr(formData.get("stepId"));
+  if (!stepId) return;
+  const step = await prisma.runbookStep.findUnique({
+    where: { id: stepId },
+    select: { id: true, runbookId: true, runbook: { select: { orgId: true } } },
+  });
+  if (!step || step.runbook.orgId !== me.orgId) return;
+
+  await prisma.runbookStep.delete({ where: { id: stepId } });
+
+  // Re-sequence remaining steps to keep orderIdx dense.
+  const remaining = await prisma.runbookStep.findMany({
+    where: { runbookId: step.runbookId },
+    orderBy: { orderIdx: "asc" },
+    select: { id: true, orderIdx: true },
+  });
+  await Promise.all(
+    remaining.map((s, i) =>
+      s.orderIdx === i
+        ? Promise.resolve()
+        : prisma.runbookStep.update({ where: { id: s.id }, data: { orderIdx: i } }),
+    ),
+  );
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.step.deleted",
+    targetType: "RunbookStep",
+    targetId: stepId,
+    summary: "Deleted runbook step",
+  });
+  revalidatePath(`/runbooks/${step.runbookId}`);
+}
+
+export async function moveRunbookStepAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const stepId = optStr(formData.get("stepId"));
+  const direction = optStr(formData.get("direction"));
+  if (!stepId || (direction !== "up" && direction !== "down")) return;
+
+  const step = await prisma.runbookStep.findUnique({
+    where: { id: stepId },
+    select: { id: true, orderIdx: true, runbookId: true, runbook: { select: { orgId: true } } },
+  });
+  if (!step || step.runbook.orgId !== me.orgId) return;
+
+  const siblings = await prisma.runbookStep.findMany({
+    where: { runbookId: step.runbookId },
+    orderBy: { orderIdx: "asc" },
+    select: { id: true, orderIdx: true },
+  });
+  const ids = siblings.map((s) => s.id);
+  const i = ids.indexOf(stepId);
+  const target = direction === "up" ? i - 1 : i + 1;
+  if (target < 0 || target >= ids.length) return;
+
+  // Swap orderIdx values. Two-stage write avoids the @@unique([runbookId, orderIdx]) collision.
+  const a = siblings[i];
+  const b = siblings[target];
+  const TEMP = -1 - i;
+  await prisma.runbookStep.update({ where: { id: a.id }, data: { orderIdx: TEMP } });
+  await prisma.runbookStep.update({ where: { id: b.id }, data: { orderIdx: a.orderIdx } });
+  await prisma.runbookStep.update({ where: { id: a.id }, data: { orderIdx: b.orderIdx } });
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.step.reordered",
+    targetType: "Runbook",
+    targetId: step.runbookId,
+    summary: `Moved step ${direction}`,
+  });
+  revalidatePath(`/runbooks/${step.runbookId}`);
+}
+
+export async function setRunbookIBSLinksAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const runbookId = optStr(formData.get("runbookId"));
+  if (!runbookId) return;
+  await requireOwnedRunbook(runbookId, me.orgId);
+
+  const ibsIds = formData
+    .getAll("ibsIds")
+    .filter((v): v is string => typeof v === "string");
+  // Filter to IBSs in this org to avoid cross-tenant linking.
+  const validIBS = await prisma.organizationIBS.findMany({
+    where: { orgId: me.orgId, id: { in: ibsIds } },
+    select: { id: true },
+  });
+
+  await prisma.$transaction([
+    prisma.runbookIBSLink.deleteMany({ where: { runbookId } }),
+    prisma.runbookIBSLink.createMany({
+      data: validIBS.map((i) => ({ runbookId, ibsId: i.id })),
+    }),
+  ]);
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.ibs.linked",
+    targetType: "Runbook",
+    targetId: runbookId,
+    summary: `Linked ${validIBS.length} IBS${validIBS.length === 1 ? "" : "s"}`,
+  });
+  revalidatePath(`/runbooks/${runbookId}`);
+}
+
+export async function setRunbookScenarioLinksAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const runbookId = optStr(formData.get("runbookId"));
+  if (!runbookId) return;
+  await requireOwnedRunbook(runbookId, me.orgId);
+
+  const scenarioIds = formData
+    .getAll("scenarioIds")
+    .filter((v): v is string => typeof v === "string");
+  const validScenarios = await prisma.scenario.findMany({
+    where: { orgId: me.orgId, id: { in: scenarioIds } },
+    select: { id: true },
+  });
+
+  await prisma.$transaction([
+    prisma.runbookScenarioLink.deleteMany({ where: { runbookId } }),
+    prisma.runbookScenarioLink.createMany({
+      data: validScenarios.map((s) => ({ runbookId, scenarioId: s.id })),
+    }),
+  ]);
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.scenarios.linked",
+    targetType: "Runbook",
+    targetId: runbookId,
+    summary: `Linked ${validScenarios.length} scenario${validScenarios.length === 1 ? "" : "s"}`,
+  });
+  revalidatePath(`/runbooks/${runbookId}`);
+}
+
+export async function setRunbookTriggerAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const runbookId = optStr(formData.get("runbookId"));
+  if (!runbookId) return;
+  await requireOwnedRunbook(runbookId, me.orgId);
+
+  const severityAtLeast = optStr(formData.get("severityAtLeast"));
+  const scenarioCategoryEquals = optStr(formData.get("scenarioCategoryEquals"));
+
+  if (!severityAtLeast && !scenarioCategoryEquals) {
+    await prisma.runbookTriggerCondition.deleteMany({ where: { runbookId } });
+  } else {
+    await prisma.runbookTriggerCondition.upsert({
+      where: { runbookId },
+      create: { runbookId, severityAtLeast, scenarioCategoryEquals },
+      update: { severityAtLeast, scenarioCategoryEquals },
+    });
+  }
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.trigger.updated",
+    targetType: "Runbook",
+    targetId: runbookId,
+    summary: severityAtLeast
+      ? `Auto-activate ≥ ${severityAtLeast}${scenarioCategoryEquals ? ` · category ${scenarioCategoryEquals}` : ""}`
+      : "Manual activation",
+  });
+  revalidatePath(`/runbooks/${runbookId}`);
+}
+
+export async function publishRunbookAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const id = optStr(formData.get("id"));
+  if (!id) return;
+  const runbook = await prisma.runbook.findFirst({
+    where: { id, orgId: me.orgId },
+    select: { id: true, title: true, status: true, version: true, _count: { select: { steps: true } } },
+  });
+  if (!runbook) return;
+  if (runbook._count.steps === 0) return; // can't publish a stepless runbook
+
+  const nextVersion = runbook.status === "PUBLISHED" ? runbook.version + 1 : runbook.version;
+  await prisma.runbook.update({
+    where: { id },
+    data: { status: "PUBLISHED", publishedAt: new Date(), version: nextVersion },
+  });
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.published",
+    targetType: "Runbook",
+    targetId: id,
+    summary: `Published "${runbook.title}" v${nextVersion}`,
+    metadata: { version: nextVersion },
+  });
+  revalidatePath(`/runbooks/${id}`);
+  revalidatePath("/runbooks");
+}
+
+export async function unpublishRunbookAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const id = optStr(formData.get("id"));
+  if (!id) return;
+  const runbook = await prisma.runbook.findFirst({
+    where: { id, orgId: me.orgId },
+    select: { id: true },
+  });
+  if (!runbook) return;
+  await prisma.runbook.update({
+    where: { id },
+    data: { status: "DRAFT" },
+  });
+  revalidatePath(`/runbooks/${id}`);
   revalidatePath("/runbooks");
 }
 
