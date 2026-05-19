@@ -72,15 +72,25 @@ export default function IBSForm({
   vendorSuggestions = [],
   informationSuggestions = [],
   processSuggestions = [],
+  onSaved,
 }: {
   existing?: IBS;
   techSuggestions?: ResourceSuggestion[];
   vendorSuggestions?: ResourceSuggestion[];
   informationSuggestions?: ResourceSuggestion[];
   processSuggestions?: ResourceSuggestion[];
+  /** Called after the server action resolves — used by the modal wrapper
+   *  to close itself once the save completes. */
+  onSaved?: () => void;
 }) {
   const isEdit = !!existing?.id;
-  const action = isEdit ? updateIBSAction : createIBSAction;
+  const baseAction = isEdit ? updateIBSAction : createIBSAction;
+  const action = onSaved
+    ? async (fd: FormData) => {
+        await baseAction(fd);
+        onSaved();
+      }
+    : baseAction;
   const [tab, setTab] = useState<TabKey>("identity");
 
   return (

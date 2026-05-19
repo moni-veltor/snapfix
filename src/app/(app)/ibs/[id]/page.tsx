@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import IBSForm from "@/components/IBSForm";
+import IBSEditButton from "@/components/ibs/IBSEditButton";
 import {
   approveIBSAction,
   deprecateIBSAction,
@@ -19,14 +19,11 @@ import SubmitButton from "@/components/ui/SubmitButton";
 
 export default async function IBSDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ edit?: string }>;
 }) {
   const me = await requireOrgUser();
   const { id } = await params;
-  const sp = await searchParams;
 
   // Lazy migration: fan out the legacy 6 string-array fields into IBSResource
   // rows on first view, if and only if the IBS has zero IBSResource rows.
@@ -68,7 +65,6 @@ export default async function IBSDetailPage({
   });
   if (!ibs) notFound();
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
-  const editing = canManage && sp.edit === "1";
 
   // Cross-IBS shared-dependency join using IBSResource.label (case-insensitive).
   const peerResources = await prisma.iBSResource.findMany({
@@ -95,52 +91,38 @@ export default async function IBSDetailPage({
       ])
     : [[], [], []];
 
-  if (editing) {
-    // Suggestions for the resource picker — same shape as /ibs/new
-    const [systems, vendors] = await Promise.all([
-      prisma.techSystem.findMany({
-        where: { orgId: me.orgId },
-        orderBy: { name: "asc" },
-        select: { name: true },
-      }),
-      prisma.vendor.findMany({
-        where: { orgId: me.orgId },
-        orderBy: { name: "asc" },
-        select: { name: true },
-      }),
-    ]);
-    const commonInfo = [
-      "Customer PII", "KYC documentation", "Account balances",
-      "Transaction history", "Payment instructions", "Authentication credentials",
-      "Risk-scoring features", "Regulatory reports",
-    ];
-    const commonProc = [
-      "Identity verification", "AML screening", "Account creation",
-      "Payment authorisation", "Fraud review", "Customer onboarding",
-      "Application underwriting", "Customer-comms cascade",
-    ];
-    return (
-      <div className="mx-auto max-w-4xl space-y-6">
-        <header>
-          <p className="text-xs uppercase tracking-wide text-muted">
-            <Link href={`/ibs/${ibs.id}`} className="underline">
-              ← Back
-            </Link>
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-            Edit {ibs.code} — {ibs.name}
-          </h1>
-        </header>
-        <IBSForm
-          existing={ibs}
-          techSuggestions={systems.map((s) => ({ value: s.name, source: "system" as const }))}
-          vendorSuggestions={vendors.map((v) => ({ value: v.name, source: "vendor" as const }))}
-          informationSuggestions={commonInfo.map((value) => ({ value, source: "library" as const }))}
-          processSuggestions={commonProc.map((value) => ({ value, source: "library" as const }))}
-        />
-      </div>
-    );
-  }
+  // Suggestion lists for the edit modal (always loaded so the modal can
+  // pop instantly without an extra round-trip on click).
+  const [systems, vendors] = canManage
+    ? await Promise.all([
+        prisma.techSystem.findMany({
+          where: { orgId: me.orgId },
+          orderBy: { name: "asc" },
+          select: { name: true },
+        }),
+        prisma.vendor.findMany({
+          where: { orgId: me.orgId },
+          orderBy: { name: "asc" },
+          select: { name: true },
+        }),
+      ])
+    : [[], []];
+  const commonInfo = [
+    "Customer PII", "KYC documentation", "Account balances",
+    "Transaction history", "Payment instructions", "Authentication credentials",
+    "Risk-scoring features", "Regulatory reports",
+  ];
+  const commonProc = [
+    "Identity verification", "AML screening", "Account creation",
+    "Payment authorisation", "Fraud review", "Customer onboarding",
+    "Application underwriting", "Customer-comms cascade",
+  ];
+  const editSuggestions = {
+    techSuggestions: systems.map((s) => ({ value: s.name, source: "system" as const })),
+    vendorSuggestions: vendors.map((v) => ({ value: v.name, source: "vendor" as const })),
+    informationSuggestions: commonInfo.map((value) => ({ value, source: "library" as const })),
+    processSuggestions: commonProc.map((value) => ({ value, source: "library" as const })),
+  };
 
   return (
     <div className="space-y-8">
@@ -171,12 +153,7 @@ export default async function IBSDetailPage({
             </Link>
             {canManage && (
               <>
-              <Link
-                href={`/ibs/${ibs.id}?edit=1`}
-                className="rounded-md border border-line-strong px-3 py-1.5 text-sm hover:bg-surface-1"
-              >
-                Edit
-              </Link>
+              <IBSEditButton ibs={ibs} {...editSuggestions} />
               {ibs.status === "DRAFT" && (
                 <ToastForm
                   action={approveIBSAction}
