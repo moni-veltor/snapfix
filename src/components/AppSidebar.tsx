@@ -11,6 +11,7 @@ import {
   CheckSquare,
   Building2,
   Boxes,
+  BookOpen,
   Server,
   BarChart3,
   Users,
@@ -51,6 +52,7 @@ type NavItem = {
 const PRIMARY: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/scenarios", label: "Scenarios", icon: FileText },
+  { href: "/runbooks", label: "Runbooks", icon: BookOpen },
   { href: "/exercises", label: "Exercises", icon: Target },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/action-items", label: "Action items", icon: CheckSquare },

@@ -21,7 +21,9 @@ export type AuditAction =
   | "artefact.uploaded" | "artefact.deleted"
   | "vendor.register.generated"
   | "vendor.notification.generated" | "vendor.notification.submitted" | "vendor.notification.acknowledged"
-  | "vendor.mtp.updated" | "vendor.assessment.recorded";
+  | "vendor.mtp.updated" | "vendor.assessment.recorded"
+  | "runbook.created" | "runbook.cloned_from_library" | "runbook.library_seeded"
+  | "runbook.archived" | "runbook.deleted";
 
 type AuditInput = {
   orgId: string;

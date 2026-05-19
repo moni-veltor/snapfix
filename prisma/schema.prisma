@@ -57,6 +57,7 @@ model Organization {
   departments   Department[]
   decisionTypes OrgDecisionType[]
   vendorRegisterSnapshots VendorRegisterSnapshot[]
+  runbooks      Runbook[]
 }
 
 /// Departmental org-chart node — a business unit / team / function. Separate
@@ -161,6 +162,7 @@ model User {
   vendorAssessmentsRecorded VendorAssessment[]    @relation("VendorAssessmentRecorder")
   mtpNotificationsCreated   VendorMtpNotification[] @relation("MtpNotificationCreator")
   registerSnapshotsCreated  VendorRegisterSnapshot[] @relation("RegisterSnapshotCreator")
+  createdRunbooks           Runbook[]               @relation("RunbookCreator")
   exerciseParticipations  ExerciseParticipant[]
   incidentLogEntries      IncidentLogEntry[]
   responses               ParticipantResponse[]
@@ -299,6 +301,7 @@ model Scenario {
   exercises            Exercise[]
   artefacts            Artefact[]
   chainedFromExercises ExerciseScenarioLink[]
+  runbookLinks         RunbookScenarioLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1042,6 +1045,7 @@ model OrganizationIBS {
 
   exerciseLinks ExerciseIBSLink[]
   vendorLinks   VendorIBSLink[]
+  runbookLinks  RunbookIBSLink[]
 
   @@unique([orgId, code])
 }
@@ -2360,4 +2364,182 @@ model IBSResource {
   @@index([ibsId, kind, orderIdx])
   /// Lowercased label index for cross-IBS shared-dependency lookup.
   @@index([label])
+}
+
+// ─── Runbooks ───────────────────────────────────────────────────────────────
+//
+// A runbook is structured workflow for handling a class of incident — the
+// step-by-step playbook the IMT walks when a cyber incident, vendor outage,
+// or BCP activation lands. Steps are typed (ACTION / DECISION / NOTIFICATION
+// / COMMS / CHECKPOINT) so the live workspace can drive the right form when
+// a step is started. Runbooks ship as a library and are cloned + customised
+// per org, the same pattern as Scenarios.
+//
+// Live activation, step execution snapshots, and the decision/comms/notif
+// wiring all land in later commits — the schema below is the registry +
+// builder + linking layer.
+
+enum RunbookCategory {
+  CYBER
+  RANSOMWARE
+  CLOUD_REGION_OUTAGE
+  VENDOR_FAILURE
+  BCP_ACTIVATION
+  DATA_INCIDENT
+  PEOPLE_DISRUPTION
+  REGULATORY_NOTIFICATION
+  OTHER
+}
+
+enum RunbookStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Step kind drives which form the live workspace opens when this step is
+/// started. ACTION = free-text completion; DECISION = links to DecisionRecord;
+/// NOTIFICATION = creates a RegulatorNotification with SLA; COMMS = drafts a
+/// CommunicationDraft from a template; CHECKPOINT = pause-and-verify gate.
+enum RunbookStepKind {
+  ACTION
+  DECISION
+  NOTIFICATION
+  COMMS
+  CHECKPOINT
+}
+
+model Runbook {
+  id    String        @id @default(cuid())
+  /// Nullable for library templates (orgId = null + isTemplate = true).
+  /// Cloned into an org sets orgId and unsets isTemplate.
+  orgId String?
+  org   Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  category    RunbookCategory @default(OTHER)
+
+  /// Accountable role title (e.g. "CRO", "CTO"). Free text so it matches the
+  /// firm's role vocabulary rather than a fixed enum.
+  ownerRoleTitle String?
+
+  /// Bumps on publishRunbookAction. RunbookExecution (later commit) snapshots
+  /// the runbook at this version so historical evidence stays reproducible.
+  version    Int           @default(1)
+  publishedAt DateTime?
+  status      RunbookStatus @default(DRAFT)
+
+  /// Library template marker — same pattern as Scenario.isTemplate.
+  isTemplate       Boolean   @default(false)
+  templateOriginId String?
+  templateOrigin   Runbook?  @relation("RunbookTemplate", fields: [templateOriginId], references: [id], onDelete: SetNull)
+  clones           Runbook[] @relation("RunbookTemplate")
+
+  archivedAt DateTime?
+
+  steps         RunbookStep[]
+  ibsLinks      RunbookIBSLink[]
+  scenarioLinks RunbookScenarioLink[]
+  trigger       RunbookTriggerCondition?
+
+  createdById String?
+  createdBy   User?    @relation("RunbookCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([orgId, category])
+  @@index([isTemplate])
+}
+
+model RunbookStep {
+  id         String  @id @default(cuid())
+  runbookId  String
+  runbook    Runbook @relation(fields: [runbookId], references: [id], onDelete: Cascade)
+
+  /// Ordering within the runbook. Sparse-integer style — reorders rewrite
+  /// the column rather than inserting fractional positions.
+  orderIdx Int
+
+  title       String
+  description String?         // markdown
+  kind        RunbookStepKind @default(ACTION)
+
+  /// Role title that owns this step (e.g. "CTO", "Head of Comms"). Used to
+  /// route the step into a participant's queue in the live workspace.
+  ownerRoleTitle String?
+
+  /// Expected time to complete in minutes — drives the pacing score and the
+  /// ETA chip on the COO dashboard.
+  estimatedMin Int?
+
+  /// Acceptance criteria — the visible "done means…" prompt shown above the
+  /// completion button.
+  successCriteria String?
+
+  /// DAG semantics without a graph editor. blocksOrders lists the orderIdx
+  /// values that must reach COMPLETE (or SKIPPED with reason) before this
+  /// step becomes startable. Validated against sibling steps server-side.
+  blocksOrders Int[]
+
+  /// DECISION-specific. References either a built-in DecisionType (free
+  /// string, e.g. "ACTIVATE_BCP") or an OrgDecisionType by id.
+  decisionTypeCode  String?
+  orgDecisionTypeId String?
+
+  /// NOTIFICATION-specific. JSON shape: { regulator: "FCA"|"PRA"|"ICO"|...,
+  /// slaHours: number, trigger: "POST_INVOCATION"|"POST_AWARENESS" }.
+  regulatorTrigger Json?
+
+  /// COMMS-specific. JSON shape: { stakeholder, subject, bodyTemplate }.
+  /// bodyTemplate supports {{incident.title}} / {{incident.severity}} /
+  /// {{org.name}} placeholders rendered at activation time.
+  commsTemplate Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([runbookId, orderIdx])
+  @@index([runbookId])
+}
+
+/// Which IBSs this runbook protects. Surfaced on the IBS detail page as
+/// "Runbooks that cover this IBS" so an IBS owner can find their playbook
+/// without digging.
+model RunbookIBSLink {
+  runbookId String
+  runbook   Runbook         @relation(fields: [runbookId], references: [id], onDelete: Cascade)
+  ibsId     String
+  ibs       OrganizationIBS @relation(fields: [ibsId], references: [id], onDelete: Cascade)
+
+  @@id([runbookId, ibsId])
+}
+
+/// Which scenarios test this runbook. Lets the planner see "this scenario
+/// exercises 2 runbooks — last rehearsed N days ago" in the pre-flight.
+model RunbookScenarioLink {
+  runbookId  String
+  runbook    Runbook  @relation(fields: [runbookId], references: [id], onDelete: Cascade)
+  scenarioId String
+  scenario   Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@id([runbookId, scenarioId])
+}
+
+/// Auto-activation trigger. A runbook fires when (severityAtLeast is null OR
+/// incident.severity >= severityAtLeast) AND (scenarioCategoryEquals is null
+/// OR scenario.category equals it). One row per runbook (or none — manual
+/// activation only).
+model RunbookTriggerCondition {
+  runbookId String  @id
+  runbook   Runbook @relation(fields: [runbookId], references: [id], onDelete: Cascade)
+
+  /// Incident severity threshold ("LOW"|"MEDIUM"|"HIGH"|"CRITICAL").
+  /// String rather than enum so the live activation logic can compare
+  /// against the IncidentSeverity column without an enum round-trip.
+  severityAtLeast        String?
+  scenarioCategoryEquals String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
