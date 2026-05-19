@@ -8,6 +8,7 @@ import BoardTab from "@/components/analytics/BoardTab";
 import ProgrammeTab from "@/components/analytics/ProgrammeTab";
 import ExecutiveTab from "@/components/analytics/ExecutiveTab";
 import RiskTab from "@/components/analytics/RiskTab";
+import VendorsTab from "@/components/analytics/VendorsTab";
 import {
   parseFiltersFromSearchParams,
   resolveDateRange,
@@ -76,22 +77,8 @@ export default async function AnalyticsPage({
       )}
 
       {audience === "vendors" && (
-        <Placeholder
-          title="Vendors view"
-          message="Hyperscaler concentration heatmap, MTP readiness, exit-plan freshness, annual concentration brief export. Ships in Commit D."
-        />
+        <VendorsTab orgId={me.orgId} filters={filters} range={range} />
       )}
     </div>
-  );
-}
-
-function Placeholder({ title, message }: { title: string; message: string }) {
-  return (
-    <section className="rounded-xl border border-dashed border-line bg-surface-1 p-8 text-center">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:text-indigo-300">
-        {title}
-      </p>
-      <p className="mt-2 text-sm text-muted">{message}</p>
-    </section>
   );
 }
