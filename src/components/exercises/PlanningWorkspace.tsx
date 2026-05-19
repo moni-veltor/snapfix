@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   AlertOctagon,
@@ -50,8 +50,18 @@ type Participant = {
   deputyParticipantId: string | null;
 };
 
+type Stage = "BASICS" | "SCENARIOS" | "TEAM" | "INJECTS" | "PREFLIGHT";
+
 type Readiness = {
-  checks: { id: string; label: string; why: string; ok: boolean; required: boolean; fixHref?: string }[];
+  checks: {
+    id: string;
+    label: string;
+    why: string;
+    ok: boolean;
+    required: boolean;
+    stage: Stage;
+    fixHref?: string;
+  }[];
   canGoReady: boolean;
   strict: boolean;
 };
@@ -167,6 +177,9 @@ export default function PlanningWorkspace({
         )}
       </section>
 
+      {/* ─── Stage breakdown (Basics / Scenarios / Team / Injects / Pre-flight) ─ */}
+      <StageBreakdown exerciseId={exercise.id} readiness={readiness} />
+
       {/* ─── Schedule ─────────────────────────────────────────────────── */}
       <ScheduleCard exercise={exercise} canEdit={canEdit} />
 
@@ -208,6 +221,110 @@ export default function PlanningWorkspace({
 // ────────────────────────────────────────────────────────────────────────────
 // Schedule card
 // ────────────────────────────────────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────────────────────
+// Stage breakdown — mirrors the 5 wizard steps so the admin can see what's
+// missing PER STAGE without having to scroll through every card below.
+// ────────────────────────────────────────────────────────────────────────────
+
+const STAGES: { key: Stage; label: string; hint: string; step: number }[] = [
+  { key: "BASICS", label: "Basics", hint: "Date, duration, jurisdiction", step: 1 },
+  { key: "SCENARIOS", label: "Scenarios", hint: "Scenario chain, IBSs, objectives", step: 2 },
+  { key: "TEAM", label: "Team", hint: "Facilitator + roster", step: 3 },
+  { key: "INJECTS", label: "Injects", hint: "Timeline + coverage", step: 4 },
+  { key: "PREFLIGHT", label: "Pre-flight", hint: "Briefing + sign-off", step: 5 },
+];
+
+function StageBreakdown({ exerciseId, readiness }: { exerciseId: string; readiness: Readiness }) {
+  const byStage = useMemo(() => {
+    const map = new Map<Stage, Readiness["checks"]>();
+    for (const s of STAGES) map.set(s.key, []);
+    for (const c of readiness.checks) {
+      const list = map.get(c.stage);
+      if (list) list.push(c);
+    }
+    return map;
+  }, [readiness.checks]);
+
+  return (
+    <section className="rounded-xl border border-line bg-surface-1 p-4">
+      <header className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-sm font-semibold text-ink">Planning stages</h3>
+        <p className="text-[11px] text-soft">
+          Each tile = one wizard step. Click &quot;Open&quot; to jump straight to it.
+        </p>
+      </header>
+      <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        {STAGES.map((s) => {
+          const list = byStage.get(s.key) ?? [];
+          const passed = list.filter((c) => c.ok).length;
+          const total = list.length;
+          const failedRequired = list.filter((c) => !c.ok && (c.required || readiness.strict));
+          const allPass = total > 0 && passed === total;
+          const hasBlocker = failedRequired.length > 0;
+          const pct = total === 0 ? 100 : Math.round((passed / total) * 100);
+          const tone = allPass
+            ? "border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30"
+            : hasBlocker
+              ? "border-rose-300 bg-rose-50 dark:border-rose-800/60 dark:bg-rose-950/30"
+              : "border-amber-300 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30";
+          const fillTone = allPass ? "bg-emerald-500" : hasBlocker ? "bg-rose-500" : "bg-amber-500";
+          return (
+            <li
+              key={s.key}
+              className={`rounded-lg border p-3 transition-shadow ${tone}`}
+            >
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/60 font-mono text-[9px] text-ink dark:bg-black/30">
+                    {s.step}
+                  </span>
+                  {s.label}
+                </p>
+                {allPass ? (
+                  <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-300" />
+                ) : hasBlocker ? (
+                  <AlertOctagon size={12} className="text-rose-600 dark:text-rose-300" />
+                ) : (
+                  <AlertOctagon size={12} className="text-amber-600 dark:text-amber-300" />
+                )}
+              </div>
+              <p className="mt-0.5 text-[10px] text-soft">{s.hint}</p>
+              <div className="mt-2 flex items-center gap-1.5 text-[10px]">
+                <span className="font-mono font-semibold text-ink">
+                  {passed}/{total || 0}
+                </span>
+                <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/50 dark:bg-black/20">
+                  <div className={`h-full ${fillTone}`} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+              {failedRequired.length > 0 && (
+                <ul className="mt-1.5 space-y-0.5 text-[10px] text-rose-800 dark:text-rose-200">
+                  {failedRequired.slice(0, 3).map((c) => (
+                    <li key={c.id} className="truncate">
+                      · {c.label}
+                    </li>
+                  ))}
+                  {failedRequired.length > 3 && (
+                    <li className="italic text-rose-700/80 dark:text-rose-300/80">
+                      + {failedRequired.length - 3} more
+                    </li>
+                  )}
+                </ul>
+              )}
+              <Link
+                href={`/exercises/new?step=${s.step}&id=${exerciseId}`}
+                className="mt-2 inline-flex items-center gap-1 text-[10px] text-indigo-600 hover:underline dark:text-indigo-300"
+              >
+                Open stage →
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
 
 function ScheduleCard({ exercise, canEdit }: { exercise: ExerciseSnapshot; canEdit: boolean }) {
   const allOk = !!exercise.plannedDate && !!exercise.durationMin;

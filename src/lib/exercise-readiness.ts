@@ -2,6 +2,8 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { loadAggregatedInjects, findCoverageGaps } from "@/lib/exercise-injects";
 
+export type ReadinessStage = "BASICS" | "SCENARIOS" | "TEAM" | "INJECTS" | "PREFLIGHT";
+
 export type ReadinessCheck = {
   id: string;
   label: string;
@@ -10,6 +12,8 @@ export type ReadinessCheck = {
   ok: boolean;
   /** When true, this check must pass even outside regulator mode. */
   required: boolean;
+  /** Wizard stage this check belongs to. */
+  stage: ReadinessStage;
   /** Optional remediation link (relative path). */
   fixHref?: string;
 };
@@ -88,6 +92,7 @@ export async function evaluateReadiness(exerciseId: string): Promise<ReadinessRe
       why: "Calendar invites, regulator clocks, and the briefing email all need a real D-Day timestamp.",
       ok: !!exercise.plannedDate,
       required: true,
+      stage: "BASICS",
       fixHref: `/exercises/new?step=1&id=${exerciseId}`,
     },
     {
@@ -96,38 +101,17 @@ export async function evaluateReadiness(exerciseId: string): Promise<ReadinessRe
       why: "Cost estimate, briefing email, and the .ics calendar block all need a planned duration.",
       ok: !!exercise.durationMin,
       required: true,
+      stage: "BASICS",
       fixHref: `/exercises/new?step=1&id=${exerciseId}`,
     },
     {
-      id: "facilitator",
-      label: "At least one facilitator",
-      why: "Someone has to run the room.",
-      ok: facilitators.length >= 1,
-      required: true,
-    },
-    {
-      id: "co-facilitator",
-      label: "Backup facilitator named",
-      why: "Single-facilitator design is anti-resilience. A co-facilitator can take over if the primary becomes unavailable.",
-      ok: !!exercise.coFacilitatorId,
-      required: false,
-      fixHref: `/exercises/new?step=3&id=${exerciseId}`,
-    },
-    {
-      id: "roster",
-      label: "At least 2 participants on the roster",
-      why: "A war-room with one person isn't a war-room.",
-      ok: participantCount >= 2,
-      required: true,
-      fixHref: `/exercises/new?step=3&id=${exerciseId}`,
-    },
-    {
-      id: "coverage",
-      label: "All injects address an on-roster role (no coverage gaps)",
-      why: "An inject addressed to nobody is a silent failure — the team won't see it and the exercise won't test what you intended.",
-      ok: coverageGaps.length === 0,
-      required: true,
-      fixHref: `/exercises/new?step=4&id=${exerciseId}`,
+      id: "regulator-audience",
+      label: "Regulator audience named (regulator mode only)",
+      why: "We need to know which regulator's format to shape the evidence pack into (PRA / FCA / DORA / BoE).",
+      ok: !strict || !!exercise.regulatorAudience,
+      required: strict,
+      stage: "BASICS",
+      fixHref: `/exercises/new?step=1&id=${exerciseId}`,
     },
     {
       id: "ibs",
@@ -137,6 +121,7 @@ export async function evaluateReadiness(exerciseId: string): Promise<ReadinessRe
         exercise.ibsLinks.length > 0 ||
         exercise.chainedScenarios.some((c) => c.scenario._count.ibsList > 0),
       required: true,
+      stage: "SCENARIOS",
       fixHref: `/exercises/new?step=2&id=${exerciseId}`,
     },
     {
@@ -145,14 +130,43 @@ export async function evaluateReadiness(exerciseId: string): Promise<ReadinessRe
       why: "Objectives are what the debrief scores against. No objective means nothing concrete to learn from.",
       ok: exercise.objectives.length > 0,
       required: true,
+      stage: "SCENARIOS",
       fixHref: `/exercises/new?step=2&id=${exerciseId}`,
     },
     {
-      id: "briefing",
-      label: "Pre-exercise briefing sent or explicitly skipped",
-      why: "Participants need to know what's expected before D-Day. If you're briefing in person, mark it skipped with a reason.",
-      ok: briefingDealtWith,
+      id: "facilitator",
+      label: "At least one facilitator",
+      why: "Someone has to run the room.",
+      ok: facilitators.length >= 1,
+      required: true,
+      stage: "TEAM",
+    },
+    {
+      id: "co-facilitator",
+      label: "Backup facilitator named",
+      why: "Single-facilitator design is anti-resilience. A co-facilitator can take over if the primary becomes unavailable.",
+      ok: !!exercise.coFacilitatorId,
       required: false,
+      stage: "TEAM",
+      fixHref: `/exercises/new?step=3&id=${exerciseId}`,
+    },
+    {
+      id: "roster",
+      label: "At least 2 participants on the roster",
+      why: "A war-room with one person isn't a war-room.",
+      ok: participantCount >= 2,
+      required: true,
+      stage: "TEAM",
+      fixHref: `/exercises/new?step=3&id=${exerciseId}`,
+    },
+    {
+      id: "coverage",
+      label: "All injects address an on-roster role (no coverage gaps)",
+      why: "An inject addressed to nobody is a silent failure — the team won't see it and the exercise won't test what you intended.",
+      ok: coverageGaps.length === 0,
+      required: true,
+      stage: "INJECTS",
+      fixHref: `/exercises/new?step=4&id=${exerciseId}`,
     },
     {
       id: "preread",
@@ -160,7 +174,16 @@ export async function evaluateReadiness(exerciseId: string): Promise<ReadinessRe
       why: "If anyone hasn't acked the pre-read, they're more likely to misfire on D-Day.",
       ok: participantCount === 0 ? false : ackedCount === participantCount,
       required: false,
+      stage: "INJECTS",
       fixHref: `/exercises/new?step=4&id=${exerciseId}`,
+    },
+    {
+      id: "briefing",
+      label: "Pre-exercise briefing sent or explicitly skipped",
+      why: "Participants need to know what's expected before D-Day. If you're briefing in person, mark it skipped with a reason.",
+      ok: briefingDealtWith,
+      required: false,
+      stage: "PREFLIGHT",
     },
     {
       id: "approvals",
@@ -168,14 +191,7 @@ export async function evaluateReadiness(exerciseId: string): Promise<ReadinessRe
       why: "When the exercise needs CRO / Board approval (high cost or regulator mode), the approval chain must be APPROVED, not PENDING or REJECTED.",
       ok: rejectedCount === 0 && (strict ? approvedCount > 0 : pendingCount === 0),
       required: strict,
-    },
-    {
-      id: "regulator-audience",
-      label: "Regulator audience named (regulator mode only)",
-      why: "We need to know which regulator's format to shape the evidence pack into (PRA / FCA / DORA / BoE).",
-      ok: !strict || !!exercise.regulatorAudience,
-      required: strict,
-      fixHref: `/exercises/new?step=1&id=${exerciseId}`,
+      stage: "PREFLIGHT",
     },
   ];
 
