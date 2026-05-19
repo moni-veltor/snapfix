@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  BookOpen,
   Compass,
   Inbox,
   ListChecks,
@@ -10,15 +11,18 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-type TabKey = "briefing" | "inbox" | "decisions" | "comms" | "team";
+type TabKey = "briefing" | "inbox" | "runbook" | "decisions" | "comms" | "team";
+const TAB_KEYS: TabKey[] = ["briefing", "inbox", "runbook", "decisions", "comms", "team"];
 
 type Props = {
   briefing: ReactNode;
   inbox: ReactNode;
+  runbook: ReactNode;
   decisions: ReactNode;
   comms: ReactNode;
   team: ReactNode;
   unreadCount?: number;
+  runbookBadge?: number;
   decisionsBadge?: number;
   commsBadge?: number;
   teamBadge?: number;
@@ -29,10 +33,12 @@ const STORAGE_KEY = "snapfix-live-tab";
 export default function LiveTabs({
   briefing,
   inbox,
+  runbook,
   decisions,
   comms,
   team,
   unreadCount = 0,
+  runbookBadge = 0,
   decisionsBadge = 0,
   commsBadge = 0,
   teamBadge = 0,
@@ -45,7 +51,7 @@ export default function LiveTabs({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = window.localStorage.getItem(STORAGE_KEY) as TabKey | null;
-    if (stored && ["briefing", "inbox", "decisions", "comms", "team"].includes(stored)) {
+    if (stored && TAB_KEYS.includes(stored)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTab(stored);
     }
@@ -59,6 +65,7 @@ export default function LiveTabs({
   const tabs: { key: TabKey; label: string; icon: typeof Compass; badge: number; hint: string }[] = [
     { key: "briefing", label: "Briefing", icon: Compass, badge: 0, hint: "Role + next actions" },
     { key: "inbox", label: "Inbox", icon: Inbox, badge: unreadCount, hint: "Messages for you" },
+    { key: "runbook", label: "Runbook", icon: BookOpen, badge: runbookBadge, hint: "Steps to walk" },
     { key: "decisions", label: "Decisions", icon: ListChecks, badge: decisionsBadge, hint: "Log + closure gate" },
     { key: "comms", label: "Comms", icon: Megaphone, badge: commsBadge, hint: "Drafts + regulator" },
     { key: "team", label: "Team", icon: Users, badge: teamBadge, hint: "Seats + feed" },
@@ -115,6 +122,7 @@ export default function LiveTabs({
 
       <div hidden={tab !== "briefing"}>{briefing}</div>
       <div hidden={tab !== "inbox"}>{inbox}</div>
+      <div hidden={tab !== "runbook"}>{runbook}</div>
       <div hidden={tab !== "decisions"}>{decisions}</div>
       <div hidden={tab !== "comms"}>{comms}</div>
       <div hidden={tab !== "team"}>{team}</div>

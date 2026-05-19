@@ -26,7 +26,10 @@ export type AuditAction =
   | "runbook.archived" | "runbook.deleted" | "runbook.updated" | "runbook.published"
   | "runbook.step.added" | "runbook.step.updated" | "runbook.step.deleted"
   | "runbook.step.reordered" | "runbook.ibs.linked" | "runbook.scenarios.linked"
-  | "runbook.trigger.updated";
+  | "runbook.trigger.updated"
+  | "runbook.execution.activated" | "runbook.execution.abandoned"
+  | "runbook.execution.step.started" | "runbook.execution.step.completed"
+  | "runbook.execution.step.skipped";
 
 type AuditInput = {
   orgId: string;

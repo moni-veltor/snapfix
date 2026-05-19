@@ -163,6 +163,7 @@ model User {
   mtpNotificationsCreated   VendorMtpNotification[] @relation("MtpNotificationCreator")
   registerSnapshotsCreated  VendorRegisterSnapshot[] @relation("RegisterSnapshotCreator")
   createdRunbooks           Runbook[]               @relation("RunbookCreator")
+  activatedRunbookExecutions RunbookExecution[]     @relation("RunbookExecutionActivator")
   exerciseParticipations  ExerciseParticipant[]
   incidentLogEntries      IncidentLogEntry[]
   responses               ParticipantResponse[]
@@ -716,6 +717,7 @@ model ExerciseParticipant {
   sitrepsAuthored    Sitrep[]
   imtMeetingsChaired IMTMeeting[]     @relation("IMTMeetingChair")
   wellbeingChecks    ExerciseWellbeingCheck[]
+  completedRunbookSteps RunbookStepExecution[] @relation("RunbookStepCompletedBy")
 
   @@unique([exerciseId, userId])
 }
@@ -1240,6 +1242,7 @@ model Incident {
   comms                  CommunicationDraft[]
   bcpActivations         BCPActivation[]
   postIncidentReport     PostIncidentReport?
+  runbookExecutions      RunbookExecution[]
 
   @@index([exerciseId, status])
 }
@@ -2442,6 +2445,7 @@ model Runbook {
   ibsLinks      RunbookIBSLink[]
   scenarioLinks RunbookScenarioLink[]
   trigger       RunbookTriggerCondition?
+  executions    RunbookExecution[]
 
   createdById String?
   createdBy   User?    @relation("RunbookCreator", fields: [createdById], references: [id], onDelete: SetNull)
@@ -2542,4 +2546,98 @@ model RunbookTriggerCondition {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── Runbook execution (live activation + step progress) ───────────────────
+//
+// One RunbookExecution per (incident × runbook). Snapshots the runbook +
+// every step into runbookJson at activation time so the version-of-record
+// stays reproducible even if the runbook is later edited or archived.
+//
+// Step state is tracked separately on RunbookStepExecution rows — the same
+// row also holds the linkedDecisionId / linkedNotificationId / linkedCommsId
+// pointers that Commit D will populate when a step's owner completes the
+// associated form.
+
+enum RunbookExecutionStatus {
+  ACTIVE
+  COMPLETE
+  ABANDONED
+}
+
+enum RunbookExecutionTrigger {
+  AUTO
+  MANUAL
+}
+
+enum RunbookStepExecutionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETE
+  SKIPPED
+  BLOCKED
+}
+
+model RunbookExecution {
+  id         String @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  runbookId  String
+  runbook    Runbook  @relation(fields: [runbookId], references: [id], onDelete: Cascade)
+
+  /// Frozen JSON snapshot of the runbook at activation time. Shape mirrors
+  /// the Runbook + RunbookStep models so post-mortem can read the version
+  /// that ran without joining back to the live records.
+  runbookJson Json
+
+  status        RunbookExecutionStatus  @default(ACTIVE)
+  activatedBy   RunbookExecutionTrigger @default(AUTO)
+  activatedByUserId String?
+  activatedByUser   User?   @relation("RunbookExecutionActivator", fields: [activatedByUserId], references: [id], onDelete: SetNull)
+
+  /// Snapshot at activation time so future severity changes don't void the
+  /// trigger reason. Helps the post-mortem read "activated because…".
+  activationReason String?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  abandonedReason String?
+
+  stepExecutions RunbookStepExecution[]
+
+  @@unique([incidentId, runbookId])
+  @@index([incidentId])
+}
+
+model RunbookStepExecution {
+  id          String           @id @default(cuid())
+  executionId String
+  execution   RunbookExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  /// orderIdx of the step inside the frozen runbookJson. Combined with
+  /// executionId, this is the stable key — we don't FK back to RunbookStep
+  /// because that row may change after activation.
+  stepOrderIdx Int
+
+  status RunbookStepExecutionStatus @default(PENDING)
+
+  startedAt              DateTime?
+  completedAt            DateTime?
+  completedByParticipantId String?
+  completedByParticipant   ExerciseParticipant? @relation("RunbookStepCompletedBy", fields: [completedByParticipantId], references: [id], onDelete: SetNull)
+  notes                  String?
+
+  /// Reverse links to the artefacts produced by this step. Populated in
+  /// Commit D — completing a DECISION step writes linkedDecisionId, a
+  /// NOTIFICATION step writes linkedNotificationId, a COMMS step
+  /// writes linkedCommsId.
+  linkedDecisionId     String?
+  linkedNotificationId String?
+  linkedCommsId        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([executionId, stepOrderIdx])
+  @@index([executionId, status])
 }

@@ -8,6 +8,7 @@ import { currentDDay } from "@/lib/dday";
 import { SeverityLevel, IncidentStatus } from "@/generated/prisma/enums";
 import { deriveOverallSeverity, autoPromoteSeverityForCyber } from "@/lib/severity";
 import { autoCreateRegulatorNotificationsOnInvocation } from "@/lib/regulator";
+import { autoActivateRunbooksForIncident } from "@/lib/runbook-activation";
 
 /**
  * Resolve the calling participant for an exercise. Returns null if the caller
@@ -235,6 +236,11 @@ export async function assessSeverityAction(formData: FormData) {
   if (derived === "HIGH" && incident.invokedAt) {
     await autoCreateRegulatorNotificationsOnInvocation(incident.id, incident.invokedAt);
   }
+
+  // Side effect — auto-activate matching runbooks based on the new severity.
+  // Idempotent and capped, so re-classifying severity later doesn't pile on
+  // runbook activations.
+  await autoActivateRunbooksForIncident(incident.id);
 
   revalidatePath(`/exercises/${ctx.exercise.id}/live`);
   revalidatePath(`/exercises/${ctx.exercise.id}/facilitator`);

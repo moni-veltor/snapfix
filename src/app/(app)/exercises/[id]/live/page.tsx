@@ -33,6 +33,12 @@ import Scratchpad from "@/components/live/Scratchpad";
 import OnCallStatus from "@/components/live/OnCallStatus";
 import RoleBriefing from "@/components/live/RoleBriefing";
 import LiveTabs from "@/components/live/LiveTabs";
+import LiveRunbookTab, {
+  type LiveExecution,
+  type LiveStep,
+  type AvailableRunbook,
+} from "@/components/runbooks/LiveRunbookTab";
+import type { FrozenRunbook } from "@/lib/runbook-activation";
 import LivePoller from "@/components/live/LivePoller";
 import InjectArrivalNotifier from "@/components/live/InjectArrivalNotifier";
 import FirstTimeLiveTour from "@/components/live/FirstTimeLiveTour";
@@ -211,6 +217,92 @@ export default async function LiveWorkspacePage({
     }),
   ]);
 
+  // ─── Runbook executions for the active incident ────────────────────────
+  const runbookExecutionRows = activeIncident
+    ? await prisma.runbookExecution.findMany({
+        where: { incidentId: activeIncident.id },
+        orderBy: { startedAt: "asc" },
+        include: { stepExecutions: { orderBy: { stepOrderIdx: "asc" } } },
+      })
+    : [];
+
+  const availableRunbookRows = activeIncident
+    ? await prisma.runbook.findMany({
+        where: {
+          orgId: me.orgId,
+          status: "PUBLISHED",
+          executions: { none: { incidentId: activeIncident.id } },
+        },
+        orderBy: [{ category: "asc" }, { title: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          _count: { select: { steps: true } },
+        },
+      })
+    : [];
+
+  const liveExecutions: LiveExecution[] = runbookExecutionRows.map((r) => {
+    const frozen = r.runbookJson as unknown as FrozenRunbook;
+    const stepById = new Map<number, (typeof r.stepExecutions)[number]>();
+    for (const se of r.stepExecutions) stepById.set(se.stepOrderIdx, se);
+
+    const steps: LiveStep[] = frozen.steps.map((s) => {
+      const exec = stepById.get(s.orderIdx);
+      return {
+        stepExecutionId: exec?.id ?? "",
+        orderIdx: s.orderIdx,
+        title: s.title,
+        description: s.description,
+        kind: s.kind as LiveStep["kind"],
+        ownerRoleTitle: s.ownerRoleTitle,
+        estimatedMin: s.estimatedMin,
+        successCriteria: s.successCriteria,
+        blocksOrders: s.blocksOrders ?? [],
+        status: (exec?.status ?? "PENDING") as LiveStep["status"],
+        notes: exec?.notes ?? null,
+        startedAt: exec?.startedAt ?? null,
+        completedAt: exec?.completedAt ?? null,
+        decisionTypeCode: s.decisionTypeCode,
+        regulatorTrigger: s.regulatorTrigger,
+        commsTemplate: s.commsTemplate,
+      };
+    });
+
+    return {
+      executionId: r.id,
+      runbookId: r.runbookId,
+      runbookTitle: frozen.title,
+      runbookCategory: frozen.category,
+      version: frozen.version,
+      status: r.status,
+      activatedBy: r.activatedBy,
+      activationReason: r.activationReason,
+      startedAt: r.startedAt,
+      steps,
+    };
+  });
+
+  const availableRunbooks: AvailableRunbook[] = availableRunbookRows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    category: r.category,
+    stepCount: r._count.steps,
+  }));
+
+  // Badge = count of my queued/in-progress steps across all active executions.
+  const myRunbookQueueCount = liveExecutions
+    .filter((e) => e.status === "ACTIVE")
+    .reduce((sum, e) => {
+      const mine = e.steps.filter(
+        (s) =>
+          (s.status === "PENDING" || s.status === "IN_PROGRESS") &&
+          (s.ownerRoleTitle ?? "").toLowerCase() === participant.roleTitle.toLowerCase(),
+      );
+      return sum + mine.length;
+    }, 0);
+
   const incidentForBanner = activeIncident
     ? {
         id: activeIncident.id,
@@ -329,6 +421,7 @@ export default async function LiveWorkspacePage({
 
       <LiveTabs
         unreadCount={unreadCount}
+        runbookBadge={myRunbookQueueCount}
         decisionsBadge={activeIncident ? 1 : 0}
         commsBadge={commsDrafts.length}
         teamBadge={presence.filter((p) => p.online).length}
@@ -416,6 +509,17 @@ export default async function LiveWorkspacePage({
               </ul>
             )}
           </section>
+        }
+        runbook={
+          <LiveRunbookTab
+            incidentId={activeIncident?.id ?? null}
+            executions={liveExecutions}
+            availableRunbooks={availableRunbooks}
+            myRoleTitle={participant.roleTitle}
+            canActivate={
+              me.orgRole === "OWNER" || me.orgRole === "ADMIN" || participant.exerciseRole === "FACILITATOR"
+            }
+          />
         }
         decisions={
           <div className="space-y-4">
