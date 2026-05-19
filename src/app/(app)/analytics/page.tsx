@@ -1,309 +1,103 @@
-import Link from "next/link";
 import { BarChart3 } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
-import IBSCoverageHeatmap from "@/components/analytics/IBSCoverageHeatmap";
+import AudienceTabs, { type Audience } from "@/components/analytics/AudienceTabs";
+import FilterBar from "@/components/analytics/FilterBar";
+import ProgrammeTab from "@/components/analytics/ProgrammeTab";
+import {
+  parseFiltersFromSearchParams,
+  resolveDateRange,
+} from "@/lib/analytics-filters";
 
-export const metadata = { title: "Coverage Analytics — SnapFix" };
+export const metadata = { title: "Analytics — SnapFix" };
 
-export default async function AnalyticsPage() {
+const AUDIENCES: Audience[] = ["board", "executive", "programme", "risk", "vendors"];
+
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const me = await requireOrgUser();
+  const sp = await searchParams;
 
-  const [scenarios, exercises, ibsRegister] = await Promise.all([
-    prisma.scenario.findMany({
-      where: { orgId: me.orgId, isTemplate: false },
-      select: {
-        id: true,
-        title: true,
-        category: true,
-        coversPeople: true,
-        coversProperty: true,
-        coversTechnology: true,
-        coversDataAvailability: true,
-        coversDataIntegrity: true,
-        coversThirdParty: true,
-      },
-    }),
-    prisma.exercise.findMany({
-      where: { orgId: me.orgId, status: { in: ["IN_PROGRESS", "PAUSED", "COMPLETED"] } },
-      include: {
-        scenario: {
-          select: {
-            category: true,
-            coversPeople: true,
-            coversProperty: true,
-            coversTechnology: true,
-            coversDataAvailability: true,
-            coversDataIntegrity: true,
-            coversThirdParty: true,
-          },
-        },
-        ibsLinks: { include: { ibs: true } },
-      },
-    }),
-    prisma.organizationIBS.findMany({
-      where: { orgId: me.orgId },
-      include: {
-        _count: { select: { exerciseLinks: true } },
-        exerciseLinks: {
-          include: {
-            exercise: {
-              select: {
-                scenario: {
-                  select: {
-                    coversPeople: true,
-                    coversProperty: true,
-                    coversTechnology: true,
-                    coversDataAvailability: true,
-                    coversDataIntegrity: true,
-                    coversThirdParty: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    }),
-  ]);
+  const audienceRaw = Array.isArray(sp.audience) ? sp.audience[0] : sp.audience;
+  const audience: Audience = AUDIENCES.includes(audienceRaw as Audience)
+    ? (audienceRaw as Audience)
+    : "programme";
 
-  // Per-IBS 6-box counts — for the heatmap. For each IBS, count how many of
-  // its linked exercises tested each of the six risk dimensions.
-  const heatmapRows = ibsRegister.map((ibs) => {
-    const counts = {
-      people: 0,
-      property: 0,
-      technology: 0,
-      dataAvailability: 0,
-      dataIntegrity: 0,
-      thirdParty: 0,
-    };
-    for (const link of ibs.exerciseLinks) {
-      const s = link.exercise.scenario;
-      if (s.coversPeople) counts.people++;
-      if (s.coversProperty) counts.property++;
-      if (s.coversTechnology) counts.technology++;
-      if (s.coversDataAvailability) counts.dataAvailability++;
-      if (s.coversDataIntegrity) counts.dataIntegrity++;
-      if (s.coversThirdParty) counts.thirdParty++;
-    }
-    return {
-      id: ibs.id,
-      code: ibs.code,
-      name: ibs.name,
-      criticality: ibs.criticality,
-      ...counts,
-    };
+  const filters = parseFiltersFromSearchParams(sp);
+  const range = resolveDateRange(filters.range);
+
+  // Compact key-value mirror of the URL params, used to keep filter state
+  // when switching audience tabs.
+  const carryParams: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(sp)) {
+    if (typeof v === "string") carryParams[k] = v;
+  }
+
+  const ibsOptions = await prisma.organizationIBS.findMany({
+    where: { orgId: me.orgId },
+    orderBy: { name: "asc" },
+    select: { id: true, code: true, name: true, criticality: true },
   });
 
-  // Aggregate 6-box coverage across executed exercises
-  const exec = {
-    people: 0,
-    property: 0,
-    technology: 0,
-    dataAvailability: 0,
-    dataIntegrity: 0,
-    thirdParty: 0,
-  };
-  for (const ex of exercises) {
-    if (ex.scenario.coversPeople) exec.people++;
-    if (ex.scenario.coversProperty) exec.property++;
-    if (ex.scenario.coversTechnology) exec.technology++;
-    if (ex.scenario.coversDataAvailability) exec.dataAvailability++;
-    if (ex.scenario.coversDataIntegrity) exec.dataIntegrity++;
-    if (ex.scenario.coversThirdParty) exec.thirdParty++;
-  }
-
-  const lib = {
-    people: 0,
-    property: 0,
-    technology: 0,
-    dataAvailability: 0,
-    dataIntegrity: 0,
-    thirdParty: 0,
-  };
-  for (const s of scenarios) {
-    if (s.coversPeople) lib.people++;
-    if (s.coversProperty) lib.property++;
-    if (s.coversTechnology) lib.technology++;
-    if (s.coversDataAvailability) lib.dataAvailability++;
-    if (s.coversDataIntegrity) lib.dataIntegrity++;
-    if (s.coversThirdParty) lib.thirdParty++;
-  }
-
-  // CMORG category coverage
-  const cats = new Map<string, { lib: number; exec: number }>();
-  for (const s of scenarios) {
-    const k = s.category ?? "Other";
-    const v = cats.get(k) ?? { lib: 0, exec: 0 };
-    v.lib += 1;
-    cats.set(k, v);
-  }
-  for (const ex of exercises) {
-    const k = ex.scenario.category ?? "Other";
-    const v = cats.get(k) ?? { lib: 0, exec: 0 };
-    v.exec += 1;
-    cats.set(k, v);
-  }
-  const sortedCats = Array.from(cats.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-
-  const untestedIBS = ibsRegister.filter((i) => i._count.exerciseLinks === 0);
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHero
-        eyebrow="Programme"
+        eyebrow={`${audience.charAt(0).toUpperCase()}${audience.slice(1)} view`}
         icon={BarChart3}
-        title="Coverage analytics"
-        pitch="What your scenario library can test vs. what you've actually exercised. Spot the gaps a regulator will ask about."
+        title="Analytics"
+        pitch="Operational-resilience evidence sliced for the audience that's asking. Filter by time, jurisdiction, classification or IBS — every tile updates."
       />
 
-      <Section
-        title="IBS × risk-dimension coverage"
-        subtitle="For each Important Business Service, how many exercises have tested it against each of the six risk dimensions. Empty cells are gaps a regulator will ask about."
-      >
-        <IBSCoverageHeatmap rows={heatmapRows} />
-      </Section>
+      <AudienceTabs current={audience} carryParams={carryParams} />
 
-      <Section title="6-box risk coverage" subtitle="Library = scenarios you've added · Tested = exercises with that risk-box covered (in progress / paused / completed)">
-        <div className="overflow-hidden rounded-md border border-line bg-surface-1">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-0 text-left text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="p-3">Risk box</th>
-                <th className="p-3">In library</th>
-                <th className="p-3">Tested</th>
-                <th className="p-3">Gap</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["People", lib.people, exec.people],
-                ["Property", lib.property, exec.property],
-                ["Technology", lib.technology, exec.technology],
-                ["Data availability", lib.dataAvailability, exec.dataAvailability],
-                ["Data integrity", lib.dataIntegrity, exec.dataIntegrity],
-                ["Third party", lib.thirdParty, exec.thirdParty],
-              ].map(([label, l, e]) => {
-                const gap = (l as number) > 0 && (e as number) === 0;
-                return (
-                  <tr key={label as string} className="border-t border-line">
-                    <td className="p-3 font-medium">{label}</td>
-                    <td className="p-3">{l}</td>
-                    <td className="p-3">{e}</td>
-                    <td className="p-3">
-                      {gap ? (
-                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">
-                          Untested
-                        </span>
-                      ) : (e as number) > 0 ? (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">
-                          Covered
-                        </span>
-                      ) : (
-                        <span className="text-xs text-soft">N/A</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Section>
+      <FilterBar ibsOptions={ibsOptions} />
 
-      <Section title="CMORG category coverage" subtitle="Scenarios per CMORG taxonomy category, vs. exercises run">
-        <div className="overflow-hidden rounded-md border border-line bg-surface-1">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-0 text-left text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="p-3">Category</th>
-                <th className="p-3">Scenarios</th>
-                <th className="p-3">Exercises</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedCats.map(([c, v]) => (
-                <tr key={c} className="border-t border-line">
-                  <td className="p-3 font-medium">{c}</td>
-                  <td className="p-3">{v.lib}</td>
-                  <td className="p-3">
-                    {v.exec}
-                    {v.lib > 0 && v.exec === 0 && (
-                      <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">
-                        Untested
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Section>
+      {audience === "programme" && (
+        <ProgrammeTab orgId={me.orgId} filters={filters} range={range} />
+      )}
 
-      <Section
-        title="IBS test history"
-        subtitle="Which IBSs in your register have been exercised?"
-      >
-        {ibsRegister.length === 0 ? (
-          <p className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-sm text-muted">
-            No IBSs in your register.{" "}
-            <Link href="/ibs/new" className="underline">
-              Add your first one
-            </Link>
-            .
-          </p>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-xs text-muted">
-              {untestedIBS.length} of {ibsRegister.length} IBS have never been exercise-tested.
-            </p>
-            <ul className="space-y-1 text-sm">
-              {ibsRegister.map((i) => (
-                <li
-                  key={i.id}
-                  className="flex items-center justify-between rounded border border-line bg-surface-1 px-3 py-2"
-                >
-                  <div>
-                    <Link className="font-medium hover:underline" href={`/ibs/${i.id}`}>
-                      <span className="font-mono text-xs text-muted">{i.code}</span> · {i.name}
-                    </Link>
-                  </div>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs ${
-                      i._count.exerciseLinks === 0
-                        ? "bg-rose-100 text-rose-800"
-                        : "bg-emerald-100 text-emerald-800"
-                    }`}
-                  >
-                    {i._count.exerciseLinks} tested
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </Section>
+      {audience === "board" && (
+        <Placeholder
+          title="Board view"
+          message="Strategic KPIs + 1-page export ship in Commit B. Health composite, programme spend, coverage %, regulator-readiness, top 3 risks."
+        />
+      )}
+
+      {audience === "executive" && (
+        <Placeholder
+          title="Executive view (ERCC / BRCC + Comms)"
+          message="Performance trend, regulator-clock performance, BCP activations, comms cascade compliance, monthly digest subscription. Ships in Commit C."
+        />
+      )}
+
+      {audience === "risk" && (
+        <Placeholder
+          title="Risk view (1LoD / 2LoD / 3LoD)"
+          message="Top failed controls, RTO/RPO tolerance-breach register, decision-with-rationale rate, cyber DD overdue. Ships in Commit C."
+        />
+      )}
+
+      {audience === "vendors" && (
+        <Placeholder
+          title="Vendors view"
+          message="Hyperscaler concentration heatmap, MTP readiness, exit-plan freshness, annual concentration brief export. Ships in Commit D."
+        />
+      )}
     </div>
   );
 }
 
-function Section({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
+function Placeholder({ title, message }: { title: string; message: string }) {
   return (
-    <section className="space-y-2">
-      <h2 className="text-lg font-semibold">{title}</h2>
-      {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
-      <div className="mt-2">{children}</div>
+    <section className="rounded-xl border border-dashed border-line bg-surface-1 p-8 text-center">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:text-indigo-300">
+        {title}
+      </p>
+      <p className="mt-2 text-sm text-muted">{message}</p>
     </section>
   );
 }
