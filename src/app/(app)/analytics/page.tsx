@@ -6,6 +6,8 @@ import AudienceTabs, { type Audience } from "@/components/analytics/AudienceTabs
 import FilterBar from "@/components/analytics/FilterBar";
 import BoardTab from "@/components/analytics/BoardTab";
 import ProgrammeTab from "@/components/analytics/ProgrammeTab";
+import ExecutiveTab from "@/components/analytics/ExecutiveTab";
+import RiskTab from "@/components/analytics/RiskTab";
 import {
   parseFiltersFromSearchParams,
   resolveDateRange,
@@ -66,17 +68,11 @@ export default async function AnalyticsPage({
       )}
 
       {audience === "executive" && (
-        <Placeholder
-          title="Executive view (ERCC / BRCC + Comms)"
-          message="Performance trend, regulator-clock performance, BCP activations, comms cascade compliance, monthly digest subscription. Ships in Commit C."
-        />
+        <ExecutiveTab orgId={me.orgId} filters={filters} range={range} />
       )}
 
       {audience === "risk" && (
-        <Placeholder
-          title="Risk view (1LoD / 2LoD / 3LoD)"
-          message="Top failed controls, RTO/RPO tolerance-breach register, decision-with-rationale rate, cyber DD overdue. Ships in Commit C."
-        />
+        <RiskTab orgId={me.orgId} filters={filters} range={range} />
       )}
 
       {audience === "vendors" && (
