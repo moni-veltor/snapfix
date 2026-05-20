@@ -1,17 +1,21 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { COVERAGE_RULES } from "./rules-coverage";
+import { CADENCE_RULES } from "./rules-cadence";
+import { PEOPLE_RULES } from "./rules-people";
 import {
   TOPIC_LABEL,
+  ruleScope,
   xpForLevel,
   type AchievementLevel,
   type AchievementRule,
   type AchievementsSummary,
+  type AchievementScope,
   type AchievementTopic,
   type EvaluatedAchievement,
   type TopicMaturity,
 } from "./types";
-import type { AchievementOrgState } from "./state";
+import type { AchievementOrgState, AchievementPersonalState } from "./state";
 
 /**
  * All rules across all topics live in one immutable registry. Adding a new
@@ -19,6 +23,8 @@ import type { AchievementOrgState } from "./state";
  */
 const ALL_RULES: ReadonlyArray<AchievementRule> = [
   ...COVERAGE_RULES,
+  ...CADENCE_RULES,
+  ...PEOPLE_RULES,
 ];
 
 const ALL_TOPICS: ReadonlyArray<AchievementTopic> = [
@@ -47,36 +53,74 @@ const ALL_LEVELS: ReadonlyArray<AchievementLevel> = [1, 2, 3, 4, 5];
 export async function evaluateAchievements({
   orgId,
   state,
+  userId,
+  personal,
 }: {
   orgId: string;
   state: AchievementOrgState;
+  /** User context for personal-scope rules. Required to evaluate any rule with scope=user. */
+  userId?: string;
+  /** Per-user state slice. Falls back to no-op for personal rules when null. */
+  personal?: AchievementPersonalState | null;
 }): Promise<AchievementsSummary> {
-  const existingUnlocks = await prisma.achievementUnlock.findMany({
-    where: { orgId, scope: "org" },
-    select: { achievementId: true, unlockedAt: true, xpAwarded: true },
-  });
-  const unlockMap = new Map(existingUnlocks.map((u) => [u.achievementId, u]));
+  const userScope = userId ? `user:${userId}` : null;
+  const scopesToLoad = userScope ? ["org", userScope] : ["org"];
 
-  const newUnlocks: { ruleId: string; level: AchievementLevel; xp: number }[] = [];
+  const existingUnlocks = await prisma.achievementUnlock.findMany({
+    where: { orgId, scope: { in: scopesToLoad } },
+    select: { achievementId: true, unlockedAt: true, xpAwarded: true, scope: true },
+  });
+  const unlockMap = new Map(
+    existingUnlocks.map((u) => [`${u.scope}::${u.achievementId}`, u]),
+  );
+
+  const newUnlocks: {
+    ruleId: string;
+    scope: string;
+    level: AchievementLevel;
+    xp: number;
+  }[] = [];
+
   const evaluated: EvaluatedAchievement[] = ALL_RULES.map((rule) => {
-    const result = rule.evaluate(state);
-    const existing = unlockMap.get(rule.id);
+    const scope = ruleScope(rule);
+    const scopeKey = scope === "user" ? userScope ?? "user:anon" : "org";
+    const existing = unlockMap.get(`${scopeKey}::${rule.id}`);
     const xp = rule.xp ?? xpForLevel(rule.level);
     const stickyDefault = rule.sticky ?? rule.level <= 3;
+
+    // Personal rules need a user state; if missing (e.g. unauthenticated
+    // viewer or page running before user session is known) return a
+    // permanently in-progress result so the badge still renders.
+    let result;
+    if (scope === "user") {
+      if (!personal) {
+        result = {
+          status: "inProgress" as const,
+          progress: 0,
+          valueLabel: "sign in to track",
+          nextLabel: "personal achievements activate after sign-in",
+        };
+      } else {
+        result = (rule as PersonalAchievementRuleForEval).evaluate(personal);
+      }
+    } else {
+      result = (rule as OrgAchievementRuleForEval).evaluate(state);
+    }
 
     let unlocked = result.status === "unlocked";
     let unlockedAt: Date | null = existing?.unlockedAt ?? null;
     let xpAwarded = 0;
 
-    if (unlocked && !existing) {
-      // First time reaching the bar — schedule for persistence.
-      newUnlocks.push({ ruleId: rule.id, level: rule.level, xp });
+    if (unlocked && !existing && (scope === "org" || userScope)) {
+      newUnlocks.push({
+        ruleId: rule.id,
+        scope: scopeKey,
+        level: rule.level,
+        xp,
+      });
       unlockedAt = new Date();
       xpAwarded = xp;
     } else if (existing) {
-      // Sticky retention: keep unlocked even if state regressed for L1-L3
-      // (or any rule with sticky=true). For non-sticky L4-L5, current state
-      // is what counts — but the unlockedAt timestamp stays for the feed.
       if (stickyDefault || result.status === "unlocked") {
         unlocked = true;
         xpAwarded = existing.xpAwarded;
@@ -90,16 +134,34 @@ export async function evaluateAchievements({
     await prisma.achievementUnlock.createMany({
       data: newUnlocks.map((u) => ({
         orgId,
-        scope: "org",
+        scope: u.scope,
         achievementId: u.ruleId,
         level: u.level,
         xpAwarded: u.xp,
+        userId: u.scope.startsWith("user:") ? u.scope.slice(5) : null,
       })),
       skipDuplicates: true,
     });
   }
 
   return buildSummary(evaluated);
+}
+
+// Narrowed types for the engine's evaluate dispatch — avoids casting through
+// `as never`.
+type OrgAchievementRuleForEval = Extract<AchievementRule, { scope?: "org" }>;
+type PersonalAchievementRuleForEval = Extract<AchievementRule, { scope: "user" }>;
+
+export function isPersonalRule(
+  rule: AchievementRule,
+): rule is PersonalAchievementRuleForEval {
+  return ruleScope(rule) === "user";
+}
+
+export function ruleScopeKey(rule: AchievementRule, userId?: string): string {
+  const scope: AchievementScope = ruleScope(rule);
+  if (scope === "user") return userId ? `user:${userId}` : "user:anon";
+  return "org";
 }
 
 function buildSummary(evaluated: EvaluatedAchievement[]): AchievementsSummary {

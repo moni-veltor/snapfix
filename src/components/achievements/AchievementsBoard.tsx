@@ -39,23 +39,25 @@ type RecentUnlock = {
 type Props = {
   maturity: TopicMaturity[];
   achievements: EvaluatedAchievement[];
-  byTopic: Record<AchievementTopic, EvaluatedAchievement[]>;
+  /** Reserved for future use (per-topic pre-bucketing); component re-buckets internally. */
+  byTopic?: Record<AchievementTopic, EvaluatedAchievement[]>;
   closestToUnlock: EvaluatedAchievement[];
   recentlyUnlocked: RecentUnlock[];
 };
 
 type StatusFilter = "all" | "unlocked" | "in-progress";
+type ScopeFilter = "all" | "org" | "user";
 
 export default function AchievementsBoard({
   maturity,
   achievements,
-  byTopic,
   closestToUnlock,
   recentlyUnlocked,
 }: Props) {
   const [activeTopic, setActiveTopic] = useState<AchievementTopic | "all">("coverage");
   const [activeLevel, setActiveLevel] = useState<AchievementLevel | "all">("all");
   const [activeStatus, setActiveStatus] = useState<StatusFilter>("all");
+  const [activeScope, setActiveScope] = useState<ScopeFilter>("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<EvaluatedAchievement | null>(null);
 
@@ -64,9 +66,18 @@ export default function AchievementsBoard({
     [maturity],
   );
 
+  // Hide the scope toggle entirely when no personal rules exist (no scope=user).
+  const hasPersonalRules = useMemo(
+    () => achievements.some((a) => a.rule.scope === "user"),
+    [achievements],
+  );
+
   const filtered = useMemo(() => {
     let pool = achievements;
-    if (activeTopic !== "all") pool = byTopic[activeTopic];
+    if (activeScope === "org") pool = pool.filter((a) => a.rule.scope !== "user");
+    if (activeScope === "user") pool = pool.filter((a) => a.rule.scope === "user");
+    if (activeTopic !== "all")
+      pool = pool.filter((a) => a.rule.topic === activeTopic);
     if (activeLevel !== "all") pool = pool.filter((a) => a.rule.level === activeLevel);
     if (activeStatus === "unlocked") pool = pool.filter((a) => a.unlocked);
     if (activeStatus === "in-progress") pool = pool.filter((a) => !a.unlocked);
@@ -79,7 +90,7 @@ export default function AchievementsBoard({
       );
     }
     return pool;
-  }, [achievements, byTopic, activeTopic, activeLevel, activeStatus, query]);
+  }, [achievements, activeTopic, activeLevel, activeStatus, activeScope, query]);
 
   const groupedByLevel = useMemo(() => {
     const out: Record<AchievementLevel, EvaluatedAchievement[]> = {
@@ -183,6 +194,12 @@ export default function AchievementsBoard({
           <LevelTabs active={activeLevel} onChange={setActiveLevel} />
           <span className="h-4 w-px bg-line" />
           <StatusTabs active={activeStatus} onChange={setActiveStatus} />
+          {hasPersonalRules && (
+            <>
+              <span className="h-4 w-px bg-line" />
+              <ScopeTabs active={activeScope} onChange={setActiveScope} />
+            </>
+          )}
           <label className="relative ml-auto">
             <Search
               size={12}
@@ -202,6 +219,7 @@ export default function AchievementsBoard({
           {(activeTopic !== "all" ||
             activeLevel !== "all" ||
             activeStatus !== "all" ||
+            activeScope !== "all" ||
             query) &&
             " · filtered"}
         </p>
@@ -405,6 +423,32 @@ function StatusTabs({
   );
 }
 
+function ScopeTabs({
+  active,
+  onChange,
+}: {
+  active: ScopeFilter;
+  onChange: (v: ScopeFilter) => void;
+}) {
+  const options: { value: ScopeFilter; label: string }[] = [
+    { value: "all", label: "Everyone" },
+    { value: "org", label: "Org-wide" },
+    { value: "user", label: "Personal" },
+  ];
+  return (
+    <div role="tablist" className="flex flex-wrap gap-1">
+      {options.map((o) => (
+        <TabChip
+          key={o.value}
+          label={o.label}
+          active={active === o.value}
+          onClick={() => onChange(o.value)}
+        />
+      ))}
+    </div>
+  );
+}
+
 function TabChip({
   label,
   active,
@@ -489,8 +533,13 @@ function BadgeCard({
         </div>
       )}
       <footer className="mt-auto flex items-center justify-between text-[10px] text-soft">
-        <span>
+        <span className="flex items-center gap-1">
           {TOPIC_LABEL[a.rule.topic]} · L{a.rule.level}
+          {a.rule.scope === "user" && (
+            <span className="rounded-full bg-indigo-100 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wider text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200">
+              Personal
+            </span>
+          )}
         </span>
         {a.unlocked && a.xpAwarded > 0 && (
           <span className="font-semibold text-ink">+{a.xpAwarded} XP</span>

@@ -14,7 +14,7 @@
  * badge regresses too. Mirrors how regulators think about maturity.
  */
 
-import type { AchievementOrgState } from "./state";
+import type { AchievementOrgState, AchievementPersonalState } from "./state";
 
 export type AchievementTopic = "coverage" | "cadence" | "people" | "governance" | "resilience";
 export type AchievementLevel = 1 | 2 | 3 | 4 | 5;
@@ -62,7 +62,7 @@ export type AchievementEvalResult =
       nextLabel?: string;
     };
 
-export type AchievementRule = {
+type AchievementRuleBase = {
   id: string;
   topic: AchievementTopic;
   level: AchievementLevel;
@@ -79,9 +79,28 @@ export type AchievementRule = {
   deepLink?: string;
   /** XP awarded on first unlock. Defaults to xpForLevel(level). */
   xp?: number;
-  /** Pure predicate. No DB access — operates on the pre-computed state. */
+};
+
+export type OrgAchievementRule = AchievementRuleBase & {
+  /** Org-wide scope — every member of the org sees the same unlock state. */
+  scope?: "org";
   evaluate: (state: AchievementOrgState) => AchievementEvalResult;
 };
+
+export type PersonalAchievementRule = AchievementRuleBase & {
+  /** Per-user scope — each user has their own unlock state. */
+  scope: "user";
+  evaluate: (state: AchievementPersonalState) => AchievementEvalResult;
+};
+
+export type AchievementRule = OrgAchievementRule | PersonalAchievementRule;
+
+/** Rule scope used by the persistence layer + UI toggle. */
+export type AchievementScope = "org" | "user";
+
+export function ruleScope(rule: AchievementRule): AchievementScope {
+  return rule.scope === "user" ? "user" : "org";
+}
 
 /** A rule + its evaluation outcome, ready for rendering. */
 export type EvaluatedAchievement = {

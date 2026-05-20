@@ -10,7 +10,10 @@ import {
   loadRecentlyUnlocked,
   pickClosestToUnlock,
 } from "@/lib/achievements/engine";
-import { loadAchievementOrgState } from "@/lib/achievements/state";
+import {
+  loadAchievementOrgState,
+  loadAchievementPersonalState,
+} from "@/lib/achievements/state";
 import { TOPIC_LABEL } from "@/lib/achievements/types";
 
 export const metadata = { title: "Achievements — SnapFix" };
@@ -32,9 +35,18 @@ export default async function AchievementsPage() {
   const session = await auth();
   if (!session?.user?.orgId) redirect("/sign-in");
   const orgId = session.user.orgId;
+  const userId = session.user.id ?? null;
 
-  const state = await loadAchievementOrgState(orgId);
-  const summary = await evaluateAchievements({ orgId, state });
+  const [state, personal] = await Promise.all([
+    loadAchievementOrgState(orgId),
+    userId ? loadAchievementPersonalState(orgId, userId) : Promise.resolve(null),
+  ]);
+  const summary = await evaluateAchievements({
+    orgId,
+    state,
+    userId: userId ?? undefined,
+    personal,
+  });
 
   const recentRows = await loadRecentlyUnlocked(orgId, 8);
   const recentlyUnlocked = recentRows
