@@ -29,7 +29,7 @@ export default async function DecisionTypesSettingsPage() {
         eyebrow="Admin"
         icon={ListChecks}
         title="Decision presets"
-        pitch="Custom IMT decisions for your firm. These appear in the live war-room decision form alongside the built-in vocabulary (Activate BCP, Notify FCA, etc)."
+        pitch="Custom IMT decision vocabulary"
       />
 
       <div className="mx-auto max-w-3xl space-y-6">

@@ -51,7 +51,7 @@ export default async function VendorRegisterPage() {
         eyebrow="Annex 3"
         icon={ShieldCheck}
         title="Material Third Party register"
-        pitch="Annual MTP register submission. Each vendor flagged Material Third Party feeds this snapshot. Generate at the reporting date and the XLSX matches the official Annex 3 template."
+        pitch="Annual MTP snapshot · official XLSX"
         actions={
           <Link
             href="/vendors"

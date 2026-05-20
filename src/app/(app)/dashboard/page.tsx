@@ -1236,10 +1236,7 @@ function NextBestActionsSection({ actions }: { actions: NextBestAction[] }) {
           <CheckCircle2 size={14} />
           <h2 className="font-semibold">Nothing demands you right now</h2>
         </header>
-        <p className="mt-1 text-xs">
-          No overdue items, no untested IBSs, no concentration warnings. A good
-          week to author a new scenario or run a tabletop.
-        </p>
+        <p className="mt-1 text-xs">Good week to plan a tabletop.</p>
       </section>
     );
   }
@@ -1247,9 +1244,7 @@ function NextBestActionsSection({ actions }: { actions: NextBestAction[] }) {
     <section>
       <header className="mb-2 flex items-center gap-2">
         <h2 className="text-sm font-semibold text-ink">Next best actions</h2>
-        <span className="text-[11px] text-soft">
-          Ranked by impact · derived from live data
-        </span>
+        <span className="text-[11px] text-soft">Ranked by impact</span>
       </header>
       <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {actions.map((a) => {

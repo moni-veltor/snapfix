@@ -83,7 +83,7 @@ export default async function RunbooksPage() {
         eyebrow="Operational playbooks"
         icon={BookOpen}
         title="Runbooks"
-        pitch="Structured step-by-step playbooks the IMT walks when an incident lands. Each step has an owner role and an expected time, so the same workflow that runs an exercise also runs a real incident."
+        pitch="IMT playbooks · exercise + real-incident"
         actions={
           canManage ? (
             <div className="flex flex-wrap items-center gap-2">

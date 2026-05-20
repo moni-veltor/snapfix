@@ -31,7 +31,7 @@ export default async function ExerciseRatesPage() {
         eyebrow="Admin"
         icon={Coins}
         title="Exercise cost rates"
-        pitch="Per-role fully-loaded hourly rates used to estimate and report exercise cost. Snapshot at planning time, so rate changes don't retroactively alter past evidence."
+        pitch="Per-role hourly rates · snapshot at plan time"
       />
 
       <div className="mx-auto max-w-3xl space-y-4">

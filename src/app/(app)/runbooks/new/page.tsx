@@ -26,7 +26,7 @@ export default async function NewRunbookPage() {
         eyebrow="New runbook"
         icon={BookOpen}
         title="Create runbook"
-        pitch="Start with the bones — title, category, owner. Steps come next on the runbook detail page."
+        pitch="Steps land next, on the detail page"
         actions={
           <Link
             href="/runbooks"

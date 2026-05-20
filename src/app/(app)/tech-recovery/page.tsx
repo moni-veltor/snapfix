@@ -47,7 +47,7 @@ export default async function TechRecoveryPage() {
         eyebrow="Technical recovery"
         icon={Server}
         title="System recovery register"
-        pitch="The systems behind your IBSs — recovery objectives, failover topology, backup posture, and the DR-test ledger that proves you can actually meet your RTOs."
+        pitch="RTO · RPO · failover · DR-test ledger"
         actions={
           canManage ? (
             <div className="flex flex-wrap items-center gap-2">

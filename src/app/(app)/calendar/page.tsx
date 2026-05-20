@@ -43,8 +43,8 @@ export default async function CalendarPage() {
         title="Exercise calendar"
         pitch={
           exercises.length === 0
-            ? "No exercises planned yet. Click Plan exercise to add the first one."
-            : `${exercises.length} ${exercises.length === 1 ? "exercise" : "exercises"} with planned or started dates.`
+            ? "Nothing scheduled yet"
+            : `${exercises.length} ${exercises.length === 1 ? "exercise" : "exercises"} scheduled`
         }
         actions={canCreate && <ExerciseAddButton />}
       />

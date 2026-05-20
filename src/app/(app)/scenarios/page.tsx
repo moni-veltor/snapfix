@@ -30,7 +30,7 @@ export default async function ScenariosPage() {
         eyebrow="Library"
         icon={FileText}
         title="Scenarios"
-        pitch="Your authored scenarios — the MSEL events and injects that get played out in an exercise. Clone one from the CMORG library or author your own."
+        pitch="MSEL events + injects"
         actions={
           isFacilitator && (
             <div className="flex items-center gap-2">

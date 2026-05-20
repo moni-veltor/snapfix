@@ -101,8 +101,8 @@ export default async function AchievementsPage() {
     summary.maturity[0] ?? null,
   );
   const pitch = topMaturity && topMaturity.level > 0
-    ? `You're L${topMaturity.level} ${topMaturity.topic ? TOPIC_LABEL[topMaturity.topic] : ""} on the maturity ladder. ${summary.totalUnlocked} of ${summary.totalRules} achievements unlocked across every topic.`
-    : `Climb the maturity ladder — every topic has 5 levels and 50 achievements. ${summary.totalRules} live in the catalogue today.`;
+    ? `Best topic · L${topMaturity.level} ${topMaturity.topic ? TOPIC_LABEL[topMaturity.topic] : ""}`
+    : `${summary.totalRules} achievements · 5 topics × 5 levels`;
 
   return (
     <div className="space-y-6">

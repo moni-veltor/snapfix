@@ -30,7 +30,7 @@ export default async function SettingsPage() {
         eyebrow="Admin"
         icon={SettingsIcon}
         title="Organisation settings"
-        pitch="Name, tier, brand accent and logo. Changes apply across the app for everyone in your org."
+        pitch="Profile · brand · tier"
       />
 
       <div className="mx-auto max-w-2xl space-y-6">
@@ -63,9 +63,6 @@ export default async function SettingsPage() {
               <option value="TIER_2">Tier 2 — Digital challenger</option>
               <option value="TIER_3">Tier 3 — New bank, neobank, EMI, fintech</option>
             </select>
-            <span className="mt-1 block text-xs text-muted">
-              Determines the recommended scenarios shown in the library.
-            </span>
           </label>
 
           <fieldset className="space-y-2">
@@ -92,10 +89,6 @@ export default async function SettingsPage() {
                 />
               ))}
             </div>
-            <span className="block text-xs text-muted">
-              Overrides the indigo brand across focus rings, active tabs, links and chart strokes.
-              The presets are visual hints — pick one via the picker on the left to apply.
-            </span>
           </fieldset>
 
           <div className="text-xs text-muted">

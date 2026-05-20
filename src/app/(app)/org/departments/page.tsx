@@ -57,7 +57,7 @@ export default async function DepartmentsPage() {
         eyebrow="Org chart"
         icon={Building2}
         title="Departments"
-        pitch="Business units / teams / functions. Separate from your IMT role catalogue: roles are who sits in the war-room during an exercise; departments are where people sit in the org chart day-to-day. IBSs can be owned end-to-end by a department."
+        pitch="Business units · day-to-day org chart"
       />
 
       <section className="grid gap-3 sm:grid-cols-4">

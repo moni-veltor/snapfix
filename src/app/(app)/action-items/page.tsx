@@ -71,7 +71,7 @@ export default async function ActionItemsPage({
         eyebrow="Follow-through"
         icon={CheckSquare}
         title="Action items"
-        pitch="Everything that came out of an exercise debrief. Filter by status, group by priority, close the loop."
+        pitch="Debrief follow-through · close the loop"
       />
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">

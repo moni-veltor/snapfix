@@ -104,7 +104,7 @@ export default async function IBSListPage() {
         eyebrow="Register"
         icon={Building2}
         title="Important Business Services"
-        pitch={`The spine of your operational-resilience programme. ${counts.total} ${counts.total === 1 ? "service" : "services"} captured — each with its tolerance, resource map, and testing history.`}
+        pitch={`${counts.total} ${counts.total === 1 ? "service" : "services"} · tolerances + resource map`}
         actions={
           canManage && (
             <div className="flex items-center gap-2">

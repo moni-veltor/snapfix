@@ -60,10 +60,7 @@ export default async function RunbookDetailPage({
         eyebrow={`${runbook.category.replace(/_/g, " ")}${runbook.status === "PUBLISHED" ? ` · v${runbook.version}` : ""}`}
         icon={BookOpen}
         title={runbook.title}
-        pitch={
-          runbook.description ??
-          "Step-by-step playbook the IMT walks during an exercise or a real incident."
-        }
+        pitch={runbook.description ?? "IMT playbook"}
         actions={
           <Link
             href="/runbooks"

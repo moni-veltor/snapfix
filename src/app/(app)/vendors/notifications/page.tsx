@@ -37,7 +37,7 @@ export default async function VendorNotificationsPage() {
         eyebrow="Annex 3"
         icon={FileSignature}
         title="Notification history"
-        pitch="Every notification filed for any vendor — drafts, submitted, acknowledged. Click into a vendor to file a new one."
+        pitch="All MTP notifications · drafts → acknowledged"
         actions={
           <Link
             href="/vendors"

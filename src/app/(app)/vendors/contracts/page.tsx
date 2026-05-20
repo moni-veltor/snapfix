@@ -116,7 +116,7 @@ export default async function VendorContractsPage() {
         eyebrow="Renewals"
         icon={CalendarClock}
         title="Vendor contract calendar"
-        pitch={`${vendors.length} vendor${vendors.length === 1 ? "" : "s"} with a recorded end-date. Combined annual value: £${(totalAnnualValue / 1000).toLocaleString("en-GB", { maximumFractionDigits: 0 })}k.`}
+        pitch={`${vendors.length} on a schedule · £${(totalAnnualValue / 1000).toLocaleString("en-GB", { maximumFractionDigits: 0 })}k combined`}
       />
 
       {vendors.length === 0 ? (

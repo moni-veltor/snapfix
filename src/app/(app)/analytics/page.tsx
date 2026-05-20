@@ -53,7 +53,7 @@ export default async function AnalyticsPage({
         eyebrow={`${audience.charAt(0).toUpperCase()}${audience.slice(1)} view`}
         icon={BarChart3}
         title="Analytics"
-        pitch="Operational-resilience evidence sliced for the audience that's asking. Filter by time, jurisdiction, classification or IBS — every tile updates."
+        pitch="Per-audience evidence · live filters"
       />
 
       <AudienceTabs current={audience} carryParams={carryParams} />

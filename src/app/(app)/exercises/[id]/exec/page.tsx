@@ -61,7 +61,7 @@ export default async function ExecSummaryPage({
         eyebrow="Executive summary"
         icon={ShieldCheck}
         title={exercise.title}
-        pitch="Top-line outcome. Click into the full exercise view for the operational detail."
+        pitch="Outcome summary · open exercise for detail"
         actions={
           <Link
             href={`/exercises/${exercise.id}`}

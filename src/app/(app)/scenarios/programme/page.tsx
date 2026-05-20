@@ -70,7 +70,7 @@ export default async function ScenarioProgrammePage({
         eyebrow="Programme"
         icon={CalendarRange}
         title={`Scenario programme · ${year}`}
-        pitch={`${inThisYear.length} scenario${inThisYear.length === 1 ? "" : "s"} slotted into ${year}, ${unscheduled.length} unscheduled, ${mandated.length} tied to a regulatory commitment.`}
+        pitch={`${inThisYear.length} slotted · ${unscheduled.length} open · ${mandated.length} mandated`}
         actions={
           <div className="flex items-center gap-1">
             {yearSet.map((y) => (

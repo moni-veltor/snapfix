@@ -26,7 +26,7 @@ export default async function ExercisesPage() {
         eyebrow="War room"
         icon={Target}
         title="Exercises"
-        pitch="Where scenarios meet your team. Plan it, run it live with a D-Day clock, debrief honestly, learn fast."
+        pitch="Plan · run · debrief"
         actions={canCreate && <ExerciseAddButton />}
       />
       {exercises.length === 0 ? (

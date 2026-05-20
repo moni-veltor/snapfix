@@ -110,7 +110,7 @@ export default async function DRSchedulePage() {
         eyebrow="DR programme"
         icon={CalendarClock}
         title="DR-test schedule"
-        pitch={`${scheduled.length} system${scheduled.length === 1 ? "" : "s"} on a schedule, ${unscheduled.length} without. ${pendingAttestations.length} test${pendingAttestations.length === 1 ? "" : "s"} await tech-lead attestation.`}
+        pitch={`${scheduled.length} scheduled · ${unscheduled.length} open · ${pendingAttestations.length} pending attestation`}
       />
 
       {/* Pending attestations */}

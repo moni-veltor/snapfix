@@ -21,7 +21,7 @@ export default async function AuditPage() {
         eyebrow="Trace"
         icon={ScrollText}
         title="Audit log"
-        pitch={`Last ${entries.length} events. Filter by action, actor or date range; export the filtered view as CSV for internal-audit and regulator submissions.`}
+        pitch={`${entries.length} events · CSV export`}
       />
       <AuditLogView entries={entries} />
     </div>

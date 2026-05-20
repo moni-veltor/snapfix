@@ -82,7 +82,7 @@ export default async function VendorsPage() {
         eyebrow="Dependencies"
         icon={Boxes}
         title="Critical third parties"
-        pitch="Vendors that support your IBSs. Link each to the services it underpins so a vendor outage instantly surfaces the affected IBSs — and capture DORA fields below so the Register of Information stays current."
+        pitch="Third-party register · DORA + MTP"
         actions={
           canManage ? (
             <div className="flex flex-wrap items-center gap-2">

@@ -39,7 +39,7 @@ export default async function TemplatesPage() {
         eyebrow="Library"
         icon={BookMarked}
         title="Scenario library"
-        pitch={`${templates.length} scenarios across cloud disasters, microservices failures, cyber, people, third-party concentration and data integrity. Pick one, clone it into your org, and run it live.`}
+        pitch={`${templates.length} ready-to-clone templates`}
       />
 
       <TemplateLibraryGrid
