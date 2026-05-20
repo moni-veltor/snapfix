@@ -14,7 +14,10 @@ import {
   loadAchievementOrgState,
   loadAchievementPersonalState,
 } from "@/lib/achievements/state";
-import { TOPIC_LABEL } from "@/lib/achievements/types";
+import {
+  TOPIC_LABEL,
+  toSerializableAchievement,
+} from "@/lib/achievements/types";
 
 export const metadata = { title: "Achievements — SnapFix" };
 
@@ -151,9 +154,8 @@ export default async function AchievementsPage() {
 
       <AchievementsBoard
         maturity={summary.maturity}
-        achievements={summary.achievements}
-        byTopic={summary.byTopic}
-        closestToUnlock={closestToUnlock}
+        achievements={summary.achievements.map(toSerializableAchievement)}
+        closestToUnlock={closestToUnlock.map(toSerializableAchievement)}
         recentlyUnlocked={recentlyUnlocked}
       />
     </div>

@@ -21,9 +21,15 @@ import {
   TOPIC_LABEL,
   type AchievementLevel,
   type AchievementTopic,
-  type EvaluatedAchievement,
+  type SerializableAchievement,
   type TopicMaturity,
 } from "@/lib/achievements/types";
+
+/**
+ * Client-side achievement shape — `rule.evaluate` is stripped at the server
+ * boundary because Next.js refuses functions in client component props.
+ */
+type EvaluatedAchievement = SerializableAchievement;
 
 const ALL_LEVELS: AchievementLevel[] = [1, 2, 3, 4, 5];
 

@@ -114,6 +114,41 @@ export type EvaluatedAchievement = {
   xpAwarded: number;
 };
 
+/**
+ * Serializable view of a rule — strips the `evaluate` function so it can
+ * cross the server → client boundary. Client components must consume this
+ * shape, not AchievementRule (Next.js refuses functions in client props).
+ */
+export type SerializableRule = Omit<AchievementRuleBase, never> & {
+  scope?: AchievementScope;
+};
+
+/** Serializable view of an evaluated achievement. */
+export type SerializableAchievement = Omit<EvaluatedAchievement, "rule"> & {
+  rule: SerializableRule;
+};
+
+export function toSerializableRule(rule: AchievementRule): SerializableRule {
+  return {
+    id: rule.id,
+    topic: rule.topic,
+    level: rule.level,
+    title: rule.title,
+    description: rule.description,
+    icon: rule.icon,
+    sticky: rule.sticky,
+    deepLink: rule.deepLink,
+    xp: rule.xp,
+    scope: rule.scope ?? "org",
+  };
+}
+
+export function toSerializableAchievement(
+  a: EvaluatedAchievement,
+): SerializableAchievement {
+  return { ...a, rule: toSerializableRule(a.rule) };
+}
+
 /** Aggregate maturity score per topic — used by the dashboard. */
 export type TopicMaturity = {
   topic: AchievementTopic;
