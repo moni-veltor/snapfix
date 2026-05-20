@@ -226,6 +226,46 @@ export default async function LiveWorkspacePage({
       })
     : [];
 
+  const linkedDecisionIds = runbookExecutionRows
+    .flatMap((r) => r.stepExecutions.map((s) => s.linkedDecisionId))
+    .filter((v): v is string => !!v);
+  const linkedNotificationIds = runbookExecutionRows
+    .flatMap((r) => r.stepExecutions.map((s) => s.linkedNotificationId))
+    .filter((v): v is string => !!v);
+  const linkedCommsIds = runbookExecutionRows
+    .flatMap((r) => r.stepExecutions.map((s) => s.linkedCommsId))
+    .filter((v): v is string => !!v);
+
+  const [linkedDecisionsRows, linkedNotificationRows, linkedCommsRows] = await Promise.all([
+    linkedDecisionIds.length === 0
+      ? Promise.resolve([])
+      : prisma.decisionRecord.findMany({
+          where: { id: { in: linkedDecisionIds } },
+          select: {
+            id: true,
+            title: true,
+            decisionType: true,
+            approverRolesRequired: true,
+            approvedAt: true,
+          },
+        }),
+    linkedNotificationIds.length === 0
+      ? Promise.resolve([])
+      : prisma.regulatorNotification.findMany({
+          where: { id: { in: linkedNotificationIds } },
+          select: { id: true, regulator: true, status: true, dueAt: true, sentAt: true },
+        }),
+    linkedCommsIds.length === 0
+      ? Promise.resolve([])
+      : prisma.communicationDraft.findMany({
+          where: { id: { in: linkedCommsIds } },
+          select: { id: true, subject: true, stakeholder: true, status: true },
+        }),
+  ]);
+  const linkedDecisionsById = new Map(linkedDecisionsRows.map((d) => [d.id, d]));
+  const linkedNotificationsById = new Map(linkedNotificationRows.map((n) => [n.id, n]));
+  const linkedCommsById = new Map(linkedCommsRows.map((c) => [c.id, c]));
+
   const availableRunbookRows = activeIncident
     ? await prisma.runbook.findMany({
         where: {
@@ -250,6 +290,15 @@ export default async function LiveWorkspacePage({
 
     const steps: LiveStep[] = frozen.steps.map((s) => {
       const exec = stepById.get(s.orderIdx);
+      const linkedDecision = exec?.linkedDecisionId
+        ? linkedDecisionsById.get(exec.linkedDecisionId) ?? null
+        : null;
+      const linkedNotification = exec?.linkedNotificationId
+        ? linkedNotificationsById.get(exec.linkedNotificationId) ?? null
+        : null;
+      const linkedComms = exec?.linkedCommsId
+        ? linkedCommsById.get(exec.linkedCommsId) ?? null
+        : null;
       return {
         stepExecutionId: exec?.id ?? "",
         orderIdx: s.orderIdx,
@@ -267,6 +316,32 @@ export default async function LiveWorkspacePage({
         decisionTypeCode: s.decisionTypeCode,
         regulatorTrigger: s.regulatorTrigger,
         commsTemplate: s.commsTemplate,
+        linkedDecision: linkedDecision
+          ? {
+              id: linkedDecision.id,
+              title: linkedDecision.title,
+              decisionType: linkedDecision.decisionType,
+              approverRolesRequired: linkedDecision.approverRolesRequired,
+              approvedAt: linkedDecision.approvedAt,
+            }
+          : null,
+        linkedNotification: linkedNotification
+          ? {
+              id: linkedNotification.id,
+              regulator: linkedNotification.regulator,
+              status: linkedNotification.status,
+              dueAt: linkedNotification.dueAt,
+              sentAt: linkedNotification.sentAt,
+            }
+          : null,
+        linkedComms: linkedComms
+          ? {
+              id: linkedComms.id,
+              subject: linkedComms.subject,
+              stakeholder: linkedComms.stakeholder,
+              status: linkedComms.status,
+            }
+          : null,
       };
     });
 

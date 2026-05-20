@@ -42,10 +42,31 @@ export type LiveStep = {
   notes: string | null;
   startedAt: Date | null;
   completedAt: Date | null;
-  /** When kind = DECISION/NOTIFICATION/COMMS, the form to open (wired in Commit D). */
+  /** Pre-fill metadata captured at activation time. */
   decisionTypeCode: string | null;
   regulatorTrigger: { regulator: string; slaHours: number; trigger: string } | null;
   commsTemplate: { stakeholder: string; subject: string; bodyTemplate: string } | null;
+  /** Artefact links populated by start/complete actions in Commit D. */
+  linkedDecision: {
+    id: string;
+    title: string;
+    decisionType: string;
+    approverRolesRequired: string[];
+    approvedAt: Date | null;
+  } | null;
+  linkedNotification: {
+    id: string;
+    regulator: string;
+    status: string;
+    dueAt: Date;
+    sentAt: Date | null;
+  } | null;
+  linkedComms: {
+    id: string;
+    subject: string;
+    stakeholder: string | null;
+    status: string;
+  } | null;
 };
 
 export type LiveExecution = {
@@ -495,10 +516,10 @@ function StepRow({
               detail={step.decisionTypeCode.replace(/_/g, " ")}
             />
           )}
-          {step.kind === "NOTIFICATION" && step.regulatorTrigger && (
+          {step.kind === "NOTIFICATION" && step.regulatorTrigger && !step.linkedNotification && (
             <PrefilledHint
               icon={ShieldAlert}
-              label="Regulator clock"
+              label="Regulator clock starts on start"
               detail={`${step.regulatorTrigger.regulator} · ${step.regulatorTrigger.slaHours}h ${
                 step.regulatorTrigger.trigger === "POST_INVOCATION"
                   ? "from invocation"
@@ -506,11 +527,52 @@ function StepRow({
               }`}
             />
           )}
-          {step.kind === "COMMS" && step.commsTemplate && (
+          {step.kind === "COMMS" && step.commsTemplate && !step.linkedComms && (
             <PrefilledHint
               icon={Megaphone}
-              label={`Comms · ${step.commsTemplate.stakeholder}`}
+              label={`Comms draft on start · ${step.commsTemplate.stakeholder}`}
               detail={step.commsTemplate.subject}
+            />
+          )}
+          {step.linkedDecision && (
+            <ArtefactLink
+              icon={CheckSquare}
+              label={`Decision: ${step.linkedDecision.decisionType.replace(/_/g, " ")}`}
+              detail={`Approvers required: ${step.linkedDecision.approverRolesRequired.join(", ") || "none"}${
+                step.linkedDecision.approvedAt ? " · approved" : ""
+              }`}
+            />
+          )}
+          {step.linkedNotification && (
+            <ArtefactLink
+              icon={ShieldAlert}
+              label={`${step.linkedNotification.regulator} clock`}
+              detail={`Status ${step.linkedNotification.status}${
+                step.linkedNotification.sentAt
+                  ? ` · sent ${step.linkedNotification.sentAt.toISOString().slice(11, 16)} UTC`
+                  : ` · due ${step.linkedNotification.dueAt.toISOString().slice(0, 16).replace("T", " ")}Z`
+              }`}
+              tone={
+                step.linkedNotification.status === "SENT"
+                  ? "ok"
+                  : step.linkedNotification.status === "BREACHED"
+                    ? "critical"
+                    : "neutral"
+              }
+            />
+          )}
+          {step.linkedComms && (
+            <ArtefactLink
+              icon={Megaphone}
+              label={`Comms draft · ${step.linkedComms.stakeholder ?? "—"}`}
+              detail={`${step.linkedComms.subject} · status ${step.linkedComms.status}`}
+              tone={
+                step.linkedComms.status === "SENT" || step.linkedComms.status === "APPROVED"
+                  ? "ok"
+                  : step.linkedComms.status === "REJECTED"
+                    ? "critical"
+                    : "neutral"
+              }
             />
           )}
           {step.status === "BLOCKED" && step.blocksOrders.length > 0 && (
@@ -527,6 +589,8 @@ function StepRow({
           {!isTerminal && step.status !== "BLOCKED" && (
             <StepActionForms
               stepExecutionId={step.stepExecutionId}
+              stepKind={step.kind}
+              decisionTypeCode={step.decisionTypeCode}
               canStart={canStart}
               canFinish={canFinish}
             />
@@ -554,16 +618,47 @@ function PrefilledHint({
   );
 }
 
+function ArtefactLink({
+  icon: Icon,
+  label,
+  detail,
+  tone = "neutral",
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  detail: string;
+  tone?: "ok" | "critical" | "neutral";
+}) {
+  const cls =
+    tone === "ok"
+      ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200"
+      : tone === "critical"
+        ? "border-rose-300 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200"
+        : "border-indigo-200 bg-indigo-50 text-indigo-900 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-100";
+  return (
+    <p className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] ${cls}`}>
+      <Icon size={11} />
+      <span className="font-semibold">{label}:</span> {detail}
+    </p>
+  );
+}
+
 function StepActionForms({
   stepExecutionId,
+  stepKind,
+  decisionTypeCode,
   canStart,
   canFinish,
 }: {
   stepExecutionId: string;
+  stepKind: StepKind;
+  decisionTypeCode: string | null;
   canStart: boolean;
   canFinish: boolean;
 }) {
   const [skipOpen, setSkipOpen] = useState(false);
+  const [decisionOpen, setDecisionOpen] = useState(false);
+  const needsRationale = stepKind === "DECISION";
   return (
     <div className="flex flex-wrap gap-2 border-t border-line pt-3">
       {canStart && (
@@ -578,7 +673,7 @@ function StepActionForms({
           </button>
         </form>
       )}
-      {canFinish && (
+      {canFinish && !needsRationale && (
         <form action={completeRunbookStepAction}>
           <input type="hidden" name="stepExecutionId" value={stepExecutionId} />
           <button
@@ -586,9 +681,23 @@ function StepActionForms({
             className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
           >
             <CheckCircle2 size={12} />
-            Mark complete
+            {stepKind === "NOTIFICATION"
+              ? "Mark sent"
+              : stepKind === "COMMS"
+                ? "Approve draft"
+                : "Mark complete"}
           </button>
         </form>
+      )}
+      {canFinish && needsRationale && (
+        <button
+          type="button"
+          onClick={() => setDecisionOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
+        >
+          <CheckCircle2 size={12} />
+          Record decision…
+        </button>
       )}
       <button
         type="button"
@@ -598,6 +707,53 @@ function StepActionForms({
         <SkipForward size={12} />
         Skip…
       </button>
+      <Modal
+        open={decisionOpen}
+        onClose={() => setDecisionOpen(false)}
+        title="Record decision"
+        subtitle={
+          decisionTypeCode
+            ? `Decision type pre-filled: ${decisionTypeCode.replace(/_/g, " ")}. Add a rationale — the regulator wants authority + reasoning, not just the outcome.`
+            : "Add a rationale — the regulator wants authority + reasoning, not just the outcome."
+        }
+        size="md"
+      >
+        <form
+          action={completeRunbookStepAction}
+          onSubmit={() => setDecisionOpen(false)}
+          className="space-y-3"
+        >
+          <input type="hidden" name="stepExecutionId" value={stepExecutionId} />
+          <label className="block">
+            <span className="block text-[11px] font-semibold uppercase tracking-wider text-muted">
+              Rationale
+            </span>
+            <textarea
+              name="decisionRationale"
+              required
+              rows={4}
+              placeholder='e.g. "Severity classified HIGH; standing up IMT per policy" or "BCP activated — recovery RTO 45m exceeded"'
+              className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm text-ink focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setDecisionOpen(false)}
+              className="rounded-md border border-line-strong bg-surface-1 px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-2"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
+            >
+              <CheckCircle2 size={12} />
+              Record + complete
+            </button>
+          </div>
+        </form>
+      </Modal>
       <Modal
         open={skipOpen}
         onClose={() => setSkipOpen(false)}
