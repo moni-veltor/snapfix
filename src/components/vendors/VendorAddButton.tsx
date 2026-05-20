@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
-import Modal from "@/components/ui/Modal";
-import VendorAddWizard from "@/components/vendors/VendorAddWizard";
+import VendorQuickEditDrawer from "@/components/vendors/VendorQuickEditDrawer";
 
 /**
  * Top-right "Add vendor" entry point used in the /vendors hero. Opens
- * the 5-step VendorAddWizard inside a modal; the wizard closes itself
- * on submit via the onDone callback. Auto-opens when `?new=1` is in
- * the URL so deep-links from the Compose menu land directly on it.
+ * the same tabbed drawer as edit (in create mode) — only the Wizard
+ * tab is usable initially; MTP register + Notifications unlock once
+ * the vendor exists. Auto-opens when `?new=1` is in the URL so
+ * deep-links from the Compose menu land directly on it.
  */
 export default function VendorAddButton() {
   const [open, setOpen] = useState(false);
@@ -32,15 +32,11 @@ export default function VendorAddButton() {
         <Plus size={14} strokeWidth={2.4} />
         Add vendor
       </button>
-      <Modal
+      <VendorQuickEditDrawer
         open={open}
         onClose={() => setOpen(false)}
-        title="Add a vendor"
-        subtitle="Five-step wizard — basics, DORA, contract, assurance, exit plan."
-        size="lg"
-      >
-        <VendorAddWizard onDone={() => setOpen(false)} />
-      </Modal>
+        vendor={null}
+      />
     </>
   );
 }

@@ -17,7 +17,7 @@ type Bundle = Awaited<ReturnType<typeof getVendorEditBundle>>;
 type Props = {
   open: boolean;
   onClose: () => void;
-  /** Minimal placeholder shown in the header while the bundle loads. */
+  /** Pass null to open in create mode. */
   vendor: { id: string; name: string } | null;
   canEdit?: boolean;
 };
@@ -25,8 +25,12 @@ type Props = {
 /**
  * Aggregate edit drawer — shows everything the /vendors/[id] detail
  * page does: the wizard (basics / DORA / contract / assurance / exit),
- * the MTP register editor and the notifications panel. Data is fetched
- * lazily on open so the grid stays cheap.
+ * the MTP register editor and the notifications panel.
+ *
+ * When `vendor` is null the drawer opens in create mode: only the
+ * Wizard tab is usable, the MTP + Notifications tabs are disabled with
+ * a hint that they unlock after first save. Data is fetched lazily on
+ * open so the grid stays cheap.
  */
 export default function VendorQuickEditDrawer({
   open,
@@ -34,28 +38,93 @@ export default function VendorQuickEditDrawer({
   vendor,
   canEdit = true,
 }: Props) {
+  if (!open) return null;
+  const isCreate = vendor === null;
+
+  return (
+    <Drawer
+      open={open}
+      onClose={onClose}
+      title={isCreate ? "Add a vendor" : vendor.name}
+      subtitle={
+        isCreate
+          ? "Five-step wizard. MTP register and notifications unlock after first save."
+          : "Full vendor editor — wizard, MTP register and notifications, same as the detail page."
+      }
+      width="2xl"
+    >
+      {isCreate ? (
+        <CreateBody onClose={onClose} />
+      ) : (
+        <EditBody
+          key={vendor.id}
+          vendorId={vendor.id}
+          canEdit={canEdit}
+          onClose={onClose}
+        />
+      )}
+    </Drawer>
+  );
+}
+
+function CreateBody({ onClose }: { onClose: () => void }) {
+  return (
+    <>
+      <div className="border-b border-line bg-surface-1 px-5 pt-3">
+        <div role="tablist" className="flex flex-wrap gap-1">
+          <TabButton active onClick={() => {}} icon={Sparkles}>
+            Wizard
+          </TabButton>
+          <TabButton
+            active={false}
+            disabled
+            onClick={() => {}}
+            icon={ClipboardCheck}
+            title="Save the vendor first to unlock the MTP register"
+          >
+            MTP register
+          </TabButton>
+          <TabButton
+            active={false}
+            disabled
+            onClick={() => {}}
+            icon={Bell}
+            title="Save the vendor first to unlock notifications"
+          >
+            Notifications
+          </TabButton>
+        </div>
+      </div>
+      <div className="p-5">
+        <VendorAddWizard onDone={onClose} />
+      </div>
+    </>
+  );
+}
+
+function EditBody({
+  vendorId,
+  canEdit,
+  onClose,
+}: {
+  vendorId: string;
+  canEdit: boolean;
+  onClose: () => void;
+}) {
   const [tab, setTab] = useState<Tab>("wizard");
   const [bundle, setBundle] = useState<Bundle | null>(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!open || !vendor?.id) return;
     let cancelled = false;
-    // Lazy fetch on open; loading flag flips once before the network resolves.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    getVendorEditBundle(vendor.id).then((b) => {
-      if (cancelled) return;
-      setBundle(b);
-      setLoading(false);
+    getVendorEditBundle(vendorId).then((b) => {
+      if (!cancelled) setBundle(b);
     });
     return () => {
       cancelled = true;
     };
-  }, [open, vendor?.id]);
+  }, [vendorId]);
 
-  if (!vendor) return null;
-
+  const loading = bundle === null;
   const v = bundle?.vendor ?? null;
   const wizardExisting: VendorExisting | null = v
     ? {
@@ -84,13 +153,7 @@ export default function VendorQuickEditDrawer({
     : null;
 
   return (
-    <Drawer
-      open={open}
-      onClose={onClose}
-      title={vendor.name}
-      subtitle="Full vendor editor — wizard, MTP register and notifications, same as the detail page."
-      width="2xl"
-    >
+    <>
       <div className="border-b border-line bg-surface-1 px-5 pt-3">
         <div role="tablist" className="flex flex-wrap gap-1">
           <TabButton active={tab === "wizard"} onClick={() => setTab("wizard")} icon={Sparkles}>
@@ -150,7 +213,7 @@ export default function VendorQuickEditDrawer({
           </>
         )}
       </div>
-    </Drawer>
+    </>
   );
 }
 
@@ -159,23 +222,29 @@ function TabButton({
   onClick,
   icon: Icon,
   children,
+  disabled = false,
+  title,
 }: {
   active: boolean;
   onClick: () => void;
   icon: React.ComponentType<{ size?: number }>;
   children: React.ReactNode;
+  disabled?: boolean;
+  title?: string;
 }) {
   return (
     <button
       role="tab"
       type="button"
       aria-selected={active}
+      disabled={disabled}
       onClick={onClick}
+      title={title}
       className={`-mb-px flex items-center gap-1.5 rounded-t-md border-b-2 px-3 py-1.5 text-xs font-medium transition-colors ${
         active
           ? "border-indigo-500 text-indigo-700 dark:text-indigo-200"
           : "border-transparent text-muted hover:text-ink"
-      }`}
+      } ${disabled ? "opacity-40 cursor-not-allowed hover:text-muted" : ""}`}
     >
       <Icon size={11} />
       {children}
