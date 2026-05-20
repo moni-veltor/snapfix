@@ -38,10 +38,14 @@ import FeaturedCard from "@/components/ui/FeaturedCard";
 import DailyTipCard from "@/components/fun/DailyTipCard";
 import YourLiveExerciseWidget from "@/components/dashboard/YourLiveExerciseWidget";
 import RecapCard from "@/components/dashboard/RecapCard";
+import NudgeBar from "@/components/dashboard/NudgeBar";
+import UnlockToast from "@/components/dashboard/UnlockToast";
 import {
   buildDashboardRecap,
+  bumpDashboardStreak,
   consumeRecapCutPoint,
 } from "@/lib/dashboard-recap";
+import { pickNudge } from "@/lib/dashboard-nudge";
 
 export default async function Home() {
   const session = await auth();
@@ -80,8 +84,18 @@ async function Dashboard({
   // "Since you were here last" cut point — read + maybe bump in one call.
   // Returns the *prior* timestamp so refreshes within the 4h cooldown keep
   // surfacing the same recap.
-  const recapCutPoint = await consumeRecapCutPoint(userId);
+  const [recapCutPoint, streakDays, nudge] = await Promise.all([
+    consumeRecapCutPoint(userId),
+    bumpDashboardStreak(userId),
+    pickNudge(orgId),
+  ]);
   const recap = await buildDashboardRecap({ orgId, since: recapCutPoint });
+
+  const newUnlocksSinceVisit = recapCutPoint
+    ? await prisma.achievementUnlock.count({
+        where: { orgId, unlockedAt: { gte: recapCutPoint } },
+      })
+    : 0;
 
   const [
     inProgress,
@@ -514,7 +528,10 @@ async function Dashboard({
         openCount={openActionItems}
         pulse={pulse.total}
         pulseGrade={pulse.grade}
+        streakDays={streakDays}
       />
+
+      {nudge && <NudgeBar nudge={nudge} />}
 
       <YourLiveExerciseWidget
         liveExercise={liveExercise}
@@ -525,6 +542,13 @@ async function Dashboard({
       />
 
       <RecapCard recap={recap} userName={userName} />
+
+      {recapCutPoint && newUnlocksSinceVisit > 0 && (
+        <UnlockToast
+          count={newUnlocksSinceVisit}
+          sinceISO={recapCutPoint.toISOString()}
+        />
+      )}
 
       <section className="grid gap-4 lg:grid-cols-4">
         <CoverageWidget
@@ -588,6 +612,7 @@ function StatusBar({
   openCount,
   pulse,
   pulseGrade,
+  streakDays,
 }: {
   userName: string;
   liveCount: number;
@@ -597,6 +622,7 @@ function StatusBar({
   openCount: number;
   pulse: number;
   pulseGrade: string;
+  streakDays: number;
 }) {
   return (
     <header className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface-1 p-2 shadow-[var(--shadow-card)]">
@@ -604,6 +630,15 @@ function StatusBar({
         <span className="font-semibold text-ink">{userName.split(" ")[0]}</span>
         <span>·</span>
         <span className="hidden sm:inline">CTO console</span>
+        {streakDays > 1 && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+            title={`${streakDays}-day visit streak`}
+          >
+            <Flame size={10} />
+            {streakDays}d
+          </span>
+        )}
       </div>
       <div className="flex-1" />
 

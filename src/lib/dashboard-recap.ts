@@ -282,6 +282,47 @@ export async function consumeRecapCutPoint(userId: string): Promise<Date | null>
   return prior;
 }
 
+/**
+ * Calendar-day streak: bump on first visit of each UTC day. Same-day visits
+ * are a no-op, yesterday increments, any gap resets to 1. Returns the
+ * post-bump streak so the StatusBar can show the chip.
+ */
+export async function bumpDashboardStreak(userId: string): Promise<number> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { dashboardStreakDays: true, dashboardStreakLastDay: true },
+  });
+  if (!user) return 0;
+
+  const todayKey = dayKey(new Date());
+  const lastKey = user.dashboardStreakLastDay ? dayKey(user.dashboardStreakLastDay) : null;
+
+  if (lastKey === todayKey) {
+    return user.dashboardStreakDays || 1;
+  }
+
+  let next: number;
+  if (lastKey === null) {
+    next = 1;
+  } else {
+    const yesterdayKey = dayKey(new Date(Date.now() - 86_400_000));
+    next = lastKey === yesterdayKey ? user.dashboardStreakDays + 1 : 1;
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      dashboardStreakDays: next,
+      dashboardStreakLastDay: new Date(`${todayKey}T00:00:00Z`),
+    },
+  });
+  return next;
+}
+
+function dayKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 function pluralize(n: number, singular: string, plural: string): string {
   return `${n} ${n === 1 ? singular : plural}`;
 }

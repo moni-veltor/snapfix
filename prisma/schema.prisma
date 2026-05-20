@@ -148,6 +148,14 @@ model User {
   /// Null = first dashboard visit; the recap card shows a welcome state.
   lastDashboardVisitAt DateTime?
 
+  /// Calendar-day streak: number of consecutive days the user has visited
+  /// the dashboard. Same-day visits are a no-op; yesterday increments;
+  /// any gap resets to 1.
+  dashboardStreakDays    Int       @default(0)
+  /// The last calendar day (midnight UTC) the streak was incremented on.
+  /// Compared to `today` to decide same-day / yesterday / reset.
+  dashboardStreakLastDay DateTime?
+
   // Tenant membership (one user → one org)
   orgId   String?
   org     Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
