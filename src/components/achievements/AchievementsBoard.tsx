@@ -4,13 +4,20 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  Briefcase,
   CheckCircle2,
   ChevronRight,
   Filter,
+  Flame,
+  Layers,
   Lock,
   Search,
+  Shield,
+  ShieldCheck,
   Sparkles,
   Target,
+  Users,
+  type LucideIcon,
 } from "lucide-react";
 import Drawer from "@/components/ui/Drawer";
 import { ACHIEVEMENT_ICONS } from "./icons";
@@ -32,6 +39,23 @@ import {
 type EvaluatedAchievement = SerializableAchievement;
 
 const ALL_LEVELS: AchievementLevel[] = [1, 2, 3, 4, 5];
+
+/** Topic tab strip — same shape as ScenarioDetailTabs. */
+const TOPIC_TABS: {
+  key: AchievementTopic;
+  label: string;
+  hint: string;
+  icon: LucideIcon;
+}[] = [
+  { key: "coverage", label: "Coverage", hint: "Registers + breadth", icon: Layers },
+  { key: "cadence", label: "Cadence", hint: "Exercise rhythm", icon: Flame },
+  { key: "people", label: "People", hint: "Roster + decisions", icon: Users },
+  { key: "governance", label: "Governance", hint: "Clocks + closures", icon: ShieldCheck },
+  { key: "resilience", label: "Resilience", hint: "DR + runbooks", icon: Shield },
+];
+
+// Keep Briefcase imported for future People sub-categorisation.
+void Briefcase;
 
 type RecentUnlock = {
   achievementId: string;
@@ -60,7 +84,7 @@ export default function AchievementsBoard({
   closestToUnlock,
   recentlyUnlocked,
 }: Props) {
-  const [activeTopic, setActiveTopic] = useState<AchievementTopic | "all">("coverage");
+  const [activeTopic, setActiveTopic] = useState<AchievementTopic>("coverage");
   const [activeLevel, setActiveLevel] = useState<AchievementLevel | "all">("all");
   const [activeStatus, setActiveStatus] = useState<StatusFilter>("all");
   const [activeScope, setActiveScope] = useState<ScopeFilter>("all");
@@ -78,12 +102,26 @@ export default function AchievementsBoard({
     [achievements],
   );
 
+  // Topic counts for the tab badges — number of unlocked rules per topic.
+  const topicCounts = useMemo(() => {
+    const out: Record<AchievementTopic, { total: number; unlocked: number }> = {
+      coverage: { total: 0, unlocked: 0 },
+      cadence: { total: 0, unlocked: 0 },
+      people: { total: 0, unlocked: 0 },
+      governance: { total: 0, unlocked: 0 },
+      resilience: { total: 0, unlocked: 0 },
+    };
+    for (const a of achievements) {
+      out[a.rule.topic].total += 1;
+      if (a.unlocked) out[a.rule.topic].unlocked += 1;
+    }
+    return out;
+  }, [achievements]);
+
   const filtered = useMemo(() => {
-    let pool = achievements;
+    let pool = achievements.filter((a) => a.rule.topic === activeTopic);
     if (activeScope === "org") pool = pool.filter((a) => a.rule.scope !== "user");
     if (activeScope === "user") pool = pool.filter((a) => a.rule.scope === "user");
-    if (activeTopic !== "all")
-      pool = pool.filter((a) => a.rule.topic === activeTopic);
     if (activeLevel !== "all") pool = pool.filter((a) => a.rule.level === activeLevel);
     if (activeStatus === "unlocked") pool = pool.filter((a) => a.unlocked);
     if (activeStatus === "in-progress") pool = pool.filter((a) => !a.unlocked);
@@ -97,6 +135,12 @@ export default function AchievementsBoard({
     }
     return pool;
   }, [achievements, activeTopic, activeLevel, activeStatus, activeScope, query]);
+
+  const activeTopicMaturity = useMemo(
+    () => maturity.find((m) => m.topic === activeTopic) ?? null,
+    [maturity, activeTopic],
+  );
+  const activeTopicTotal = achievements.filter((a) => a.rule.topic === activeTopic).length;
 
   const groupedByLevel = useMemo(() => {
     const out: Record<AchievementLevel, EvaluatedAchievement[]> = {
@@ -128,9 +172,7 @@ export default function AchievementsBoard({
               <MaturityTile
                 maturity={m}
                 isActive={activeTopic === m.topic}
-                onClick={() =>
-                  setActiveTopic(activeTopic === m.topic ? "all" : m.topic)
-                }
+                onClick={() => setActiveTopic(m.topic)}
               />
             </li>
           ))}
@@ -188,15 +230,20 @@ export default function AchievementsBoard({
         </article>
       </section>
 
-      {/* ─── Filter bar ─────────────────────────────────────────────────── */}
+      {/* ─── Topic tabs (primary navigation) ────────────────────────────── */}
+      <TopicTabStrip
+        active={activeTopic}
+        counts={topicCounts}
+        onChange={setActiveTopic}
+      />
+
+      {/* ─── Filter bar (refines within the active topic) ───────────────── */}
       <section className="space-y-3">
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface-1 p-3">
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted">
             <Filter size={11} />
-            Filter
+            Refine
           </span>
-          <TopicTabs active={activeTopic} onChange={setActiveTopic} />
-          <span className="h-4 w-px bg-line" />
           <LevelTabs active={activeLevel} onChange={setActiveLevel} />
           <span className="h-4 w-px bg-line" />
           <StatusTabs active={activeStatus} onChange={setActiveStatus} />
@@ -221,9 +268,15 @@ export default function AchievementsBoard({
           </label>
         </div>
         <p className="text-[11px] text-soft">
-          {filtered.length} of {achievements.length} shown
-          {(activeTopic !== "all" ||
-            activeLevel !== "all" ||
+          {filtered.length} of {activeTopicTotal} shown in{" "}
+          <span className="font-semibold text-ink">{TOPIC_LABEL[activeTopic]}</span>
+          {activeTopicMaturity && activeTopicMaturity.level > 0 && (
+            <>
+              {" "}
+              · {TOPIC_LABEL[activeTopic]} is at L{activeTopicMaturity.level}
+            </>
+          )}
+          {(activeLevel !== "all" ||
             activeStatus !== "all" ||
             activeScope !== "all" ||
             query) &&
@@ -348,31 +401,64 @@ function MaturityTile({
 
 // ─── Filter tabs ─────────────────────────────────────────────────────────
 
-function TopicTabs({
+function TopicTabStrip({
   active,
+  counts,
   onChange,
 }: {
-  active: AchievementTopic | "all";
-  onChange: (v: AchievementTopic | "all") => void;
+  active: AchievementTopic;
+  counts: Record<AchievementTopic, { total: number; unlocked: number }>;
+  onChange: (v: AchievementTopic) => void;
 }) {
-  const options: { value: AchievementTopic | "all"; label: string }[] = [
-    { value: "all", label: "All" },
-    { value: "coverage", label: TOPIC_LABEL.coverage },
-    { value: "cadence", label: TOPIC_LABEL.cadence },
-    { value: "people", label: TOPIC_LABEL.people },
-    { value: "governance", label: TOPIC_LABEL.governance },
-    { value: "resilience", label: TOPIC_LABEL.resilience },
-  ];
   return (
-    <div role="tablist" className="flex flex-wrap gap-1">
-      {options.map((o) => (
-        <TabChip
-          key={o.value}
-          label={o.label}
-          active={active === o.value}
-          onClick={() => onChange(o.value)}
-        />
-      ))}
+    <div
+      role="tablist"
+      className="sticky top-0 z-10 -mx-1 flex flex-wrap gap-1 rounded-xl border border-line bg-surface-1/95 p-1 backdrop-blur"
+    >
+      {TOPIC_TABS.map((t) => {
+        const isActive = active === t.key;
+        const Icon = t.icon;
+        const c = counts[t.key];
+        return (
+          <button
+            key={t.key}
+            role="tab"
+            type="button"
+            aria-selected={isActive}
+            onClick={() => onChange(t.key)}
+            className={`group flex min-w-[140px] flex-1 items-center gap-2 rounded-lg px-3 py-2 text-left transition-all ${
+              isActive
+                ? "bg-gradient-brand text-white shadow-[var(--shadow-card)]"
+                : "text-muted hover:bg-surface-2 hover:text-ink"
+            }`}
+          >
+            <Icon size={14} className="shrink-0" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-xs font-semibold">{t.label}</span>
+              <span
+                className={`block truncate text-[10px] ${
+                  isActive ? "text-white/80" : "text-soft"
+                }`}
+              >
+                {t.hint}
+              </span>
+            </span>
+            {c.total > 0 && (
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
+                  isActive
+                    ? "bg-white/25 text-white"
+                    : c.unlocked > 0
+                      ? "bg-accent-soft text-indigo-700 dark:text-indigo-200"
+                      : "bg-surface-2 text-soft"
+                }`}
+              >
+                {c.unlocked}/{c.total}
+              </span>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
