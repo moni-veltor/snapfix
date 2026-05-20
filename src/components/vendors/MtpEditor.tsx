@@ -102,19 +102,20 @@ type Props = {
   vendor: VendorForEditor;
   readiness: Readiness;
   canEdit: boolean;
+  /** When true, MtpEditor renders just the MTP master switch + sections
+   *  2-5 with no surrounding form / save button / readiness / assessments.
+   *  Used by the create-mode drawer so MTP fields submit alongside wizard
+   *  fields under one parent <form>. */
+  embedded?: boolean;
 };
 
-export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
+export default function MtpEditor({ vendor, readiness, canEdit, embedded = false }: Props) {
   const [isMTP, setIsMTP] = useState(vendor.isMaterialThirdParty);
   const [supportsIBS, setSupportsIBS] = useState<boolean | null>(vendor.supportsCoreIBSElement);
 
-  return (
-    <div className="space-y-6">
-      <ReadinessHeader readiness={readiness} isMTP={isMTP} />
-
-      <form action={upsertVendorMtpFieldsAction} className="space-y-5">
-        <input type="hidden" name="vendorId" value={vendor.id} />
-        {/* MTP master switch — hidden until checked, then visible to confirm */}
+  const fields = (
+    <>
+      {/* MTP master switch — hidden until checked, then visible to confirm */}
         <section className="rounded-xl border border-line bg-surface-1 p-5">
           <label className="flex cursor-pointer items-start gap-3">
             <input
@@ -191,24 +192,28 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
               defaultValue={vendor.supplyChainRanking ?? ""}
               hint="Intra-group: 0 · Direct provider: 1 · Sub-contractor: 2..."
             />
-            <Field
-              label="Contract commencement (2.09)"
-              name="contractStartAt"
-              type="date"
-              defaultValue={fmtDate(vendor.contractStartAt)}
-            />
+            {!embedded && (
+              <Field
+                label="Contract commencement (2.09)"
+                name="contractStartAt"
+                type="date"
+                defaultValue={fmtDate(vendor.contractStartAt)}
+              />
+            )}
             <Field
               label="Service commencement (2.10)"
               name="serviceCommencedAt"
               type="date"
               defaultValue={fmtDate(vendor.serviceCommencedAt)}
             />
-            <Field
-              label="Renewal / end date (2.11)"
-              name="contractEndAt"
-              type="date"
-              defaultValue={fmtDate(vendor.contractEndAt)}
-            />
+            {!embedded && (
+              <Field
+                label="Renewal / end date (2.11)"
+                name="contractEndAt"
+                type="date"
+                defaultValue={fmtDate(vendor.contractEndAt)}
+              />
+            )}
             <Field
               label="Notice period — vendor (2.12)"
               name="noticePeriodVendorDays"
@@ -232,14 +237,16 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
               options={COUNTRY}
               hint="Jurisdiction whose laws govern the contract."
             />
-            <Field
-              label="Annual contract value GBP (3.15)"
-              name="contractAnnualValueGBP"
-              type="number"
-              min={0}
-              prefix="£"
-              defaultValue={vendor.contractAnnualValueGBP ?? ""}
-            />
+            {!embedded && (
+              <Field
+                label="Annual contract value GBP (3.15)"
+                name="contractAnnualValueGBP"
+                type="number"
+                min={0}
+                prefix="£"
+                defaultValue={vendor.contractAnnualValueGBP ?? ""}
+              />
+            )}
           </Grid>
           <TextArea
             label="Product / service description (2.07)"
@@ -394,6 +401,21 @@ export default function MtpEditor({ vendor, readiness, canEdit }: Props) {
             />
           </Grid>
         </Section>
+
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-5">{fields}</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <ReadinessHeader readiness={readiness} isMTP={isMTP} />
+
+      <form action={upsertVendorMtpFieldsAction} className="space-y-5">
+        <input type="hidden" name="vendorId" value={vendor.id} />
+        {fields}
 
         {canEdit && (
           <div className="flex justify-end border-t border-line pt-3">

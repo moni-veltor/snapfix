@@ -5,7 +5,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireOrgRole } from "@/lib/auth";
-import { VendorTier } from "@/generated/prisma/enums";
+import {
+  CloudDeployment,
+  ComplianceStatus,
+  FunctionCategory,
+  ImpactDiscontinuation,
+  MaterialityReason,
+  ReintegrationAbility,
+  Substitutability,
+  VendorTier,
+} from "@/generated/prisma/enums";
 import { audit } from "@/lib/audit";
 import { VENDOR_LIBRARY } from "@/lib/vendor-library";
 
@@ -25,6 +34,84 @@ function optStr(v: FormDataEntryValue | null): string | null {
   if (typeof v !== "string") return null;
   const s = v.trim();
   return s === "" ? null : s;
+}
+
+function optEnum<T extends string>(v: FormDataEntryValue | null, allowed: readonly T[]): T | null {
+  if (typeof v !== "string" || v.trim() === "") return null;
+  return (allowed as readonly string[]).includes(v) ? (v as T) : null;
+}
+
+function optBool(v: FormDataEntryValue | null): boolean | null {
+  if (v === "true" || v === "on") return true;
+  if (v === "false") return false;
+  return null;
+}
+
+/**
+ * Extract MTP register fields (sections 2–5) from the FormData. Returns
+ * an empty object when the form didn't render the MTP section, so
+ * upsertVendorAction can spread it into the payload unconditionally.
+ * We detect MTP presence by the unique-to-MTP `contractRef` field.
+ */
+function mtpFieldsFromFormData(formData: FormData) {
+  if (!formData.has("contractRef")) return {};
+  return {
+    contractRef: optStr(formData.get("contractRef")),
+    legalName: optStr(formData.get("legalName")),
+    legalEntityIdentifier:
+      optStr(formData.get("legalEntityIdentifier"))?.toUpperCase() ?? null,
+    isMaterialThirdParty: formData.get("isMaterialThirdParty") === "on",
+    isOutsourcing: optBool(formData.get("isOutsourcing")),
+    serviceTypeTaxonomy: optStr(formData.get("serviceTypeTaxonomy")),
+    cloudDeployment: optEnum(
+      formData.get("cloudDeployment"),
+      Object.values(CloudDeployment) as readonly (keyof typeof CloudDeployment)[],
+    ),
+    productServiceDescription: optStr(formData.get("productServiceDescription")),
+    supplyChainRanking: optInt(formData.get("supplyChainRanking")),
+    serviceCommencedAt: optDate(formData.get("serviceCommencedAt")),
+    noticePeriodVendorDays: optInt(formData.get("noticePeriodVendorDays")),
+    noticePeriodFirmDays: optInt(formData.get("noticePeriodFirmDays")),
+    governingLaw: optStr(formData.get("governingLaw")),
+    materialityReason: optEnum(
+      formData.get("materialityReason"),
+      Object.values(MaterialityReason) as readonly (keyof typeof MaterialityReason)[],
+    ),
+    materialityAssessedAt: optDate(formData.get("materialityAssessedAt")),
+    functionCategory: optEnum(
+      formData.get("functionCategory"),
+      Object.values(FunctionCategory) as readonly (keyof typeof FunctionCategory)[],
+    ),
+    supportsCoreIBSElement: optBool(formData.get("supportsCoreIBSElement")),
+    itPRASafetySoundness: optStr(formData.get("itPRASafetySoundness")),
+    itPRAFinancialStability: optStr(formData.get("itPRAFinancialStability")),
+    itPRAPolicyholderProtection: optStr(formData.get("itPRAPolicyholderProtection")),
+    itFCAClientHarm: optStr(formData.get("itFCAClientHarm")),
+    itFCAMarketIntegrity: optStr(formData.get("itFCAMarketIntegrity")),
+    itBankFMIRegulator: optStr(formData.get("itBankFMIRegulator")),
+    countryDataStored: optStr(formData.get("countryDataStored")),
+    countryServiceDeliveredFrom: optStr(formData.get("countryServiceDeliveredFrom")),
+    compliesWithRules: optEnum(
+      formData.get("compliesWithRules"),
+      Object.values(ComplianceStatus) as readonly (keyof typeof ComplianceStatus)[],
+    ),
+    assuranceSummary: optStr(formData.get("assuranceSummary")),
+    smfSignedOff: optBool(formData.get("smfSignedOff")),
+    governanceCommittee: optStr(formData.get("governanceCommittee")),
+    governanceApprovedAt: optDate(formData.get("governanceApprovedAt")),
+    substitutability: optEnum(
+      formData.get("substitutability"),
+      Object.values(Substitutability) as readonly (keyof typeof Substitutability)[],
+    ),
+    reintegrationAbility: optEnum(
+      formData.get("reintegrationAbility"),
+      Object.values(ReintegrationAbility) as readonly (keyof typeof ReintegrationAbility)[],
+    ),
+    impactOfDiscontinuing: optEnum(
+      formData.get("impactOfDiscontinuing"),
+      Object.values(ImpactDiscontinuation) as readonly (keyof typeof ImpactDiscontinuation)[],
+    ),
+  };
 }
 
 const UpsertVendor = z.object({
@@ -84,6 +171,7 @@ export async function upsertVendorAction(formData: FormData) {
     exitPlanReviewedAt: optDate(formData.get("exitPlanReviewedAt")),
     exitPlanRTOMin: optInt(formData.get("exitPlanRTOMin")),
     exitPlanNotes: optStr(formData.get("exitPlanNotes")),
+    ...mtpFieldsFromFormData(formData),
   };
 
   let id: string;

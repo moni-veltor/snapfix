@@ -97,6 +97,7 @@ export default function VendorAddWizard({
   onDone,
   onSaved,
   existing,
+  embedded = false,
 }: {
   onDone: () => void;
   /** Fires after the action resolves with the upserted vendor id. When
@@ -104,6 +105,11 @@ export default function VendorAddWizard({
    *  (e.g. create-mode → edit-mode in the drawer) instead of closing. */
   onSaved?: (id: string) => void;
   existing?: VendorExisting;
+  /** When true, the wizard renders its step rail + step pages + prev/next
+   *  but skips the surrounding <form> and the final "Save vendor" submit
+   *  button. Used by CreateBody so wizard fields submit alongside MTP
+   *  fields in one unified parent form. */
+  embedded?: boolean;
 }) {
   const [step, setStep] = useState(0);
   const isEdit = !!existing;
@@ -137,56 +143,96 @@ export default function VendorAddWizard({
 
       <StepRail step={step} setStep={setStep} />
 
-      <form action={handleSubmit} className="space-y-4 text-sm">
-        {existing && <input type="hidden" name="id" value={existing.id} />}
-
-        <div className={step === 0 ? "" : "hidden"}>
-          <BasicsStep existing={existing} />
+      {embedded ? (
+        <div className="space-y-4 text-sm">
+          <WizardSteps step={step} existing={existing} />
+          <WizardFooterNav
+            step={step}
+            setStep={setStep}
+            isEdit={isEdit}
+            embedded
+          />
         </div>
-        <div className={step === 1 ? "" : "hidden"}>
-          <DoraStep existing={existing} />
-        </div>
-        <div className={step === 2 ? "" : "hidden"}>
-          <ContractStep existing={existing} />
-        </div>
-        <div className={step === 3 ? "" : "hidden"}>
-          <AssuranceStep existing={existing} />
-        </div>
-        <div className={step === 4 ? "" : "hidden"}>
-          <ExitStep existing={existing} />
-        </div>
-
-        <footer className="flex items-center justify-between gap-2 border-t border-line pt-4">
-          <button
-            type="button"
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
-            disabled={step === 0}
-            className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs text-muted hover:bg-surface-2 hover:text-ink disabled:opacity-40 disabled:hover:bg-transparent"
-          >
-            <ArrowLeft size={12} />
-            Back
-          </button>
-          {step < STEPS.length - 1 ? (
-            <button
-              type="button"
-              onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-            >
-              Next
-              <ArrowRight size={12} />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-            >
-              <Check size={12} />
-              {isEdit ? "Save changes" : "Save vendor"}
-            </button>
-          )}
-        </footer>
-      </form>
+      ) : (
+        <form action={handleSubmit} className="space-y-4 text-sm">
+          {existing && <input type="hidden" name="id" value={existing.id} />}
+          <WizardSteps step={step} existing={existing} />
+          <WizardFooterNav step={step} setStep={setStep} isEdit={isEdit} />
+        </form>
+      )}
     </div>
+  );
+}
+
+function WizardSteps({
+  step,
+  existing,
+}: {
+  step: number;
+  existing?: VendorExisting;
+}) {
+  return (
+    <>
+      <div className={step === 0 ? "" : "hidden"}>
+        <BasicsStep existing={existing} />
+      </div>
+      <div className={step === 1 ? "" : "hidden"}>
+        <DoraStep existing={existing} />
+      </div>
+      <div className={step === 2 ? "" : "hidden"}>
+        <ContractStep existing={existing} />
+      </div>
+      <div className={step === 3 ? "" : "hidden"}>
+        <AssuranceStep existing={existing} />
+      </div>
+      <div className={step === 4 ? "" : "hidden"}>
+        <ExitStep existing={existing} />
+      </div>
+    </>
+  );
+}
+
+function WizardFooterNav({
+  step,
+  setStep,
+  isEdit,
+  embedded = false,
+}: {
+  step: number;
+  setStep: (n: number) => void;
+  isEdit: boolean;
+  embedded?: boolean;
+}) {
+  return (
+    <footer className="flex items-center justify-between gap-2 border-t border-line pt-4">
+      <button
+        type="button"
+        onClick={() => setStep(Math.max(0, step - 1))}
+        disabled={step === 0}
+        className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs text-muted hover:bg-surface-2 hover:text-ink disabled:opacity-40 disabled:hover:bg-transparent"
+      >
+        <ArrowLeft size={12} />
+        Back
+      </button>
+      {step < STEPS.length - 1 ? (
+        <button
+          type="button"
+          onClick={() => setStep(Math.min(STEPS.length - 1, step + 1))}
+          className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+        >
+          Next
+          <ArrowRight size={12} />
+        </button>
+      ) : embedded ? null : (
+        <button
+          type="submit"
+          className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+        >
+          <Check size={12} />
+          {isEdit ? "Save changes" : "Save vendor"}
+        </button>
+      )}
+    </footer>
   );
 }
 
