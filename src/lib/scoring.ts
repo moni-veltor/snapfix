@@ -41,6 +41,18 @@ export type IncidentScore = {
     imtMeetingsLogged: number;
     readCoveragePct: number;
     mobilisationCoveragePct: number;
+    /** Average % of steps in COMPLETE state across active/closed runbook
+     * executions for this incident. `null` when no runbook has been
+     * activated against the incident. */
+    runbookCompletionPct: number | null;
+    /** 100 when every completed step ran at-or-under estimate; lower when
+     * steps overran. `null` when there's nothing to score yet. */
+    runbookPacingPct: number | null;
+    /** Total step count across activated runbooks for this incident. */
+    runbookStepsTotal: number;
+    /** Steps completed; counts SKIPPED steps too (the regulator cares
+     * the gate was addressed, not whether it ran). */
+    runbookStepsTerminal: number;
   };
   coaching: CoachingItem[];
 };
@@ -119,6 +131,9 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
   ).length;
   const mobilisationCoveragePct = eligible.length === 0 ? 100 : Math.round((mobilised / eligible.length) * 100);
 
+  // — Runbook completion + pacing across every execution on this incident
+  const runbookMetrics = await computeRunbookMetrics(incidentId);
+
   const metrics: IncidentScore["metrics"] = {
     invocationLatencyMin,
     severityLatencyMin,
@@ -129,6 +144,10 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
     imtMeetingsLogged: incident.imtMeetings.length,
     readCoveragePct: readCoverage,
     mobilisationCoveragePct,
+    runbookCompletionPct: runbookMetrics.completionPct,
+    runbookPacingPct: runbookMetrics.pacingPct,
+    runbookStepsTotal: runbookMetrics.total,
+    runbookStepsTerminal: runbookMetrics.terminal,
   };
 
   // ── Coaching ───────────────────────────────────────────────────────────
@@ -271,6 +290,42 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
     });
   }
 
+  // ── Runbook coaching ─────────────────────────────────────────────────
+  if (runbookMetrics.completionPct !== null) {
+    const pct = runbookMetrics.completionPct;
+    const level: CoachingLevel = pct >= 80 ? "good" : pct >= 60 ? "warn" : "critical";
+    coaching.push({
+      id: "runbook-completion",
+      level,
+      finding: `Runbook completion at ${pct}% (${runbookMetrics.terminal}/${runbookMetrics.total} steps terminal).`,
+      clause: "best practice",
+      recommendation:
+        level === "good"
+          ? "Runbook walked cleanly. Capture the timeline as evidence."
+          : "Aim for ≥ 80% step completion. Steps left PENDING / BLOCKED at closure mean either the runbook is mis-scoped for this incident, or the IMT moved off-script. Both are findings worth a debrief.",
+    });
+  }
+  for (const skipped of runbookMetrics.skippedSteps.slice(0, 5)) {
+    coaching.push({
+      id: `runbook-skipped-${skipped.executionId}-${skipped.orderIdx}`,
+      level: "warn",
+      finding: `Runbook step "${skipped.title}" skipped${skipped.reason ? ` — ${skipped.reason}` : "."}`,
+      clause: "best practice",
+      recommendation:
+        "Skipped steps with a documented reason are defensible but still findings. Decide whether the step belongs in the runbook for next time, or whether the team needs training to take it on.",
+    });
+  }
+  for (const slow of runbookMetrics.slowSteps.slice(0, 5)) {
+    coaching.push({
+      id: `runbook-slow-${slow.executionId}-${slow.orderIdx}`,
+      level: "warn",
+      finding: `Step "${slow.title}" took ${slow.actualMin}m vs estimated ${slow.estimatedMin}m (${slow.overshootPct}% over).`,
+      clause: "best practice",
+      recommendation:
+        "Either the estimate was wrong (update the runbook) or the team needs more rehearsal time on this step. Don't leave the estimate stale — runbook pacing is what the COO dashboard surfaces during live incidents.",
+    });
+  }
+
   // ── Overall score ─────────────────────────────────────────────────────
   const scores: number[] = [];
   scores.push(scoreFromCoaching(coaching, "invocation-latency", "invocation-missing"));
@@ -282,6 +337,11 @@ export async function scoreIncident(incidentId: string): Promise<IncidentScore |
   scores.push(scoreFromCoaching(coaching, "cascade-violation"));
   scores.push(scoreFromCoaching(coaching, "mobilisation-thin"));
   scores.push(scoreFromCoaching(coaching, "read-coverage-thin"));
+  // Runbook completion only counts when there's a runbook to walk —
+  // otherwise it's not a fair component of the overall score.
+  if (runbookMetrics.completionPct !== null) {
+    scores.push(scoreFromCoaching(coaching, "runbook-completion"));
+  }
 
   const overall = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 
@@ -368,4 +428,130 @@ async function computeReadCoverage(exerciseId: string): Promise<number> {
   ]);
   const read = eventReceipts.length + injectReceipts.length;
   return Math.min(100, Math.round((read / addressed) * 100));
+}
+
+// ─── Runbook metrics ────────────────────────────────────────────────────────
+
+type RunbookMetricsResult = {
+  completionPct: number | null;
+  pacingPct: number | null;
+  total: number;
+  terminal: number;
+  skippedSteps: {
+    executionId: string;
+    orderIdx: number;
+    title: string;
+    reason: string | null;
+  }[];
+  slowSteps: {
+    executionId: string;
+    orderIdx: number;
+    title: string;
+    estimatedMin: number;
+    actualMin: number;
+    overshootPct: number;
+  }[];
+};
+
+/**
+ * Aggregate runbook execution metrics for a single incident. Walks every
+ * RunbookExecution (active + complete) for the incident and computes:
+ *   - completion % across ACTIVE/COMPLETE/ABANDONED executions
+ *   - pacing % comparing actualMin vs estimatedMin on terminal steps
+ *   - lists of skipped + slow steps for coaching items
+ *
+ * Returns null completion when no runbook has been activated against the
+ * incident — runbook scoring is opt-in.
+ */
+async function computeRunbookMetrics(incidentId: string): Promise<RunbookMetricsResult> {
+  const executions = await prisma.runbookExecution.findMany({
+    where: { incidentId },
+    select: {
+      id: true,
+      runbookJson: true,
+      stepExecutions: {
+        select: {
+          stepOrderIdx: true,
+          status: true,
+          startedAt: true,
+          completedAt: true,
+          notes: true,
+        },
+      },
+    },
+  });
+  if (executions.length === 0) {
+    return {
+      completionPct: null,
+      pacingPct: null,
+      total: 0,
+      terminal: 0,
+      skippedSteps: [],
+      slowSteps: [],
+    };
+  }
+
+  let total = 0;
+  let terminal = 0;
+  const skippedSteps: RunbookMetricsResult["skippedSteps"] = [];
+  const slowSteps: RunbookMetricsResult["slowSteps"] = [];
+
+  // Pacing — only counts steps that finished and had an estimate.
+  let pacingPaceSum = 0;
+  let pacingCount = 0;
+
+  for (const ex of executions) {
+    const frozen = ex.runbookJson as unknown as { steps: { orderIdx: number; title: string; estimatedMin: number | null }[] };
+    const stepsByIdx = new Map(frozen.steps.map((s) => [s.orderIdx, s]));
+
+    for (const se of ex.stepExecutions) {
+      total += 1;
+      if (se.status === "COMPLETE" || se.status === "SKIPPED") terminal += 1;
+
+      const frozenStep = stepsByIdx.get(se.stepOrderIdx);
+      const title = frozenStep?.title ?? `step #${se.stepOrderIdx + 1}`;
+
+      if (se.status === "SKIPPED") {
+        skippedSteps.push({
+          executionId: ex.id,
+          orderIdx: se.stepOrderIdx,
+          title,
+          reason: se.notes,
+        });
+      }
+
+      // Pacing — needs a started/completed window + an estimate.
+      const estimate = frozenStep?.estimatedMin ?? null;
+      if (
+        se.status === "COMPLETE" &&
+        se.startedAt &&
+        se.completedAt &&
+        estimate !== null &&
+        estimate > 0
+      ) {
+        const actualMin = Math.max(1, Math.round((se.completedAt.getTime() - se.startedAt.getTime()) / 60_000));
+        const pace = estimate / actualMin; // 1.0 = on-time; > 1 = ahead; < 1 = slow.
+        pacingPaceSum += Math.min(1, pace);
+        pacingCount += 1;
+        if (actualMin > estimate * 2) {
+          slowSteps.push({
+            executionId: ex.id,
+            orderIdx: se.stepOrderIdx,
+            title,
+            estimatedMin: estimate,
+            actualMin,
+            overshootPct: Math.round(((actualMin - estimate) / estimate) * 100),
+          });
+        }
+      }
+    }
+  }
+
+  const completionPct = total === 0 ? null : Math.round((terminal / total) * 100);
+  const pacingPct = pacingCount === 0 ? null : Math.round((pacingPaceSum / pacingCount) * 100);
+
+  // Worst-overshoot first so coaching surfaces the most material ones.
+  slowSteps.sort((a, b) => b.overshootPct - a.overshootPct);
+
+  return { completionPct, pacingPct, total, terminal, skippedSteps, slowSteps };
 }

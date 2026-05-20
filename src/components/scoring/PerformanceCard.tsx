@@ -56,7 +56,9 @@ export default function PerformanceCard({ score }: Props) {
           <div className="text-xs">
             <div className="text-muted">out of 100</div>
             <div className="mt-1 max-w-[160px] text-soft">
-              Average of nine best-practice metrics.
+              Average of the best-practice metrics that fired for this
+              incident — runbook completion only counts when a runbook was
+              activated.
             </div>
           </div>
         </div>
@@ -127,6 +129,36 @@ export default function PerformanceCard({ score }: Props) {
           tone={score.metrics.cascadeViolations > 0 ? "warn" : "neutral"}
           rubric="Customer / regulator drafts rejected by the approver (typically because the cascade order was violated — sending external before internal, or skipping CRO/legal sign-off). Indicates comms discipline gaps."
         />
+        {score.metrics.runbookCompletionPct !== null && (
+          <Metric
+            label="Runbook completion"
+            value={`${score.metrics.runbookCompletionPct}%`}
+            subtle={`${score.metrics.runbookStepsTerminal}/${score.metrics.runbookStepsTotal} steps terminal`}
+            tone={
+              score.metrics.runbookCompletionPct >= 80
+                ? "neutral"
+                : score.metrics.runbookCompletionPct >= 60
+                  ? "warn"
+                  : "critical"
+            }
+            rubric="Share of runbook steps in COMPLETE or SKIPPED state across every runbook activated against this incident. Steps left PENDING or BLOCKED at closure mean the runbook isn't fit for this scenario or the IMT moved off-script — both are findings."
+          />
+        )}
+        {score.metrics.runbookPacingPct !== null && (
+          <Metric
+            label="Runbook pacing"
+            value={`${score.metrics.runbookPacingPct}%`}
+            subtle="actual vs estimated"
+            tone={
+              score.metrics.runbookPacingPct >= 80
+                ? "neutral"
+                : score.metrics.runbookPacingPct >= 60
+                  ? "warn"
+                  : "critical"
+            }
+            rubric="Compares each completed step's actual wall-clock time to the estimated time the runbook author set. 100% = every step on or ahead of estimate. Low values flag either stale estimates (update the runbook) or rehearsal gaps."
+          />
+        )}
       </dl>
 
       {score.coaching.length > 0 && (

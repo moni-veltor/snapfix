@@ -22,6 +22,10 @@ import PerformanceCard from "@/components/scoring/PerformanceCard";
 import ClosureCelebration from "@/components/scoring/ClosureCelebration";
 import HighlightReel from "@/components/scoring/HighlightReel";
 import { buildHighlightReel } from "@/lib/highlight-reel";
+import RunbookTimeline, {
+  type TimelineExecution,
+} from "@/components/runbooks/RunbookTimeline";
+import type { FrozenRunbook } from "@/lib/runbook-activation";
 
 export default async function DebriefPage({
   params,
@@ -66,6 +70,9 @@ export default async function DebriefPage({
     ? await evaluateToleranceBreaches(closedIncidentId)
     : [];
   const highlights = await buildHighlightReel(exercise.id);
+  const runbookTimeline = closedIncidentId
+    ? await buildRunbookTimeline(closedIncidentId)
+    : [];
   const answersByQuestion = new Map<string, typeof exercise.debriefAnswers>();
   for (const a of exercise.debriefAnswers) {
     const list = answersByQuestion.get(a.questionId) ?? [];
@@ -95,6 +102,7 @@ export default async function DebriefPage({
       )}
       {score && <PerformanceCard score={score} />}
       {highlights.length > 0 && <HighlightReel highlights={highlights} />}
+      {runbookTimeline.length > 0 && <RunbookTimeline executions={runbookTimeline} />}
 
       <section className="space-y-4">
         <header className="flex items-baseline justify-between">
@@ -464,4 +472,94 @@ function ReadOnlyBlock({ label, body }: { label: string; body: string }) {
       <p className="mt-1 whitespace-pre-wrap text-ink">{body}</p>
     </div>
   );
+}
+
+async function buildRunbookTimeline(incidentId: string): Promise<TimelineExecution[]> {
+  const executions = await prisma.runbookExecution.findMany({
+    where: { incidentId },
+    orderBy: { startedAt: "asc" },
+    include: {
+      stepExecutions: {
+        orderBy: { stepOrderIdx: "asc" },
+        include: {
+          completedByParticipant: {
+            include: { user: { select: { name: true, email: true } } },
+          },
+        },
+      },
+    },
+  });
+  if (executions.length === 0) return [];
+
+  const decisionIds = executions
+    .flatMap((e) => e.stepExecutions.map((s) => s.linkedDecisionId))
+    .filter((v): v is string => !!v);
+  const notifIds = executions
+    .flatMap((e) => e.stepExecutions.map((s) => s.linkedNotificationId))
+    .filter((v): v is string => !!v);
+  const commsIds = executions
+    .flatMap((e) => e.stepExecutions.map((s) => s.linkedCommsId))
+    .filter((v): v is string => !!v);
+
+  const [decisions, notifs, comms] = await Promise.all([
+    decisionIds.length
+      ? prisma.decisionRecord.findMany({
+          where: { id: { in: decisionIds } },
+          select: { id: true, title: true, decisionType: true, approvedAt: true },
+        })
+      : Promise.resolve([]),
+    notifIds.length
+      ? prisma.regulatorNotification.findMany({
+          where: { id: { in: notifIds } },
+          select: { id: true, regulator: true, status: true, sentAt: true, dueAt: true },
+        })
+      : Promise.resolve([]),
+    commsIds.length
+      ? prisma.communicationDraft.findMany({
+          where: { id: { in: commsIds } },
+          select: { id: true, subject: true, status: true, stakeholder: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  const decisionsById = new Map(decisions.map((d) => [d.id, d]));
+  const notifsById = new Map(notifs.map((n) => [n.id, n]));
+  const commsById = new Map(comms.map((c) => [c.id, c]));
+
+  return executions.map((execution) => ({
+    executionId: execution.id,
+    runbookTitle: (execution.runbookJson as unknown as FrozenRunbook).title,
+    runbookCategory: (execution.runbookJson as unknown as FrozenRunbook).category,
+    version: (execution.runbookJson as unknown as FrozenRunbook).version,
+    status: execution.status,
+    activatedBy: execution.activatedBy,
+    activationReason: execution.activationReason,
+    startedAt: execution.startedAt,
+    completedAt: execution.completedAt,
+    abandonedReason: execution.abandonedReason,
+    frozen: execution.runbookJson as unknown as FrozenRunbook,
+    steps: execution.stepExecutions.map((se) => {
+      const decision = se.linkedDecisionId ? decisionsById.get(se.linkedDecisionId) : null;
+      const notif = se.linkedNotificationId ? notifsById.get(se.linkedNotificationId) : null;
+      const draft = se.linkedCommsId ? commsById.get(se.linkedCommsId) : null;
+      const completedByName =
+        se.completedByParticipant?.user?.name ?? se.completedByParticipant?.user?.email ?? null;
+      return {
+        stepOrderIdx: se.stepOrderIdx,
+        status: se.status,
+        startedAt: se.startedAt,
+        completedAt: se.completedAt,
+        notes: se.notes,
+        completedByName,
+        linkedDecisionTitle: decision
+          ? `${decision.title} · ${decision.decisionType.replace(/_/g, " ")}${decision.approvedAt ? " · approved" : ""}`
+          : null,
+        linkedNotificationLabel: notif
+          ? `${notif.regulator} ${notif.status}${notif.sentAt ? ` · sent ${notif.sentAt.toISOString().slice(11, 16)} UTC` : ""}`
+          : null,
+        linkedCommsSubject: draft
+          ? `${draft.subject} · ${draft.status}${draft.stakeholder ? ` · ${draft.stakeholder}` : ""}`
+          : null,
+      };
+    }),
+  }));
 }

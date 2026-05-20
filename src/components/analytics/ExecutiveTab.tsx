@@ -70,11 +70,20 @@ export default async function ExecutiveTab({
     if (!bucket) continue;
     bucket.scoreSum += score.overall;
     bucket.scoreCount += 1;
+    if (score.metrics.runbookCompletionPct !== null) {
+      bucket.runbookSum += score.metrics.runbookCompletionPct;
+      bucket.runbookCount += 1;
+    }
   }
   const trendData = monthBuckets.map((b) => ({
     label: b.label,
     value: b.scoreCount === 0 ? 0 : Math.round(b.scoreSum / b.scoreCount),
   }));
+  const runbookTrendData = monthBuckets.map((b) => ({
+    label: b.label,
+    value: b.runbookCount === 0 ? 0 : Math.round(b.runbookSum / b.runbookCount),
+  }));
+  const hasRunbookData = runbookTrendData.some((d) => d.value > 0);
 
   // ─── Exercise tempo by quarter ──────────────────────────────────────────
   const quarterBuckets = buildQuarterBuckets(now, 4);
@@ -231,6 +240,18 @@ export default async function ExecutiveTab({
           <EmptyHint message="No scored exercises in this window. Run an exercise to populate the trend." />
         ) : (
           <TrendLine data={trendData} yDomain={[0, 100]} yLabel="score" threshold={75} />
+        )}
+      </Section>
+
+      {/* ─── Runbook completion trend ──────────────────────────────────── */}
+      <Section
+        title="Runbook completion trend"
+        subtitle="Average runbook completion % by month across exercises that activated a runbook. Dashed line = 80 (good-practice floor)."
+      >
+        {!hasRunbookData ? (
+          <EmptyHint message="No runbooks were activated against exercises in this window. Publish runbooks and let severity classification auto-fire them." />
+        ) : (
+          <TrendLine data={runbookTrendData} yDomain={[0, 100]} yLabel="completion %" threshold={80} />
         )}
       </Section>
 
@@ -416,8 +437,24 @@ function EmptyHint({ message }: { message: string }) {
 function buildMonthBuckets(
   ref: Date,
   count: number,
-): { label: string; from: Date; to: Date; scoreSum: number; scoreCount: number }[] {
-  const buckets: { label: string; from: Date; to: Date; scoreSum: number; scoreCount: number }[] = [];
+): {
+  label: string;
+  from: Date;
+  to: Date;
+  scoreSum: number;
+  scoreCount: number;
+  runbookSum: number;
+  runbookCount: number;
+}[] {
+  const buckets: {
+    label: string;
+    from: Date;
+    to: Date;
+    scoreSum: number;
+    scoreCount: number;
+    runbookSum: number;
+    runbookCount: number;
+  }[] = [];
   for (let i = count - 1; i >= 0; i--) {
     const from = new Date(ref.getFullYear(), ref.getMonth() - i, 1);
     const to = new Date(ref.getFullYear(), ref.getMonth() - i + 1, 1);
@@ -427,6 +464,8 @@ function buildMonthBuckets(
       to,
       scoreSum: 0,
       scoreCount: 0,
+      runbookSum: 0,
+      runbookCount: 0,
     });
   }
   return buckets;

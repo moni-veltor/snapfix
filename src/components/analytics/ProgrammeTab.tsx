@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import IBSCoverageHeatmap from "@/components/analytics/IBSCoverageHeatmap";
 import type { AnalyticsFilters, DateRange } from "@/lib/analytics-filters";
+import type { FrozenRunbook } from "@/lib/runbook-activation";
 
 /**
  * Programme tab — the original analytics page content, scoped to the
@@ -31,7 +32,7 @@ export default async function ProgrammeTab({
     ...(filters.ibsIds.length > 0 ? { id: { in: filters.ibsIds } } : {}),
   };
 
-  const [scenarios, exercises, ibsRegister] = await Promise.all([
+  const [scenarios, exercises, ibsRegister, runbookCoverageRows] = await Promise.all([
     prisma.scenario.findMany({
       where: { orgId, isTemplate: false },
       select: {
@@ -84,6 +85,24 @@ export default async function ProgrammeTab({
                 },
               },
             },
+          },
+        },
+      },
+    }),
+    prisma.runbook.findMany({
+      where: { orgId, status: { not: "ARCHIVED" } },
+      orderBy: [{ status: "asc" }, { category: "asc" }, { title: "asc" }],
+      include: {
+        _count: { select: { steps: true } },
+        executions: {
+          where: range.from
+            ? { startedAt: { gte: range.from }, incident: { exercise: exerciseWhere } }
+            : { incident: { exercise: exerciseWhere } },
+          select: {
+            id: true,
+            status: true,
+            runbookJson: true,
+            stepExecutions: { select: { status: true } },
           },
         },
       },
@@ -153,6 +172,59 @@ export default async function ProgrammeTab({
   const sortedCats = Array.from(cats.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
   const untestedIBS = ibsRegister.filter((i) => i._count.exerciseLinks === 0);
+
+  // ─── Runbook coverage ──────────────────────────────────────────────────
+  type RunbookCoverageRow = {
+    id: string;
+    title: string;
+    category: string;
+    status: string;
+    totalSteps: number;
+    executionsCount: number;
+    stepsTerminal: number;
+    stepsTotal: number;
+    completionPct: number | null;
+    stepsExercised: number;
+  };
+  const runbookCoverage: RunbookCoverageRow[] = runbookCoverageRows.map((r) => {
+    let stepsTerminal = 0;
+    let stepsTotal = 0;
+    const exercisedOrders = new Set<number>();
+    for (const ex of r.executions) {
+      const frozen = ex.runbookJson as unknown as FrozenRunbook;
+      stepsTotal += ex.stepExecutions.length;
+      for (let i = 0; i < ex.stepExecutions.length; i++) {
+        const se = ex.stepExecutions[i];
+        if (se.status === "COMPLETE" || se.status === "SKIPPED") stepsTerminal += 1;
+      }
+      // Anything that wasn't PENDING is "exercised" for coverage purposes.
+      for (const step of frozen.steps) {
+        const matching = ex.stepExecutions[step.orderIdx];
+        if (matching && matching.status !== "PENDING" && matching.status !== "BLOCKED") {
+          exercisedOrders.add(step.orderIdx);
+        }
+      }
+    }
+    return {
+      id: r.id,
+      title: r.title,
+      category: r.category,
+      status: r.status,
+      totalSteps: r._count.steps,
+      executionsCount: r.executions.length,
+      stepsTerminal,
+      stepsTotal,
+      completionPct:
+        stepsTotal === 0 ? null : Math.round((stepsTerminal / stepsTotal) * 100),
+      stepsExercised: exercisedOrders.size,
+    };
+  });
+  runbookCoverage.sort((a, b) => {
+    // Untested first, then by lowest completion %.
+    if (a.executionsCount === 0 && b.executionsCount !== 0) return -1;
+    if (a.executionsCount !== 0 && b.executionsCount === 0) return 1;
+    return (a.completionPct ?? 0) - (b.completionPct ?? 0);
+  });
 
   return (
     <div className="space-y-8">
@@ -244,6 +316,77 @@ export default async function ProgrammeTab({
             </tbody>
           </table>
         </div>
+      </Section>
+
+      <Section
+        title="Runbook coverage"
+        subtitle={`Per published runbook, how often it activated ${range.label.toLowerCase()} and the % of steps that reached COMPLETE or SKIPPED. Steps that never fired are coverage gaps a regulator can challenge.`}
+      >
+        {runbookCoverage.length === 0 ? (
+          <p className="rounded-md border border-dashed border-line-strong bg-surface-1 p-6 text-sm text-muted">
+            No runbooks in your registry yet.{" "}
+            <Link href="/runbooks" className="underline">
+              Browse the library
+            </Link>{" "}
+            to seed your first one.
+          </p>
+        ) : (
+          <div className="overflow-hidden rounded-md border border-line bg-surface-1">
+            <table className="w-full text-sm">
+              <thead className="bg-surface-0 text-left text-xs uppercase tracking-wide text-muted">
+                <tr>
+                  <th className="p-3">Runbook</th>
+                  <th className="p-3 text-right">Activations</th>
+                  <th className="p-3 text-right">Steps exercised</th>
+                  <th className="p-3 text-right">Completion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {runbookCoverage.map((r) => (
+                  <tr key={r.id} className="border-t border-line">
+                    <td className="p-3">
+                      <Link href={`/runbooks/${r.id}`} className="font-medium hover:underline">
+                        {r.title}
+                      </Link>
+                      <p className="text-[11px] text-soft">
+                        {r.category.replace(/_/g, " ")} · {r.status.toLowerCase()} · {r.totalSteps} step{r.totalSteps === 1 ? "" : "s"}
+                      </p>
+                    </td>
+                    <td className="p-3 text-right font-mono">
+                      {r.executionsCount === 0 ? (
+                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">
+                          0
+                        </span>
+                      ) : (
+                        r.executionsCount
+                      )}
+                    </td>
+                    <td className="p-3 text-right font-mono text-xs">
+                      {r.stepsExercised}/{r.totalSteps}
+                    </td>
+                    <td className="p-3 text-right">
+                      {r.completionPct === null ? (
+                        <span className="text-soft">—</span>
+                      ) : (
+                        <span
+                          className={`rounded-full px-2 py-0.5 font-mono text-xs font-semibold ${
+                            r.completionPct >= 80
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
+                              : r.completionPct >= 60
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+                                : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200"
+                          }`}
+                        >
+                          {r.completionPct}%
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Section>
 
       <Section
