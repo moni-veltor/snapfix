@@ -20,9 +20,7 @@ import {
   linkVendorToIBSAction,
   unlinkVendorFromIBSAction,
 } from "@/app/actions/vendors";
-import VendorQuickEditDrawer, {
-  type VendorQuickEditRow,
-} from "@/components/vendors/VendorQuickEditDrawer";
+import VendorQuickEditDrawer from "@/components/vendors/VendorQuickEditDrawer";
 
 type VendorRow = {
   id: string;
@@ -36,18 +34,11 @@ type VendorRow = {
   statusUrl: string | null;
   isDoraCritical: boolean;
   isMaterialThirdParty?: boolean;
-  doraIctTier: "TIER_1" | "TIER_2" | "TIER_3" | string | null;
   hyperscaler: string | null;
   region: string | null;
   assuranceKind: string | null;
   assuranceExpiryAt: Date | null;
-  contractStartAt: Date | null;
-  contractEndAt: Date | null;
-  contractRenewalNoticeDays: number | null;
-  contractAnnualValueGBP: number | null;
   exitPlanReviewedAt: Date | null;
-  exitPlanRTOMin: number | null;
-  exitPlanNotes: string | null;
   ibsLinks: { ibsId: string; ibs: { id: string; code: string; name: string } }[];
 };
 
@@ -102,31 +93,7 @@ export default function VendorGrid({
   const [now] = useState(() => Date.now());
 
   const editVendor = editId ? vendors.find((v) => v.id === editId) ?? null : null;
-  const editRow: VendorQuickEditRow | null = editVendor
-    ? {
-        id: editVendor.id,
-        name: editVendor.name,
-        description: editVendor.description,
-        serviceKind: editVendor.serviceKind,
-        tier: editVendor.tier,
-        contactName: editVendor.contactName,
-        contactEmail: editVendor.contactEmail,
-        statusUrl: editVendor.statusUrl,
-        isDoraCritical: editVendor.isDoraCritical,
-        doraIctTier: editVendor.doraIctTier,
-        hyperscaler: editVendor.hyperscaler,
-        region: editVendor.region,
-        contractStartAt: editVendor.contractStartAt,
-        contractEndAt: editVendor.contractEndAt,
-        contractRenewalNoticeDays: editVendor.contractRenewalNoticeDays,
-        contractAnnualValueGBP: editVendor.contractAnnualValueGBP,
-        assuranceKind: editVendor.assuranceKind,
-        assuranceExpiryAt: editVendor.assuranceExpiryAt,
-        exitPlanReviewedAt: editVendor.exitPlanReviewedAt,
-        exitPlanRTOMin: editVendor.exitPlanRTOMin,
-        exitPlanNotes: editVendor.exitPlanNotes,
-      }
-    : null;
+  const editStub = editVendor ? { id: editVendor.id, name: editVendor.name } : null;
 
   const groups = useMemo(() => {
     const out: Record<string, VendorRow[]> = { TIER_1: [], TIER_2: [], TIER_3: [] };
@@ -242,9 +209,10 @@ export default function VendorGrid({
       })}
 
       <VendorQuickEditDrawer
-        open={editRow !== null}
+        open={editStub !== null}
         onClose={() => setEditId(null)}
-        row={editRow}
+        vendor={editStub}
+        canEdit={canManage}
       />
     </section>
   );

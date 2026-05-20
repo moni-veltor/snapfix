@@ -12,18 +12,29 @@ import {
   Boxes,
   type LucideIcon,
 } from "lucide-react";
-import IBSQuickEditDrawer, {
-  type IBSQuickEditRow,
-} from "@/components/ibs/IBSQuickEditDrawer";
+import IBSQuickEditDrawer from "@/components/ibs/IBSQuickEditDrawer";
 import MineToggle, { useMineToggle } from "@/components/ui/MineToggle";
 
-type RegisterRow = IBSQuickEditRow & {
+type RegisterRow = {
+  id: string;
+  code: string;
+  name: string;
+  outcome: string | null;
   status: "DRAFT" | "APPROVED" | "DEPRECATED" | string;
+  criticality: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | string;
+  impactToleranceMin: number;
+  fcaToleranceMin: number | null;
+  praToleranceMin: number | null;
+  processOwner: string | null;
   processOwnerUserId: string | null;
   exerciseCount: number;
+  coversPeople: boolean;
+  coversProperty: boolean;
+  coversTechnology: boolean;
+  coversDataAvailability: boolean;
+  coversDataIntegrity: boolean;
+  coversThirdParty: boolean;
 };
-
-type ResourceSuggestion = { value: string; source: "system" | "vendor" | "library" };
 
 type Filter = "all" | "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
 
@@ -94,18 +105,10 @@ export default function IBSRegisterGrid({
   rows,
   canEdit = false,
   currentUserId = null,
-  techSuggestions = [],
-  vendorSuggestions = [],
-  informationSuggestions = [],
-  processSuggestions = [],
 }: {
   rows: RegisterRow[];
   canEdit?: boolean;
   currentUserId?: string | null;
-  techSuggestions?: ResourceSuggestion[];
-  vendorSuggestions?: ResourceSuggestion[];
-  informationSuggestions?: ResourceSuggestion[];
-  processSuggestions?: ResourceSuggestion[];
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -115,6 +118,9 @@ export default function IBSRegisterGrid({
     ? rows.filter((r) => r.processOwnerUserId === currentUserId).length
     : 0;
   const editRow = editId ? rows.find((r) => r.id === editId) ?? null : null;
+  const editStub = editRow
+    ? { id: editRow.id, code: editRow.code, name: editRow.name }
+    : null;
 
   const groups = useMemo(() => {
     const out: Record<string, RegisterRow[]> = {
@@ -252,13 +258,10 @@ export default function IBSRegisterGrid({
       })}
 
       <IBSQuickEditDrawer
-        open={editRow !== null}
+        open={editStub !== null}
         onClose={() => setEditId(null)}
-        row={editRow}
-        techSuggestions={techSuggestions}
-        vendorSuggestions={vendorSuggestions}
-        informationSuggestions={informationSuggestions}
-        processSuggestions={processSuggestions}
+        ibs={editStub}
+        canEdit={canEdit}
       />
     </section>
   );

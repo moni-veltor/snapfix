@@ -133,6 +133,115 @@ export async function updateIBSAction(formData: FormData) {
   revalidatePath("/ibs");
 }
 
+/**
+ * Lazy loader for the aggregate edit drawer. Returns everything the
+ * detail page renders — full IBS scalars, attestations, resources
+ * with vendor/system/department joins, the cross-IBS shared-dependency
+ * map, plus the org-wide autocomplete sources.
+ */
+export async function getIBSEditBundle(id: string) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const ibs = await prisma.organizationIBS.findFirst({
+    where: { id, orgId: me.orgId },
+    include: {
+      attestations: {
+        orderBy: [{ cycle: "desc" }, { line: "asc" }],
+        include: { reviewer: { select: { name: true, email: true } } },
+      },
+      resources: {
+        orderBy: [{ kind: "asc" }, { orderIdx: "asc" }],
+        include: {
+          vendor: { select: { id: true, name: true, statusUrl: true } },
+          techSystem: {
+            select: {
+              id: true,
+              name: true,
+              tier: true,
+              nextDrTestDueAt: true,
+              drTests: {
+                orderBy: { testedAt: "desc" },
+                take: 1,
+                select: { testedAt: true, outcome: true },
+              },
+            },
+          },
+          department: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+  if (!ibs) return null;
+
+  const [peerResources, orgVendors, orgTechSystems, orgDepartments, allSystems, allVendors] =
+    await Promise.all([
+      prisma.iBSResource.findMany({
+        where: { ibs: { orgId: me.orgId, id: { not: id } } },
+        select: {
+          label: true,
+          ibs: { select: { id: true, code: true, name: true } },
+        },
+      }),
+      prisma.vendor.findMany({
+        where: { orgId: me.orgId },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+      prisma.techSystem.findMany({
+        where: { orgId: me.orgId },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+      prisma.department.findMany({
+        where: { orgId: me.orgId },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
+      prisma.techSystem.findMany({
+        where: { orgId: me.orgId },
+        orderBy: { name: "asc" },
+        select: { name: true },
+      }),
+      prisma.vendor.findMany({
+        where: { orgId: me.orgId },
+        orderBy: { name: "asc" },
+        select: { name: true },
+      }),
+    ]);
+
+  const sharedBy: Record<string, { id: string; code: string; name: string }[]> = {};
+  for (const pr of peerResources) {
+    const key = pr.label.toLowerCase();
+    const arr = sharedBy[key] ?? [];
+    if (!arr.some((x) => x.id === pr.ibs.id)) arr.push(pr.ibs);
+    sharedBy[key] = arr;
+  }
+
+  const COMMON_INFORMATION = [
+    "Customer PII", "KYC documentation", "Account balances",
+    "Transaction history", "Payment instructions", "Authentication credentials",
+    "Risk-scoring features", "Regulatory reports",
+  ];
+  const COMMON_PROCESSES = [
+    "Identity verification", "AML screening", "Account creation",
+    "Payment authorisation", "Fraud review", "Customer onboarding",
+    "Application underwriting", "Customer-comms cascade",
+  ];
+
+  return {
+    ibs,
+    sharedBy,
+    orgVendors,
+    orgTechSystems,
+    orgDepartments,
+    suggestions: {
+      techSuggestions: allSystems.map((s) => ({ value: s.name, source: "system" as const })),
+      vendorSuggestions: allVendors.map((v) => ({ value: v.name, source: "vendor" as const })),
+      informationSuggestions: COMMON_INFORMATION.map((value) => ({ value, source: "library" as const })),
+      processSuggestions: COMMON_PROCESSES.map((value) => ({ value, source: "library" as const })),
+    },
+  };
+}
+
 export async function approveIBSAction(formData: FormData) {
   const me = await requireOrgRole("OWNER", "ADMIN");
   const id = String(formData.get("id"));

@@ -105,6 +105,30 @@ export async function deleteVendorAction(formData: FormData) {
   revalidatePath("/vendors");
 }
 
+/**
+ * Lazy loader for the aggregate edit drawer. Returns everything the
+ * detail page renders — full vendor scalars, assessments, ibsLinks,
+ * notifications and live MTP readiness — so a single click can open
+ * the full editing surface without overfetching every row up front.
+ */
+export async function getVendorEditBundle(id: string) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const vendor = await prisma.vendor.findFirst({
+    where: { id, orgId: me.orgId },
+    include: {
+      assessments: { orderBy: [{ kind: "asc" }, { assessedAt: "desc" }] },
+      ibsLinks: {
+        include: { ibs: { select: { id: true, name: true, criticality: true } } },
+      },
+      notifications: { orderBy: { submissionId: "desc" } },
+    },
+  });
+  if (!vendor) return null;
+  const { evaluateVendorReadiness } = await import("@/lib/vendor-mtp-readiness");
+  const readiness = evaluateVendorReadiness(vendor);
+  return { vendor, readiness };
+}
+
 const LinkSchema = z.object({
   vendorId: z.string(),
   ibsId: z.string(),
