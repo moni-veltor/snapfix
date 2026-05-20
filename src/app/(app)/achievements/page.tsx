@@ -1,135 +1,93 @@
 import { redirect } from "next/navigation";
 import { Crown, Sparkles } from "lucide-react";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import {
-  ACHIEVEMENT_ICONS,
-  TIER_TONE,
-  computeAchievements,
-  computeLevel,
-  type Achievement,
-} from "@/lib/achievements";
+import AchievementsBoard from "@/components/achievements/AchievementsBoard";
 import Hoot from "@/components/fun/Hoot";
 import { ProgressRing } from "@/components/ui/charts";
+import {
+  evaluateAchievements,
+  findRuleById,
+  loadRecentlyUnlocked,
+  pickClosestToUnlock,
+} from "@/lib/achievements/engine";
+import { loadAchievementOrgState } from "@/lib/achievements/state";
+import { TOPIC_LABEL } from "@/lib/achievements/types";
+
+export const metadata = { title: "Achievements — SnapFix" };
+
+const RANKS = [
+  "Recruit", // 1
+  "Apprentice", // 2
+  "Practitioner", // 3
+  "Specialist", // 4
+  "Expert", // 5
+  "Master", // 6
+  "Mentor", // 7
+  "Architect", // 8
+  "Grandmaster", // 9
+  "Resilience Legend", // 10+
+];
 
 export default async function AchievementsPage() {
   const session = await auth();
   if (!session?.user?.orgId) redirect("/sign-in");
   const orgId = session.user.orgId;
 
-  const now = new Date();
-  const ago90 = new Date(now.getTime() - 90 * 86_400_000);
-  const ago1y = new Date(now.getTime() - 365 * 86_400_000);
+  const state = await loadAchievementOrgState(orgId);
+  const summary = await evaluateAchievements({ orgId, state });
 
-  const [
-    ibsTotal,
-    untestedIBSCount,
-    exercisesCompleted,
-    exercisesLast90,
-    exercisesLast12mo,
-    drTestCount,
-    systemsCount,
-    systemsTestedCount,
-    coverage,
-    rolesTotal,
-    rolesWithDeputy,
-    vendorsCritical,
-    scenariosClonedCount,
-    exerciseStartedAts,
-  ] = await Promise.all([
-    prisma.organizationIBS.count({ where: { orgId } }),
-    prisma.organizationIBS.count({
-      where: { orgId, exerciseLinks: { none: {} } },
-    }),
-    prisma.exercise.count({ where: { orgId, status: "COMPLETED" } }),
-    prisma.exercise.count({ where: { orgId, startedAt: { gte: ago90 } } }),
-    prisma.exercise.count({ where: { orgId, startedAt: { gte: ago1y } } }),
-    prisma.dRTest.count({ where: { system: { orgId } } }),
-    prisma.techSystem.count({ where: { orgId } }),
-    prisma.techSystem.count({ where: { orgId, drTests: { some: {} } } }),
-    prisma.exercise.findMany({
-      where: { orgId, status: { in: ["IN_PROGRESS", "PAUSED", "COMPLETED"] } },
-      include: {
-        scenario: {
-          select: {
-            coversPeople: true,
-            coversProperty: true,
-            coversTechnology: true,
-            coversDataAvailability: true,
-            coversDataIntegrity: true,
-            coversThirdParty: true,
-          },
-        },
-      },
-    }),
-    prisma.organizationRole.count({ where: { orgId } }),
-    prisma.organizationRole.count({
-      where: { orgId, deputyOfRoleId: { not: null } },
-    }),
-    prisma.vendor.findMany({
-      where: { orgId, OR: [{ tier: "TIER_1" }, { isDoraCritical: true }] },
-      select: { exitPlanNotes: true, exitPlanReviewedAt: true },
-    }),
-    prisma.scenario.count({
-      where: { orgId, templateOriginId: { not: null } },
-    }),
-    prisma.exercise.findMany({
-      where: { orgId, startedAt: { not: null, gte: ago1y } },
-      orderBy: { startedAt: "desc" },
-      select: { startedAt: true },
-    }),
-  ]);
+  const recentRows = await loadRecentlyUnlocked(orgId, 8);
+  const recentlyUnlocked = recentRows
+    .map((r) => {
+      const rule = findRuleById(r.achievementId);
+      if (!rule) return null;
+      return {
+        achievementId: r.achievementId,
+        level: r.level,
+        unlockedAt: r.unlockedAt,
+        xpAwarded: r.xpAwarded,
+        title: rule.title,
+        topic: rule.topic,
+      };
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null);
 
-  const harmTypesCovered = [
-    coverage.some((e) => e.scenario.coversPeople),
-    coverage.some((e) => e.scenario.coversProperty),
-    coverage.some((e) => e.scenario.coversTechnology),
-    coverage.some((e) => e.scenario.coversDataAvailability),
-    coverage.some((e) => e.scenario.coversDataIntegrity),
-    coverage.some((e) => e.scenario.coversThirdParty),
-  ].filter(Boolean).length;
+  const closestToUnlock = pickClosestToUnlock(summary.achievements, 5);
 
-  const vendorsWithExitPlan = vendorsCritical.filter(
-    (v) =>
-      v.exitPlanNotes && v.exitPlanNotes.trim().length > 40 && v.exitPlanReviewedAt,
-  ).length;
-
-  // Monthly-exercise streak ending in the current month
-  const monthsSet = new Set<string>();
-  for (const e of exerciseStartedAts) {
-    if (!e.startedAt) continue;
-    monthsSet.add(monthKey(e.startedAt));
+  // ── Resilience rank ─────────────────────────────────────────────────────
+  // 500 XP per level, with a 1.15× ramp so the curve flattens politely.
+  let level = 1;
+  let need = 500;
+  let remaining = summary.totalXp;
+  while (remaining >= need && level < 12) {
+    remaining -= need;
+    level += 1;
+    need = Math.round(need * 1.15);
   }
-  let monthsWithExerciseStreak = 0;
-  let cursor = new Date(now.getFullYear(), now.getMonth(), 1);
-  while (monthsSet.has(monthKey(cursor))) {
-    monthsWithExerciseStreak += 1;
-    cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
-    if (monthsWithExerciseStreak > 36) break;
+  const rank = RANKS[Math.min(level - 1, RANKS.length - 1)];
+  const progressPct = need === 0 ? 0 : remaining / need;
+
+  // ── Topic + level tallies for the header strip ──────────────────────────
+  const tally = {
+    l1: 0,
+    l2: 0,
+    l3: 0,
+    l4: 0,
+    l5: 0,
+  } as Record<"l1" | "l2" | "l3" | "l4" | "l5", number>;
+  for (const a of summary.achievements) {
+    if (!a.unlocked) continue;
+    tally[`l${a.rule.level}` as keyof typeof tally] += 1;
   }
 
-  const achievements = computeAchievements({
-    ibsCount: ibsTotal,
-    ibsTestedCount: ibsTotal - untestedIBSCount,
-    ibsTotal,
-    exercisesCompletedCount: exercisesCompleted,
-    exercisesLast90Days: exercisesLast90,
-    exercisesLast12Months: exercisesLast12mo,
-    monthsWithExerciseStreak,
-    drTestCount,
-    systemsCount,
-    systemsTestedCount,
-    harmTypesCovered,
-    rolesWithDeputy,
-    rolesTotal,
-    vendorsWithExitPlan,
-    vendorsCriticalTotal: vendorsCritical.length,
-    scenariosClonedCount,
-  });
-
-  const level = computeLevel(achievements);
-  const platinums = achievements.filter((a) => a.tier === "platinum").length;
-  const byCategory = group(achievements, (a) => a.category);
+  // ── Pitch line based on furthest topic ──────────────────────────────────
+  const topMaturity = summary.maturity.reduce(
+    (best, m) => (m.level > best.level ? m : best),
+    summary.maturity[0] ?? null,
+  );
+  const pitch = topMaturity && topMaturity.level > 0
+    ? `You're L${topMaturity.level} ${topMaturity.topic ? TOPIC_LABEL[topMaturity.topic] : ""} on the maturity ladder. ${summary.totalUnlocked} of ${summary.totalRules} achievements unlocked across every topic.`
+    : `Climb the maturity ladder — every topic has 5 levels and 50 achievements. ${summary.totalRules} live in the catalogue today.`;
 
   return (
     <div className="space-y-8">
@@ -145,57 +103,47 @@ export default async function AchievementsPage() {
         />
         <div className="relative flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <Hoot mood={platinums > 0 ? "happy" : "thinking"} size={88} />
+            <Hoot mood={summary.totalUnlocked > 0 ? "happy" : "thinking"} size={88} />
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">
                 Resilience programme
               </p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-                {level.rank}
-              </h1>
+              <h1 className="mt-1 text-3xl font-semibold tracking-tight">{rank}</h1>
               <p className="mt-1 text-sm text-white/90">
-                Level {level.level} ·{" "}
-                <span className="font-semibold">{level.xp.toLocaleString()} XP</span>
+                Level {level} ·{" "}
+                <span className="font-semibold">{summary.totalXp.toLocaleString()} XP</span>
+                {" · "}
+                {summary.totalUnlocked}/{summary.totalRules} unlocked
               </p>
+              <p className="mt-2 max-w-xl text-[11px] text-white/80">{pitch}</p>
             </div>
           </div>
           <ProgressRing
-            value={Math.round(level.progressPct * 100)}
-            label={`${Math.round(level.progressPct * 100)}%`}
-            sublabel={`to lvl ${level.level + 1}`}
+            value={Math.round(progressPct * 100)}
+            label={`${Math.round(progressPct * 100)}%`}
+            sublabel={`to lvl ${level + 1}`}
             size={120}
             thickness={10}
             gradient={false}
             color="#ffffff"
           />
         </div>
-        <div className="relative mt-5 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-          <Stat icon={Sparkles} label="Bronze" count={achievements.filter((a) => a.tier === "bronze").length} />
-          <Stat icon={Sparkles} label="Silver" count={achievements.filter((a) => a.tier === "silver").length} />
-          <Stat icon={Sparkles} label="Gold" count={achievements.filter((a) => a.tier === "gold").length} />
-          <Stat icon={Crown} label="Platinum" count={platinums} />
+        <div className="relative mt-5 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+          <Stat icon={Sparkles} label="L1 Awareness" count={tally.l1} />
+          <Stat icon={Sparkles} label="L2 Documented" count={tally.l2} />
+          <Stat icon={Sparkles} label="L3 Tested" count={tally.l3} />
+          <Stat icon={Sparkles} label="L4 Measured" count={tally.l4} />
+          <Stat icon={Crown} label="L5 Optimised" count={tally.l5} />
         </div>
       </header>
 
-      {Object.entries(byCategory).map(([cat, items]) => (
-        <section key={cat} className="space-y-3">
-          <header className="flex items-baseline gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-soft">
-              {cat}
-            </h2>
-            <span className="text-[11px] text-soft">
-              {items.filter((i) => i.tier).length} / {items.length} unlocked
-            </span>
-          </header>
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((a) => (
-              <li key={a.id}>
-                <BadgeCard achievement={a} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <AchievementsBoard
+        maturity={summary.maturity}
+        achievements={summary.achievements}
+        byTopic={summary.byTopic}
+        closestToUnlock={closestToUnlock}
+        recentlyUnlocked={recentlyUnlocked}
+      />
     </div>
   );
 }
@@ -216,90 +164,4 @@ function Stat({
       <span className="ml-auto text-base font-semibold text-white">{count}</span>
     </div>
   );
-}
-
-function BadgeCard({ achievement: a }: { achievement: Achievement }) {
-  const Icon = ACHIEVEMENT_ICONS[a.iconName];
-  const unlocked = a.tier !== null;
-  const toneRef = a.tier ? TIER_TONE[a.tier] : null;
-  return (
-    <article
-      className={`relative flex h-full flex-col gap-3 overflow-hidden rounded-xl border border-line p-4 transition-all ${
-        unlocked
-          ? `bg-surface-1 ring-2 ${toneRef!.ring}`
-          : "bg-surface-1 opacity-60 grayscale"
-      }`}
-    >
-      {unlocked && toneRef && (
-        <div
-          className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${toneRef.ribbon}`}
-        />
-      )}
-      <div className="flex items-start justify-between">
-        <span
-          className={`flex h-11 w-11 items-center justify-center rounded-xl ${
-            unlocked && toneRef ? `${toneRef.bg} ${toneRef.text}` : "bg-surface-2 text-soft"
-          }`}
-        >
-          <Icon size={20} />
-        </span>
-        {unlocked && toneRef ? (
-          <span
-            className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] ${toneRef.bg} ${toneRef.text}`}
-          >
-            {toneRef.label}
-          </span>
-        ) : (
-          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-soft">
-            Locked
-          </span>
-        )}
-      </div>
-
-      <div className="min-w-0">
-        <h3 className="text-sm font-semibold text-ink">{a.label}</h3>
-        <p className="mt-1 text-xs text-muted">{a.description}</p>
-      </div>
-
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-[10px] text-soft">
-          {a.progressLabel && <span>{a.progressLabel}</span>}
-          {a.nextThresholdLabel && (
-            <span className="text-soft">next: {a.nextThresholdLabel}</span>
-          )}
-        </div>
-        <div className="h-1 overflow-hidden rounded-full bg-surface-2">
-          <div
-            className={`h-full rounded-full ${
-              unlocked && toneRef
-                ? `bg-gradient-to-r ${toneRef.ribbon}`
-                : "bg-line-strong"
-            }`}
-            style={{ width: `${Math.round(a.progressInTier * 100)}%` }}
-          />
-        </div>
-      </div>
-
-      {unlocked && a.xpAwarded > 0 && (
-        <footer className="mt-auto border-t border-line pt-2 text-[10px] text-soft">
-          <span className="font-semibold text-ink">+{a.xpAwarded.toLocaleString()} XP</span>{" "}
-          earned
-        </footer>
-      )}
-    </article>
-  );
-}
-
-function monthKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function group<T, K extends string>(items: T[], key: (t: T) => K): Record<K, T[]> {
-  const out = {} as Record<K, T[]>;
-  for (const item of items) {
-    const k = key(item);
-    if (!out[k]) out[k] = [];
-    out[k].push(item);
-  }
-  return out;
 }

@@ -58,6 +58,7 @@ model Organization {
   decisionTypes OrgDecisionType[]
   vendorRegisterSnapshots VendorRegisterSnapshot[]
   runbooks      Runbook[]
+  achievementUnlocks AchievementUnlock[]
 }
 
 /// Departmental org-chart node — a business unit / team / function. Separate
@@ -164,6 +165,7 @@ model User {
   registerSnapshotsCreated  VendorRegisterSnapshot[] @relation("RegisterSnapshotCreator")
   createdRunbooks           Runbook[]               @relation("RunbookCreator")
   activatedRunbookExecutions RunbookExecution[]     @relation("RunbookExecutionActivator")
+  achievementUnlocks         AchievementUnlock[]    @relation("AchievementUnlockUser")
   exerciseParticipations  ExerciseParticipant[]
   incidentLogEntries      IncidentLogEntry[]
   responses               ParticipantResponse[]
@@ -2640,4 +2642,40 @@ model RunbookStepExecution {
 
   @@unique([executionId, stepOrderIdx])
   @@index([executionId, status])
+}
+
+// ─── Achievements — sticky unlock history ──────────────────────────────────
+//
+// One row per (scope × achievement) the first time the rule fires. The
+// engine treats L1–L3 unlocks as sticky: even if the underlying state
+// regresses, the row stays and the badge keeps showing as earned. L4–L5
+// re-check live state on every read.
+//
+// scope = "org" for org-wide unlocks, "user:{userId}" for personal — keeps
+// the unique constraint clean since Postgres treats null in unique tuples
+// as distinct (so a plain nullable userId wouldn't work).
+
+model AchievementUnlock {
+  id            String @id @default(cuid())
+  orgId         String
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// Set when the achievement is personal. Null for org-wide unlocks.
+  userId        String?
+  user          User?    @relation("AchievementUnlockUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  /// Synthetic key: "org" or "user:{userId}". Lets us index uniquely.
+  scope         String
+  achievementId String
+  /// Maturity level (1..5) for the rule that unlocked.
+  level         Int
+  /// XP awarded at unlock time. Tier weights live in the engine; we store
+  /// the amount so historic XP doesn't shift if weights change.
+  xpAwarded     Int
+
+  unlockedAt    DateTime @default(now())
+
+  @@unique([orgId, scope, achievementId])
+  @@index([orgId, unlockedAt])
+  @@index([orgId, level])
 }
