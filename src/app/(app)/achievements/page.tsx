@@ -105,50 +105,49 @@ export default async function AchievementsPage() {
     : `Climb the maturity ladder — every topic has 5 levels and 50 achievements. ${summary.totalRules} live in the catalogue today.`;
 
   return (
-    <div className="space-y-8">
-      <header className="relative overflow-hidden rounded-2xl border-2 border-indigo-400 bg-gradient-brand p-6 text-white shadow-[var(--shadow-card-glow)]">
+    <div className="space-y-6">
+      {/* Compact hero — same gradient identity, single-line layout, ~100px. */}
+      <header className="relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-xl border border-indigo-400 bg-gradient-brand px-4 py-3 text-white shadow-[var(--shadow-card-glow)]">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-30"
+          className="pointer-events-none absolute inset-0 opacity-20"
           style={{
             backgroundImage:
               "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.4) 1px, transparent 0)",
             backgroundSize: "32px 32px",
           }}
         />
-        <div className="relative flex flex-wrap items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <Hoot mood={summary.totalUnlocked > 0 ? "happy" : "thinking"} size={88} />
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/80">
-                Resilience programme
-              </p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-tight">{rank}</h1>
-              <p className="mt-1 text-sm text-white/90">
-                Level {level} ·{" "}
-                <span className="font-semibold">{summary.totalXp.toLocaleString()} XP</span>
-                {" · "}
-                {summary.totalUnlocked}/{summary.totalRules} unlocked
-              </p>
-              <p className="mt-2 max-w-xl text-[11px] text-white/80">{pitch}</p>
-            </div>
+        <div className="relative flex min-w-0 items-center gap-3">
+          <Hoot mood={summary.totalUnlocked > 0 ? "happy" : "thinking"} size={48} />
+          <div className="min-w-0">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-white/80">
+              Resilience programme
+            </p>
+            <h1 className="truncate font-display text-xl font-semibold tracking-tight">
+              {rank}
+            </h1>
+            <p className="text-[11px] text-white/85">
+              Level {level} ·{" "}
+              <span className="font-semibold">{summary.totalXp.toLocaleString()} XP</span>{" "}
+              · {summary.totalUnlocked}/{summary.totalRules} unlocked
+            </p>
           </div>
+        </div>
+        <div className="relative flex items-center gap-2 text-[10px]">
+          <InlinePill icon={Sparkles} label="L1" count={tally.l1} />
+          <InlinePill icon={Sparkles} label="L2" count={tally.l2} />
+          <InlinePill icon={Sparkles} label="L3" count={tally.l3} />
+          <InlinePill icon={Sparkles} label="L4" count={tally.l4} />
+          <InlinePill icon={Crown} label="L5" count={tally.l5} highlight />
           <ProgressRing
             value={Math.round(progressPct * 100)}
             label={`${Math.round(progressPct * 100)}%`}
-            sublabel={`to lvl ${level + 1}`}
-            size={120}
-            thickness={10}
+            sublabel={`lvl ${level + 1}`}
+            size={64}
+            thickness={6}
             gradient={false}
             color="#ffffff"
           />
-        </div>
-        <div className="relative mt-5 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
-          <Stat icon={Sparkles} label="L1 Awareness" count={tally.l1} />
-          <Stat icon={Sparkles} label="L2 Documented" count={tally.l2} />
-          <Stat icon={Sparkles} label="L3 Tested" count={tally.l3} />
-          <Stat icon={Sparkles} label="L4 Measured" count={tally.l4} />
-          <Stat icon={Crown} label="L5 Optimised" count={tally.l5} />
         </div>
       </header>
 
@@ -157,25 +156,33 @@ export default async function AchievementsPage() {
         achievements={summary.achievements.map(toSerializableAchievement)}
         closestToUnlock={closestToUnlock.map(toSerializableAchievement)}
         recentlyUnlocked={recentlyUnlocked}
+        pitch={pitch}
       />
     </div>
   );
 }
 
-function Stat({
+function InlinePill({
   icon: Icon,
   label,
   count,
+  highlight,
 }: {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   label: string;
   count: number;
+  highlight?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2">
-      <Icon size={12} className="text-white/70" />
-      <span className="text-[10px] uppercase tracking-wider text-white/70">{label}</span>
-      <span className="ml-auto text-base font-semibold text-white">{count}</span>
-    </div>
+    <span
+      className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 ${
+        highlight ? "bg-white/30" : "bg-white/10"
+      } text-white`}
+    >
+      <Icon size={10} className="text-white/80" />
+      <span className="font-semibold tracking-wider">{label}</span>
+      <span className="font-mono">{count}</span>
+    </span>
   );
 }
+
