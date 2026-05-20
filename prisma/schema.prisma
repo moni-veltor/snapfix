@@ -142,6 +142,12 @@ model User {
   /// banner ("Exercise X in 3 days — confirm details").
   lastReadinessCheckAt DateTime?
 
+  /// "Since you were here last" anchor used by the dashboard recap card.
+  /// Bumped on dashboard load but only when ≥ 4 hours have passed since
+  /// the previous value — so a quick refresh doesn't reset the recap.
+  /// Null = first dashboard visit; the recap card shows a welcome state.
+  lastDashboardVisitAt DateTime?
+
   // Tenant membership (one user → one org)
   orgId   String?
   org     Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)

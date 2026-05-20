@@ -25,7 +25,6 @@ import {
   computePulse,
   nextBestActions,
   type NextBestAction,
-  pickHeadline,
 } from "@/lib/dashboard";
 import {
   aggregateExitReadiness,
@@ -38,6 +37,11 @@ import { MiniHeatmap, ProgressRing, Sparkline } from "@/components/ui/charts";
 import FeaturedCard from "@/components/ui/FeaturedCard";
 import DailyTipCard from "@/components/fun/DailyTipCard";
 import YourLiveExerciseWidget from "@/components/dashboard/YourLiveExerciseWidget";
+import RecapCard from "@/components/dashboard/RecapCard";
+import {
+  buildDashboardRecap,
+  consumeRecapCutPoint,
+} from "@/lib/dashboard-recap";
 
 export default async function Home() {
   const session = await auth();
@@ -73,6 +77,12 @@ async function Dashboard({
   const ago7d = new Date(now.getTime() - 7 * 86_400_000);
   const in30d = new Date(now.getTime() + 30 * 86_400_000);
 
+  // "Since you were here last" cut point — read + maybe bump in one call.
+  // Returns the *prior* timestamp so refreshes within the 4h cooldown keep
+  // surfacing the same recap.
+  const recapCutPoint = await consumeRecapCutPoint(userId);
+  const recap = await buildDashboardRecap({ orgId, since: recapCutPoint });
+
   const [
     inProgress,
     openActionItems,
@@ -85,7 +95,6 @@ async function Dashboard({
     scenarioCount,
     exerciseCount,
     exercisesLast90Days,
-    lastExercise,
     weeklyExercises,
     memberCount,
     rolesTotal,
@@ -167,11 +176,6 @@ async function Dashboard({
     prisma.scenario.count({ where: { orgId, isTemplate: false } }),
     prisma.exercise.count({ where: { orgId } }),
     prisma.exercise.count({ where: { orgId, startedAt: { gte: ago90 } } }),
-    prisma.exercise.findFirst({
-      where: { orgId, startedAt: { not: null } },
-      orderBy: { startedAt: "desc" },
-      select: { startedAt: true },
-    }),
     prisma.exercise.findMany({
       where: { orgId, startedAt: { gte: ago12w } },
       select: { startedAt: true },
@@ -328,16 +332,6 @@ async function Dashboard({
     actionItemsOverdue: overdueActionItems,
     exercisesLast90Days,
     harmTypesCovered,
-  });
-
-  const headline = pickHeadline({
-    liveExercises: inProgress.map((e) => ({ id: e.id, title: e.title })),
-    overdueActionItems,
-    ibsTotal: ibsCount,
-    exercisesLast90Days,
-    lastExerciseAt: lastExercise?.startedAt ?? null,
-    pendingInvites,
-    rolesConfigured: rolesTotal,
   });
 
   // Weekly tempo
@@ -530,7 +524,7 @@ async function Dashboard({
         userId={userId}
       />
 
-      <HeadlineBanner headline={headline} />
+      <RecapCard recap={recap} userName={userName} />
 
       <section className="grid gap-4 lg:grid-cols-4">
         <CoverageWidget
@@ -688,77 +682,6 @@ function StatusPill({
       <Icon size={11} />
       {children}
     </Link>
-  );
-}
-
-// ─── Headline banner ─────────────────────────────────────────────────────
-
-function HeadlineBanner({
-  headline,
-}: {
-  headline: ReturnType<typeof pickHeadline>;
-}) {
-  const toneClass =
-    headline.tone === "live"
-      ? "border-rose-300 dark:border-rose-700"
-      : headline.tone === "critical"
-        ? "border-rose-300 dark:border-rose-700"
-        : headline.tone === "warn"
-          ? "border-amber-300 dark:border-amber-700"
-          : headline.tone === "info"
-            ? "border-indigo-300 dark:border-indigo-700"
-            : "border-emerald-300 dark:border-emerald-700";
-
-  const eyebrowClass =
-    headline.tone === "live" || headline.tone === "critical"
-      ? "text-rose-600 dark:text-rose-300"
-      : headline.tone === "warn"
-        ? "text-amber-600 dark:text-amber-300"
-        : headline.tone === "info"
-          ? "text-indigo-600 dark:text-indigo-300"
-          : "text-emerald-600 dark:text-emerald-300";
-
-  return (
-    <FeaturedCard className={toneClass} glow={headline.tone === "live"}>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 max-w-2xl">
-          {headline.tone === "live" ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_0_3px_rgba(244,63,94,0.18)]">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-90" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-              </span>
-              {headline.eyebrow}
-            </span>
-          ) : (
-            <div
-              className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] ${eyebrowClass} ${
-                headline.tone === "critical"
-                  ? "bg-rose-100 dark:bg-rose-950/40"
-                  : headline.tone === "warn"
-                    ? "bg-amber-100 dark:bg-amber-950/40"
-                    : headline.tone === "info"
-                      ? "bg-indigo-100 dark:bg-indigo-950/40"
-                      : "bg-emerald-100 dark:bg-emerald-950/40"
-              }`}
-            >
-              {headline.tone === "ok" && <Sparkles size={11} />}
-              {headline.tone === "critical" && <ShieldAlert size={11} />}
-              {headline.eyebrow}
-            </div>
-          )}
-          <h2 className="mt-2 text-xl font-semibold text-ink">{headline.title}</h2>
-          <p className="mt-1.5 text-sm text-muted">{headline.body}</p>
-        </div>
-        <Link
-          href={headline.cta.href}
-          className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)] dark:bg-indigo-500 dark:hover:bg-indigo-400"
-        >
-          {headline.cta.label}
-          <ArrowRight size={14} />
-        </Link>
-      </div>
-    </FeaturedCard>
   );
 }
 
