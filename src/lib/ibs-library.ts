@@ -2,9 +2,9 @@ import type { FirmTier, ImpactLevel } from "@/generated/prisma/enums";
 import type { Sector } from "@/lib/library/sectors";
 
 /**
- * Pre-built IBS library. Drives the /ibs/library catalogue page: admins
- * browse, filter by tier or category, and one-click "Add to register" so
- * they don't have to author every IBS from scratch.
+ * Pre-built IBS library. Drives the LibraryBrowser drawer launched from
+ * /ibs: admins browse, filter by tier or category, and one-click "Add to
+ * register" so they don't have to author every IBS from scratch.
  *
  * Each entry mirrors the OrganizationIBS shape with sensible defaults.
  * Codes here are slugs — they get re-coded with the org's IBS_NN sequence

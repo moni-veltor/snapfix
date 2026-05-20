@@ -318,6 +318,5 @@ export async function addLibraryScenarioAction(formData: FormData) {
     summary: `Cloned scenario "${created.title}" from library (slug: ${slug})`,
   });
   revalidatePath("/scenarios");
-  revalidatePath("/scenarios/library");
   redirect(`/scenarios/${created.id}`);
 }

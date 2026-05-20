@@ -72,7 +72,7 @@ export default function OnboardingWizard({ orgName, myName, status }: Props) {
       pitch:
         "Your Important Business Services with their tolerances. Either pick from the library or author your own. Required for coverage analytics.",
       doneLabel: "IBS register started",
-      cta: { href: "/ibs/library", label: "Browse IBS library" },
+      cta: { href: "/ibs", label: "Browse IBS library" },
       Icon: Layers,
       done: status.hasIBS,
     },

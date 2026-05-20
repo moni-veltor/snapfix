@@ -256,6 +256,5 @@ export async function addLibraryIBSAction(formData: FormData) {
     summary: `Added ${created.code} — ${created.name} from library (slug: ${slug})`,
   });
   revalidatePath("/ibs");
-  revalidatePath("/ibs/library");
   redirect(`/ibs/${created.id}`);
 }

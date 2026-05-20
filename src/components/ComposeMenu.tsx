@@ -70,14 +70,14 @@ export default function ComposeMenu({ canManage }: Props) {
           <Group label="Plan & run">
             <Item href="/exercises/new" icon={Target} label="Plan an exercise" />
             <Item href="/scenarios?new=1" icon={FileText} label="New scenario" />
-            <Item href="/scenarios/library" icon={Library} label="Sector scenario library" />
+            <Item href="/scenarios" icon={Library} label="Sector scenario library" />
             <Item href="/templates" icon={Library} label="CMORG templates" />
           </Group>
 
           {canManage && (
             <Group label="Resilience">
               <Item href="/ibs" icon={Building2} label="Add IBS" />
-              <Item href="/ibs/library" icon={Library} label="Browse IBS library" />
+              <Item href="/ibs" icon={Library} label="Browse IBS library" />
               <Item href="/vendors" icon={Building2} label="Add vendor" />
               <Item href="/tech-recovery" icon={Server} label="Add tech system" />
             </Group>

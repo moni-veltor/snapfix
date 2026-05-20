@@ -1,10 +1,12 @@
-import Link from "next/link";
-import { Building2, Flame, Library, Server } from "lucide-react";
+import { Building2, Flame, Server } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import IBSRegisterGrid from "@/components/ibs/IBSRegisterGrid";
 import IBSAddButton from "@/components/ibs/IBSAddButton";
+import LibraryBrowserButton from "@/components/library/LibraryBrowserButton";
+import { IBS_LIBRARY_CONFIG } from "@/components/library/configs/ibs";
+import { IBS_LIBRARY } from "@/lib/ibs-library";
 
 export const metadata = { title: "IBS Register — SnapFix" };
 
@@ -106,13 +108,12 @@ export default async function IBSListPage() {
         actions={
           canManage && (
             <div className="flex items-center gap-2">
-              <Link
-                href="/ibs/library"
-                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
-              >
-                <Library size={14} strokeWidth={2.2} />
-                Browse library
-              </Link>
+              <LibraryBrowserButton
+                config={IBS_LIBRARY_CONFIG}
+                items={IBS_LIBRARY}
+                existingKeys={rows.map((r) => r.name)}
+                canAdd={canManage}
+              />
               <IBSAddButton
                 techSuggestions={techSuggestions}
                 vendorSuggestions={vendorSuggestions}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarRange, FileText, Library } from "lucide-react";
+import { CalendarRange, FileText } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import EmptyState from "@/components/EmptyState";
@@ -7,6 +7,9 @@ import PageHero from "@/components/ui/PageHero";
 import { ScenariosIllustration } from "@/components/illustrations/Illustrations";
 import ScenarioGrid from "@/components/scenarios/ScenarioGrid";
 import ScenarioAddButton from "@/components/scenarios/ScenarioAddButton";
+import LibraryBrowserButton from "@/components/library/LibraryBrowserButton";
+import { SCENARIO_LIBRARY_CONFIG } from "@/components/library/configs/scenarios";
+import { LIBRARY_SCENARIOS } from "@/lib/library/scenarios";
 
 export default async function ScenariosPage() {
   const user = await requireOrgUser();
@@ -20,6 +23,7 @@ export default async function ScenariosPage() {
     },
   });
   const isFacilitator = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
+  const existingScenarioTitles = scenarios.map((s) => s.title);
   return (
     <div className="space-y-6">
       <PageHero
@@ -30,13 +34,12 @@ export default async function ScenariosPage() {
         actions={
           isFacilitator && (
             <div className="flex items-center gap-2">
-              <Link
-                href="/scenarios/library"
-                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
-              >
-                <Library size={14} strokeWidth={2.2} />
-                Browse library
-              </Link>
+              <LibraryBrowserButton
+                config={SCENARIO_LIBRARY_CONFIG}
+                items={LIBRARY_SCENARIOS}
+                existingKeys={existingScenarioTitles}
+                canAdd={isFacilitator}
+              />
               <Link
                 href="/scenarios/programme"
                 className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"

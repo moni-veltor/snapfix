@@ -113,8 +113,8 @@ export default function StepScenarios({
             Create one
           </Link>{" "}
           or{" "}
-          <Link href="/scenarios/library" className="font-medium text-indigo-600 underline">
-            clone from the library
+          <Link href="/scenarios" className="font-medium text-indigo-600 underline">
+            browse the library
           </Link>
           .
         </p>

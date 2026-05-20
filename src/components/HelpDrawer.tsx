@@ -116,7 +116,7 @@ export default function HelpDrawer({
                   subtitle="One-click starter packs by firm tier"
                 />
                 <Resource
-                  href="/ibs/library"
+                  href="/ibs"
                   title="IBS library"
                   subtitle="Pre-built Important Business Services"
                 />
