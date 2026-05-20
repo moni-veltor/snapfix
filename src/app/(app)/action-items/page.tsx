@@ -104,6 +104,7 @@ export default async function ActionItemsPage({
 
       <ActionItemBoard
         defaultFilter={defaultFilter}
+        currentUserId={me.id}
         items={items.map((i) => ({
           id: i.id,
           title: i.title,
@@ -112,6 +113,7 @@ export default async function ActionItemsPage({
           status: i.status,
           dueAt: i.dueAt,
           ownerText: i.ownerText,
+          ownerUserId: i.ownerUserId,
           ownerUser: i.ownerUser,
           exercise: i.exercise,
         }))}

@@ -83,6 +83,7 @@ export default async function IBSListPage() {
     fcaToleranceMin: i.fcaToleranceMin,
     praToleranceMin: i.praToleranceMin,
     processOwner: i.processOwner,
+    processOwnerUserId: i.processOwnerUserId,
     exerciseCount: i._count.exerciseLinks,
     coversPeople: i.coversPeople,
     coversProperty: i.coversProperty,
@@ -171,7 +172,7 @@ export default async function IBSListPage() {
             />
           </section>
 
-          <IBSRegisterGrid rows={rows} canEdit={canManage} />
+          <IBSRegisterGrid rows={rows} canEdit={canManage} currentUserId={me.id} />
         </>
       )}
     </div>

@@ -15,6 +15,7 @@ import {
 import IBSQuickEditDrawer, {
   type IBSQuickEditRow,
 } from "@/components/ibs/IBSQuickEditDrawer";
+import MineToggle, { useMineToggle } from "@/components/ui/MineToggle";
 
 type RegisterRow = {
   id: string;
@@ -27,6 +28,7 @@ type RegisterRow = {
   fcaToleranceMin: number | null;
   praToleranceMin: number | null;
   processOwner: string | null;
+  processOwnerUserId: string | null;
   exerciseCount: number;
   coversPeople: boolean;
   coversProperty: boolean;
@@ -104,13 +106,19 @@ function fmtHours(min: number): string {
 export default function IBSRegisterGrid({
   rows,
   canEdit = false,
+  currentUserId = null,
 }: {
   rows: RegisterRow[];
   canEdit?: boolean;
+  currentUserId?: string | null;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
+  const [mineOnly, setMineOnly] = useMineToggle("ibs");
   const [editId, setEditId] = useState<string | null>(null);
+  const mineCount = currentUserId
+    ? rows.filter((r) => r.processOwnerUserId === currentUserId).length
+    : 0;
   const editRow = editId ? rows.find((r) => r.id === editId) ?? null : null;
   const editQuickRow: IBSQuickEditRow | null = editRow
     ? {
@@ -149,12 +157,18 @@ export default function IBSRegisterGrid({
   }, [rows]);
 
   const q = query.trim().toLowerCase();
-  const matches = (r: RegisterRow) =>
-    q === "" ||
-    r.code.toLowerCase().includes(q) ||
-    r.name.toLowerCase().includes(q) ||
-    (r.outcome ?? "").toLowerCase().includes(q) ||
-    (r.processOwner ?? "").toLowerCase().includes(q);
+  const matches = (r: RegisterRow) => {
+    if (mineOnly && currentUserId && r.processOwnerUserId !== currentUserId) {
+      return false;
+    }
+    if (q === "") return true;
+    return (
+      r.code.toLowerCase().includes(q) ||
+      r.name.toLowerCase().includes(q) ||
+      (r.outcome ?? "").toLowerCase().includes(q) ||
+      (r.processOwner ?? "").toLowerCase().includes(q)
+    );
+  };
 
   const visibleKeys =
     filter === "all"
@@ -176,6 +190,14 @@ export default function IBSRegisterGrid({
           placeholder="Search by code, name, outcome or owner…"
           className="min-w-[220px] flex-1 rounded-md border border-line bg-surface-0 px-3 py-1.5 text-sm text-ink placeholder:text-soft focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
         />
+        {currentUserId && (
+          <MineToggle
+            on={mineOnly}
+            onChange={setMineOnly}
+            count={mineCount}
+            total={rows.length}
+          />
+        )}
         <div role="tablist" className="flex flex-wrap gap-1">
           {FILTERS.map((f) => {
             const count = f.id === "all" ? rows.length : groups[f.id].length;

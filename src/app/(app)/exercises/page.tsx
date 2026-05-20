@@ -16,9 +16,27 @@ export default async function ExercisesPage() {
       scenario: { select: { title: true } },
       facilitator: { select: { name: true, email: true } },
       _count: { select: { participants: true, teams: true } },
+      participants: {
+        where: { userId: user.id },
+        select: { id: true },
+        take: 1,
+      },
     },
   });
   const canCreate = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
+  const rows = exercises.map((e) => ({
+    id: e.id,
+    title: e.title,
+    status: e.status,
+    plannedDate: e.plannedDate,
+    scenario: e.scenario,
+    facilitator: e.facilitator,
+    _count: e._count,
+    meInvolved:
+      e.facilitatorId === user.id ||
+      e.coFacilitatorId === user.id ||
+      e.participants.length > 0,
+  }));
 
   return (
     <div className="space-y-6">
@@ -44,7 +62,7 @@ export default async function ExercisesPage() {
           secondaryLabel={canCreate ? "Browse scenarios" : undefined}
         />
       ) : (
-        <ExerciseGrid exercises={exercises} />
+        <ExerciseGrid exercises={rows} showMineToggle />
       )}
     </div>
   );

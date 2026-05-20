@@ -10,6 +10,7 @@ import {
   Pencil,
   Users,
 } from "lucide-react";
+import MineToggle, { useMineToggle } from "@/components/ui/MineToggle";
 
 type ExerciseStatus =
   | "DRAFT"
@@ -28,6 +29,8 @@ type ExerciseRow = {
   scenario: { title: string };
   facilitator: { name: string | null; email: string } | null;
   _count: { participants: number; teams: number };
+  /** True if the viewer is facilitator, co-facilitator, or a participant. */
+  meInvolved?: boolean;
 };
 
 type Filter = "all" | "live" | "upcoming" | "completed" | "draft";
@@ -86,9 +89,17 @@ function StatusIcon({ status, size = 14 }: { status: string; size?: number }) {
   return <CalendarPlus size={size} />;
 }
 
-export default function ExerciseGrid({ exercises }: { exercises: ExerciseRow[] }) {
+export default function ExerciseGrid({
+  exercises,
+  showMineToggle = false,
+}: {
+  exercises: ExerciseRow[];
+  showMineToggle?: boolean;
+}) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
+  const [mineOnly, setMineOnly] = useMineToggle("exercises");
+  const mineCount = exercises.filter((e) => e.meInvolved).length;
 
   const counts = useMemo(() => {
     const c: Record<Filter, number> = {
@@ -109,6 +120,7 @@ export default function ExerciseGrid({ exercises }: { exercises: ExerciseRow[] }
 
   const q = query.trim().toLowerCase();
   const filtered = exercises.filter((e) => {
+    if (mineOnly && !e.meInvolved) return false;
     if (q && !e.title.toLowerCase().includes(q) && !e.scenario.title.toLowerCase().includes(q))
       return false;
     if (filter === "all") return true;
@@ -126,6 +138,14 @@ export default function ExerciseGrid({ exercises }: { exercises: ExerciseRow[] }
           placeholder="Search by exercise or scenario title…"
           className="min-w-[220px] flex-1 rounded-md border border-line bg-surface-0 px-3 py-1.5 text-sm text-ink placeholder:text-soft focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
         />
+        {showMineToggle && (
+          <MineToggle
+            on={mineOnly}
+            onChange={setMineOnly}
+            count={mineCount}
+            total={exercises.length}
+          />
+        )}
         <div role="tablist" className="flex flex-wrap gap-1">
           {FILTERS.map((f) => {
             const active = filter === f.id;

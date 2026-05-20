@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { updateActionItemStatusAction } from "@/app/actions/action-items";
+import MineToggle, { useMineToggle } from "@/components/ui/MineToggle";
 
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 type Status = "OPEN" | "IN_PROGRESS" | "BLOCKED" | "DONE" | "WONT_FIX";
@@ -24,6 +25,7 @@ type ActionItemRow = {
   status: Status | string;
   dueAt: Date | null;
   ownerText: string | null;
+  ownerUserId: string | null;
   ownerUser: { name: string | null; email: string } | null;
   exercise: { id: string; title: string };
 };
@@ -69,12 +71,18 @@ const STATUS_TONE: Record<string, string> = {
 export default function ActionItemBoard({
   items,
   defaultFilter = "open",
+  currentUserId = null,
 }: {
   items: ActionItemRow[];
   defaultFilter?: Filter;
+  currentUserId?: string | null;
 }) {
   const [filter, setFilter] = useState<Filter>(defaultFilter);
   const [query, setQuery] = useState("");
+  const [mineOnly, setMineOnly] = useMineToggle("action-items");
+  const mineCount = currentUserId
+    ? items.filter((i) => i.ownerUserId === currentUserId).length
+    : 0;
   // Stable "now" — captured once at mount, not on every render.
   const [now] = useState(() => Date.now());
   const isOverdue = (i: ActionItemRow) =>
@@ -104,6 +112,7 @@ export default function ActionItemBoard({
 
   const q = query.trim().toLowerCase();
   const filtered = items.filter((i) => {
+    if (mineOnly && currentUserId && i.ownerUserId !== currentUserId) return false;
     if (
       q &&
       !i.title.toLowerCase().includes(q) &&
@@ -142,6 +151,14 @@ export default function ActionItemBoard({
           placeholder="Search title, description or exercise…"
           className="min-w-[220px] flex-1 rounded-md border border-line bg-surface-0 px-3 py-1.5 text-sm text-ink placeholder:text-soft focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
         />
+        {currentUserId && (
+          <MineToggle
+            on={mineOnly}
+            onChange={setMineOnly}
+            count={mineCount}
+            total={items.length}
+          />
+        )}
       </div>
 
       <div role="tablist" className="flex flex-wrap gap-1">
