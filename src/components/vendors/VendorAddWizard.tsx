@@ -11,8 +11,8 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { toast } from "sonner";
 import { upsertVendorAction } from "@/app/actions/vendors";
-import { withToast } from "@/lib/toast-action";
 
 type StepDef = {
   id: string;
@@ -95,21 +95,36 @@ function toDateInput(d: Date | null | undefined): string {
  */
 export default function VendorAddWizard({
   onDone,
+  onSaved,
   existing,
 }: {
   onDone: () => void;
+  /** Fires after the action resolves with the upserted vendor id. When
+   *  provided, takes precedence over onDone — lets the parent transition
+   *  (e.g. create-mode → edit-mode in the drawer) instead of closing. */
+  onSaved?: (id: string) => void;
   existing?: VendorExisting;
 }) {
   const [step, setStep] = useState(0);
   const isEdit = !!existing;
 
-  const action = withToast(upsertVendorAction, {
-    success: isEdit ? "Vendor updated" : "Vendor saved",
-    description: isEdit
-      ? undefined
-      : "Open it in the register to link IBSs.",
-    error: isEdit ? "Couldn't update vendor" : "Couldn't save vendor",
-  });
+  const handleSubmit = async (fd: FormData) => {
+    const toastId = toast.loading(isEdit ? "Updating vendor…" : "Saving vendor…");
+    try {
+      const result = await upsertVendorAction(fd);
+      toast.success(isEdit ? "Vendor updated" : "Vendor saved", {
+        id: toastId,
+        description: isEdit ? undefined : "Open it in the register to link IBSs.",
+      });
+      if (onSaved) onSaved(result.id);
+      else onDone();
+    } catch (err) {
+      toast.error(isEdit ? "Couldn't update vendor" : "Couldn't save vendor", {
+        id: toastId,
+      });
+      throw err;
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -122,13 +137,7 @@ export default function VendorAddWizard({
 
       <StepRail step={step} setStep={setStep} />
 
-      <form
-        action={async (fd) => {
-          onDone();
-          await action(fd);
-        }}
-        className="space-y-4 text-sm"
-      >
+      <form action={handleSubmit} className="space-y-4 text-sm">
         {existing && <input type="hidden" name="id" value={existing.id} />}
 
         <div className={step === 0 ? "" : "hidden"}>

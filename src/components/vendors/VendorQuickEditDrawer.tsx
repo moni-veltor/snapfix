@@ -68,37 +68,84 @@ export default function VendorQuickEditDrawer({
 }
 
 function CreateBody({ onClose }: { onClose: () => void }) {
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("wizard");
+
+  // After save, the wizard hands us the new id and we transition to
+  // the same EditBody an existing row uses — all tabs become live.
+  if (createdId) {
+    return (
+      <EditBody
+        key={createdId}
+        vendorId={createdId}
+        canEdit={true}
+        onClose={onClose}
+        initialTab={tab === "wizard" ? "mtp" : tab}
+      />
+    );
+  }
+
   return (
     <>
       <div className="border-b border-line bg-surface-1 px-5 pt-3">
         <div role="tablist" className="flex flex-wrap gap-1">
-          <TabButton active onClick={() => {}} icon={Sparkles}>
+          <TabButton active={tab === "wizard"} onClick={() => setTab("wizard")} icon={Sparkles}>
             Wizard
           </TabButton>
           <TabButton
-            active={false}
-            disabled
-            onClick={() => {}}
+            active={tab === "mtp"}
+            onClick={() => setTab("mtp")}
             icon={ClipboardCheck}
-            title="Save the vendor first to unlock the MTP register"
           >
             MTP register
           </TabButton>
           <TabButton
-            active={false}
-            disabled
-            onClick={() => {}}
+            active={tab === "notifications"}
+            onClick={() => setTab("notifications")}
             icon={Bell}
-            title="Save the vendor first to unlock notifications"
           >
             Notifications
           </TabButton>
         </div>
       </div>
       <div className="p-5">
-        <VendorAddWizard onDone={onClose} />
+        {tab === "wizard" && (
+          <VendorAddWizard onDone={onClose} onSaved={setCreatedId} />
+        )}
+        {tab !== "wizard" && (
+          <PreSavePrompt
+            label={tab === "mtp" ? "MTP register" : "Notifications"}
+            onSwitchToWizard={() => setTab("wizard")}
+          />
+        )}
       </div>
     </>
+  );
+}
+
+function PreSavePrompt({
+  label,
+  onSwitchToWizard,
+}: {
+  label: string;
+  onSwitchToWizard: () => void;
+}) {
+  return (
+    <div className="rounded-md border border-dashed border-line bg-surface-1 p-8 text-center">
+      <p className="text-sm text-ink">
+        Save the vendor first to use the {label} tab.
+      </p>
+      <p className="mt-1 text-xs text-muted">
+        The wizard creates the vendor record; {label.toLowerCase()} attaches to it.
+      </p>
+      <button
+        type="button"
+        onClick={onSwitchToWizard}
+        className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+      >
+        Back to the wizard
+      </button>
+    </div>
   );
 }
 
@@ -106,12 +153,14 @@ function EditBody({
   vendorId,
   canEdit,
   onClose,
+  initialTab = "wizard",
 }: {
   vendorId: string;
   canEdit: boolean;
   onClose: () => void;
+  initialTab?: Tab;
 }) {
-  const [tab, setTab] = useState<Tab>("wizard");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [bundle, setBundle] = useState<Bundle | null>(null);
 
   useEffect(() => {

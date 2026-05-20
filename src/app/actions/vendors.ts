@@ -86,16 +86,22 @@ export async function upsertVendorAction(formData: FormData) {
     exitPlanNotes: optStr(formData.get("exitPlanNotes")),
   };
 
+  let id: string;
   if (base.id) {
     await prisma.vendor.updateMany({
       where: { id: base.id, orgId: me.orgId },
       data: payload,
     });
+    id = base.id;
   } else {
-    await prisma.vendor.create({ data: { ...payload, orgId: me.orgId } });
+    const created = await prisma.vendor.create({
+      data: { ...payload, orgId: me.orgId },
+    });
+    id = created.id;
   }
   revalidatePath("/vendors");
-  redirect("/vendors");
+  revalidatePath(`/vendors/${id}`);
+  return { id };
 }
 
 export async function deleteVendorAction(formData: FormData) {
