@@ -15,6 +15,8 @@ import { evaluateVendorReadiness } from "@/lib/vendor-mtp-readiness";
 import { formatMoney } from "@/lib/exercise-cost";
 import type { AnalyticsFilters, DateRange } from "@/lib/analytics-filters";
 import BoardSparkline from "./BoardSparkline";
+import MaturityStrip from "@/components/achievements/MaturityStrip";
+import { loadMaturitySummary } from "@/lib/achievements/summary";
 
 /**
  * Board view — one A4 page when printed. Five tiles + top-3 findings.
@@ -35,6 +37,8 @@ export default async function BoardTab({
   const now = new Date();
   const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
   const windowFrom = range.from ?? yearAgo;
+
+  const maturitySummary = await loadMaturitySummary(orgId);
 
   // ─── Recent completed exercises (for score trend + composite) ──────────
   const completedExercises = await prisma.exercise.findMany({
@@ -185,6 +189,13 @@ export default async function BoardTab({
         </h1>
       </div>
 
+      {/* ─── Maturity strip — same shape as Achievements page ───────────── */}
+      <MaturityStrip
+        maturity={maturitySummary.maturity}
+        title="Resilience maturity"
+        pitch="5-level ladder per topic. Lands cleanly on a printed page — the Board pack carries the same picture as Achievements."
+      />
+
       {/* ─── 5-tile KPI strip ───────────────────────────────────────────── */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <KpiTile
@@ -302,7 +313,15 @@ export default async function BoardTab({
         <Link href="/analytics?audience=executive" className="font-medium text-indigo-600 underline">
           Switch to Executive view
         </Link>{" "}
-        for trends, regulator-clock performance, and the comms cascade picture.
+        for trends, regulator-clock performance, and the comms cascade picture.{" "}
+        Need a one-page maturity statement for the Board pack?{" "}
+        <Link
+          href="/achievements/statement"
+          className="font-medium text-indigo-600 underline"
+        >
+          Open the maturity statement
+        </Link>
+        .
       </p>
     </div>
   );

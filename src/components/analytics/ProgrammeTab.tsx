@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import IBSCoverageHeatmap from "@/components/analytics/IBSCoverageHeatmap";
+import MaturityStrip from "@/components/achievements/MaturityStrip";
+import { loadMaturitySummary } from "@/lib/achievements/summary";
 import type { AnalyticsFilters, DateRange } from "@/lib/analytics-filters";
 import type { FrozenRunbook } from "@/lib/runbook-activation";
 
@@ -32,6 +34,7 @@ export default async function ProgrammeTab({
     ...(filters.ibsIds.length > 0 ? { id: { in: filters.ibsIds } } : {}),
   };
 
+  const maturitySummary = await loadMaturitySummary(orgId);
   const [scenarios, exercises, ibsRegister, runbookCoverageRows] = await Promise.all([
     prisma.scenario.findMany({
       where: { orgId, isTemplate: false },
@@ -228,6 +231,7 @@ export default async function ProgrammeTab({
 
   return (
     <div className="space-y-8">
+      <MaturityStrip maturity={maturitySummary.maturity} />
       <Section
         title="IBS × risk-dimension coverage"
         subtitle={`Per IBS, how many exercises ${range.label.toLowerCase()} have tested it against each of the six risk dimensions. Empty cells are gaps a regulator will ask about.`}

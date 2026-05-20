@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { scoreIncident } from "@/lib/scoring";
 import type { AnalyticsFilters, DateRange } from "@/lib/analytics-filters";
 import { TrendLine, ToneBars } from "./AnalyticsCharts";
+import MaturityStrip from "@/components/achievements/MaturityStrip";
+import { loadMaturitySummary } from "@/lib/achievements/summary";
 
 /**
  * Executive view (ERCC / BRCC + Comms).
@@ -36,6 +38,7 @@ export default async function ExecutiveTab({
       : {}),
   };
 
+  const maturitySummary = await loadMaturitySummary(orgId);
   const completedExercises = await prisma.exercise.findMany({
     where: exerciseWhere,
     orderBy: { completedAt: "asc" },
@@ -178,6 +181,7 @@ export default async function ExecutiveTab({
 
   return (
     <div className="space-y-6">
+      <MaturityStrip maturity={maturitySummary.maturity} />
       {/* ─── KPI strip ───────────────────────────────────────────────────── */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MiniTile
