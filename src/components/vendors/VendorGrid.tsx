@@ -36,14 +36,18 @@ type VendorRow = {
   statusUrl: string | null;
   isDoraCritical: boolean;
   isMaterialThirdParty?: boolean;
+  doraIctTier: "TIER_1" | "TIER_2" | "TIER_3" | string | null;
   hyperscaler: string | null;
   region: string | null;
   assuranceKind: string | null;
   assuranceExpiryAt: Date | null;
-  contractStartAt?: Date | null;
-  contractEndAt?: Date | null;
+  contractStartAt: Date | null;
+  contractEndAt: Date | null;
+  contractRenewalNoticeDays: number | null;
+  contractAnnualValueGBP: number | null;
   exitPlanReviewedAt: Date | null;
-  exitPlanRTOMin?: number | null;
+  exitPlanRTOMin: number | null;
+  exitPlanNotes: string | null;
   ibsLinks: { ibsId: string; ibs: { id: string; code: string; name: string } }[];
 };
 
@@ -102,17 +106,25 @@ export default function VendorGrid({
     ? {
         id: editVendor.id,
         name: editVendor.name,
+        description: editVendor.description,
         serviceKind: editVendor.serviceKind,
         tier: editVendor.tier,
+        contactName: editVendor.contactName,
+        contactEmail: editVendor.contactEmail,
+        statusUrl: editVendor.statusUrl,
         isDoraCritical: editVendor.isDoraCritical,
-        isMaterialThirdParty: editVendor.isMaterialThirdParty,
+        doraIctTier: editVendor.doraIctTier,
         hyperscaler: editVendor.hyperscaler,
         region: editVendor.region,
-        statusUrl: editVendor.statusUrl,
-        contractStartAt: editVendor.contractStartAt ?? null,
-        contractEndAt: editVendor.contractEndAt ?? null,
+        contractStartAt: editVendor.contractStartAt,
+        contractEndAt: editVendor.contractEndAt,
+        contractRenewalNoticeDays: editVendor.contractRenewalNoticeDays,
+        contractAnnualValueGBP: editVendor.contractAnnualValueGBP,
+        assuranceKind: editVendor.assuranceKind,
+        assuranceExpiryAt: editVendor.assuranceExpiryAt,
         exitPlanReviewedAt: editVendor.exitPlanReviewedAt,
-        exitPlanRTOMin: editVendor.exitPlanRTOMin ?? null,
+        exitPlanRTOMin: editVendor.exitPlanRTOMin,
+        exitPlanNotes: editVendor.exitPlanNotes,
       }
     : null;
 

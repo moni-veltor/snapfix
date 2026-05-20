@@ -77,20 +77,42 @@ export default async function IBSListPage() {
     code: i.code,
     name: i.name,
     outcome: i.outcome,
-    status: i.status,
-    criticality: i.criticality,
+    description: i.description,
+    processType: i.processType,
+    processOwner: i.processOwner,
+    processOwnerUserId: i.processOwnerUserId,
+    secondLineReviewer: i.secondLineReviewer,
+    reviewDueAt: i.reviewDueAt,
+    customerJourneys: i.customerJourneys,
+    productsCovered: i.productsCovered,
     impactToleranceMin: i.impactToleranceMin,
     fcaToleranceMin: i.fcaToleranceMin,
     praToleranceMin: i.praToleranceMin,
-    processOwner: i.processOwner,
-    processOwnerUserId: i.processOwnerUserId,
-    exerciseCount: i._count.exerciseLinks,
+    toleranceRationale: i.toleranceRationale,
+    criticality: i.criticality,
+    status: i.status,
+    technology: i.technology,
+    peopleNotes: i.peopleNotes,
+    facilities: i.facilities,
+    thirdParties: i.thirdParties,
+    information: i.information,
+    processes: i.processes,
+    impactCustomerFinancial: i.impactCustomerFinancial,
+    impactVulnerableCustomer: i.impactVulnerableCustomer,
+    impactLossOfLicense: i.impactLossOfLicense,
+    impactRegulatoryFine: i.impactRegulatoryFine,
+    impactReputational: i.impactReputational,
+    impactLossOfCapital: i.impactLossOfCapital,
+    importanceAssessmentNotes: i.importanceAssessmentNotes,
+    vulnerabilitiesNotes: i.vulnerabilitiesNotes,
+    testingNotes: i.testingNotes,
     coversPeople: i.coversPeople,
     coversProperty: i.coversProperty,
     coversTechnology: i.coversTechnology,
     coversDataAvailability: i.coversDataAvailability,
     coversDataIntegrity: i.coversDataIntegrity,
     coversThirdParty: i.coversThirdParty,
+    exerciseCount: i._count.exerciseLinks,
   }));
 
   const counts = {
@@ -172,7 +194,15 @@ export default async function IBSListPage() {
             />
           </section>
 
-          <IBSRegisterGrid rows={rows} canEdit={canManage} currentUserId={me.id} />
+          <IBSRegisterGrid
+            rows={rows}
+            canEdit={canManage}
+            currentUserId={me.id}
+            techSuggestions={techSuggestions}
+            vendorSuggestions={vendorSuggestions}
+            informationSuggestions={informationSuggestions}
+            processSuggestions={processSuggestions}
+          />
         </>
       )}
     </div>

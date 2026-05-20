@@ -54,20 +54,61 @@ const STEPS: StepDef[] = [
   },
 ];
 
+export type VendorExisting = {
+  id: string;
+  name: string;
+  description: string | null;
+  serviceKind: string | null;
+  tier: "TIER_1" | "TIER_2" | "TIER_3" | string;
+  contactName: string | null;
+  contactEmail: string | null;
+  statusUrl: string | null;
+  isDoraCritical: boolean;
+  doraIctTier: "TIER_1" | "TIER_2" | "TIER_3" | string | null;
+  hyperscaler: string | null;
+  region: string | null;
+  contractStartAt: Date | null;
+  contractEndAt: Date | null;
+  contractRenewalNoticeDays: number | null;
+  contractAnnualValueGBP: number | null;
+  assuranceKind: string | null;
+  assuranceExpiryAt: Date | null;
+  exitPlanReviewedAt: Date | null;
+  exitPlanRTOMin: number | null;
+  exitPlanNotes: string | null;
+};
+
+function toDateInput(d: Date | null | undefined): string {
+  if (!d) return "";
+  return d.toISOString().slice(0, 10);
+}
+
 /**
- * Five-step add-vendor wizard, designed to live inside a Modal. All
- * fields render in the DOM (visually hidden for inactive steps) so a
- * single form submission carries every value to `upsertVendorAction`.
- * Back/Next are `type="button"`; only the final "Save" is a real submit.
- * Parent owns open/close — we close on submit by calling `onDone()`.
+ * Five-step add-vendor wizard, designed to live inside a Modal or
+ * Drawer. All fields render in the DOM (visually hidden for inactive
+ * steps) so a single form submission carries every value to
+ * `upsertVendorAction`.
+ *
+ * When `existing` is passed the wizard pre-fills every field and sends
+ * a hidden `id` — the action's upsert branch then performs an update.
+ * This guarantees create + edit cover the same field set.
  */
-export default function VendorAddWizard({ onDone }: { onDone: () => void }) {
+export default function VendorAddWizard({
+  onDone,
+  existing,
+}: {
+  onDone: () => void;
+  existing?: VendorExisting;
+}) {
   const [step, setStep] = useState(0);
+  const isEdit = !!existing;
 
   const action = withToast(upsertVendorAction, {
-    success: "Vendor saved",
-    description: "Open it in the register to link IBSs.",
-    error: "Couldn't save vendor",
+    success: isEdit ? "Vendor updated" : "Vendor saved",
+    description: isEdit
+      ? undefined
+      : "Open it in the register to link IBSs.",
+    error: isEdit ? "Couldn't update vendor" : "Couldn't save vendor",
   });
 
   return (
@@ -88,20 +129,22 @@ export default function VendorAddWizard({ onDone }: { onDone: () => void }) {
         }}
         className="space-y-4 text-sm"
       >
+        {existing && <input type="hidden" name="id" value={existing.id} />}
+
         <div className={step === 0 ? "" : "hidden"}>
-          <BasicsStep />
+          <BasicsStep existing={existing} />
         </div>
         <div className={step === 1 ? "" : "hidden"}>
-          <DoraStep />
+          <DoraStep existing={existing} />
         </div>
         <div className={step === 2 ? "" : "hidden"}>
-          <ContractStep />
+          <ContractStep existing={existing} />
         </div>
         <div className={step === 3 ? "" : "hidden"}>
-          <AssuranceStep />
+          <AssuranceStep existing={existing} />
         </div>
         <div className={step === 4 ? "" : "hidden"}>
-          <ExitStep />
+          <ExitStep existing={existing} />
         </div>
 
         <footer className="flex items-center justify-between gap-2 border-t border-line pt-4">
@@ -129,7 +172,7 @@ export default function VendorAddWizard({ onDone }: { onDone: () => void }) {
               className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
             >
               <Check size={12} />
-              Save vendor
+              {isEdit ? "Save changes" : "Save vendor"}
             </button>
           )}
         </footer>
@@ -176,7 +219,7 @@ function StepRail({
   );
 }
 
-function BasicsStep() {
+function BasicsStep({ existing }: { existing?: VendorExisting }) {
   return (
     <fieldset className="space-y-3">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -185,6 +228,7 @@ function BasicsStep() {
           <input
             name="name"
             required
+            defaultValue={existing?.name ?? ""}
             placeholder="Thought Machine"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
@@ -194,7 +238,7 @@ function BasicsStep() {
           <select
             name="tier"
             required
-            defaultValue="TIER_2"
+            defaultValue={existing?.tier ?? "TIER_2"}
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           >
             <option value="TIER_1">Tier 1 — mission-critical</option>
@@ -206,6 +250,7 @@ function BasicsStep() {
           <span className="text-soft">Service</span>
           <input
             name="serviceKind"
+            defaultValue={existing?.serviceKind ?? ""}
             placeholder="Core banking / Payments / Reconciliations"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
@@ -214,6 +259,7 @@ function BasicsStep() {
           <span className="text-soft">Status page URL</span>
           <input
             name="statusUrl"
+            defaultValue={existing?.statusUrl ?? ""}
             placeholder="https://status.vendor.com"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
@@ -222,6 +268,7 @@ function BasicsStep() {
           <span className="text-soft">Account manager</span>
           <input
             name="contactName"
+            defaultValue={existing?.contactName ?? ""}
             placeholder="Name"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
@@ -231,6 +278,7 @@ function BasicsStep() {
           <input
             name="contactEmail"
             type="email"
+            defaultValue={existing?.contactEmail ?? ""}
             placeholder="contact@vendor.com"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
@@ -241,6 +289,7 @@ function BasicsStep() {
         <textarea
           name="description"
           rows={2}
+          defaultValue={existing?.description ?? ""}
           placeholder="What they do and which capability they underpin."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
@@ -249,13 +298,14 @@ function BasicsStep() {
   );
 }
 
-function DoraStep() {
+function DoraStep({ existing }: { existing?: VendorExisting }) {
   return (
     <fieldset className="space-y-3">
       <label className="flex items-start gap-2 rounded-md border border-line bg-surface-0 p-3 text-xs">
         <input
           type="checkbox"
           name="isDoraCritical"
+          defaultChecked={!!existing?.isDoraCritical}
           className="mt-0.5 rounded border-line"
         />
         <span>
@@ -273,7 +323,7 @@ function DoraStep() {
           <span className="text-soft">DORA ICT tier</span>
           <select
             name="doraIctTier"
-            defaultValue="none"
+            defaultValue={existing?.doraIctTier ?? "none"}
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           >
             <option value="none">Same as commercial tier</option>
@@ -286,6 +336,7 @@ function DoraStep() {
           <span className="text-soft">Hyperscaler</span>
           <input
             name="hyperscaler"
+            defaultValue={existing?.hyperscaler ?? ""}
             placeholder="AWS / GCP / Azure / on-prem"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
@@ -294,6 +345,7 @@ function DoraStep() {
           <span className="text-soft">Region</span>
           <input
             name="region"
+            defaultValue={existing?.region ?? ""}
             placeholder="eu-west-2"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
@@ -303,7 +355,7 @@ function DoraStep() {
   );
 }
 
-function ContractStep() {
+function ContractStep({ existing }: { existing?: VendorExisting }) {
   return (
     <fieldset className="space-y-3">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -312,6 +364,7 @@ function ContractStep() {
           <input
             type="date"
             name="contractStartAt"
+            defaultValue={toDateInput(existing?.contractStartAt)}
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
           />
         </label>
@@ -320,6 +373,7 @@ function ContractStep() {
           <input
             type="date"
             name="contractEndAt"
+            defaultValue={toDateInput(existing?.contractEndAt)}
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
           />
         </label>
@@ -329,6 +383,7 @@ function ContractStep() {
             type="number"
             name="contractRenewalNoticeDays"
             min={0}
+            defaultValue={existing?.contractRenewalNoticeDays ?? ""}
             placeholder="90"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
           />
@@ -339,6 +394,7 @@ function ContractStep() {
             type="number"
             name="contractAnnualValueGBP"
             min={0}
+            defaultValue={existing?.contractAnnualValueGBP ?? ""}
             placeholder="250000"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
           />
@@ -352,7 +408,7 @@ function ContractStep() {
   );
 }
 
-function AssuranceStep() {
+function AssuranceStep({ existing }: { existing?: VendorExisting }) {
   return (
     <fieldset className="space-y-3">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -360,7 +416,7 @@ function AssuranceStep() {
           <span className="text-soft">Assurance kind</span>
           <select
             name="assuranceKind"
-            defaultValue=""
+            defaultValue={existing?.assuranceKind ?? ""}
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           >
             <option value="">— Select —</option>
@@ -376,6 +432,7 @@ function AssuranceStep() {
           <input
             type="date"
             name="assuranceExpiryAt"
+            defaultValue={toDateInput(existing?.assuranceExpiryAt)}
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
           />
         </label>
@@ -387,7 +444,7 @@ function AssuranceStep() {
   );
 }
 
-function ExitStep() {
+function ExitStep({ existing }: { existing?: VendorExisting }) {
   return (
     <fieldset className="space-y-3">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -396,6 +453,7 @@ function ExitStep() {
           <input
             type="date"
             name="exitPlanReviewedAt"
+            defaultValue={toDateInput(existing?.exitPlanReviewedAt)}
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
           />
         </label>
@@ -405,6 +463,7 @@ function ExitStep() {
             type="number"
             name="exitPlanRTOMin"
             min={0}
+            defaultValue={existing?.exitPlanRTOMin ?? ""}
             placeholder="2880"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
           />
@@ -415,6 +474,7 @@ function ExitStep() {
         <textarea
           name="exitPlanNotes"
           rows={4}
+          defaultValue={existing?.exitPlanNotes ?? ""}
           placeholder="Trigger conditions, target alternative provider, switching steps, data extraction approach."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
