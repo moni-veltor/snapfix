@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { COVERAGE_RULES } from "./rules-coverage";
 import { CADENCE_RULES } from "./rules-cadence";
 import { PEOPLE_RULES } from "./rules-people";
+import { GOVERNANCE_RULES } from "./rules-governance";
+import { RESILIENCE_RULES } from "./rules-resilience";
 import {
   TOPIC_LABEL,
   ruleScope,
@@ -25,6 +27,8 @@ const ALL_RULES: ReadonlyArray<AchievementRule> = [
   ...COVERAGE_RULES,
   ...CADENCE_RULES,
   ...PEOPLE_RULES,
+  ...GOVERNANCE_RULES,
+  ...RESILIENCE_RULES,
 ];
 
 const ALL_TOPICS: ReadonlyArray<AchievementTopic> = [

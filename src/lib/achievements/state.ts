@@ -114,6 +114,70 @@ export type AchievementOrgState = {
     /** Exercises that had a hot-wash filled in. */
     withHotWash: number;
   };
+  // ─── Governance (consumed by rules-governance) ─────────────────────
+  governance: {
+    /** Audit log entries written in the last 12 months. */
+    auditEntriesInWindow: number;
+    /** Audit log entries lifetime — a programme has a heartbeat once this is non-trivial. */
+    auditEntriesLifetime: number;
+    /** Regulator notifications fired in window. */
+    regulatorNotificationsInWindow: number;
+    /** Regulator notifications SENT or WAIVED (resolved cleanly) in window. */
+    regulatorNotificationsResolvedInWindow: number;
+    /** Regulator notifications BREACHED (past dueAt without SENT/WAIVED). */
+    regulatorNotificationsBreachedInWindow: number;
+    /** PIRs (PostIncidentReport) due in window. */
+    pirsDueInWindow: number;
+    /** PIRs submitted (any time) for incidents in window. */
+    pirsSubmittedInWindow: number;
+    /** PIRs submitted before their dueAt. */
+    pirsOnTimeInWindow: number;
+    /** Retrospectives held (heldAt set) in window. */
+    retrospectivesHeldInWindow: number;
+    /** Exercise action items closed in window. */
+    actionItemsClosedInWindow: number;
+    /** Total exercise action items created in window. */
+    actionItemsTotalInWindow: number;
+    /** MTP vendors with smfSignedOff = true. */
+    mtpSmfSignedOff: number;
+    /** MTP vendors with governanceApprovedAt set. */
+    mtpGovernanceApproved: number;
+    /** IBSs with secondLineReviewer named. */
+    ibsSecondLineReviewer: number;
+    /** Distinct decision types observed in window — vocabulary breadth. */
+    distinctDecisionTypesInWindow: number;
+  };
+  // ─── Resilience (consumed by rules-resilience) ─────────────────────
+  resilience: {
+    /** Published runbooks in the registry. */
+    runbooksPublished: number;
+    /** Runbook executions ACTIVE or COMPLETE. */
+    runbookExecutionsTotal: number;
+    /** Runbook executions in status COMPLETE. */
+    runbookExecutionsComplete: number;
+    /** Runbook executions ABANDONED. */
+    runbookExecutionsAbandoned: number;
+    /** Step executions in COMPLETE status in window. */
+    runbookStepsCompletedInWindow: number;
+    /** Step executions SKIPPED with reason in window. */
+    runbookStepsSkippedInWindow: number;
+    /** Distinct runbooks activated in window. */
+    distinctRunbooksActivatedInWindow: number;
+    /** % of recent incidents that hit ≥ 80 score (proxy: # of scored incidents). */
+    incidentsScored80PlusInWindow: number;
+    /** Total scored incidents in window. */
+    incidentsScoredInWindow: number;
+    /** Tolerance breaches recorded (ImpactBreach in window). */
+    toleranceBreachesInWindow: number;
+    /** Closures that met all five closure criteria — strong-closure rate proxy. */
+    cleanClosuresInWindow: number;
+    /** Closed incidents lifetime in window. */
+    closuresInWindow: number;
+    /** BCP activations in window. */
+    bcpActivationsInWindow: number;
+    /** Distinct exercises with a recovery plan filled in. */
+    recoveryPlansInWindow: number;
+  };
   // ─── People (consumed by rules-people org-scope) ───────────────────
   people: {
     rolesTotal: number;
@@ -217,6 +281,7 @@ export async function loadAchievementOrgState(orgId: string): Promise<Achievemen
         productsCovered: true,
         impactCustomerFinancial: true,
         impactReputational: true,
+        secondLineReviewer: true,
         createdAt: true,
         exerciseLinks: {
           select: { exercise: { select: { startedAt: true, completedAt: true } } },
@@ -409,6 +474,91 @@ export async function loadAchievementOrgState(orgId: string): Promise<Achievemen
         preReadAckedAt: true,
         exerciseId: true,
       },
+    }),
+  ]);
+
+  // ─── Governance + Resilience queries (third batch) ───────────────────
+  const [
+    auditLifetimeCount,
+    auditWindowCount,
+    regulatorNotifsWindow,
+    pirsWindow,
+    retrosWindow,
+    actionItemsWindow,
+    decisionTypesWindow,
+    runbooksAll,
+    runbookExecutionsAll,
+    stepExecutionsWindow,
+    impactBreachesWindow,
+    closedIncidentsWindow,
+    bcpActivationsWindow,
+    recoveryPlansWindow,
+  ] = await Promise.all([
+    prisma.auditLogEntry.count({ where: { orgId } }),
+    prisma.auditLogEntry.count({ where: { orgId, createdAt: { gte: yearAgo } } }),
+    prisma.regulatorNotification.findMany({
+      where: { incident: { exercise: { orgId } }, createdAt: { gte: yearAgo } },
+      select: { status: true, dueAt: true, sentAt: true },
+    }),
+    prisma.postIncidentReport.findMany({
+      where: {
+        incident: { exercise: { orgId, completedAt: { gte: yearAgo } } },
+      },
+      select: { dueAt: true, submittedAt: true },
+    }),
+    prisma.retrospective.findMany({
+      where: { exercise: { orgId, completedAt: { gte: yearAgo } } },
+      select: { heldAt: true },
+    }),
+    prisma.exerciseActionItem.findMany({
+      where: { orgId, createdAt: { gte: yearAgo } },
+      select: { status: true },
+    }),
+    prisma.decisionRecord.findMany({
+      where: { incident: { exercise: { orgId } }, createdAt: { gte: yearAgo } },
+      select: { decisionType: true },
+    }),
+    prisma.runbook.findMany({
+      where: { orgId },
+      select: { status: true },
+    }),
+    prisma.runbookExecution.findMany({
+      where: { incident: { exercise: { orgId } } },
+      select: { status: true, runbookId: true, startedAt: true },
+    }),
+    prisma.runbookStepExecution.findMany({
+      where: {
+        execution: { incident: { exercise: { orgId } } },
+        updatedAt: { gte: yearAgo },
+      },
+      select: { status: true },
+    }),
+    prisma.impactBreach.findMany({
+      where: { exercise: { orgId }, detectedAt: { gte: yearAgo } },
+      select: { id: true },
+    }),
+    prisma.incident.findMany({
+      where: {
+        exercise: { orgId },
+        closedAt: { gte: yearAgo, not: null },
+      },
+      select: {
+        closureImpactCeased: true,
+        closureRegsNotified: true,
+        closureLogComplete: true,
+        closurePreliminaryRCA: true,
+        closureCRO_SignOff: true,
+      },
+    }),
+    prisma.bCPActivation.count({
+      where: {
+        incident: { exercise: { orgId } },
+        activatedAt: { gte: yearAgo },
+      },
+    }),
+    prisma.recoveryPlan.findMany({
+      where: { exercise: { orgId, completedAt: { gte: yearAgo } } },
+      select: { id: true },
     }),
   ]);
 
@@ -765,6 +915,95 @@ export async function loadAchievementOrgState(orgId: string): Promise<Achievemen
     eligibleParticipantsInWindow,
   };
 
+  // ─── Governance aggregates ────────────────────────────────────────────
+  const regResolved = regulatorNotifsWindow.filter(
+    (n) => n.status === "SENT" || n.status === "WAIVED",
+  ).length;
+  const regBreached = regulatorNotifsWindow.filter(
+    (n) =>
+      n.status === "BREACHED" ||
+      (n.dueAt < now && n.status !== "SENT" && n.status !== "WAIVED"),
+  ).length;
+  const pirsSubmitted = pirsWindow.filter((p) => p.submittedAt !== null).length;
+  const pirsOnTime = pirsWindow.filter(
+    (p) => p.submittedAt !== null && p.submittedAt <= p.dueAt,
+  ).length;
+  const retrosHeld = retrosWindow.filter((r) => r.heldAt !== null).length;
+  const actionItemsClosed = actionItemsWindow.filter(
+    (a) => a.status === "DONE" || a.status === "WONT_FIX",
+  ).length;
+  const mtpSmfSignedOff = vendorRows.filter(
+    (v) => v.isMaterialThirdParty && v.smfSignedOff === true,
+  ).length;
+  const mtpGovernanceApproved = vendorRows.filter(
+    (v) => v.isMaterialThirdParty && v.governanceApprovedAt !== null,
+  ).length;
+  const distinctDecisionTypes = new Set(
+    decisionTypesWindow.map((d) => String(d.decisionType)).filter((t) => !!t),
+  ).size;
+
+  const governance = {
+    auditEntriesInWindow: auditWindowCount,
+    auditEntriesLifetime: auditLifetimeCount,
+    regulatorNotificationsInWindow: regulatorNotifsWindow.length,
+    regulatorNotificationsResolvedInWindow: regResolved,
+    regulatorNotificationsBreachedInWindow: regBreached,
+    pirsDueInWindow: pirsWindow.length,
+    pirsSubmittedInWindow: pirsSubmitted,
+    pirsOnTimeInWindow: pirsOnTime,
+    retrospectivesHeldInWindow: retrosHeld,
+    actionItemsClosedInWindow: actionItemsClosed,
+    actionItemsTotalInWindow: actionItemsWindow.length,
+    mtpSmfSignedOff,
+    mtpGovernanceApproved,
+    ibsSecondLineReviewer: ibsRows.filter(
+      (i) => i.secondLineReviewer && i.secondLineReviewer.trim().length > 0,
+    ).length,
+    distinctDecisionTypesInWindow: distinctDecisionTypes,
+  };
+
+  // ─── Resilience aggregates ────────────────────────────────────────────
+  const runbookExecutionsComplete = runbookExecutionsAll.filter(
+    (e) => e.status === "COMPLETE",
+  ).length;
+  const runbookExecutionsAbandoned = runbookExecutionsAll.filter(
+    (e) => e.status === "ABANDONED",
+  ).length;
+  const distinctRunbooksActivated = new Set(
+    runbookExecutionsAll
+      .filter((e) => e.startedAt >= yearAgo)
+      .map((e) => e.runbookId),
+  ).size;
+  const stepsCompleted = stepExecutionsWindow.filter((s) => s.status === "COMPLETE").length;
+  const stepsSkipped = stepExecutionsWindow.filter((s) => s.status === "SKIPPED").length;
+  const cleanClosures = closedIncidentsWindow.filter(
+    (c) =>
+      c.closureImpactCeased &&
+      c.closureRegsNotified &&
+      c.closureLogComplete &&
+      c.closurePreliminaryRCA &&
+      c.closureCRO_SignOff,
+  ).length;
+
+  const resilience = {
+    runbooksPublished: runbooksAll.filter((r) => r.status === "PUBLISHED").length,
+    runbookExecutionsTotal: runbookExecutionsAll.length,
+    runbookExecutionsComplete,
+    runbookExecutionsAbandoned,
+    runbookStepsCompletedInWindow: stepsCompleted,
+    runbookStepsSkippedInWindow: stepsSkipped,
+    distinctRunbooksActivatedInWindow: distinctRunbooksActivated,
+    // Score aggregates require scoring every incident — too heavy for the
+    // achievements page. Proxy with a count: # of clean closures in window.
+    incidentsScored80PlusInWindow: cleanClosures,
+    incidentsScoredInWindow: closedIncidentsWindow.length,
+    toleranceBreachesInWindow: impactBreachesWindow.length,
+    cleanClosuresInWindow: cleanClosures,
+    closuresInWindow: closedIncidentsWindow.length,
+    bcpActivationsInWindow: bcpActivationsWindow,
+    recoveryPlansInWindow: recoveryPlansWindow.length,
+  };
+
   return {
     ibs,
     vendors,
@@ -778,6 +1017,8 @@ export async function loadAchievementOrgState(orgId: string): Promise<Achievemen
     sectors: { distinctCoveredInWindow: sectors.size },
     snapshots,
     cadence,
+    governance,
+    resilience,
     people,
   };
 }
