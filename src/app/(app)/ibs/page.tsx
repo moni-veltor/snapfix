@@ -171,7 +171,7 @@ export default async function IBSListPage() {
             />
           </section>
 
-          <IBSRegisterGrid rows={rows} />
+          <IBSRegisterGrid rows={rows} canEdit={canManage} />
         </>
       )}
     </div>

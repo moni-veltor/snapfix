@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   Building,
@@ -13,6 +12,9 @@ import {
   Boxes,
   type LucideIcon,
 } from "lucide-react";
+import IBSQuickEditDrawer, {
+  type IBSQuickEditRow,
+} from "@/components/ibs/IBSQuickEditDrawer";
 
 type RegisterRow = {
   id: string;
@@ -99,9 +101,35 @@ function fmtHours(min: number): string {
   return `${Math.round(min / 60 / 24)}d`;
 }
 
-export default function IBSRegisterGrid({ rows }: { rows: RegisterRow[] }) {
+export default function IBSRegisterGrid({
+  rows,
+  canEdit = false,
+}: {
+  rows: RegisterRow[];
+  canEdit?: boolean;
+}) {
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const editRow = editId ? rows.find((r) => r.id === editId) ?? null : null;
+  const editQuickRow: IBSQuickEditRow | null = editRow
+    ? {
+        id: editRow.id,
+        code: editRow.code,
+        name: editRow.name,
+        outcome: editRow.outcome,
+        status: editRow.status,
+        criticality: editRow.criticality,
+        impactToleranceMin: editRow.impactToleranceMin,
+        processOwner: editRow.processOwner,
+        coversPeople: editRow.coversPeople,
+        coversProperty: editRow.coversProperty,
+        coversTechnology: editRow.coversTechnology,
+        coversDataAvailability: editRow.coversDataAvailability,
+        coversDataIntegrity: editRow.coversDataIntegrity,
+        coversThirdParty: editRow.coversThirdParty,
+      }
+    : null;
 
   const groups = useMemo(() => {
     const out: Record<string, RegisterRow[]> = {
@@ -212,23 +240,55 @@ export default function IBSRegisterGrid({ rows }: { rows: RegisterRow[] }) {
             <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {sortedByCriticality.map((r) => (
                 <li key={r.id}>
-                  <ServiceCard row={r} />
+                  <ServiceCard
+                    row={r}
+                    canEdit={canEdit}
+                    onEdit={() => setEditId(r.id)}
+                  />
                 </li>
               ))}
             </ul>
           </section>
         );
       })}
+
+      <IBSQuickEditDrawer
+        open={editQuickRow !== null}
+        onClose={() => setEditId(null)}
+        row={editQuickRow}
+      />
     </section>
   );
 }
 
-function ServiceCard({ row }: { row: RegisterRow }) {
+function ServiceCard({
+  row,
+  canEdit,
+  onEdit,
+}: {
+  row: RegisterRow;
+  canEdit: boolean;
+  onEdit: () => void;
+}) {
   const tone = CRITICALITY_TONE[row.criticality] ?? CRITICALITY_TONE.LOW;
+
+  const handleActivate = () => {
+    if (canEdit) onEdit();
+    else window.location.assign(`/ibs/${row.id}`);
+  };
+
   return (
-    <Link
-      href={`/ibs/${row.id}`}
-      className={`group block h-full rounded-xl border bg-surface-1 transition-all hover:-translate-y-px hover:shadow-[var(--shadow-card-md)] ${tone.ring}`}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleActivate}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleActivate();
+        }
+      }}
+      className={`group block h-full cursor-pointer rounded-xl border bg-surface-1 text-left transition-all hover:-translate-y-px hover:shadow-[var(--shadow-card-md)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${tone.ring}`}
     >
       <div className={`h-1 rounded-t-xl ${tone.bar}`} />
       <article className="flex h-full flex-col gap-3 p-4">
@@ -298,7 +358,7 @@ function ServiceCard({ row }: { row: RegisterRow }) {
           )}
         </footer>
       </article>
-    </Link>
+    </div>
   );
 }
 

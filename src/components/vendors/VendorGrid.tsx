@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   Boxes,
@@ -9,6 +8,7 @@ import {
   ChevronUp,
   ExternalLink,
   Mail,
+  Pencil,
   Phone,
   Plus,
   ShieldAlert,
@@ -20,6 +20,9 @@ import {
   linkVendorToIBSAction,
   unlinkVendorFromIBSAction,
 } from "@/app/actions/vendors";
+import VendorQuickEditDrawer, {
+  type VendorQuickEditRow,
+} from "@/components/vendors/VendorQuickEditDrawer";
 
 type VendorRow = {
   id: string;
@@ -32,11 +35,15 @@ type VendorRow = {
   contactPhone: string | null;
   statusUrl: string | null;
   isDoraCritical: boolean;
+  isMaterialThirdParty?: boolean;
   hyperscaler: string | null;
   region: string | null;
   assuranceKind: string | null;
   assuranceExpiryAt: Date | null;
+  contractStartAt?: Date | null;
+  contractEndAt?: Date | null;
   exitPlanReviewedAt: Date | null;
+  exitPlanRTOMin?: number | null;
   ibsLinks: { ibsId: string; ibs: { id: string; code: string; name: string } }[];
 };
 
@@ -87,7 +94,27 @@ export default function VendorGrid({
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
+
+  const editVendor = editId ? vendors.find((v) => v.id === editId) ?? null : null;
+  const editRow: VendorQuickEditRow | null = editVendor
+    ? {
+        id: editVendor.id,
+        name: editVendor.name,
+        serviceKind: editVendor.serviceKind,
+        tier: editVendor.tier,
+        isDoraCritical: editVendor.isDoraCritical,
+        isMaterialThirdParty: editVendor.isMaterialThirdParty,
+        hyperscaler: editVendor.hyperscaler,
+        region: editVendor.region,
+        statusUrl: editVendor.statusUrl,
+        contractStartAt: editVendor.contractStartAt ?? null,
+        contractEndAt: editVendor.contractEndAt ?? null,
+        exitPlanReviewedAt: editVendor.exitPlanReviewedAt,
+        exitPlanRTOMin: editVendor.exitPlanRTOMin ?? null,
+      }
+    : null;
 
   const groups = useMemo(() => {
     const out: Record<string, VendorRow[]> = { TIER_1: [], TIER_2: [], TIER_3: [] };
@@ -192,6 +219,7 @@ export default function VendorGrid({
                     canManage={canManage}
                     expanded={openId === v.id}
                     onToggle={() => setOpenId(openId === v.id ? null : v.id)}
+                    onEdit={() => setEditId(v.id)}
                     now={now}
                   />
                 </li>
@@ -200,6 +228,12 @@ export default function VendorGrid({
           </section>
         );
       })}
+
+      <VendorQuickEditDrawer
+        open={editRow !== null}
+        onClose={() => setEditId(null)}
+        row={editRow}
+      />
     </section>
   );
 }
@@ -210,6 +244,7 @@ function VendorCard({
   canManage,
   expanded,
   onToggle,
+  onEdit,
   now,
 }: {
   vendor: VendorRow;
@@ -217,6 +252,7 @@ function VendorCard({
   canManage: boolean;
   expanded: boolean;
   onToggle: () => void;
+  onEdit: () => void;
   now: number;
 }) {
   const tone = TIER_TONE[vendor.tier] ?? TIER_TONE.TIER_3;
@@ -318,12 +354,14 @@ function VendorCard({
           </button>
           {canManage && (
             <div className="flex items-center gap-0.5">
-              <Link
-                href={`/vendors/${vendor.id}`}
-                className="rounded-md px-2 py-1 text-[11px] text-muted hover:bg-surface-2 hover:text-ink"
+              <button
+                type="button"
+                onClick={onEdit}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted hover:bg-surface-2 hover:text-ink"
               >
-                Open
-              </Link>
+                <Pencil size={11} />
+                Edit
+              </button>
               <form action={deleteVendorAction}>
                 <input type="hidden" name="id" value={vendor.id} />
                 <button

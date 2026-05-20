@@ -105,6 +105,86 @@ export async function deleteVendorAction(formData: FormData) {
   revalidatePath("/vendors");
 }
 
+/**
+ * Partial update for the vendor quick-edit drawer. Only writes the fields
+ * present in formData — name / serviceKind / tier / isDoraCritical /
+ * isMaterialThirdParty / hyperscaler / region / contract dates / exit-plan
+ * fields / statusUrl. The full MTP register fields stay on the per-vendor
+ * detail page.
+ */
+export async function quickUpdateVendorAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const id = String(formData.get("id"));
+  if (!id) return;
+
+  const existing = await prisma.vendor.findFirst({
+    where: { id, orgId: me.orgId },
+    select: { id: true, name: true },
+  });
+  if (!existing) return;
+
+  const data: Record<string, unknown> = {};
+
+  const name = formData.get("name");
+  if (typeof name === "string" && name.trim().length > 0) data.name = name.trim();
+
+  const serviceKind = formData.get("serviceKind");
+  if (typeof serviceKind === "string") data.serviceKind = serviceKind.trim() || null;
+
+  const tier = formData.get("tier");
+  if (typeof tier === "string" && tier) data.tier = tier;
+
+  // Toggles arrive as "on" when checked, missing when unchecked.
+  data.isDoraCritical = formData.get("isDoraCritical") === "on";
+  data.isMaterialThirdParty = formData.get("isMaterialThirdParty") === "on";
+
+  const hyperscaler = formData.get("hyperscaler");
+  if (typeof hyperscaler === "string") data.hyperscaler = hyperscaler.trim() || null;
+
+  const region = formData.get("region");
+  if (typeof region === "string") data.region = region.trim() || null;
+
+  const statusUrl = formData.get("statusUrl");
+  if (typeof statusUrl === "string") data.statusUrl = statusUrl.trim() || null;
+
+  const optDate = (v: FormDataEntryValue | null): Date | null | undefined => {
+    if (typeof v !== "string") return undefined;
+    if (v.trim() === "") return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? undefined : d;
+  };
+
+  const start = optDate(formData.get("contractStartAt"));
+  if (start !== undefined) data.contractStartAt = start;
+  const end = optDate(formData.get("contractEndAt"));
+  if (end !== undefined) data.contractEndAt = end;
+  const exitReviewed = optDate(formData.get("exitPlanReviewedAt"));
+  if (exitReviewed !== undefined) data.exitPlanReviewedAt = exitReviewed;
+
+  const rto = formData.get("exitPlanRTOMin");
+  if (typeof rto === "string") {
+    if (rto.trim() === "") data.exitPlanRTOMin = null;
+    else {
+      const n = Number(rto);
+      if (Number.isFinite(n) && n >= 0) data.exitPlanRTOMin = Math.round(n);
+    }
+  }
+
+  if (Object.keys(data).length === 0) return;
+
+  await prisma.vendor.update({ where: { id }, data });
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "vendor.mtp.updated",
+    targetType: "vendor",
+    targetId: id,
+    summary: `Quick-edited vendor ${existing.name}`,
+  });
+  revalidatePath("/vendors");
+  revalidatePath(`/vendors/${id}`);
+}
+
 const LinkSchema = z.object({
   vendorId: z.string(),
   ibsId: z.string(),

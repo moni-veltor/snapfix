@@ -133,6 +133,74 @@ export async function updateIBSAction(formData: FormData) {
   revalidatePath("/ibs");
 }
 
+/**
+ * Partial update used by the quick-edit drawer on the IBS register. Only
+ * the fields present in formData are written, so the drawer can ship a
+ * subset (name / criticality / status / tolerance / process owner / 6-box
+ * harm flags) without re-asserting the entire IBSInput payload that the
+ * full-page editor uses.
+ */
+export async function quickUpdateIBSAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const id = String(formData.get("id"));
+  if (!id) return;
+
+  const existing = await prisma.organizationIBS.findFirst({
+    where: { id, orgId: me.orgId },
+    select: { id: true, code: true, name: true },
+  });
+  if (!existing) return;
+
+  const data: Record<string, unknown> = {};
+
+  const name = formData.get("name");
+  if (typeof name === "string" && name.trim().length > 0) data.name = name.trim();
+
+  const criticality = formData.get("criticality");
+  if (typeof criticality === "string" && criticality) data.criticality = criticality;
+
+  const status = formData.get("status");
+  if (typeof status === "string" && status) data.status = status;
+
+  const tol = formData.get("impactToleranceMin");
+  if (typeof tol === "string" && tol.trim()) {
+    const n = Number(tol);
+    if (Number.isFinite(n) && n >= 0) data.impactToleranceMin = Math.round(n);
+  }
+
+  const processOwner = formData.get("processOwner");
+  if (typeof processOwner === "string") data.processOwner = processOwner.trim() || null;
+
+  const description = formData.get("description");
+  if (typeof description === "string") data.description = description.trim() || null;
+
+  // 6-box harm toggles arrive as "on" when checked.
+  for (const key of [
+    "coversPeople",
+    "coversProperty",
+    "coversTechnology",
+    "coversDataAvailability",
+    "coversDataIntegrity",
+    "coversThirdParty",
+  ] as const) {
+    data[key] = formData.get(key) === "on";
+  }
+
+  if (Object.keys(data).length === 0) return;
+
+  await prisma.organizationIBS.update({ where: { id }, data });
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "ibs.updated",
+    targetType: "ibs",
+    targetId: id,
+    summary: `Quick-edited IBS ${existing.code}`,
+  });
+  revalidatePath("/ibs");
+  revalidatePath(`/ibs/${id}`);
+}
+
 export async function approveIBSAction(formData: FormData) {
   const me = await requireOrgRole("OWNER", "ADMIN");
   const id = String(formData.get("id"));
