@@ -182,6 +182,5 @@ export async function addLibraryVendorAction(formData: FormData) {
     summary: `Added vendor ${created.name} from library (${lib.category})`,
   });
   revalidatePath("/vendors");
-  revalidatePath("/vendors/library");
   redirect("/vendors");
 }

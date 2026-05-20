@@ -254,6 +254,5 @@ export async function addLibrarySystemAction(formData: FormData) {
     summary: `Added system ${created.name} from library (${lib.kind})`,
   });
   revalidatePath("/tech-recovery");
-  revalidatePath("/tech-recovery/library");
   redirect("/tech-recovery");
 }

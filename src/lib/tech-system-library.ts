@@ -6,9 +6,9 @@ import type {
 
 /**
  * Pre-built tech-system library — opinionated catalogue of systems that
- * support an IBS stack in a UK bank or fintech. Drives /tech-recovery/library
- * so admins can one-click-add the systems they actually run instead of
- * typing them all by hand.
+ * support an IBS stack in a UK bank or fintech. Drives the LibraryBrowser
+ * drawer launched from /tech-recovery so admins can one-click-add the
+ * systems they actually run instead of typing them all by hand.
  *
  * Each entry mirrors the TechSystem model shape with sensible defaults you
  * would refine post-add (regions, backup validation date, owner).

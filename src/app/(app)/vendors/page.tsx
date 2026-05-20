@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Boxes, CalendarClock, FileSignature, Library, ShieldCheck } from "lucide-react";
+import { Boxes, CalendarClock, FileSignature, ShieldCheck } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
@@ -10,6 +10,9 @@ import VendorDoraExportButton, {
   type DoraExportRow,
 } from "@/components/vendors/VendorDoraExportButton";
 import type { VendorLite } from "@/lib/dora";
+import LibraryBrowserButton from "@/components/library/LibraryBrowserButton";
+import { VENDOR_LIBRARY_CONFIG } from "@/components/library/configs/vendors";
+import { VENDOR_LIBRARY } from "@/lib/vendor-library";
 
 export default async function VendorsPage() {
   const me = await requireOrgUser();
@@ -83,13 +86,12 @@ export default async function VendorsPage() {
         actions={
           canManage ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href="/vendors/library"
-                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
-              >
-                <Library size={14} strokeWidth={2.2} />
-                Browse library
-              </Link>
+              <LibraryBrowserButton
+                config={VENDOR_LIBRARY_CONFIG}
+                items={VENDOR_LIBRARY}
+                existingKeys={vendors.map((v) => v.name)}
+                canAdd={canManage}
+              />
               <Link
                 href="/vendors/contracts"
                 className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"

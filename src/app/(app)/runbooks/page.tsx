@@ -14,7 +14,8 @@ import {
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
-import LibraryRunbookPicker from "@/components/runbooks/LibraryRunbookPicker";
+import LibraryBrowserButton from "@/components/library/LibraryBrowserButton";
+import { RUNBOOK_LIBRARY_CONFIG } from "@/components/library/configs/runbooks";
 import { LIBRARY_RUNBOOKS } from "@/lib/library/runbooks";
 import type { RunbookCategory } from "@/generated/prisma/enums";
 
@@ -60,8 +61,7 @@ export default async function RunbooksPage() {
     },
   });
 
-  const existingTitles = new Set(runbooks.map((r) => r.title));
-  const libraryAvailable = LIBRARY_RUNBOOKS.filter((l) => !existingTitles.has(l.title));
+  const existingTitles = runbooks.map((r) => r.title);
 
   const active = runbooks.filter((r) => r.status !== "ARCHIVED");
   const archived = runbooks.filter((r) => r.status === "ARCHIVED");
@@ -87,9 +87,13 @@ export default async function RunbooksPage() {
         actions={
           canManage ? (
             <div className="flex flex-wrap items-center gap-2">
-              {libraryAvailable.length > 0 && (
-                <LibraryRunbookPicker library={libraryAvailable} />
-              )}
+              <LibraryBrowserButton
+                config={RUNBOOK_LIBRARY_CONFIG}
+                items={LIBRARY_RUNBOOKS}
+                existingKeys={existingTitles}
+                canAdd={canManage}
+                label="Add from library"
+              />
               <Link
                 href="/runbooks/new"
                 className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
@@ -103,7 +107,7 @@ export default async function RunbooksPage() {
       />
 
       {active.length === 0 ? (
-        <EmptyState canManage={canManage} libraryCount={libraryAvailable.length} />
+        <EmptyState canManage={canManage} libraryCount={LIBRARY_RUNBOOKS.filter((l) => !new Set(existingTitles).has(l.title)).length} />
       ) : (
         <div className="space-y-6">
           {orderedCategories.map((cat) => {

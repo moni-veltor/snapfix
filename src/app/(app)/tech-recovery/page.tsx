@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { CalendarClock, Library, Server } from "lucide-react";
+import { CalendarClock, Server } from "lucide-react";
 import PageHero from "@/components/ui/PageHero";
 import { ProgressRing, Bar } from "@/components/ui/charts";
 import { postureScore, type SystemWithTests } from "@/lib/tech-recovery";
 import SystemList from "@/components/tech/SystemList";
 import SystemAddButton from "@/components/tech/SystemAddButton";
+import LibraryBrowserButton from "@/components/library/LibraryBrowserButton";
+import { TECH_LIBRARY_CONFIG } from "@/components/library/configs/tech";
+import { SYSTEM_LIBRARY } from "@/lib/tech-system-library";
 
 export default async function TechRecoveryPage() {
   const me = await requireOrgUser();
@@ -48,13 +51,12 @@ export default async function TechRecoveryPage() {
         actions={
           canManage ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href="/tech-recovery/library"
-                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
-              >
-                <Library size={14} strokeWidth={2.2} />
-                Browse library
-              </Link>
+              <LibraryBrowserButton
+                config={TECH_LIBRARY_CONFIG}
+                items={SYSTEM_LIBRARY}
+                existingKeys={systems.map((s) => s.name)}
+                canAdd={canManage}
+              />
               <Link
                 href="/tech-recovery/schedule"
                 className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
@@ -127,13 +129,14 @@ export default async function TechRecoveryPage() {
           </p>
           {canManage && (
             <div className="mt-4 flex items-center justify-center gap-2">
-              <Link
-                href="/tech-recovery/library"
-                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-              >
-                <Library size={11} />
-                Browse the library
-              </Link>
+              <LibraryBrowserButton
+                config={TECH_LIBRARY_CONFIG}
+                items={SYSTEM_LIBRARY}
+                existingKeys={systems.map((s) => s.name)}
+                canAdd={canManage}
+                label="Browse the library"
+                variant="primary"
+              />
               <span className="text-xs text-soft">or use the Add system button above</span>
             </div>
           )}

@@ -4,8 +4,9 @@ import type { Sector } from "@/lib/library/sectors";
 /**
  * Pre-built vendor library — opinionated catalogue of vendors active in
  * UK financial services, energy, telecoms, healthcare, retail, public
- * sector, manufacturing, and adjacent industries. Drives /vendors/library
- * so admins can one-click-add real providers instead of typing them.
+ * sector, manufacturing, and adjacent industries. Drives the LibraryBrowser
+ * drawer launched from /vendors so admins can one-click-add real providers
+ * instead of typing them.
  *
  * Each entry mirrors the Vendor model shape; fields beyond name +
  * service-kind + suggested tier are best-effort defaults you'd want to
