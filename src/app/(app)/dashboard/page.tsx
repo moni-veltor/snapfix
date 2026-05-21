@@ -6,17 +6,12 @@ import {
   Boxes,
   CalendarClock,
   CheckCircle2,
-  Crown,
-  Database,
-  FileText,
   Flame,
   ListChecks,
   Server,
   ShieldAlert,
-  ShieldCheck,
   Sparkles,
   Users,
-  Wifi,
   type LucideIcon,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
@@ -33,13 +28,18 @@ import {
   type VendorLite,
 } from "@/lib/dora";
 import { postureScore, type SystemWithTests } from "@/lib/tech-recovery";
-import { MiniHeatmap, ProgressRing, Sparkline } from "@/components/ui/charts";
 import FeaturedCard from "@/components/ui/FeaturedCard";
 import DailyTipCard from "@/components/fun/DailyTipCard";
 import YourLiveExerciseWidget from "@/components/dashboard/YourLiveExerciseWidget";
 import RecapCard from "@/components/dashboard/RecapCard";
 import NudgeBar from "@/components/dashboard/NudgeBar";
 import UnlockToast from "@/components/dashboard/UnlockToast";
+import {
+  ResilienceRiskPanel,
+  ThirdPartyRiskPanel,
+  ComplianceClockPanel,
+  type PanelOffender,
+} from "@/components/dashboard/OutcomePanels";
 import {
   buildDashboardRecap,
   bumpDashboardStreak,
@@ -77,8 +77,6 @@ async function Dashboard({
 }) {
   const now = new Date();
   const ago90 = new Date(now.getTime() - 90 * 86_400_000);
-  const ago12w = new Date(now.getTime() - 84 * 86_400_000);
-  const ago7d = new Date(now.getTime() - 7 * 86_400_000);
   const in30d = new Date(now.getTime() + 30 * 86_400_000);
 
   // "Since you were here last" cut point — read + maybe bump in one call.
@@ -104,24 +102,18 @@ async function Dashboard({
     ibsCount,
     untestedIBS,
     ibsReviewDueSoon,
-    ibsSample,
     coverage,
     scenarioCount,
     exerciseCount,
     exercisesLast90Days,
-    weeklyExercises,
     memberCount,
     rolesTotal,
     rolesWithDeputy,
-    rolesWithDefaultHolder,
     pendingInvites,
     vendors,
     techSystems,
-    recentSitreps,
-    recentDecisions,
     openRegulatorNotifications,
     overduePIRs,
-    recentClones,
   ] = await Promise.all([
     prisma.exercise.findMany({
       where: { orgId, status: { in: ["IN_PROGRESS", "PAUSED"] } },
@@ -145,33 +137,6 @@ async function Dashboard({
     prisma.organizationIBS.count({
       where: { orgId, reviewDueAt: { gte: now, lte: in30d } },
     }),
-    prisma.organizationIBS.findMany({
-      where: { orgId },
-      take: 6,
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        exerciseLinks: {
-          select: {
-            exercise: {
-              select: {
-                scenario: {
-                  select: {
-                    coversPeople: true,
-                    coversProperty: true,
-                    coversTechnology: true,
-                    coversDataAvailability: true,
-                    coversDataIntegrity: true,
-                    coversThirdParty: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    }),
     prisma.exercise.findMany({
       where: { orgId, status: { in: ["IN_PROGRESS", "PAUSED", "COMPLETED"] } },
       include: {
@@ -190,17 +155,10 @@ async function Dashboard({
     prisma.scenario.count({ where: { orgId, isTemplate: false } }),
     prisma.exercise.count({ where: { orgId } }),
     prisma.exercise.count({ where: { orgId, startedAt: { gte: ago90 } } }),
-    prisma.exercise.findMany({
-      where: { orgId, startedAt: { gte: ago12w } },
-      select: { startedAt: true },
-    }),
     prisma.user.count({ where: { orgId } }),
     prisma.organizationRole.count({ where: { orgId } }),
     prisma.organizationRole.count({
       where: { orgId, deputyOfRoleId: { not: null } },
-    }),
-    prisma.organizationRole.count({
-      where: { orgId, defaultHolderId: { not: null } },
     }),
     canManage
       ? prisma.invitation.count({
@@ -215,18 +173,6 @@ async function Dashboard({
       where: { orgId },
       include: { drTests: { orderBy: { testedAt: "desc" }, take: 5 } },
     }),
-    prisma.sitrep.findMany({
-      where: { incident: { exercise: { orgId } }, createdAt: { gte: ago7d } },
-      orderBy: { createdAt: "desc" },
-      take: 6,
-      include: { incident: { select: { title: true, exerciseId: true } } },
-    }),
-    prisma.decisionRecord.findMany({
-      where: { incident: { exercise: { orgId } }, createdAt: { gte: ago7d } },
-      orderBy: { createdAt: "desc" },
-      take: 6,
-      include: { incident: { select: { title: true, exerciseId: true } } },
-    }),
     prisma.regulatorNotification.count({
       where: {
         incident: { exercise: { orgId } },
@@ -240,32 +186,49 @@ async function Dashboard({
         dueAt: { lt: now },
       },
     }),
-    prisma.scenario.findMany({
-      where: { orgId, templateOriginId: { not: null }, createdAt: { gte: ago7d } },
-      orderBy: { createdAt: "desc" },
-      take: 4,
-      select: { id: true, title: true, createdAt: true },
-    }),
   ]);
 
-  // ─── MTP roll-up (cheap, used by the dashboard tile) ────────────
-  const [mtpVendorsForReadiness, mtpNotificationsByStatus] = await Promise.all([
-    prisma.vendor.findMany({
-      where: { orgId, isMaterialThirdParty: true },
-      include: { assessments: true },
-    }),
-    prisma.vendorMtpNotification.groupBy({
-      by: ["status"],
-      where: { vendor: { orgId } },
-      _count: true,
-    }),
-  ]);
+  // ─── Top-3 offenders for the outcome panels ─────────────────────────────
+  const [untestedCriticalIBSs, overdueActionItemsTop, ibsReviewsDueSoon] =
+    await Promise.all([
+      prisma.organizationIBS.findMany({
+        where: { orgId, criticality: "CRITICAL", exerciseLinks: { none: {} } },
+        orderBy: { code: "asc" },
+        take: 5,
+        select: { id: true, code: true, name: true },
+      }),
+      prisma.exerciseActionItem.findMany({
+        where: {
+          orgId,
+          status: { in: ["OPEN", "IN_PROGRESS", "BLOCKED"] },
+          dueAt: { lt: now },
+        },
+        orderBy: { dueAt: "asc" },
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          dueAt: true,
+          exercise: { select: { id: true, title: true } },
+        },
+      }),
+      prisma.organizationIBS.findMany({
+        where: { orgId, reviewDueAt: { gte: now, lte: in30d } },
+        orderBy: { reviewDueAt: "asc" },
+        take: 5,
+        select: { id: true, code: true, name: true, reviewDueAt: true },
+      }),
+    ]);
+
+  // ─── MTP roll-up (drives the third-party panel's register-ready chip) ──
+  const mtpVendorsForReadiness = await prisma.vendor.findMany({
+    where: { orgId, isMaterialThirdParty: true },
+    include: { assessments: true },
+  });
   const { evaluateVendorReadiness } = await import("@/lib/vendor-mtp-readiness");
   const mtpReadyCount = mtpVendorsForReadiness.filter(
     (v) => evaluateVendorReadiness(v).isRegisterReady,
   ).length;
-  const mtpDraftCount =
-    mtpNotificationsByStatus.find((s) => s.status === "DRAFT")?._count ?? 0;
 
   // ─── Participant personalisation ────────────────────────────────────────
   // "Your live exercise" + "Your next exercise" — drives the top widget.
@@ -348,29 +311,6 @@ async function Dashboard({
     harmTypesCovered,
   });
 
-  // Weekly tempo
-  const weeklyBuckets = Array.from({ length: 12 }, () => 0);
-  for (const e of weeklyExercises) {
-    if (!e.startedAt) continue;
-    const weeksAgo = Math.floor(
-      (now.getTime() - e.startedAt.getTime()) / (7 * 86_400_000),
-    );
-    if (weeksAgo >= 0 && weeksAgo < 12) weeklyBuckets[11 - weeksAgo] += 1;
-  }
-
-  // Coverage heatmap (top 6 IBSs × harm types)
-  const heatmapCells: number[][] = ibsSample.map((ibs) => {
-    const links = ibs.exerciseLinks.map((l) => l.exercise.scenario);
-    return [
-      links.filter((s) => s.coversPeople).length,
-      links.filter((s) => s.coversProperty).length,
-      links.filter((s) => s.coversTechnology).length,
-      links.filter((s) => s.coversDataAvailability).length,
-      links.filter((s) => s.coversDataIntegrity).length,
-      links.filter((s) => s.coversThirdParty).length,
-    ];
-  });
-
   // Vendor metrics
   const vendorsLite: VendorLite[] = vendors.map((v) => ({
     id: v.id,
@@ -408,11 +348,6 @@ async function Dashboard({
   const systemsTyped = techSystems as SystemWithTests[];
   const techPosture = postureScore(systemsTyped, now);
   const systemsNoRto = systemsTyped.filter((s) => s.rtoMin == null).length;
-  const systemsNeverTested = systemsTyped.filter((s) => s.drTests.length === 0).length;
-  const noFailoverCritical = systemsTyped.filter(
-    (s) =>
-      (s.tier === "CRITICAL" || s.tier === "ESSENTIAL") && s.failoverKind === "NONE",
-  ).length;
   // Oldest DR test for the next-best-actions trigger
   let oldestDrDays: number | null = null;
   for (const s of systemsTyped) {
@@ -440,44 +375,6 @@ async function Dashboard({
     pendingInvites,
     liveExerciseCount: inProgress.length,
   });
-
-  // Combined activity feed
-  type FeedItem = {
-    id: string;
-    kind: "sitrep" | "decision" | "clone";
-    title: string;
-    sub: string;
-    href: string;
-    at: Date;
-  };
-  const feed: FeedItem[] = [
-    ...recentSitreps.map((s): FeedItem => ({
-      id: `s-${s.id}`,
-      kind: "sitrep",
-      title: s.summary.slice(0, 80),
-      sub: `${s.businessUnit} · ${s.incident.title}`,
-      href: `/exercises/${s.incident.exerciseId}`,
-      at: s.createdAt,
-    })),
-    ...recentDecisions.map((d): FeedItem => ({
-      id: `d-${d.id}`,
-      kind: "decision",
-      title: d.title,
-      sub: d.incident.title,
-      href: `/exercises/${d.incident.exerciseId}`,
-      at: d.createdAt,
-    })),
-    ...recentClones.map((c): FeedItem => ({
-      id: `c-${c.id}`,
-      kind: "clone",
-      title: c.title,
-      sub: "Scenario cloned",
-      href: `/scenarios/${c.id}`,
-      at: c.createdAt,
-    })),
-  ]
-    .sort((a, b) => b.at.getTime() - a.at.getTime())
-    .slice(0, 8);
 
   // Build widget props for participant personalisation.
   const liveExercise = myLiveParticipation
@@ -550,47 +447,50 @@ async function Dashboard({
         />
       )}
 
-      <section className="grid gap-4 lg:grid-cols-4">
-        <CoverageWidget
-          rows={ibsSample.map((i) => i.name)}
-          cells={heatmapCells}
-          testedIBS={testedIBS}
-          ibsCount={ibsCount}
-          untestedIBS={untestedIBS}
+      <section className="grid gap-4 lg:grid-cols-3">
+        <ResilienceRiskPanel
+          untestedCriticalIBS={untestedCriticalIBSs.map((i): PanelOffender => ({
+            label: `${i.code} · ${i.name}`,
+            sub: "CRITICAL",
+            href: `/ibs/${i.id}`,
+          }))}
+          ibsTotal={ibsCount}
+          ibsTested={testedIBS}
+          pulse={pulse.total}
+          pulseGrade={pulse.grade}
+          techPosture={techPosture}
+          harmTypesCovered={harmTypesCovered}
         />
-        <ConcentrationWidget
+        <ThirdPartyRiskPanel
+          weakExitVendors={vendorsLite
+            .filter(
+              (v) =>
+                (v.isDoraCritical || v.tier === "TIER_1") &&
+                (!v.exitPlanNotes || v.exitPlanNotes.length < 40 || !v.exitPlanReviewedAt),
+            )
+            .slice(0, 5)
+            .map((v): PanelOffender => ({
+              label: v.name,
+              sub: v.isDoraCritical ? "DORA" : v.tier === "TIER_1" ? "TIER 1" : undefined,
+              href: `/vendors/${v.id}`,
+            }))}
           totalVendors={vendorsLite.length}
           topHyperscaler={topHs}
+          assuranceExpiringSoon={assuranceExpiringSoon}
           exitReadiness={exitReadiness}
-          assuranceExpiring={assuranceExpiringSoon}
-          weakExitPlans={weakExitPlanCount}
-        />
-        <TechRecoveryWidget
-          totalSystems={systemsTyped.length}
-          posture={techPosture}
-          noRto={systemsNoRto}
-          neverTested={systemsNeverTested}
-          noFailover={noFailoverCritical}
-        />
-        <ActivityFeed feed={feed} />
-
-        <CadenceWidget weeklyBuckets={weeklyBuckets} harmTypesCovered={harmTypesCovered} />
-        <PeopleWidget
-          rolesTotal={rolesTotal}
-          rolesWithDeputy={rolesWithDeputy}
-          rolesWithDefaultHolder={rolesWithDefaultHolder}
-          memberCount={memberCount}
-        />
-        <ComplianceClockWidget
-          ibsReviewDueSoon={ibsReviewDueSoon}
-          overduePIRs={overduePIRs}
-          openRegulatorNotifications={openRegulatorNotifications}
-          overdueActionItems={overdueActionItems}
-        />
-        <MtpRegisterWidget
           mtpTotal={mtpVendorsForReadiness.length}
           mtpReady={mtpReadyCount}
-          notifDrafts={mtpDraftCount}
+        />
+        <ComplianceClockPanel
+          overdueItems={buildComplianceOffenders({
+            overdueActions: overdueActionItemsTop,
+            ibsReviews: ibsReviewsDueSoon,
+            now,
+          })}
+          overdueActions={overdueActionItems}
+          overduePIRs={overduePIRs}
+          openRegulatorNotifications={openRegulatorNotifications}
+          ibsReviewDueSoon={ibsReviewDueSoon}
         />
       </section>
 
@@ -720,535 +620,6 @@ function StatusPill({
   );
 }
 
-// ─── Widgets ─────────────────────────────────────────────────────────────
-
-function Widget({
-  title,
-  href,
-  icon: Icon,
-  tone = "indigo",
-  children,
-  className = "",
-}: {
-  title: string;
-  href?: string;
-  icon: LucideIcon;
-  tone?: "indigo" | "amber" | "cyan" | "violet" | "rose" | "emerald";
-  children: React.ReactNode;
-  className?: string;
-}) {
-  const bar = {
-    indigo: "from-indigo-500 to-indigo-400",
-    amber: "from-amber-500 to-amber-400",
-    cyan: "from-cyan-500 to-cyan-400",
-    violet: "from-violet-500 to-violet-400",
-    rose: "from-rose-500 to-rose-400",
-    emerald: "from-emerald-500 to-emerald-400",
-  }[tone];
-  const inner = (
-    <article
-      className={`flex h-full flex-col overflow-hidden rounded-xl border border-line bg-surface-1 transition-all ${href ? "hover:-translate-y-px hover:shadow-[var(--shadow-card-md)]" : ""} ${className}`}
-    >
-      <div className={`h-1 bg-gradient-to-r ${bar}`} />
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <header className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-soft">
-            <Icon size={11} />
-            {title}
-          </div>
-          {href && (
-            <span className="text-[10px] text-soft group-hover:text-ink">→</span>
-          )}
-        </header>
-        {children}
-      </div>
-    </article>
-  );
-  return href ? (
-    <Link href={href} className="group block h-full">
-      {inner}
-    </Link>
-  ) : (
-    inner
-  );
-}
-
-function CoverageWidget({
-  rows,
-  cells,
-  testedIBS,
-  ibsCount,
-  untestedIBS,
-}: {
-  rows: string[];
-  cells: number[][];
-  testedIBS: number;
-  ibsCount: number;
-  untestedIBS: number;
-}) {
-  const pct = ibsCount === 0 ? 0 : Math.round((testedIBS / ibsCount) * 100);
-  const tone: "indigo" | "amber" | "rose" =
-    pct >= 75 ? "indigo" : pct >= 40 ? "amber" : "rose";
-  return (
-    <Widget title="Resilience coverage" icon={Wifi} tone={tone} href="/ibs">
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold text-ink">{pct}%</span>
-        <span className="text-xs text-muted">of IBSs stress-tested</span>
-      </div>
-      {rows.length > 0 ? (
-        <div className="mt-1 overflow-hidden">
-          <MiniHeatmap
-            cells={cells}
-            rowLabels={rows}
-            colLabels={["P", "Pr", "T", "A", "I", "3"]}
-            cellSize={14}
-            ariaLabel="IBS by harm-type coverage"
-          />
-        </div>
-      ) : (
-        <p className="rounded-md border border-dashed border-line p-3 text-center text-[11px] text-muted">
-          No IBSs registered yet.
-        </p>
-      )}
-      <footer className="mt-auto flex items-center justify-between border-t border-line pt-2 text-[10px]">
-        {untestedIBS > 0 ? (
-          <span className="font-semibold text-rose-600 dark:text-rose-300">
-            {untestedIBS} never tested
-          </span>
-        ) : (
-          <span className="font-semibold text-emerald-600 dark:text-emerald-300">
-            All IBSs tested
-          </span>
-        )}
-        <span className="text-soft">{ibsCount} total</span>
-      </footer>
-    </Widget>
-  );
-}
-
-function ConcentrationWidget({
-  totalVendors,
-  topHyperscaler,
-  exitReadiness,
-  assuranceExpiring,
-  weakExitPlans,
-}: {
-  totalVendors: number;
-  topHyperscaler: { hyperscaler: string; count: number } | null;
-  exitReadiness: number;
-  assuranceExpiring: number;
-  weakExitPlans: number;
-}) {
-  const concentrationPct =
-    totalVendors === 0 || !topHyperscaler
-      ? 0
-      : Math.round((topHyperscaler.count / totalVendors) * 100);
-  const tone: "indigo" | "amber" | "rose" =
-    concentrationPct >= 50 ? "rose" : concentrationPct >= 30 ? "amber" : "indigo";
-  return (
-    <Widget title="Third-party concentration" icon={Boxes} tone={tone} href="/vendors">
-      {topHyperscaler ? (
-        <>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-ink">{topHyperscaler.hyperscaler}</span>
-          </div>
-          <div className="text-xs text-muted">
-            <span className="font-semibold text-ink">{topHyperscaler.count}</span> of{" "}
-            {totalVendors} vendors ·{" "}
-            <span
-              className={
-                concentrationPct >= 30
-                  ? "font-semibold text-rose-600 dark:text-rose-300"
-                  : ""
-              }
-            >
-              {concentrationPct}%
-            </span>
-          </div>
-        </>
-      ) : (
-        <p className="text-xs text-muted">
-          {totalVendors} vendor{totalVendors === 1 ? "" : "s"} · no hyperscaler tagged yet
-        </p>
-      )}
-      <div className="mt-2 flex flex-wrap items-center gap-1 text-[10px]">
-        <span className="rounded-full bg-surface-2 px-1.5 py-0.5 text-muted">
-          Exit readiness {exitReadiness}
-        </span>
-        {assuranceExpiring > 0 && (
-          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-            {assuranceExpiring} expiring
-          </span>
-        )}
-        {weakExitPlans > 0 && (
-          <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
-            {weakExitPlans} weak exit
-          </span>
-        )}
-      </div>
-      <footer className="mt-auto border-t border-line pt-2 text-[10px] text-soft">
-        DORA register
-      </footer>
-    </Widget>
-  );
-}
-
-function MtpRegisterWidget({
-  mtpTotal,
-  mtpReady,
-  notifDrafts,
-}: {
-  mtpTotal: number;
-  mtpReady: number;
-  notifDrafts: number;
-}) {
-  const pct = mtpTotal === 0 ? 0 : Math.round((mtpReady / mtpTotal) * 100);
-  const tone: "indigo" | "amber" | "rose" =
-    mtpTotal === 0 ? "indigo" : pct === 100 ? "indigo" : pct >= 50 ? "amber" : "rose";
-  return (
-    <Widget title="MTP register" icon={ShieldCheck} tone={tone} href="/vendors/register">
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-bold text-ink">
-          {mtpTotal === 0 ? "—" : `${mtpReady}/${mtpTotal}`}
-        </span>
-        {mtpTotal > 0 && <span className="text-xs text-muted">register-ready ({pct}%)</span>}
-      </div>
-      <div className="text-xs text-muted">
-        {mtpTotal === 0 ? (
-          <>No Material Third Parties flagged yet</>
-        ) : (
-          <>
-            {mtpTotal} Material Third Part{mtpTotal === 1 ? "y" : "ies"}
-          </>
-        )}
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-1 text-[10px]">
-        {notifDrafts > 0 && (
-          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-            {notifDrafts} notification draft{notifDrafts === 1 ? "" : "s"}
-          </span>
-        )}
-        {mtpReady < mtpTotal && (
-          <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
-            {mtpTotal - mtpReady} incomplete
-          </span>
-        )}
-      </div>
-      <footer className="mt-auto border-t border-line pt-2 text-[10px] text-soft">
-        FCA / PRA Annex 3
-      </footer>
-    </Widget>
-  );
-}
-
-function TechRecoveryWidget({
-  totalSystems,
-  posture,
-  noRto,
-  neverTested,
-  noFailover,
-}: {
-  totalSystems: number;
-  posture: number;
-  noRto: number;
-  neverTested: number;
-  noFailover: number;
-}) {
-  const tone: "indigo" | "amber" | "rose" =
-    posture >= 70 ? "indigo" : posture >= 50 ? "amber" : "rose";
-  return (
-    <Widget title="Technical recovery" icon={Server} tone={tone} href="/tech-recovery">
-      {totalSystems === 0 ? (
-        <p className="rounded-md border border-dashed border-line p-3 text-center text-[11px] text-muted">
-          No systems registered yet.
-        </p>
-      ) : (
-        <>
-          <div className="flex items-start gap-3">
-            <ProgressRing
-              value={posture}
-              label={String(posture)}
-              size={68}
-              thickness={7}
-            />
-            <ul className="flex-1 space-y-1 text-[11px]">
-              <li className="flex items-center justify-between">
-                <span className="text-muted">Total systems</span>
-                <span className="font-semibold text-ink">{totalSystems}</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-muted">No RTO declared</span>
-                <span
-                  className={`font-semibold ${noRto > 0 ? "text-rose-600 dark:text-rose-300" : "text-emerald-600 dark:text-emerald-300"}`}
-                >
-                  {noRto}
-                </span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-muted">Never DR-tested</span>
-                <span
-                  className={`font-semibold ${neverTested > 0 ? "text-rose-600 dark:text-rose-300" : "text-emerald-600 dark:text-emerald-300"}`}
-                >
-                  {neverTested}
-                </span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-muted">No failover</span>
-                <span
-                  className={`font-semibold ${noFailover > 0 ? "text-rose-600 dark:text-rose-300" : "text-emerald-600 dark:text-emerald-300"}`}
-                >
-                  {noFailover}
-                </span>
-              </li>
-            </ul>
-          </div>
-        </>
-      )}
-      <footer className="mt-auto border-t border-line pt-2 text-[10px] text-soft">
-        Posture score 0–100
-      </footer>
-    </Widget>
-  );
-}
-
-function CadenceWidget({
-  weeklyBuckets,
-  harmTypesCovered,
-}: {
-  weeklyBuckets: number[];
-  harmTypesCovered: number;
-}) {
-  const total = weeklyBuckets.reduce((a, b) => a + b, 0);
-  return (
-    <Widget title="Exercise tempo" icon={CalendarClock} tone="indigo" href="/exercises">
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold text-ink">{total}</span>
-        <span className="text-xs text-muted">exercises in 12 weeks</span>
-      </div>
-      <Sparkline
-        values={weeklyBuckets}
-        width={280}
-        height={36}
-        color="var(--accent)"
-        className="mt-1 w-full"
-      />
-      <div className="mt-1 flex items-center justify-between text-[10px] text-soft">
-        <span>12 wk ago</span>
-        <span>now</span>
-      </div>
-      <footer className="mt-auto flex items-center justify-between border-t border-line pt-2 text-[10px]">
-        <span className="text-muted">Harms covered this year</span>
-        <span className="font-semibold text-ink">{harmTypesCovered} / 6</span>
-      </footer>
-    </Widget>
-  );
-}
-
-function PeopleWidget({
-  rolesTotal,
-  rolesWithDeputy,
-  rolesWithDefaultHolder,
-  memberCount,
-}: {
-  rolesTotal: number;
-  rolesWithDeputy: number;
-  rolesWithDefaultHolder: number;
-  memberCount: number;
-}) {
-  const depPct = rolesTotal === 0 ? 0 : Math.round((rolesWithDeputy / rolesTotal) * 100);
-  const holderPct =
-    rolesTotal === 0 ? 0 : Math.round((rolesWithDefaultHolder / rolesTotal) * 100);
-  const tone: "indigo" | "amber" | "rose" =
-    depPct >= 50 ? "indigo" : depPct >= 25 ? "amber" : "rose";
-  return (
-    <Widget title="People & seats" icon={Users} tone={tone} href="/org/roles">
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold text-ink">{rolesTotal}</span>
-        <span className="text-xs text-muted">IMT roles defined</span>
-      </div>
-      <Bar pct={holderPct} label="With default holder" />
-      <Bar pct={depPct} label="With deputy" />
-      <footer className="mt-auto flex items-center justify-between border-t border-line pt-2 text-[10px]">
-        <span className="text-muted">Team members</span>
-        <span className="font-semibold text-ink">{memberCount}</span>
-      </footer>
-    </Widget>
-  );
-}
-
-function Bar({ pct, label }: { pct: number; label: string }) {
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-[10px]">
-        <span className="text-muted">{label}</span>
-        <span className="font-semibold text-ink">{pct}%</span>
-      </div>
-      <div className="h-1 overflow-hidden rounded-full bg-surface-2">
-        <div
-          className="h-full rounded-full bg-gradient-brand transition-all"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ComplianceClockWidget({
-  ibsReviewDueSoon,
-  overduePIRs,
-  openRegulatorNotifications,
-  overdueActionItems,
-}: {
-  ibsReviewDueSoon: number;
-  overduePIRs: number;
-  openRegulatorNotifications: number;
-  overdueActionItems: number;
-}) {
-  const totalDue = overduePIRs + openRegulatorNotifications + overdueActionItems;
-  const tone: "emerald" | "amber" | "rose" =
-    totalDue === 0 ? "emerald" : totalDue >= 5 ? "rose" : "amber";
-  return (
-    <Widget title="Compliance clock" icon={ShieldCheck} tone={tone} href="/audit">
-      <ul className="space-y-1.5 text-xs">
-        <Row
-          icon={CalendarClock}
-          label="IBS reviews due (30d)"
-          value={ibsReviewDueSoon}
-          tone={ibsReviewDueSoon > 0 ? "warn" : "ok"}
-        />
-        <Row
-          icon={FileText}
-          label="PIRs overdue"
-          value={overduePIRs}
-          tone={overduePIRs > 0 ? "critical" : "ok"}
-        />
-        <Row
-          icon={Crown}
-          label="Regulator notifications open"
-          value={openRegulatorNotifications}
-          tone={openRegulatorNotifications > 0 ? "warn" : "ok"}
-        />
-        <Row
-          icon={Flame}
-          label="Action items overdue"
-          value={overdueActionItems}
-          tone={
-            overdueActionItems === 0
-              ? "ok"
-              : overdueActionItems >= 5
-                ? "critical"
-                : "warn"
-          }
-        />
-      </ul>
-      <footer className="mt-auto border-t border-line pt-2 text-[10px] text-soft">
-        Time-bound obligations
-      </footer>
-    </Widget>
-  );
-}
-
-function Row({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: number;
-  tone: "ok" | "warn" | "critical";
-}) {
-  return (
-    <li className="flex items-center justify-between">
-      <span className="flex items-center gap-1.5 text-muted">
-        <Icon size={10} />
-        {label}
-      </span>
-      <span
-        className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-          tone === "critical"
-            ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
-            : tone === "warn"
-              ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-        }`}
-      >
-        {value}
-      </span>
-    </li>
-  );
-}
-
-// ─── Activity feed ──────────────────────────────────────────────────────
-
-function ActivityFeed({
-  feed,
-}: {
-  feed: {
-    id: string;
-    kind: "sitrep" | "decision" | "clone";
-    title: string;
-    sub: string;
-    href: string;
-    at: Date;
-  }[];
-}) {
-  return (
-    <article className="flex h-full flex-col overflow-hidden rounded-xl border border-line bg-surface-1 lg:row-span-2">
-      <div className="h-1 bg-gradient-to-r from-violet-500 to-violet-400" />
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <header className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-soft">
-          <FileText size={11} />
-          Activity (last 7 days)
-        </header>
-        {feed.length === 0 ? (
-          <p className="rounded-md border border-dashed border-line p-3 text-center text-[11px] text-muted">
-            Quiet week — no decisions, sitreps or scenario clones recorded.
-          </p>
-        ) : (
-          <ul className="space-y-1.5">
-            {feed.map((f) => (
-              <li key={f.id}>
-                <Link
-                  href={f.href}
-                  className="flex items-start gap-2 rounded-md border border-line bg-surface-0 px-2.5 py-1.5 text-xs hover:bg-surface-2"
-                >
-                  <FeedIcon kind={f.kind} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-ink">{f.title}</p>
-                    <p className="truncate text-[10px] text-soft">{f.sub}</p>
-                  </div>
-                  <span className="shrink-0 text-[10px] text-soft">
-                    {timeAgo(f.at)}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function FeedIcon({ kind }: { kind: "sitrep" | "decision" | "clone" }) {
-  if (kind === "sitrep")
-    return <FileText size={11} className="mt-0.5 shrink-0 text-cyan-600 dark:text-cyan-300" />;
-  if (kind === "decision")
-    return (
-      <ShieldCheck size={11} className="mt-0.5 shrink-0 text-indigo-600 dark:text-indigo-300" />
-    );
-  return <Database size={11} className="mt-0.5 shrink-0 text-violet-600 dark:text-violet-300" />;
-}
-
-function timeAgo(d: Date): string {
-  const s = Math.round((Date.now() - d.getTime()) / 1000);
-  if (s < 60) return `${s}s`;
-  if (s < 3600) return `${Math.floor(s / 60)}m`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  return `${Math.floor(s / 86400)}d`;
-}
 
 // ─── Next best actions ─────────────────────────────────────────────────
 
@@ -1431,5 +802,45 @@ function LandingPage() {
       </section>
     </div>
   );
+}
+
+function buildComplianceOffenders({
+  overdueActions,
+  ibsReviews,
+  now,
+}: {
+  overdueActions: {
+    id: string;
+    title: string;
+    dueAt: Date | null;
+    exercise: { id: string; title: string };
+  }[];
+  ibsReviews: {
+    id: string;
+    code: string;
+    name: string;
+    reviewDueAt: Date | null;
+  }[];
+  now: Date;
+}): PanelOffender[] {
+  const fmtDays = (d: Date) => {
+    const ms = d.getTime() - now.getTime();
+    const days = Math.round(ms / 86_400_000);
+    if (days < 0) return `${Math.abs(days)}d overdue`;
+    if (days === 0) return "due today";
+    return `due in ${days}d`;
+  };
+  const actionItems = overdueActions.map((a): PanelOffender => ({
+    label: a.title,
+    sub: a.dueAt ? fmtDays(a.dueAt) : "no due date",
+    href: `/exercises/${a.exercise.id}`,
+  }));
+  const reviewItems = ibsReviews.map((i): PanelOffender => ({
+    label: `${i.code} · ${i.name} review`,
+    sub: i.reviewDueAt ? fmtDays(i.reviewDueAt) : undefined,
+    href: `/ibs/${i.id}`,
+  }));
+  // Overdue actions are more urgent than upcoming reviews — surface them first.
+  return [...actionItems, ...reviewItems].slice(0, 5);
 }
 
