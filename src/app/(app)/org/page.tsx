@@ -12,21 +12,14 @@ import PageHero from "@/components/ui/PageHero";
 import OrgInviteButton from "./OrgInviteButton";
 import OrgBulkImportButton from "./OrgBulkImportButton";
 import {
-  changeRoleAction,
-  removeMemberAction,
   resendInvitationAction,
   revokeInvitationAction,
 } from "@/app/actions/org";
 import ConfirmButton from "@/components/ConfirmButton";
 import TierBadge from "@/components/org/TierBadge";
 import TierMinimumsPanel from "@/components/org/TierMinimumsPanel";
+import OrgMatrix from "@/components/org/OrgMatrix";
 import { evaluateTierMinimums } from "@/lib/tier-minimums";
-
-function initials(s: string): string {
-  const parts = s.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return (s[0] ?? "?").toUpperCase();
-}
 
 export default async function OrgPage() {
   // Anyone in the org can see this page; only OWNER/ADMIN can act.
@@ -45,7 +38,36 @@ export default async function OrgPage() {
           email: true,
           orgRole: true,
           createdAt: true,
-          _count: { select: { exerciseParticipations: true } },
+          jobTitle: true,
+          location: true,
+          phone: true,
+          altEmail: true,
+          outOfHoursPhone: true,
+          department: {
+            select: { id: true, name: true, abbreviation: true },
+          },
+          defaultRoleHoldings: {
+            select: {
+              id: true,
+              abbreviation: true,
+              title: true,
+              isSMF: true,
+              isExecutive: true,
+              deputyOfRoleId: true,
+            },
+          },
+          ownedIBS: {
+            select: { id: true, code: true, name: true },
+            orderBy: { code: "asc" },
+            take: 5,
+          },
+          _count: {
+            select: {
+              exerciseParticipations: true,
+              ownedIBS: true,
+              ownedActionItems: { where: { status: { in: ["OPEN", "IN_PROGRESS", "BLOCKED"] } } },
+            },
+          },
         },
       }),
       canManage
@@ -132,62 +154,38 @@ export default async function OrgPage() {
 
       <TierMinimumsPanel result={tierMinimums} />
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Members</h2>
-        <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface-1">
-          {members.map((m) => (
-            <li key={m.id} className="flex items-center justify-between p-3 text-sm">
-              <Link
-                href={`/org/${m.id}`}
-                className="-m-3 flex items-center gap-3 rounded-md p-3 hover:bg-surface-2"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
-                  {initials(m.name ?? m.email)}
-                </div>
-                <div>
-                  <div className="font-medium text-ink">{m.name ?? m.email}</div>
-                  <div className="text-xs text-muted">
-                    {m.email} · {m._count.exerciseParticipations}{" "}
-                    {m._count.exerciseParticipations === 1 ? "exercise" : "exercises"}
-                  </div>
-                </div>
-              </Link>
-              <div className="flex items-center gap-3">
-                {canManage && m.id !== me.id ? (
-                  <form action={changeRoleAction} className="flex items-center gap-2">
-                    <input type="hidden" name="userId" value={m.id} />
-                    <select
-                      name="role"
-                      defaultValue={m.orgRole ?? "MEMBER"}
-                      className="rounded border border-line-strong px-2 py-1 text-xs"
-                    >
-                      {me.orgRole === "OWNER" && <option value="OWNER">OWNER</option>}
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="MEMBER">MEMBER</option>
-                    </select>
-                    <button className="rounded border border-line-strong px-2 py-1 text-xs hover:bg-surface-0">
-                      Save
-                    </button>
-                  </form>
-                ) : (
-                  <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{m.orgRole}</span>
-                )}
-                {canManage && m.id !== me.id && (
-                  <ConfirmButton
-                    action={removeMemberAction}
-                    hidden={{ userId: m.id }}
-                    label="Remove"
-                    title={`Remove ${m.name ?? m.email}?`}
-                    body="They'll lose access to the organisation immediately. They can be re-invited later."
-                    confirmLabel="Remove"
-                    successMessage="Member removed"
-                  />
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <OrgMatrix
+        canManage={canManage}
+        members={members.map((m) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          orgRole: m.orgRole,
+          jobTitle: m.jobTitle,
+          location: m.location,
+          phone: m.phone,
+          outOfHoursPhone: m.outOfHoursPhone,
+          altEmail: m.altEmail,
+          department: m.department
+            ? {
+                id: m.department.id,
+                name: m.department.name,
+                abbreviation: m.department.abbreviation,
+              }
+            : null,
+          seats: m.defaultRoleHoldings.map((r) => ({
+            id: r.id,
+            abbreviation: r.abbreviation,
+            title: r.title,
+            isSMF: r.isSMF,
+            isExecutive: r.isExecutive,
+            isDeputy: r.deputyOfRoleId !== null,
+          })),
+          ownedIBSCount: m._count.ownedIBS,
+          ownedIBSSample: m.ownedIBS,
+          openActionItemsCount: m._count.ownedActionItems,
+        }))}
+      />
 
       {canManage && (
         <section className="space-y-3">

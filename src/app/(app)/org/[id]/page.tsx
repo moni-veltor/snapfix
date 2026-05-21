@@ -16,6 +16,11 @@ import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import MemberProfileEditButton from "./MemberProfileEditButton";
+import ConfirmButton from "@/components/ConfirmButton";
+import {
+  changeRoleAction,
+  removeMemberAction,
+} from "@/app/actions/org";
 
 export const metadata = { title: "Member profile — SnapFix" };
 
@@ -232,6 +237,50 @@ export default async function MemberProfilePage({
           />
         </div>
       </section>
+
+      {/* Admin-only org membership controls (role change + remove) */}
+      {me.orgRole === "OWNER" || me.orgRole === "ADMIN" ? (
+        !isMe ? (
+          <section className="space-y-3 rounded-xl border border-line bg-surface-1 p-5">
+            <header>
+              <h2 className="text-sm font-semibold text-ink">Org membership</h2>
+              <p className="mt-0.5 text-xs text-muted">
+                Change their access role or remove them from the organisation.
+              </p>
+            </header>
+            <div className="flex flex-wrap items-center gap-3">
+              <form action={changeRoleAction} className="flex items-center gap-2">
+                <input type="hidden" name="userId" value={user.id} />
+                <label className="text-xs text-muted">Role</label>
+                <select
+                  name="role"
+                  defaultValue={user.orgRole ?? "MEMBER"}
+                  className="rounded-md border border-line-strong bg-surface-0 px-2 py-1 text-xs"
+                >
+                  {me.orgRole === "OWNER" && <option value="OWNER">OWNER</option>}
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="MEMBER">MEMBER</option>
+                </select>
+                <button
+                  type="submit"
+                  className="rounded-md border border-line-strong bg-surface-0 px-3 py-1 text-xs font-medium text-ink hover:bg-surface-2"
+                >
+                  Save role
+                </button>
+              </form>
+              <ConfirmButton
+                action={removeMemberAction}
+                hidden={{ userId: user.id }}
+                label="Remove from org"
+                title={`Remove ${displayName}?`}
+                body="They'll lose access immediately. They can be re-invited later."
+                confirmLabel="Remove"
+                successMessage="Member removed"
+              />
+            </div>
+          </section>
+        ) : null
+      ) : null}
 
       {/* Default-roles list */}
       {defaultRoles.length > 0 && (
