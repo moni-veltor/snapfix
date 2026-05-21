@@ -17,9 +17,8 @@ import {
 } from "@/lib/dora";
 import { postureScore, type SystemWithTests } from "@/lib/tech-recovery";
 import FeaturedCard from "@/components/ui/FeaturedCard";
-import DailyTipCard from "@/components/fun/DailyTipCard";
 import YourLiveExerciseWidget from "@/components/dashboard/YourLiveExerciseWidget";
-import RecapCard from "@/components/dashboard/RecapCard";
+import RecapCard, { type ActivityItem } from "@/components/dashboard/RecapCard";
 import NudgeBar from "@/components/dashboard/NudgeBar";
 import NextBestActions from "@/components/dashboard/NextBestActions";
 import PulseScoreChip from "@/components/dashboard/PulseScoreChip";
@@ -67,6 +66,7 @@ async function Dashboard({
 }) {
   const now = new Date();
   const ago90 = new Date(now.getTime() - 90 * 86_400_000);
+  const ago7d = new Date(now.getTime() - 7 * 86_400_000);
   const in30d = new Date(now.getTime() + 30 * 86_400_000);
 
   // "Since you were here last" cut point — read + maybe bump in one call.
@@ -209,6 +209,28 @@ async function Dashboard({
         select: { id: true, code: true, name: true, reviewDueAt: true },
       }),
     ]);
+
+  // ─── Last-7d activity feed (folded into the RecapCard expander) ────────
+  const [recentSitreps, recentDecisions, recentClones] = await Promise.all([
+    prisma.sitrep.findMany({
+      where: { incident: { exercise: { orgId } }, createdAt: { gte: ago7d } },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      include: { incident: { select: { title: true, exerciseId: true } } },
+    }),
+    prisma.decisionRecord.findMany({
+      where: { incident: { exercise: { orgId } }, createdAt: { gte: ago7d } },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      include: { incident: { select: { title: true, exerciseId: true } } },
+    }),
+    prisma.scenario.findMany({
+      where: { orgId, templateOriginId: { not: null }, createdAt: { gte: ago7d } },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+      select: { id: true, title: true, createdAt: true },
+    }),
+  ]);
 
   // ─── 90d-ago snapshots for "compared to what" deltas ─────────────────────
   // We retro-compute by filtering by createdAt / completedAt against the
@@ -461,6 +483,37 @@ async function Dashboard({
     liveExerciseCount: inProgress.length,
   });
 
+  // Folded into the RecapCard expander — what used to be the standalone
+  // ActivityFeed widget. Three feed kinds merged + sorted newest-first.
+  const recentActivity: ActivityItem[] = [
+    ...recentSitreps.map((s): ActivityItem => ({
+      id: `s-${s.id}`,
+      kind: "sitrep",
+      title: s.summary.slice(0, 80),
+      sub: `${s.businessUnit} · ${s.incident.title}`,
+      href: `/exercises/${s.incident.exerciseId}`,
+      at: s.createdAt,
+    })),
+    ...recentDecisions.map((d): ActivityItem => ({
+      id: `d-${d.id}`,
+      kind: "decision",
+      title: d.title,
+      sub: d.incident.title,
+      href: `/exercises/${d.incident.exerciseId}`,
+      at: d.createdAt,
+    })),
+    ...recentClones.map((c): ActivityItem => ({
+      id: `c-${c.id}`,
+      kind: "clone",
+      title: c.title,
+      sub: "Scenario cloned",
+      href: `/scenarios/${c.id}`,
+      at: c.createdAt,
+    })),
+  ]
+    .sort((a, b) => b.at.getTime() - a.at.getTime())
+    .slice(0, 8);
+
   // Build widget props for participant personalisation.
   const liveExercise = myLiveParticipation
     ? {
@@ -525,7 +578,7 @@ async function Dashboard({
         userId={userId}
       />
 
-      <RecapCard recap={recap} userName={userName} />
+      <RecapCard recap={recap} userName={userName} recentActivity={recentActivity} />
 
       {recapCutPoint && newUnlocksSinceVisit > 0 && (
         <UnlockToast
@@ -583,8 +636,6 @@ async function Dashboard({
           ibsReviewDueSoon={ibsReviewDueSoon}
         />
       </section>
-
-      <DailyTipCard />
     </div>
   );
 }

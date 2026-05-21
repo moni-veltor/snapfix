@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import {
   Activity,
   ArrowRight,
@@ -7,9 +10,13 @@ import {
   Building2,
   CheckCircle2,
   CheckSquare,
+  ChevronDown,
+  ChevronUp,
+  Database,
   FileText,
   Flame,
   ShieldAlert,
+  ShieldCheck,
   Sparkles,
   Trophy,
   Workflow,
@@ -18,6 +25,15 @@ import {
 } from "lucide-react";
 import FeaturedCard from "@/components/ui/FeaturedCard";
 import type { DashboardRecap, RecapItem, RecapTone } from "@/lib/dashboard-recap";
+
+export type ActivityItem = {
+  id: string;
+  kind: "sitrep" | "decision" | "clone";
+  title: string;
+  sub: string;
+  href: string;
+  at: Date;
+};
 
 const ICON_MAP: Record<RecapItem["icon"], LucideIcon> = {
   ibs: Building2,
@@ -65,10 +81,15 @@ const TONE_CLS: Record<RecapTone, { dot: string; pill: string }> = {
 export default function RecapCard({
   recap,
   userName,
+  recentActivity = [],
 }: {
   recap: DashboardRecap;
   userName: string;
+  /** Optional last-7d feed of sitreps / decisions / scenario clones —
+   *  rendered as an expandable section below the recap items. */
+  recentActivity?: ActivityItem[];
 }) {
+  const [activityOpen, setActivityOpen] = useState(false);
   // ── First-time visitor ────────────────────────────────────────────────
   if (recap.since === null) {
     return (
@@ -188,6 +209,59 @@ export default function RecapCard({
           );
         })}
       </ul>
+
+      {recentActivity.length > 0 && (
+        <div className="mt-3 border-t border-line pt-2">
+          <button
+            type="button"
+            onClick={() => setActivityOpen((s) => !s)}
+            aria-expanded={activityOpen}
+            className="flex w-full items-center justify-between text-[11px] font-medium text-indigo-600 hover:underline dark:text-indigo-300"
+          >
+            <span>
+              {activityOpen ? "Hide" : "Show"} last 7 days activity ({recentActivity.length})
+            </span>
+            {activityOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+          </button>
+          {activityOpen && (
+            <ul className="mt-2 space-y-1">
+              {recentActivity.map((f) => (
+                <li key={f.id}>
+                  <Link
+                    href={f.href}
+                    className="flex items-start gap-2 rounded-md border border-line bg-surface-0 px-2.5 py-1.5 text-xs hover:bg-surface-2"
+                  >
+                    <FeedIcon kind={f.kind} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-ink">{f.title}</p>
+                      <p className="truncate text-[10px] text-soft">{f.sub}</p>
+                    </div>
+                    <span className="shrink-0 text-[10px] text-soft">{timeAgo(f.at)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </FeaturedCard>
   );
+}
+
+function FeedIcon({ kind }: { kind: ActivityItem["kind"] }) {
+  if (kind === "sitrep")
+    return <FileText size={11} className="mt-0.5 shrink-0 text-cyan-600 dark:text-cyan-300" />;
+  if (kind === "decision")
+    return (
+      <ShieldCheck size={11} className="mt-0.5 shrink-0 text-indigo-600 dark:text-indigo-300" />
+    );
+  return <Database size={11} className="mt-0.5 shrink-0 text-violet-600 dark:text-violet-300" />;
+}
+
+function timeAgo(d: Date): string {
+  const s = Math.round((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  return `${Math.floor(s / 86400)}d`;
 }
