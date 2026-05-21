@@ -12,6 +12,7 @@ import PageHero from "@/components/ui/PageHero";
 import OrgOnboardDrawer from "./OrgOnboardDrawer";
 import OrgBulkImportButton from "./OrgBulkImportButton";
 import {
+  extendInvitationAction,
   resendInvitationAction,
   revokeInvitationAction,
 } from "@/app/actions/org";
@@ -25,9 +26,19 @@ export default async function OrgPage() {
   // Anyone in the org can see this page; only OWNER/ADMIN can act.
   const me = await requireOrgUser();
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
+  // Server-component render maps 1:1 to a request — snapshot the wall
+  // clock once so the invite-expiry math is stable for this response.
+  /* eslint-disable-next-line react-hooks/purity */
+  const nowMs = Date.now();
 
-  const [org, members, pendingInvitations, tierMinimums, presetEligibility] =
-    await Promise.all([
+  const [
+    org,
+    members,
+    pendingInvitations,
+    tierMinimums,
+    presetEligibility,
+    departments,
+  ] = await Promise.all([
       prisma.organization.findUniqueOrThrow({ where: { id: me.orgId } }),
       prisma.user.findMany({
         where: { orgId: me.orgId },
@@ -43,6 +54,7 @@ export default async function OrgPage() {
           phone: true,
           altEmail: true,
           outOfHoursPhone: true,
+          lastReadinessCheckAt: true,
           department: {
             select: { id: true, name: true, abbreviation: true },
           },
@@ -87,6 +99,11 @@ export default async function OrgPage() {
             prisma.vendor.count({ where: { orgId: me.orgId } }),
           ]).then(([roles, ibs, vendors]) => roles + ibs + vendors === 0)
         : Promise.resolve(false),
+      prisma.department.findMany({
+        where: { orgId: me.orgId },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
     ]);
 
   return (
@@ -156,6 +173,7 @@ export default async function OrgPage() {
 
       <OrgMatrix
         canManage={canManage}
+        departments={departments}
         members={members.map((m) => ({
           id: m.id,
           name: m.name,
@@ -166,6 +184,7 @@ export default async function OrgPage() {
           phone: m.phone,
           outOfHoursPhone: m.outOfHoursPhone,
           altEmail: m.altEmail,
+          lastReadinessCheckAt: m.lastReadinessCheckAt,
           department: m.department
             ? {
                 id: m.department.id,
@@ -196,34 +215,75 @@ export default async function OrgPage() {
             </p>
           ) : (
             <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface-1">
-              {pendingInvitations.map((inv) => (
-                <li key={inv.id} className="flex items-center justify-between p-3 text-sm">
-                  <div>
-                    <div className="font-medium">{inv.email}</div>
-                    <div className="text-xs text-muted">
-                      {inv.role} · invited by{" "}
-                      {inv.invitedBy?.name ?? inv.invitedBy?.email ?? "—"} ·
-                      {" expires "}
-                      {inv.expiresAt.toISOString().slice(0, 10)}
+              {pendingInvitations.map((inv) => {
+                const daysToExpiry = Math.ceil(
+                  (inv.expiresAt.getTime() - nowMs) / 86_400_000,
+                );
+                const expired = daysToExpiry <= 0;
+                const expiringSoon = daysToExpiry > 0 && daysToExpiry <= 3;
+                const expiryChip = expired
+                  ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
+                  : expiringSoon
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                    : "bg-surface-2 text-muted";
+                const expiryLabel = expired
+                  ? `Expired ${Math.abs(daysToExpiry)}d ago`
+                  : daysToExpiry === 0
+                    ? "Expires today"
+                    : `Expires in ${daysToExpiry}d`;
+                return (
+                  <li key={inv.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-ink">{inv.email}</div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                        <span>{inv.role}</span>
+                        <span>·</span>
+                        <span>
+                          invited by{" "}
+                          {inv.invitedBy?.name ?? inv.invitedBy?.email ?? "—"}
+                        </span>
+                        <span>·</span>
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${expiryChip}`}
+                        >
+                          {expiryLabel}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <form action={resendInvitationAction}>
-                      <input type="hidden" name="id" value={inv.id} />
-                      <button className="text-xs text-muted hover:underline">Resend</button>
-                    </form>
-                    <ConfirmButton
-                      action={revokeInvitationAction}
-                      hidden={{ id: inv.id }}
-                      label="Revoke"
-                      title={`Revoke this invitation?`}
-                      body={`The invite to ${inv.email} will be cancelled and the accept link will stop working.`}
-                      confirmLabel="Revoke"
-                      successMessage="Invitation revoked"
-                    />
-                  </div>
-                </li>
-              ))}
+                    <div className="flex items-center gap-1">
+                      <form action={resendInvitationAction}>
+                        <input type="hidden" name="id" value={inv.id} />
+                        <button
+                          type="submit"
+                          className="rounded-md px-2 py-1 text-xs font-medium text-ink hover:bg-surface-2"
+                          title="Re-issue the link + send a fresh email"
+                        >
+                          Re-send
+                        </button>
+                      </form>
+                      <form action={extendInvitationAction}>
+                        <input type="hidden" name="id" value={inv.id} />
+                        <button
+                          type="submit"
+                          className="rounded-md px-2 py-1 text-xs font-medium text-ink hover:bg-surface-2"
+                          title="Extend the deadline by 14 days without emailing again"
+                        >
+                          Extend
+                        </button>
+                      </form>
+                      <ConfirmButton
+                        action={revokeInvitationAction}
+                        hidden={{ id: inv.id }}
+                        label="Revoke"
+                        title={`Revoke this invitation?`}
+                        body={`The invite to ${inv.email} will be cancelled and the accept link will stop working.`}
+                        confirmLabel="Revoke"
+                        successMessage="Invitation revoked"
+                      />
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Drawer from "@/components/ui/Drawer";
+import { bulkAssignDepartmentAction } from "@/app/actions/org";
 
 export type MatrixSeat = {
   id: string;
@@ -50,6 +51,7 @@ export type MatrixMember = {
   phone: string | null;
   outOfHoursPhone: string | null;
   altEmail: string | null;
+  lastReadinessCheckAt: Date | null;
   department: MatrixDepartment | null;
   seats: MatrixSeat[];
   ownedIBSCount: number;
@@ -57,7 +59,16 @@ export type MatrixMember = {
   openActionItemsCount: number;
 };
 
-type Filter = "all" | "smf" | "exec" | "missing" | "deputy-gap";
+type Filter =
+  | "all"
+  | "smf"
+  | "exec"
+  | "missing"
+  | "deputy-gap"
+  | "ready"
+  | "no-ooh"
+  | "no-seat"
+  | "stale-contact";
 
 const FILTERS: { id: Filter; label: string }[] = [
   { id: "all", label: "All" },
@@ -98,6 +109,17 @@ function hasDeputyGap(m: MatrixMember): boolean {
   return m.seats.some((s) => s.isSMF) && m.seats.length === 1;
 }
 
+const STALE_AFTER_MS = 180 * 86_400_000;
+
+function isExerciseReady(m: MatrixMember): boolean {
+  return !!m.jobTitle && !!m.phone && !!m.outOfHoursPhone;
+}
+
+function isStaleContact(m: MatrixMember, now: number): boolean {
+  if (!m.lastReadinessCheckAt) return true;
+  return now - m.lastReadinessCheckAt.getTime() > STALE_AFTER_MS;
+}
+
 /**
  * Two-pane matrix view of the org: people grouped by department, with
  * a person-detail drawer on click. Filter strip + search + print
@@ -107,13 +129,19 @@ function hasDeputyGap(m: MatrixMember): boolean {
 export default function OrgMatrix({
   members,
   canManage,
+  departments = [],
 }: {
   members: MatrixMember[];
   canManage: boolean;
+  /** All departments in the org — drives the bulk-assign dropdown. */
+  departments?: { id: string; name: string }[];
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  // Stable "now" so the visible filter doesn't churn on each render.
+  const [now] = useState(() => Date.now());
 
   const q = query.trim().toLowerCase();
   const visible = useMemo(() => {
@@ -130,9 +158,13 @@ export default function OrgMatrix({
       if (filter === "exec" && !m.seats.some((s) => s.isExecutive)) return false;
       if (filter === "missing" && missingData(m).length === 0) return false;
       if (filter === "deputy-gap" && !hasDeputyGap(m)) return false;
+      if (filter === "ready" && !isExerciseReady(m)) return false;
+      if (filter === "no-ooh" && !!m.outOfHoursPhone) return false;
+      if (filter === "no-seat" && m.seats.length > 0) return false;
+      if (filter === "stale-contact" && !isStaleContact(m, now)) return false;
       return true;
     });
-  }, [members, q, filter]);
+  }, [members, q, filter, now]);
 
   // Group visible members by department.
   const grouped = useMemo(() => {
@@ -160,10 +192,183 @@ export default function OrgMatrix({
     deputyGap: members.filter(hasDeputyGap).length,
   };
 
-  const selected = openId ? members.find((m) => m.id === openId) ?? null : null;
+  // Roster-readiness chips — aggregate signals doubling as filter shortcuts.
+  const readiness = {
+    ready: members.filter(isExerciseReady).length,
+    noOOH: members.filter((m) => !m.outOfHoursPhone).length,
+    noSeat: members.filter((m) => m.seats.length === 0).length,
+    stale: members.filter((m) => isStaleContact(m, now)).length,
+  };
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAllVisible() {
+    setSelectedIds(new Set(visible.map((m) => m.id)));
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
+  function exportCsv() {
+    const rows = (selectedIds.size > 0
+      ? members.filter((m) => selectedIds.has(m.id))
+      : visible
+    ).map((m) => ({
+      name: m.name ?? "",
+      email: m.email,
+      role: m.orgRole ?? "",
+      jobTitle: m.jobTitle ?? "",
+      department: m.department?.name ?? "",
+      phone: m.phone ?? "",
+      ooh: m.outOfHoursPhone ?? "",
+      location: m.location ?? "",
+      seats: m.seats.map((s) => s.abbreviation).join(" "),
+      ibsOwned: m.ownedIBSCount,
+    }));
+    const headers = Object.keys(rows[0] ?? { name: "" });
+    const escape = (v: unknown) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [
+      headers.join(","),
+      ...rows.map((r) => headers.map((h) => escape((r as Record<string, unknown>)[h])).join(",")),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `org-directory-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  const selectedPerson = openId ? members.find((m) => m.id === openId) ?? null : null;
 
   return (
     <section className="space-y-4 print:space-y-2">
+      {/* Roster readiness band — aggregate signals, clickable as filters. */}
+      <div className="grid gap-2 sm:grid-cols-4 print:hidden">
+        <ReadinessChip
+          label="Exercise-ready"
+          value={readiness.ready}
+          total={members.length}
+          tone="ok"
+          active={filter === "ready"}
+          onClick={() => setFilter(filter === "ready" ? "all" : "ready")}
+        />
+        <ReadinessChip
+          label="Missing OOH phone"
+          value={readiness.noOOH}
+          total={members.length}
+          tone={readiness.noOOH > 0 ? "critical" : "ok"}
+          active={filter === "no-ooh"}
+          onClick={() => setFilter(filter === "no-ooh" ? "all" : "no-ooh")}
+        />
+        <ReadinessChip
+          label="Never claimed a seat"
+          value={readiness.noSeat}
+          total={members.length}
+          tone={readiness.noSeat > 0 ? "warn" : "ok"}
+          active={filter === "no-seat"}
+          onClick={() => setFilter(filter === "no-seat" ? "all" : "no-seat")}
+        />
+        <ReadinessChip
+          label="Stale contact (>180d)"
+          value={readiness.stale}
+          total={members.length}
+          tone={readiness.stale > 0 ? "warn" : "ok"}
+          active={filter === "stale-contact"}
+          onClick={() => setFilter(filter === "stale-contact" ? "all" : "stale-contact")}
+        />
+      </div>
+
+      {/* Bulk-action toolbar — appears when ≥ 1 member is selected. */}
+      {canManage && selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-indigo-300 bg-indigo-50/60 px-3 py-2 text-xs dark:border-indigo-700/60 dark:bg-indigo-950/30 print:hidden">
+          <span className="font-semibold text-indigo-700 dark:text-indigo-200">
+            {selectedIds.size} selected
+          </span>
+          <button
+            type="button"
+            onClick={selectAllVisible}
+            className="rounded-md px-2 py-1 text-indigo-700 hover:bg-indigo-100 dark:text-indigo-200 dark:hover:bg-indigo-900/50"
+          >
+            Select all visible
+          </button>
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="rounded-md px-2 py-1 text-soft hover:bg-surface-2 hover:text-ink"
+          >
+            Clear
+          </button>
+          <span className="text-soft">·</span>
+          <button
+            type="button"
+            onClick={exportCsv}
+            className="rounded-md bg-slate-900 px-2 py-1 font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+          >
+            Export CSV
+          </button>
+          {departments.length > 0 && (
+            <form
+              action={`/api/org/bulk-assign-department`}
+              method="post"
+              className="ml-auto inline-flex items-center gap-1"
+              onSubmit={(e) => {
+                // We submit via fetch instead of a real form post so we can
+                // call the server action directly. The form element here is
+                // only used for the select's keyboard navigation grouping.
+                e.preventDefault();
+                const fd = new FormData(e.currentTarget);
+                const select = e.currentTarget.querySelector(
+                  "select[name=departmentId]",
+                ) as HTMLSelectElement | null;
+                if (!select) return;
+                fd.set("departmentId", select.value);
+                fd.set("userIds", [...selectedIds].join(","));
+                bulkAssignDepartmentAction(fd).then(() => {
+                  clearSelection();
+                  // Let the server-revalidated render flow back.
+                  window.location.reload();
+                });
+              }}
+            >
+              <label className="text-soft">Assign to dept:</label>
+              <select
+                name="departmentId"
+                defaultValue=""
+                className="rounded-md border border-line-strong bg-surface-0 px-2 py-1 text-xs"
+              >
+                <option value="">— Unassign —</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="submit"
+                className="rounded-md border border-line-strong bg-surface-0 px-2 py-1 font-medium text-ink hover:bg-surface-2"
+              >
+                Apply
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
       {/* Filter strip — hidden in print view */}
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <div className="relative min-w-[220px] flex-1">
@@ -253,6 +458,8 @@ export default function OrgMatrix({
                   <PersonCard
                     person={m}
                     onClick={() => setOpenId(m.id)}
+                    selected={selectedIds.has(m.id)}
+                    onToggleSelected={canManage ? () => toggleSelected(m.id) : undefined}
                   />
                 </li>
               ))}
@@ -263,13 +470,15 @@ export default function OrgMatrix({
 
       {/* Detail drawer — read-only summary + deep-links to edit */}
       <Drawer
-        open={!!selected}
+        open={!!selectedPerson}
         onClose={() => setOpenId(null)}
-        title={selected?.name ?? selected?.email ?? ""}
-        subtitle={selected?.jobTitle ?? selected?.email ?? ""}
+        title={selectedPerson?.name ?? selectedPerson?.email ?? ""}
+        subtitle={selectedPerson?.jobTitle ?? selectedPerson?.email ?? ""}
         width="md"
       >
-        {selected && <PersonDetail person={selected} canManage={canManage} />}
+        {selectedPerson && (
+          <PersonDetail person={selectedPerson} canManage={canManage} />
+        )}
       </Drawer>
     </section>
   );
@@ -278,20 +487,48 @@ export default function OrgMatrix({
 function PersonCard({
   person,
   onClick,
+  selected = false,
+  onToggleSelected,
 }: {
   person: MatrixMember;
   onClick: () => void;
+  selected?: boolean;
+  /** When supplied, a checkbox renders + bulk-toolbar wakes up. */
+  onToggleSelected?: () => void;
 }) {
   const roleTone = ROLE_TONE[person.orgRole ?? "MEMBER"] ?? ROLE_TONE.MEMBER;
   const missing = missingData(person);
   const deputyGap = hasDeputyGap(person);
+  const ring = selected
+    ? "border-indigo-400 ring-2 ring-indigo-300/60"
+    : "border-line";
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="group block w-full rounded-md border border-line bg-surface-1 p-3 text-left transition-all hover:-translate-y-px hover:shadow-[var(--shadow-card)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 print:break-inside-avoid"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`group block w-full cursor-pointer rounded-md border bg-surface-1 p-3 text-left transition-all hover:-translate-y-px hover:shadow-[var(--shadow-card)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 print:break-inside-avoid ${ring}`}
     >
       <header className="flex items-start gap-2">
+        {onToggleSelected && (
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={(e) => {
+              e.stopPropagation();
+              onToggleSelected();
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-2 print:hidden"
+            aria-label={`Select ${person.name ?? person.email}`}
+          />
+        )}
         <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
           {initials(person.name ?? person.email)}
         </div>
@@ -368,6 +605,58 @@ function PersonCard({
           </span>
         )}
       </footer>
+    </div>
+  );
+}
+
+function ReadinessChip({
+  label,
+  value,
+  total,
+  tone,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  tone: "ok" | "warn" | "critical";
+  active: boolean;
+  onClick: () => void;
+}) {
+  const pct = total === 0 ? 0 : Math.round((value / total) * 100);
+  const ring =
+    tone === "critical"
+      ? "border-rose-300 dark:border-rose-700/60"
+      : tone === "warn"
+        ? "border-amber-300 dark:border-amber-700/60"
+        : "border-emerald-300 dark:border-emerald-700/60";
+  const dot =
+    tone === "critical"
+      ? "bg-rose-500"
+      : tone === "warn"
+        ? "bg-amber-500"
+        : "bg-emerald-500";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex w-full items-center justify-between gap-2 rounded-md border bg-surface-1 px-3 py-2 text-left transition-all hover:-translate-y-px hover:shadow-[var(--shadow-card)] ${ring} ${
+        active ? "ring-2 ring-indigo-300/60" : ""
+      }`}
+      title={`${value} of ${total} — click to filter`}
+    >
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-soft">
+          {label}
+        </p>
+        <p className="mt-0.5 flex items-baseline gap-1">
+          <span className="text-2xl font-semibold text-ink">{value}</span>
+          <span className="text-[10px] text-soft">/ {total} · {pct}%</span>
+        </p>
+      </div>
+      <span className={`block h-2 w-2 rounded-full ${dot}`} />
     </button>
   );
 }

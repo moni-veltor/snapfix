@@ -118,6 +118,60 @@ export async function inviteMemberAction(
   return { ok: true, emailed: sent.provider === "resend", acceptUrl };
 }
 
+/**
+ * Bump an invitation's expiry by another 14 days without rotating the
+ * token. Use this when the invitee already has the email but missed
+ * the deadline. Resend re-issues both — Extend keeps the link alive
+ * without spamming a fresh email.
+ */
+export async function extendInvitationAction(formData: FormData) {
+  const user = await requireOrgRole("OWNER", "ADMIN");
+  const id = String(formData.get("id"));
+  const newExpiry = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+  await prisma.invitation.updateMany({
+    where: { id, orgId: user.orgId, acceptedAt: null, revokedAt: null },
+    data: { expiresAt: newExpiry },
+  });
+  revalidatePath("/org");
+}
+
+/**
+ * Bulk-assign a department to many users at once. The current admin
+ * must own all listed users (same orgId). Pass deptId = empty string
+ * to unassign.
+ */
+export async function bulkAssignDepartmentAction(formData: FormData) {
+  const user = await requireOrgRole("OWNER", "ADMIN");
+  const userIdsRaw = formData.get("userIds");
+  const deptIdRaw = formData.get("departmentId");
+  if (typeof userIdsRaw !== "string") return;
+  const ids = userIdsRaw.split(",").map((s) => s.trim()).filter(Boolean);
+  if (ids.length === 0) return;
+  const departmentId =
+    typeof deptIdRaw === "string" && deptIdRaw.trim() !== ""
+      ? deptIdRaw.trim()
+      : null;
+  // Confirm every target is in the same org.
+  const owned = await prisma.user.findMany({
+    where: { id: { in: ids }, orgId: user.orgId },
+    select: { id: true },
+  });
+  const ownedIds = owned.map((u) => u.id);
+  if (departmentId) {
+    // Confirm the department also belongs to the same org.
+    const dept = await prisma.department.findFirst({
+      where: { id: departmentId, orgId: user.orgId },
+      select: { id: true },
+    });
+    if (!dept) return;
+  }
+  await prisma.user.updateMany({
+    where: { id: { in: ownedIds }, orgId: user.orgId },
+    data: { departmentId },
+  });
+  revalidatePath("/org");
+}
+
 export async function revokeInvitationAction(formData: FormData) {
   const user = await requireOrgRole("OWNER", "ADMIN");
   const id = String(formData.get("id"));
