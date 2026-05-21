@@ -41,6 +41,10 @@ export type PanelMetric = {
   tone?: "ok" | "warn" | "critical" | "neutral";
   /** Optional deep-link — turns the chip into a Link with hover state. */
   href?: string;
+  /** Optional point/pp change vs the 90d-ago snapshot. */
+  delta?: { value: number; direction: "up" | "down" | "flat"; unit?: "pp" | "" };
+  /** Optional "compared to what" — regulator cap, internal target. */
+  target?: string;
 };
 
 type Tone = "ok" | "warn" | "critical" | "info";
@@ -159,9 +163,25 @@ function Panel({
             const cls = `inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${
               METRIC_TONE[m.tone ?? "neutral"]
             }`;
+            const tip = [
+              m.target ? m.target : null,
+              m.delta
+                ? `${m.delta.direction === "up" ? "↑" : m.delta.direction === "down" ? "↓" : "→"} ${Math.abs(m.delta.value)}${m.delta.unit ?? ""} vs 90d ago`
+                : null,
+              m.href ? `Click to open ${m.label}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ");
             const inner = (
               <>
                 <span className="font-semibold">{m.value}</span>
+                {m.delta && (
+                  <span className="opacity-80">
+                    {m.delta.direction === "up" ? "↑" : m.delta.direction === "down" ? "↓" : "→"}
+                    {Math.abs(m.delta.value)}
+                    {m.delta.unit ?? ""}
+                  </span>
+                )}
                 <span className="opacity-80">{m.label}</span>
               </>
             );
@@ -170,12 +190,12 @@ function Panel({
                 key={m.label}
                 href={m.href}
                 className={`${cls} transition-shadow hover:shadow-[var(--shadow-card)]`}
-                title={`Open ${m.label}`}
+                title={tip || `Open ${m.label}`}
               >
                 {inner}
               </Link>
             ) : (
-              <span key={m.label} className={cls}>
+              <span key={m.label} className={cls} title={tip || undefined}>
                 {inner}
               </span>
             );
@@ -211,6 +231,10 @@ export type ResilienceRiskPanelProps = {
   techPosture: number;
   /** Harm types exercised in the year. */
   harmTypesCovered: number;
+  /** Optional 90d-ago deltas (point/pp change) so chips show trajectory. */
+  coverageDeltaPP?: number;
+  pulseDelta?: number;
+  techPostureDelta?: number;
 };
 
 export function ResilienceRiskPanel({
@@ -221,6 +245,9 @@ export function ResilienceRiskPanel({
   pulseGrade,
   techPosture,
   harmTypesCovered,
+  coverageDeltaPP,
+  pulseDelta,
+  techPostureDelta,
 }: ResilienceRiskPanelProps) {
   const coveragePct = ibsTotal === 0 ? 0 : Math.round((ibsTested / ibsTotal) * 100);
   const untestedCount = untestedCriticalIBS.length;
@@ -258,17 +285,23 @@ export function ResilienceRiskPanel({
           value: `${coveragePct}%`,
           tone: coveragePct >= 80 ? "ok" : coveragePct >= 50 ? "warn" : "critical",
           href: "/ibs",
+          target: "target 90%",
+          delta: toDelta(coverageDeltaPP, "pp"),
         },
         {
           label: `pulse · ${pulseGrade}`,
           value: String(pulse),
           tone: pulse >= 70 ? "ok" : pulse >= 50 ? "warn" : "critical",
+          target: "target 70 (B)",
+          delta: toDelta(pulseDelta),
         },
         {
           label: "DR posture",
           value: String(techPosture),
           tone: techPosture >= 70 ? "ok" : techPosture >= 50 ? "warn" : "critical",
           href: "/tech-recovery",
+          target: "target 75",
+          delta: toDelta(techPostureDelta),
         },
       ]}
       ctaHref="/ibs"
@@ -344,12 +377,14 @@ export function ThirdPartyRiskPanel({
           value: `${concentrationPct}%`,
           tone: concentrationPct >= 50 ? "critical" : concentrationPct >= 30 ? "warn" : "ok",
           href: "/vendors",
+          target: "soft cap 40%",
         },
         {
           label: "exit readiness",
           value: String(exitReadiness),
           tone: exitReadiness >= 70 ? "ok" : exitReadiness >= 50 ? "warn" : "critical",
           href: "/vendors/register",
+          target: "target 70",
         },
         ...(assuranceExpiringSoon > 0
           ? ([
@@ -358,6 +393,7 @@ export function ThirdPartyRiskPanel({
                 value: String(assuranceExpiringSoon),
                 tone: "warn",
                 href: "/vendors",
+                target: "target 0",
               },
             ] satisfies PanelMetric[])
           : []),
@@ -368,6 +404,7 @@ export function ThirdPartyRiskPanel({
                 value: `${mtpReady}/${mtpTotal}`,
                 tone: mtpGap === 0 ? "ok" : "warn",
                 href: "/vendors/register",
+                target: `target ${mtpTotal}/${mtpTotal}`,
               },
             ] satisfies PanelMetric[])
           : []),
@@ -440,24 +477,28 @@ export function ComplianceClockPanel({
           value: String(overdueActions),
           tone: overdueActions === 0 ? "ok" : overdueActions >= 5 ? "critical" : "warn",
           href: "/action-items?status=overdue",
+          target: "target 0",
         },
         {
           label: "overdue PIRs",
           value: String(overduePIRs),
           tone: overduePIRs === 0 ? "ok" : "critical",
           href: "/audit",
+          target: "target 0",
         },
         {
           label: "regulator open",
           value: String(openRegulatorNotifications),
           tone: openRegulatorNotifications === 0 ? "ok" : "warn",
           href: "/vendors/notifications",
+          target: "target 0",
         },
         {
           label: "IBS reviews (30d)",
           value: String(ibsReviewDueSoon),
           tone: ibsReviewDueSoon === 0 ? "ok" : "warn",
           href: "/ibs",
+          target: "informational",
         },
       ]}
       ctaHref="/audit"
@@ -478,3 +519,17 @@ export const ICON = {
   AlertTriangle,
   Sparkles,
 };
+
+/**
+ * Normalise a raw point/pp change into the PanelMetric.delta shape.
+ * Undefined / null / 0 collapse to undefined so the chip stays clean.
+ */
+function toDelta(
+  value: number | null | undefined,
+  unit: "pp" | "" = "",
+): PanelMetric["delta"] {
+  if (value == null) return undefined;
+  if (value === 0) return { value: 0, direction: "flat", unit };
+  return { value, direction: value > 0 ? "up" : "down", unit };
+}
+

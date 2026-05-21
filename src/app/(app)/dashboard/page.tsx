@@ -210,6 +210,76 @@ async function Dashboard({
       }),
     ]);
 
+  // ─── 90d-ago snapshots for "compared to what" deltas ─────────────────────
+  // We retro-compute by filtering by createdAt / completedAt against the
+  // 90d boundary. This is approximate (we don't version field state) but
+  // accurate enough for coverage + pulse trend signal.
+  const ago180 = new Date(now.getTime() - 180 * 86_400_000);
+  const [
+    ibsCount90dAgo,
+    untestedIBS90dAgo,
+    exercisesPrior90dWindow,
+    openActions90dAgo,
+    overdueActions90dAgo,
+    coverage90dAgo,
+  ] = await Promise.all([
+    prisma.organizationIBS.count({
+      where: { orgId, createdAt: { lte: ago90 } },
+    }),
+    prisma.organizationIBS.count({
+      where: {
+        orgId,
+        createdAt: { lte: ago90 },
+        exerciseLinks: {
+          none: { exercise: { completedAt: { lte: ago90 } } },
+        },
+      },
+    }),
+    prisma.exercise.count({
+      where: { orgId, startedAt: { gte: ago180, lt: ago90 } },
+    }),
+    prisma.exerciseActionItem.count({
+      where: {
+        orgId,
+        createdAt: { lte: ago90 },
+        OR: [
+          { closedAt: null },
+          { closedAt: { gt: ago90 } },
+        ],
+      },
+    }),
+    prisma.exerciseActionItem.count({
+      where: {
+        orgId,
+        createdAt: { lte: ago90 },
+        dueAt: { lt: ago90 },
+        OR: [
+          { closedAt: null },
+          { closedAt: { gt: ago90 } },
+        ],
+      },
+    }),
+    prisma.exercise.findMany({
+      where: {
+        orgId,
+        status: { in: ["IN_PROGRESS", "PAUSED", "COMPLETED"] },
+        createdAt: { lte: ago90 },
+      },
+      select: {
+        scenario: {
+          select: {
+            coversPeople: true,
+            coversProperty: true,
+            coversTechnology: true,
+            coversDataAvailability: true,
+            coversDataIntegrity: true,
+            coversThirdParty: true,
+          },
+        },
+      },
+    }),
+  ]);
+
   // ─── MTP roll-up (drives the third-party panel's register-ready chip) ──
   const mtpVendorsForReadiness = await prisma.vendor.findMany({
     where: { orgId, isMaterialThirdParty: true },
@@ -301,6 +371,30 @@ async function Dashboard({
     harmTypesCovered,
   });
 
+  // 90d-ago pulse snapshot
+  const tested90dAgo = {
+    people: coverage90dAgo.filter((e) => e.scenario.coversPeople).length,
+    property: coverage90dAgo.filter((e) => e.scenario.coversProperty).length,
+    technology: coverage90dAgo.filter((e) => e.scenario.coversTechnology).length,
+    dataAvailability: coverage90dAgo.filter((e) => e.scenario.coversDataAvailability).length,
+    dataIntegrity: coverage90dAgo.filter((e) => e.scenario.coversDataIntegrity).length,
+    thirdParty: coverage90dAgo.filter((e) => e.scenario.coversThirdParty).length,
+  };
+  const harmTypesCovered90dAgo = Object.values(tested90dAgo).filter((n) => n > 0).length;
+  const pulse90dAgo = computePulse({
+    ibsTotal: ibsCount90dAgo,
+    ibsTested: ibsCount90dAgo - untestedIBS90dAgo,
+    actionItemsTotal: openActions90dAgo,
+    actionItemsOverdue: overdueActions90dAgo,
+    exercisesLast90Days: exercisesPrior90dWindow,
+    harmTypesCovered: harmTypesCovered90dAgo,
+  });
+  const coveragePct = ibsCount === 0 ? 0 : Math.round((testedIBS / ibsCount) * 100);
+  const coveragePct90dAgo =
+    ibsCount90dAgo === 0 ? 0 : Math.round(((ibsCount90dAgo - untestedIBS90dAgo) / ibsCount90dAgo) * 100);
+  const coverageDeltaPP = coveragePct - coveragePct90dAgo;
+  const pulseDelta = pulse.total - pulse90dAgo.total;
+
   // Vendor metrics
   const vendorsLite: VendorLite[] = vendors.map((v) => ({
     id: v.id,
@@ -337,6 +431,7 @@ async function Dashboard({
   // Tech systems metrics
   const systemsTyped = techSystems as SystemWithTests[];
   const techPosture = postureScore(systemsTyped, now);
+  const techPosture90dAgo = postureScore(systemsTyped, ago90);
   const systemsNoRto = systemsTyped.filter((s) => s.rtoMin == null).length;
   // Oldest DR test for the next-best-actions trigger
   let oldestDrDays: number | null = null;
@@ -414,6 +509,7 @@ async function Dashboard({
         overdueCount={overdueActionItems}
         openCount={openActionItems}
         pulse={pulse}
+        pulsePrior={pulse90dAgo}
         streakDays={streakDays}
       />
 
@@ -451,6 +547,9 @@ async function Dashboard({
           pulseGrade={pulse.grade}
           techPosture={techPosture}
           harmTypesCovered={harmTypesCovered}
+          coverageDeltaPP={coverageDeltaPP}
+          pulseDelta={pulseDelta}
+          techPostureDelta={techPosture - techPosture90dAgo}
         />
         <ThirdPartyRiskPanel
           weakExitVendors={vendorsLite
@@ -500,6 +599,7 @@ function StatusBar({
   overdueCount,
   openCount,
   pulse,
+  pulsePrior,
   streakDays,
 }: {
   userName: string;
@@ -509,6 +609,7 @@ function StatusBar({
   overdueCount: number;
   openCount: number;
   pulse: PulseScore;
+  pulsePrior?: PulseScore;
   streakDays: number;
 }) {
   return (
@@ -562,7 +663,7 @@ function StatusBar({
         {openCount} open
       </StatusPill>
 
-      <PulseScoreChip pulse={pulse} />
+      <PulseScoreChip pulse={pulse} prior={pulsePrior} />
     </header>
   );
 }

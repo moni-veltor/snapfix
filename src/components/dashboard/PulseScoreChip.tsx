@@ -27,8 +27,16 @@ type Factor = {
  * StatusBar chip showing the composite Pulse score. Click to open a
  * popover that decomposes the score into its four factors so the user
  * can see *which one* is dragging it down and where to go fix it.
+ * Optional `prior` (a 90d-ago snapshot of the same score) renders a
+ * delta line inside the popover.
  */
-export default function PulseScoreChip({ pulse }: { pulse: PulseScore }) {
+export default function PulseScoreChip({
+  pulse,
+  prior,
+}: {
+  pulse: PulseScore;
+  prior?: PulseScore;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -89,6 +97,27 @@ export default function PulseScoreChip({ pulse }: { pulse: PulseScore }) {
             Average of four 0–100 factors. <span className="font-semibold text-ink">{worst.label}</span> is
             dragging the score down — that&apos;s where to focus.
           </p>
+          {prior && (
+            <p className="mt-1 text-[11px]">
+              <span className="text-soft">vs 90d ago:</span>{" "}
+              {(() => {
+                const d = pulse.total - prior.total;
+                if (d === 0) return <span className="text-soft">flat at {prior.total}</span>;
+                const up = d > 0;
+                return (
+                  <span
+                    className={
+                      up
+                        ? "font-semibold text-emerald-700 dark:text-emerald-300"
+                        : "font-semibold text-rose-700 dark:text-rose-300"
+                    }
+                  >
+                    {up ? "↑" : "↓"} {Math.abs(d)} (was {prior.total} · {prior.grade})
+                  </span>
+                );
+              })()}
+            </p>
+          )}
 
           <ul className="mt-3 space-y-2">
             {factors.map((f) => (
