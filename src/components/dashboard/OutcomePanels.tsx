@@ -39,6 +39,8 @@ export type PanelMetric = {
   value: string;
   /** Optional tone for the value chip. */
   tone?: "ok" | "warn" | "critical" | "neutral";
+  /** Optional deep-link — turns the chip into a Link with hover state. */
+  href?: string;
 };
 
 type Tone = "ok" | "warn" | "critical" | "info";
@@ -153,17 +155,31 @@ function Panel({
         )}
 
         <div className="flex flex-wrap gap-1.5">
-          {metrics.map((m) => (
-            <span
-              key={m.label}
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${
-                METRIC_TONE[m.tone ?? "neutral"]
-              }`}
-            >
-              <span className="font-semibold">{m.value}</span>
-              <span className="opacity-80">{m.label}</span>
-            </span>
-          ))}
+          {metrics.map((m) => {
+            const cls = `inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${
+              METRIC_TONE[m.tone ?? "neutral"]
+            }`;
+            const inner = (
+              <>
+                <span className="font-semibold">{m.value}</span>
+                <span className="opacity-80">{m.label}</span>
+              </>
+            );
+            return m.href ? (
+              <Link
+                key={m.label}
+                href={m.href}
+                className={`${cls} transition-shadow hover:shadow-[var(--shadow-card)]`}
+                title={`Open ${m.label}`}
+              >
+                {inner}
+              </Link>
+            ) : (
+              <span key={m.label} className={cls}>
+                {inner}
+              </span>
+            );
+          })}
         </div>
 
         <footer className="mt-auto flex items-center justify-end border-t border-line pt-3 text-[11px]">
@@ -241,6 +257,7 @@ export function ResilienceRiskPanel({
           label: "coverage",
           value: `${coveragePct}%`,
           tone: coveragePct >= 80 ? "ok" : coveragePct >= 50 ? "warn" : "critical",
+          href: "/ibs",
         },
         {
           label: `pulse · ${pulseGrade}`,
@@ -251,6 +268,7 @@ export function ResilienceRiskPanel({
           label: "DR posture",
           value: String(techPosture),
           tone: techPosture >= 70 ? "ok" : techPosture >= 50 ? "warn" : "critical",
+          href: "/tech-recovery",
         },
       ]}
       ctaHref="/ibs"
@@ -325,11 +343,13 @@ export function ThirdPartyRiskPanel({
           label: `${topHyperscaler?.hyperscaler ?? "concentration"}`,
           value: `${concentrationPct}%`,
           tone: concentrationPct >= 50 ? "critical" : concentrationPct >= 30 ? "warn" : "ok",
+          href: "/vendors",
         },
         {
           label: "exit readiness",
           value: String(exitReadiness),
           tone: exitReadiness >= 70 ? "ok" : exitReadiness >= 50 ? "warn" : "critical",
+          href: "/vendors/register",
         },
         ...(assuranceExpiringSoon > 0
           ? ([
@@ -337,6 +357,7 @@ export function ThirdPartyRiskPanel({
                 label: "assurance expiring",
                 value: String(assuranceExpiringSoon),
                 tone: "warn",
+                href: "/vendors",
               },
             ] satisfies PanelMetric[])
           : []),
@@ -346,6 +367,7 @@ export function ThirdPartyRiskPanel({
                 label: "MTP register-ready",
                 value: `${mtpReady}/${mtpTotal}`,
                 tone: mtpGap === 0 ? "ok" : "warn",
+                href: "/vendors/register",
               },
             ] satisfies PanelMetric[])
           : []),
@@ -417,21 +439,25 @@ export function ComplianceClockPanel({
           label: "overdue actions",
           value: String(overdueActions),
           tone: overdueActions === 0 ? "ok" : overdueActions >= 5 ? "critical" : "warn",
+          href: "/action-items?status=overdue",
         },
         {
           label: "overdue PIRs",
           value: String(overduePIRs),
           tone: overduePIRs === 0 ? "ok" : "critical",
+          href: "/audit",
         },
         {
           label: "regulator open",
           value: String(openRegulatorNotifications),
           tone: openRegulatorNotifications === 0 ? "ok" : "warn",
+          href: "/vendors/notifications",
         },
         {
           label: "IBS reviews (30d)",
           value: String(ibsReviewDueSoon),
           tone: ibsReviewDueSoon === 0 ? "ok" : "warn",
+          href: "/ibs",
         },
       ]}
       ctaHref="/audit"

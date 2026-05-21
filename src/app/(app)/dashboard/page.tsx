@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { computePulse, nextBestActions } from "@/lib/dashboard";
+import { computePulse, nextBestActions, type PulseScore } from "@/lib/dashboard";
 import {
   aggregateExitReadiness,
   assuranceStatus,
@@ -22,6 +22,7 @@ import YourLiveExerciseWidget from "@/components/dashboard/YourLiveExerciseWidge
 import RecapCard from "@/components/dashboard/RecapCard";
 import NudgeBar from "@/components/dashboard/NudgeBar";
 import NextBestActions from "@/components/dashboard/NextBestActions";
+import PulseScoreChip from "@/components/dashboard/PulseScoreChip";
 import UnlockToast from "@/components/dashboard/UnlockToast";
 import {
   ResilienceRiskPanel,
@@ -412,8 +413,7 @@ async function Dashboard({
         liveId={inProgress[0]?.id ?? null}
         overdueCount={overdueActionItems}
         openCount={openActionItems}
-        pulse={pulse.total}
-        pulseGrade={pulse.grade}
+        pulse={pulse}
         streakDays={streakDays}
       />
 
@@ -500,7 +500,6 @@ function StatusBar({
   overdueCount,
   openCount,
   pulse,
-  pulseGrade,
   streakDays,
 }: {
   userName: string;
@@ -509,8 +508,7 @@ function StatusBar({
   liveId: string | null;
   overdueCount: number;
   openCount: number;
-  pulse: number;
-  pulseGrade: string;
+  pulse: PulseScore;
   streakDays: number;
 }) {
   return (
@@ -564,19 +562,7 @@ function StatusBar({
         {openCount} open
       </StatusPill>
 
-      <span
-        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${
-          pulse >= 70
-            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-            : pulse >= 50
-              ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
-              : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
-        }`}
-        title="Composite resilience pulse — coverage × hygiene × cadence × depth"
-      >
-        Pulse <span className="font-bold">{pulse}</span>
-        <span className="opacity-70">· {pulseGrade}</span>
-      </span>
+      <PulseScoreChip pulse={pulse} />
     </header>
   );
 }
