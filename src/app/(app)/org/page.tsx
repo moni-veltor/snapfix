@@ -9,7 +9,7 @@ import {
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
-import OrgInviteButton from "./OrgInviteButton";
+import OrgOnboardDrawer from "./OrgOnboardDrawer";
 import OrgBulkImportButton from "./OrgBulkImportButton";
 import {
   resendInvitationAction,
@@ -127,7 +127,7 @@ export default async function OrgPage() {
                 Role catalogue
               </Link>
               <OrgBulkImportButton />
-              <OrgInviteButton />
+              <OrgOnboardDrawer tier={org.tier} />
             </div>
           ) : undefined
         }

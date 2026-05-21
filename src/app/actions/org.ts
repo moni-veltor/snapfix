@@ -23,6 +23,10 @@ async function originFromHeaders(): Promise<string> {
 const InviteSchema = z.object({
   email: z.email().transform((v) => v.toLowerCase()),
   role: z.enum(["ADMIN", "MEMBER"]),
+  prefillJobTitle: z.string().max(120).optional(),
+  prefillPhone: z.string().max(40).optional(),
+  prefillOutOfHoursPhone: z.string().max(40).optional(),
+  prefillLocation: z.string().max(120).optional(),
 });
 
 export type InviteResult =
@@ -37,11 +41,21 @@ export async function inviteMemberAction(
   const parsed = InviteSchema.safeParse({
     email: formData.get("email"),
     role: formData.get("role"),
+    prefillJobTitle: formData.get("prefillJobTitle") || undefined,
+    prefillPhone: formData.get("prefillPhone") || undefined,
+    prefillOutOfHoursPhone: formData.get("prefillOutOfHoursPhone") || undefined,
+    prefillLocation: formData.get("prefillLocation") || undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues.map((i) => i.message).join("; ") };
   }
-  const { email, role } = parsed.data;
+  const { email, role, prefillJobTitle, prefillPhone, prefillOutOfHoursPhone, prefillLocation } = parsed.data;
+  const prefill = {
+    prefillJobTitle: prefillJobTitle?.trim() || null,
+    prefillPhone: prefillPhone?.trim() || null,
+    prefillOutOfHoursPhone: prefillOutOfHoursPhone?.trim() || null,
+    prefillLocation: prefillLocation?.trim() || null,
+  };
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser?.orgId) {
@@ -62,6 +76,7 @@ export async function inviteMemberAction(
       token,
       invitedById: user.id,
       expiresAt,
+      ...prefill,
     },
     update: {
       role,
@@ -70,6 +85,7 @@ export async function inviteMemberAction(
       expiresAt,
       acceptedAt: null,
       revokedAt: null,
+      ...prefill,
     },
   });
 
@@ -166,6 +182,106 @@ export async function removeMemberAction(formData: FormData) {
     data: { orgId: null, orgRole: null },
   });
   revalidatePath("/org");
+}
+
+/**
+ * Guided offboard — vacates any IMT seats the user default-holds (or
+ * reassigns each to a named replacement), reassigns IBSs they own,
+ * then removes them from the org. All reassignments happen in one
+ * transaction so the org never lands in a half-vacated state.
+ *
+ * formData carries the user id plus pairs:
+ *   - reassignSeat:<roleId> → newHolderUserId (or "" / missing = vacate)
+ *   - reassignIBS:<ibsId>   → newOwnerUserId  (or "" / missing = unassign)
+ */
+export async function offboardMemberAction(formData: FormData) {
+  const actor = await requireOrgRole("OWNER", "ADMIN");
+  const targetId = String(formData.get("userId"));
+  if (targetId === actor.id) return;
+  const target = await prisma.user.findUnique({
+    where: { id: targetId },
+    select: { id: true, orgId: true, orgRole: true, name: true, email: true },
+  });
+  if (!target || target.orgId !== actor.orgId) return;
+  // Same OWNER-safety as removeMember.
+  if (target.orgRole === "OWNER" && actor.orgRole !== "OWNER") return;
+  if (target.orgRole === "OWNER") {
+    const ownerCount = await prisma.user.count({
+      where: { orgId: actor.orgId, orgRole: "OWNER" },
+    });
+    if (ownerCount <= 1) return;
+  }
+
+  // Decode the reassignment maps from FormData.
+  const seatReassignments = new Map<string, string | null>();
+  const ibsReassignments = new Map<string, string | null>();
+  for (const [k, v] of formData.entries()) {
+    if (typeof v !== "string") continue;
+    if (k.startsWith("reassignSeat:")) {
+      const roleId = k.slice("reassignSeat:".length);
+      seatReassignments.set(roleId, v.trim() === "" ? null : v.trim());
+    } else if (k.startsWith("reassignIBS:")) {
+      const ibsId = k.slice("reassignIBS:".length);
+      ibsReassignments.set(ibsId, v.trim() === "" ? null : v.trim());
+    }
+  }
+
+  // Sanity check: replacements must belong to the same org. We let
+  // unspecified seats/IBSs simply vacate (set to null) since the
+  // alternative is the user-removal leaving dangling FKs.
+  const replacementIds = new Set<string>();
+  for (const id of seatReassignments.values()) if (id) replacementIds.add(id);
+  for (const id of ibsReassignments.values()) if (id) replacementIds.add(id);
+  if (replacementIds.size > 0) {
+    const sameOrg = await prisma.user.findMany({
+      where: { id: { in: [...replacementIds] }, orgId: actor.orgId },
+      select: { id: true },
+    });
+    const valid = new Set(sameOrg.map((u) => u.id));
+    for (const [k, v] of seatReassignments) {
+      if (v && !valid.has(v)) seatReassignments.set(k, null);
+    }
+    for (const [k, v] of ibsReassignments) {
+      if (v && !valid.has(v)) ibsReassignments.set(k, null);
+    }
+  }
+
+  await prisma.$transaction([
+    // Reassign / vacate each named IMT seat.
+    ...Array.from(seatReassignments.entries()).map(([roleId, newHolderId]) =>
+      prisma.organizationRole.update({
+        where: { id: roleId },
+        data: { defaultHolderId: newHolderId },
+      }),
+    ),
+    // Reassign / unassign each owned IBS.
+    ...Array.from(ibsReassignments.entries()).map(([ibsId, newOwnerId]) =>
+      prisma.organizationIBS.update({
+        where: { id: ibsId },
+        data: { processOwnerUserId: newOwnerId },
+      }),
+    ),
+    // Vacate any remaining default-holder seats on this user that
+    // weren't explicitly listed (safety net — keeps FK integrity).
+    prisma.organizationRole.updateMany({
+      where: { orgId: actor.orgId, defaultHolderId: target.id },
+      data: { defaultHolderId: null },
+    }),
+    // Unassign any remaining IBSs they own that weren't listed.
+    prisma.organizationIBS.updateMany({
+      where: { orgId: actor.orgId, processOwnerUserId: target.id },
+      data: { processOwnerUserId: null },
+    }),
+    // Finally remove from the org.
+    prisma.user.update({
+      where: { id: target.id },
+      data: { orgId: null, orgRole: null },
+    }),
+  ]);
+
+  revalidatePath("/org");
+  revalidatePath("/org/roles");
+  revalidatePath("/ibs");
 }
 
 // ─── Per-member profile updates ─────────────────────────────────────────────

@@ -116,6 +116,14 @@ model Invitation {
   revokedAt   DateTime?
   createdAt   DateTime     @default(now())
 
+  // ── Onboard-drawer pre-fill ────────────────────────────────────────
+  // Captured by the admin at invite-time and copied to the new User on
+  // accept. All optional — admin can still send a bare-bones invite.
+  prefillJobTitle        String?
+  prefillPhone           String?
+  prefillOutOfHoursPhone String?
+  prefillLocation        String?
+
   @@unique([orgId, email])
 }
 

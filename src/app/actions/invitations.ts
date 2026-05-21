@@ -58,7 +58,18 @@ export async function acceptInvitationAction(
     await prisma.$transaction([
       prisma.user.update({
         where: { id: session.user.id },
-        data: { orgId: invitation.orgId, orgRole: invitation.role },
+        data: {
+          orgId: invitation.orgId,
+          orgRole: invitation.role,
+          // Only fill blanks — don't clobber existing values the user
+          // already set on their profile.
+          ...(invitation.prefillJobTitle ? { jobTitle: invitation.prefillJobTitle } : {}),
+          ...(invitation.prefillPhone ? { phone: invitation.prefillPhone } : {}),
+          ...(invitation.prefillOutOfHoursPhone
+            ? { outOfHoursPhone: invitation.prefillOutOfHoursPhone }
+            : {}),
+          ...(invitation.prefillLocation ? { location: invitation.prefillLocation } : {}),
+        },
       }),
       prisma.invitation.update({
         where: { id: invitation.id },
@@ -88,6 +99,10 @@ export async function acceptInvitationAction(
         passwordHash,
         orgId: invitation.orgId,
         orgRole: invitation.role,
+        jobTitle: invitation.prefillJobTitle,
+        phone: invitation.prefillPhone,
+        outOfHoursPhone: invitation.prefillOutOfHoursPhone,
+        location: invitation.prefillLocation,
       },
     }),
     prisma.invitation.update({

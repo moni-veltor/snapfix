@@ -16,11 +16,8 @@ import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import MemberProfileEditButton from "./MemberProfileEditButton";
-import ConfirmButton from "@/components/ConfirmButton";
-import {
-  changeRoleAction,
-  removeMemberAction,
-} from "@/app/actions/org";
+import OrgOffboardDrawer from "./OrgOffboardDrawer";
+import { changeRoleAction } from "@/app/actions/org";
 
 export const metadata = { title: "Member profile — SnapFix" };
 
@@ -65,7 +62,14 @@ export default async function MemberProfilePage({
   const isMe = me.id === user.id;
   const displayName = user.name ?? user.email;
 
-  const [recentParticipations, openActionItems, defaultRoles] = await Promise.all([
+  const [
+    recentParticipations,
+    openActionItems,
+    defaultRoles,
+    offboardSeats,
+    ownedIBSs,
+    candidates,
+  ] = await Promise.all([
     prisma.exerciseParticipant.findMany({
       where: { userId: user.id, exercise: { orgId: me.orgId } },
       orderBy: { joinedAt: "desc" },
@@ -90,6 +94,38 @@ export default async function MemberProfilePage({
       where: { orgId: me.orgId, defaultHolderId: user.id },
       orderBy: { orderIdx: "asc" },
       select: { id: true, abbreviation: true, title: true },
+    }),
+    // Richer per-seat data for the offboard drawer — includes SMF flag
+    // + the deputy chain so we can pre-select the deputy as the
+    // suggested replacement when one exists.
+    prisma.organizationRole.findMany({
+      where: { orgId: me.orgId, defaultHolderId: user.id },
+      orderBy: { orderIdx: "asc" },
+      select: {
+        id: true,
+        abbreviation: true,
+        title: true,
+        isSMF: true,
+        isExecutive: true,
+        // Roles where this seat IS the deputy parent — those roles'
+        // default holders are the natural reassignment candidates.
+        deputies: {
+          select: { defaultHolder: { select: { id: true, name: true, email: true } } },
+          where: { defaultHolderId: { not: null } },
+          take: 1,
+        },
+      },
+    }),
+    prisma.organizationIBS.findMany({
+      where: { orgId: me.orgId, processOwnerUserId: user.id },
+      orderBy: { code: "asc" },
+      select: { id: true, code: true, name: true },
+    }),
+    // Reassignment candidate list: everyone else in the org.
+    prisma.user.findMany({
+      where: { orgId: me.orgId, id: { not: user.id } },
+      orderBy: [{ name: "asc" }, { email: "asc" }],
+      select: { id: true, name: true, email: true },
     }),
   ]);
 
@@ -268,14 +304,25 @@ export default async function MemberProfilePage({
                   Save role
                 </button>
               </form>
-              <ConfirmButton
-                action={removeMemberAction}
-                hidden={{ userId: user.id }}
-                label="Remove from org"
-                title={`Remove ${displayName}?`}
-                body="They'll lose access immediately. They can be re-invited later."
-                confirmLabel="Remove"
-                successMessage="Member removed"
+              <OrgOffboardDrawer
+                userId={user.id}
+                userName={displayName}
+                seats={offboardSeats.map((s) => ({
+                  id: s.id,
+                  abbreviation: s.abbreviation,
+                  title: s.title,
+                  isSMF: s.isSMF,
+                  isExecutive: s.isExecutive,
+                  suggestedReplacementUserId:
+                    s.deputies[0]?.defaultHolder?.id ?? null,
+                  suggestedReplacementName:
+                    s.deputies[0]?.defaultHolder?.name ??
+                    s.deputies[0]?.defaultHolder?.email ??
+                    null,
+                }))}
+                ownedIBSs={ownedIBSs}
+                openActionItemsCount={openActionItems.length}
+                candidates={candidates}
               />
             </div>
           </section>
