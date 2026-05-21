@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { Building2, Crown, Users as UsersIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  Crown,
+  Sparkles,
+  Users as UsersIcon,
+} from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
@@ -12,6 +18,9 @@ import {
   revokeInvitationAction,
 } from "@/app/actions/org";
 import ConfirmButton from "@/components/ConfirmButton";
+import TierBadge from "@/components/org/TierBadge";
+import TierMinimumsPanel from "@/components/org/TierMinimumsPanel";
+import { evaluateTierMinimums } from "@/lib/tier-minimums";
 
 function initials(s: string): string {
   const parts = s.split(/\s+/).filter(Boolean);
@@ -24,28 +33,39 @@ export default async function OrgPage() {
   const me = await requireOrgUser();
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
 
-  const [org, members, pendingInvitations] = await Promise.all([
-    prisma.organization.findUniqueOrThrow({ where: { id: me.orgId } }),
-    prisma.user.findMany({
-      where: { orgId: me.orgId },
-      orderBy: [{ orgRole: "asc" }, { name: "asc" }],
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        orgRole: true,
-        createdAt: true,
-        _count: { select: { exerciseParticipations: true } },
-      },
-    }),
-    canManage
-      ? prisma.invitation.findMany({
-          where: { orgId: me.orgId, acceptedAt: null, revokedAt: null },
-          orderBy: { createdAt: "desc" },
-          include: { invitedBy: { select: { name: true, email: true } } },
-        })
-      : Promise.resolve([]),
-  ]);
+  const [org, members, pendingInvitations, tierMinimums, presetEligibility] =
+    await Promise.all([
+      prisma.organization.findUniqueOrThrow({ where: { id: me.orgId } }),
+      prisma.user.findMany({
+        where: { orgId: me.orgId },
+        orderBy: [{ orgRole: "asc" }, { name: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          orgRole: true,
+          createdAt: true,
+          _count: { select: { exerciseParticipations: true } },
+        },
+      }),
+      canManage
+        ? prisma.invitation.findMany({
+            where: { orgId: me.orgId, acceptedAt: null, revokedAt: null },
+            orderBy: { createdAt: "desc" },
+            include: { invitedBy: { select: { name: true, email: true } } },
+          })
+        : Promise.resolve([]),
+      evaluateTierMinimums(me.orgId),
+      // "Looks empty" check — if there are no roles + no IBSs + no vendors,
+      // the starter-pack CTA appears so admins can seed the lot in one click.
+      canManage
+        ? Promise.all([
+            prisma.organizationRole.count({ where: { orgId: me.orgId } }),
+            prisma.organizationIBS.count({ where: { orgId: me.orgId } }),
+            prisma.vendor.count({ where: { orgId: me.orgId } }),
+          ]).then(([roles, ibs, vendors]) => roles + ibs + vendors === 0)
+        : Promise.resolve(false),
+    ]);
 
   return (
     <div className="space-y-6">
@@ -54,10 +74,18 @@ export default async function OrgPage() {
         icon={UsersIcon}
         title={org.name}
         pitch={
-          <>
-            {members.length} {members.length === 1 ? "member" : "members"} · You are{" "}
-            <span className="font-medium text-ink">{me.orgRole}</span>
-          </>
+          <span className="flex flex-wrap items-center gap-2">
+            <TierBadge
+              tier={org.tier}
+              label={tierMinimums.tierLabel}
+              canEditSettings={canManage}
+            />
+            <span className="text-soft">·</span>
+            <span>
+              {members.length} {members.length === 1 ? "member" : "members"} · you are{" "}
+              <span className="font-medium text-ink">{me.orgRole}</span>
+            </span>
+          </span>
         }
         actions={
           canManage ? (
@@ -82,6 +110,27 @@ export default async function OrgPage() {
           ) : undefined
         }
       />
+
+      {canManage && presetEligibility && (
+        <Link
+          href="/settings/presets"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-300 bg-indigo-50/60 px-5 py-3 text-sm transition-all hover:-translate-y-px hover:shadow-[var(--shadow-card)] dark:border-indigo-700/60 dark:bg-indigo-950/30"
+        >
+          <span className="flex items-center gap-2 text-ink">
+            <Sparkles size={14} className="text-indigo-600 dark:text-indigo-300" />
+            <span className="font-semibold">No roles, IBSs or vendors yet.</span>
+            <span className="text-muted">
+              Apply a {tierMinimums.tierLabel.split(" — ")[0]} starter pack to seed the lot in one click.
+            </span>
+          </span>
+          <span className="inline-flex items-center gap-1 text-[12px] font-medium text-indigo-600 dark:text-indigo-300">
+            Open presets
+            <ArrowRight size={11} />
+          </span>
+        </Link>
+      )}
+
+      <TierMinimumsPanel result={tierMinimums} />
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Members</h2>
