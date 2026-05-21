@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, ShieldCheck, Users } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import RoleCatalogueEditor from "@/components/roles/RoleCatalogueEditor";
+import RoleCatalogueTabs from "@/components/roles/RoleCatalogueTabs";
 
 type Search = {
   error?: string;
@@ -21,7 +21,7 @@ export default async function OrgRolesPage({
 
   const sp = await searchParams;
 
-  const [roles, members] = await Promise.all([
+  const [roles, members, org] = await Promise.all([
     prisma.organizationRole.findMany({
       where: { orgId: session.user.orgId },
       orderBy: { orderIdx: "asc" },
@@ -36,7 +36,50 @@ export default async function OrgRolesPage({
       orderBy: [{ name: "asc" }, { email: "asc" }],
       select: { id: true, name: true, email: true },
     }),
+    prisma.organization.findUnique({
+      where: { id: session.user.orgId },
+      select: { tier: true },
+    }),
   ]);
+
+  // Pre-compute SPOF + responsibility-gap counts so the tab strip can
+  // surface them as numeric badges without re-running the derivation
+  // client-side just for the strip.
+  const apexes = roles.filter((r) => r.deputyOfRoleId === null);
+  const deputiedApexIds = new Set(
+    roles
+      .filter((r) => r.deputyOfRoleId !== null)
+      .map((r) => r.deputyOfRoleId as string),
+  );
+  const spofCount = apexes.filter(
+    (a) => (a.isSMF || a.isExecutive) && !deputiedApexIds.has(a.id),
+  ).length;
+  // Use a tiny patterns table mirroring ResponsibilityMapView for the
+  // tier-aware gap count. Keep the source of truth in the view component;
+  // here we just count gaps roughly to drive the strip badge.
+  const RESP_PATTERNS: {
+    pattern: RegExp;
+    tiers: ("TIER_1" | "TIER_2" | "TIER_3")[];
+  }[] = [
+    { pattern: /resilien|operations|continuity|bcp/i, tiers: ["TIER_1", "TIER_2", "TIER_3"] },
+    { pattern: /vendor|third[- ]?party|outsourc|procurement|ict/i, tiers: ["TIER_1", "TIER_2"] },
+    { pattern: /ciso|cyber|security|infosec/i, tiers: ["TIER_1", "TIER_2", "TIER_3"] },
+    { pattern: /\bcro\b|chief risk|risk officer|risk function/i, tiers: ["TIER_1", "TIER_2"] },
+    { pattern: /audit|3lod|third line/i, tiers: ["TIER_1", "TIER_2"] },
+    { pattern: /mlro|aml|financial crime|sanctions|fincrime/i, tiers: ["TIER_1", "TIER_2", "TIER_3"] },
+    { pattern: /\bdpo\b|data protection|privacy/i, tiers: ["TIER_1", "TIER_2", "TIER_3"] },
+    { pattern: /compliance|regulatory/i, tiers: ["TIER_1", "TIER_2"] },
+    { pattern: /\bcto\b|chief tech|head of tech|tech lead/i, tiers: ["TIER_1", "TIER_2", "TIER_3"] },
+    { pattern: /comms|communication|press|pr lead|customer.{0,10}lead/i, tiers: ["TIER_1", "TIER_2", "TIER_3"] },
+    { pattern: /\bcfo\b|chief financial|finance director|treasury/i, tiers: ["TIER_1", "TIER_2", "TIER_3"] },
+    { pattern: /\bchro\b|\bcoo\b|chief people|chief operating|hr lead|facilities/i, tiers: ["TIER_1", "TIER_2"] },
+  ];
+  const gapCount = RESP_PATTERNS.filter((a) => {
+    if (org?.tier && !a.tiers.includes(org.tier)) return false;
+    return !roles.some((r) =>
+      a.pattern.test(`${r.abbreviation} ${r.title} ${r.responsibility ?? ""}`),
+    );
+  }).length;
 
   const smfCount = roles.filter((r) => r.isSMF).length;
   const execCount = roles.filter((r) => r.isExecutive).length;
@@ -90,7 +133,7 @@ export default async function OrgRolesPage({
         <StatTile label="With deputy" value={withDeputy} />
       </section>
 
-      <RoleCatalogueEditor
+      <RoleCatalogueTabs
         roles={roles.map((r) => ({
           id: r.id,
           abbreviation: r.abbreviation,
@@ -107,6 +150,9 @@ export default async function OrgRolesPage({
           orderIdx: r.orderIdx,
         }))}
         members={members}
+        tier={org?.tier ?? null}
+        spofCount={spofCount}
+        gapCount={gapCount}
       />
     </div>
   );
