@@ -1,26 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  AlertOctagon,
-  ArrowRight,
-  Boxes,
-  CalendarClock,
   CheckCircle2,
   Flame,
   ListChecks,
-  Server,
-  ShieldAlert,
-  Sparkles,
-  Users,
   type LucideIcon,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  computePulse,
-  nextBestActions,
-  type NextBestAction,
-} from "@/lib/dashboard";
+import { computePulse, nextBestActions } from "@/lib/dashboard";
 import {
   aggregateExitReadiness,
   assuranceStatus,
@@ -33,6 +21,7 @@ import DailyTipCard from "@/components/fun/DailyTipCard";
 import YourLiveExerciseWidget from "@/components/dashboard/YourLiveExerciseWidget";
 import RecapCard from "@/components/dashboard/RecapCard";
 import NudgeBar from "@/components/dashboard/NudgeBar";
+import NextBestActions from "@/components/dashboard/NextBestActions";
 import UnlockToast from "@/components/dashboard/UnlockToast";
 import {
   ResilienceRiskPanel,
@@ -430,6 +419,8 @@ async function Dashboard({
 
       {nudge && <NudgeBar nudge={nudge} />}
 
+      <NextBestActions actions={actions} />
+
       <YourLiveExerciseWidget
         liveExercise={liveExercise}
         nextExercise={nextExercise}
@@ -493,8 +484,6 @@ async function Dashboard({
           ibsReviewDueSoon={ibsReviewDueSoon}
         />
       </section>
-
-      <NextBestActionsSection actions={actions} />
 
       <DailyTipCard />
     </div>
@@ -620,83 +609,6 @@ function StatusPill({
   );
 }
 
-
-// ─── Next best actions ─────────────────────────────────────────────────
-
-const ICON_FOR: Record<NextBestAction["iconKey"], LucideIcon> = {
-  shield: ShieldAlert,
-  flame: Flame,
-  calendar: CalendarClock,
-  server: Server,
-  users: Users,
-  boxes: Boxes,
-  alert: AlertOctagon,
-  sparkles: Sparkles,
-};
-
-function NextBestActionsSection({ actions }: { actions: NextBestAction[] }) {
-  if (actions.length === 0) {
-    return (
-      <section className="rounded-xl border border-emerald-300 bg-emerald-50 p-5 text-sm text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-200">
-        <header className="flex items-center gap-2">
-          <CheckCircle2 size={14} />
-          <h2 className="font-semibold">Nothing demands you right now</h2>
-        </header>
-        <p className="mt-1 text-xs">Good week to plan a tabletop.</p>
-      </section>
-    );
-  }
-  return (
-    <section>
-      <header className="mb-2 flex items-center gap-2">
-        <h2 className="text-sm font-semibold text-ink">Next best actions</h2>
-        <span className="text-[11px] text-soft">Ranked by impact</span>
-      </header>
-      <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {actions.map((a) => {
-          const Icon = ICON_FOR[a.iconKey];
-          const tone =
-            a.priority === "critical"
-              ? "border-rose-300 dark:border-rose-700"
-              : a.priority === "warn"
-                ? "border-amber-300 dark:border-amber-700"
-                : "border-indigo-300 dark:border-indigo-700";
-          const chipTone =
-            a.priority === "critical"
-              ? "bg-rose-600 text-white"
-              : a.priority === "warn"
-                ? "bg-amber-600 text-white"
-                : "bg-indigo-600 text-white";
-          return (
-            <li key={a.id}>
-              <Link
-                href={a.cta.href}
-                className={`group flex h-full flex-col gap-2 rounded-xl border bg-surface-1 p-3 transition-all hover:-translate-y-px hover:shadow-[var(--shadow-card-md)] ${tone}`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className={`flex h-7 w-7 items-center justify-center rounded-md ${chipTone}`}>
-                    <Icon size={13} />
-                  </span>
-                  <h3 className="text-sm font-semibold text-ink">{a.title}</h3>
-                </div>
-                <p className="text-xs text-muted">{a.body}</p>
-                <footer className="mt-auto flex items-center justify-between border-t border-line pt-2">
-                  <span className="text-[10px] uppercase tracking-wider text-soft">
-                    {a.priority}
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-ink group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
-                    {a.cta.label}
-                    <ArrowRight size={11} />
-                  </span>
-                </footer>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
-}
 
 // ─── Fresh-org + landing (unchanged) ───────────────────────────────────
 

@@ -161,6 +161,13 @@ export type NextBestAction = {
     | "boxes"
     | "alert"
     | "sparkles";
+  /** Rough effort to dispatch this item in minutes. Used as a relative
+   *  signal on the dashboard card — quick wins float to the eye even
+   *  when their priority is lower. */
+  effortMin: number;
+  /** Short hint of who in the org typically does the work — e.g.
+   *  "ADMIN", "Facilitator", "Process owner", "Tech lead". */
+  ownerHint: string;
 };
 
 export type NextBestActionsInput = {
@@ -194,6 +201,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "Join the war room or check in on the facilitator.",
       cta: { label: "Open war room", href: "/exercises" },
       iconKey: "flame",
+      effortMin: 5,
+      ownerHint: "Live IMT",
     });
   }
 
@@ -205,6 +214,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "A growing backlog erodes regulator confidence and slows the next exercise. Triage today.",
       cta: { label: "Clear backlog", href: "/action-items?status=overdue" },
       iconKey: "alert",
+      effortMin: 60,
+      ownerHint: "Action owners",
     });
   } else if (input.overdueActionItems >= 3) {
     all.push({
@@ -214,6 +225,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "Worth clearing before your next debrief generates more.",
       cta: { label: "Triage", href: "/action-items?status=overdue" },
       iconKey: "alert",
+      effortMin: 30,
+      ownerHint: "Action owners",
     });
   }
 
@@ -225,6 +238,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "Your IBSs are the spine of the programme — and the first thing a supervisor will ask for.",
       cta: { label: "Add your first IBS", href: "/ibs/new" },
       iconKey: "shield",
+      effortMin: 30,
+      ownerHint: "ADMIN",
     });
   } else if (input.untestedIBSCount > 0) {
     all.push({
@@ -234,6 +249,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "Pick a scenario that covers these and plan a focused drill.",
       cta: { label: "Plan exercise", href: "/exercises/new" },
       iconKey: "shield",
+      effortMin: 60,
+      ownerHint: "Facilitator",
     });
   }
 
@@ -245,6 +262,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "Your oldest system DR test is over a year old. Schedule a fresh test before the next audit.",
       cta: { label: "View tech recovery", href: "/tech-recovery" },
       iconKey: "server",
+      effortMin: 240,
+      ownerHint: "Tech lead",
     });
   } else if (input.systemsWithoutRTO > 0) {
     all.push({
@@ -254,6 +273,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "Declare recovery objectives so the IMT has something concrete to track against.",
       cta: { label: "Set RTOs", href: "/tech-recovery" },
       iconKey: "server",
+      effortMin: 60,
+      ownerHint: "Tech lead",
     });
   }
 
@@ -265,6 +286,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "DORA requires tested exit plans for critical third parties — paper plans aren't enough.",
       cta: { label: "Review vendors", href: "/vendors" },
       iconKey: "boxes",
+      effortMin: 120,
+      ownerHint: "Vendor lead",
     });
   }
 
@@ -276,6 +299,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "Test the hyperscaler-outage scenario before the regulator asks how you'd cope.",
       cta: { label: "Browse scenarios", href: "/templates" },
       iconKey: "boxes",
+      effortMin: 30,
+      ownerHint: "Facilitator",
     });
   }
 
@@ -287,6 +312,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "Refresh the register so the data backing your dashboards isn't stale.",
       cta: { label: "Open IBS register", href: "/ibs" },
       iconKey: "calendar",
+      effortMin: 60,
+      ownerHint: "Process owner",
     });
   }
 
@@ -298,6 +325,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: `Only ${input.rolesTotal - input.rolesWithoutDeputy} of ${input.rolesTotal} roles have a deputy. Single point of failure in absences.`,
       cta: { label: "Edit role catalogue", href: "/org/roles" },
       iconKey: "users",
+      effortMin: 30,
+      ownerHint: "ADMIN",
     });
   }
 
@@ -309,6 +338,8 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "Cadence builds muscle memory. Run a short drill this month, even a tabletop.",
       cta: { label: "Plan an exercise", href: "/exercises/new" },
       iconKey: "calendar",
+      effortMin: 30,
+      ownerHint: "Facilitator",
     });
   }
 
@@ -320,11 +351,14 @@ export function nextBestActions(input: NextBestActionsInput): NextBestAction[] {
       body: "Chase or revoke — empty seats kill exercise realism.",
       cta: { label: "Review roster", href: "/org" },
       iconKey: "users",
+      effortMin: 15,
+      ownerHint: "ADMIN",
     });
   }
 
-  // Rank by priority then by initial order. Cap at 5.
+  // Rank by priority then by initial order. Cap at 8 so the dashboard
+  // has a meaningful "see all" expander after showing the top 3.
   const order = { critical: 0, warn: 1, info: 2 } as const;
   all.sort((a, b) => order[a.priority] - order[b.priority]);
-  return all.slice(0, 5);
+  return all.slice(0, 8);
 }
