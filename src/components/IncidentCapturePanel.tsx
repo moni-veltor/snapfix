@@ -2,6 +2,15 @@
 
 import { useRef, useState } from "react";
 import {
+  ClipboardList,
+  FileText,
+  Gavel,
+  Mail,
+  MessageSquareWarning,
+  Users,
+} from "lucide-react";
+import Drawer from "@/components/ui/Drawer";
+import {
   recordDecisionAction,
   addSitrepAction,
   recordIMTMeetingAction,
@@ -30,8 +39,28 @@ type Props = {
   orgDecisionPresets?: OrgDecisionPreset[];
 };
 
-type Tab = "LOG" | "DECISION" | "SITREP" | "MEETING" | "COMMS";
+type CaptureKind = "LOG" | "DECISION" | "SITREP" | "MEETING" | "COMMS";
 
+const KINDS: {
+  id: CaptureKind;
+  label: string;
+  icon: typeof FileText;
+  requiresIncident: boolean;
+  hint: string;
+}[] = [
+  { id: "LOG", label: "Log entry", icon: ClipboardList, requiresIncident: false, hint: "Observation · action · risk · ask · …" },
+  { id: "DECISION", label: "Decision", icon: Gavel, requiresIncident: true, hint: "Formal decision for the audit trail" },
+  { id: "SITREP", label: "Sitrep", icon: MessageSquareWarning, requiresIncident: true, hint: "BU status update for the IMT" },
+  { id: "MEETING", label: "IMT meeting", icon: Users, requiresIncident: true, hint: "Minutes + next-meeting time" },
+  { id: "COMMS", label: "Comms draft", icon: Mail, requiresIncident: false, hint: "Stakeholder message — awaits approval" },
+];
+
+/**
+ * Live-capture launcher. Replaces the older long-tab interior with five
+ * compact buttons that fire-from-context drawers — each capture form
+ * opens in a focused side panel so a participant logging a decision
+ * isn't dropping out of the incident view.
+ */
 export default function IncidentCapturePanel({
   exerciseId,
   incidentId,
@@ -39,168 +68,139 @@ export default function IncidentCapturePanel({
   recentInjects = [],
   orgDecisionPresets = [],
 }: Props) {
-  const [tab, setTab] = useState<Tab>("LOG");
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const tabs: { id: Tab; label: string; disabledWhenNoIncident: boolean }[] = [
-    { id: "LOG", label: "Log entry", disabledWhenNoIncident: false },
-    { id: "DECISION", label: "Decision", disabledWhenNoIncident: true },
-    { id: "SITREP", label: "Sitrep", disabledWhenNoIncident: true },
-    { id: "MEETING", label: "IMT meeting", disabledWhenNoIncident: true },
-    { id: "COMMS", label: "Comms draft", disabledWhenNoIncident: false },
-  ];
+  const [openKind, setOpenKind] = useState<CaptureKind | null>(null);
+  const close = () => setOpenKind(null);
 
   return (
     <div className="rounded-md border border-line bg-surface-1 dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex flex-wrap border-b border-line dark:border-slate-700">
-        {tabs.map((t) => {
-          const isDisabled = t.disabledWhenNoIncident && !incidentId;
+      <div className="flex flex-wrap items-center gap-1.5 p-3">
+        {KINDS.map((k) => {
+          const Icon = k.icon;
+          const disabled = k.requiresIncident && !incidentId;
           return (
             <button
-              key={t.id}
+              key={k.id}
               type="button"
-              disabled={isDisabled}
-              onClick={() => setTab(t.id)}
-              className={`px-4 py-2 text-xs font-medium ${
-                tab === t.id
-                  ? "border-b-2 border-indigo-600 text-ink"
-                  : isDisabled
-                    ? "text-slate-300"
-                    : "text-muted hover:text-ink"
+              disabled={disabled}
+              onClick={() => setOpenKind(k.id)}
+              title={disabled ? "Invoke the IMT first" : k.hint}
+              className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                disabled
+                  ? "border-line bg-surface-2 text-soft opacity-60"
+                  : "border-line bg-surface-1 text-ink hover:border-indigo-400 hover:bg-surface-2 dark:border-slate-700"
               }`}
-              title={isDisabled ? "Invoke the IMT first" : undefined}
             >
-              {t.label}
+              <Icon size={12} />
+              {k.label}
             </button>
           );
         })}
-        <span className="ml-auto self-center pr-3 font-mono text-xs text-muted">
+        <span className="ml-auto font-mono text-xs text-muted">
           D-Day {dDayHHMM}
         </span>
       </div>
 
-      {tab === "LOG" && (
-        <form
-          ref={formRef}
-          action={async (fd) => {
-            await addLogEntryAction(fd);
-            formRef.current?.reset();
-          }}
-          className="grid grid-cols-3 gap-2 p-3 text-sm"
-        >
-          <input type="hidden" name="exerciseId" value={exerciseId} />
-          <input type="hidden" name="dDayTime" value={dDayHHMM} />
-          <select
-            name="kind"
-            required
-            title={
-              "Observation — what you saw\n" +
-              "Action — what you did\n" +
-              "Risk — what could go wrong\n" +
-              "Ask — what you need from someone else\n" +
-              "Evidence — a screenshot, artefact or fact\n" +
-              "Challenge — push-back on an assumption\n" +
-              "Resource — a system, doc or person referenced\n" +
-              "Note — general working memo"
-            }
-            className="rounded border border-line-strong px-2 py-1.5 text-sm"
-          >
-            <option value="OBSERVATION">Observation — what you saw</option>
-            <option value="ACTION">Action — what you did</option>
-            <option value="RISK">Risk — what could go wrong</option>
-            <option value="ASK">Ask — need from someone else</option>
-            <option value="EVIDENCE">Evidence — artefact / screenshot</option>
-            <option value="CHALLENGE">Challenge — push-back / disagreement</option>
-            <option value="RESOURCE">Resource — system / doc / person</option>
-            <option value="NOTE">Note — general memo</option>
-          </select>
-          <input
-            name="body"
-            required
-            placeholder="What happened? (use Decision tab for formal decisions)"
-            className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
+      <Drawer
+        open={openKind !== null}
+        onClose={close}
+        title={KINDS.find((k) => k.id === openKind)?.label ?? ""}
+        subtitle={`D-Day ${dDayHHMM}`}
+        width="md"
+      >
+        {openKind === "LOG" && (
+          <LogForm exerciseId={exerciseId} dDayHHMM={dDayHHMM} onSaved={close} />
+        )}
+        {openKind === "DECISION" && incidentId && (
+          <DecisionForm
+            exerciseId={exerciseId}
+            incidentId={incidentId}
+            recentInjects={recentInjects}
+            orgDecisionPresets={orgDecisionPresets}
+            onSaved={close}
           />
-          <button className="col-span-3 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
-            Add to log
-          </button>
-        </form>
-      )}
-
-      {tab === "DECISION" && incidentId && (
-        <DecisionForm
-          exerciseId={exerciseId}
-          incidentId={incidentId}
-          recentInjects={recentInjects}
-          orgDecisionPresets={orgDecisionPresets}
-        />
-      )}
-      {tab === "SITREP" && incidentId && (
-        <SitrepForm exerciseId={exerciseId} incidentId={incidentId} />
-      )}
-      {tab === "MEETING" && incidentId && (
-        <MeetingForm exerciseId={exerciseId} incidentId={incidentId} dDayHHMM={dDayHHMM} />
-      )}
-
-      {tab === "COMMS" && (
-        <form
-          action={async (fd) => {
-            await createCommsDraftAction(fd);
-          }}
-          className="grid grid-cols-2 gap-2 p-3 text-sm"
-        >
-          <input type="hidden" name="exerciseId" value={exerciseId} />
-          <select
-            name="audience"
-            required
-            className="rounded border border-line-strong px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          >
-            <option value="CUSTOMER">Customer</option>
-            <option value="REGULATOR">Regulator</option>
-            <option value="INTERNAL">Internal team</option>
-            <option value="SENIOR_MGMT">Senior management</option>
-            <option value="MEDIA">Media</option>
-          </select>
-          <select
-            name="stakeholder"
-            defaultValue=""
-            className="rounded border border-line-strong px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          >
-            <option value="">— Policy stakeholder —</option>
-            <option value="EMPLOYEES">Employees (must come BEFORE customers)</option>
-            <option value="CUSTOMERS">Customers</option>
-            <option value="REGULATORS">Regulators (PRA/FCA)</option>
-            <option value="ICO">ICO</option>
-            <option value="MEDIA">Media (AFTER customers)</option>
-            <option value="THIRD_PARTY_VENDORS">Third-party vendors</option>
-            <option value="INTERMEDIARIES">Intermediaries</option>
-            <option value="SHAREHOLDERS">Shareholders</option>
-            <option value="INSURERS">Insurers</option>
-          </select>
-          <input
-            name="subject"
-            required
-            placeholder="Subject"
-            className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
+        )}
+        {openKind === "SITREP" && incidentId && (
+          <SitrepForm exerciseId={exerciseId} incidentId={incidentId} onSaved={close} />
+        )}
+        {openKind === "MEETING" && incidentId && (
+          <MeetingForm
+            exerciseId={exerciseId}
+            incidentId={incidentId}
+            dDayHHMM={dDayHHMM}
+            onSaved={close}
           />
-          <textarea
-            name="body"
-            required
-            rows={3}
-            placeholder="Draft body…"
-            className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
-          />
-          <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
-            Save draft
-          </button>
-        </form>
-      )}
-
-      {(tab === "DECISION" || tab === "SITREP" || tab === "MEETING") && !incidentId && (
-        <p className="p-4 text-xs text-muted">
-          Invoke the IMT first to record decisions, sitreps, and meeting minutes.
-        </p>
-      )}
+        )}
+        {openKind === "COMMS" && (
+          <CommsForm exerciseId={exerciseId} onSaved={close} />
+        )}
+      </Drawer>
     </div>
+  );
+}
+
+function LogForm({
+  exerciseId,
+  dDayHHMM,
+  onSaved,
+}: {
+  exerciseId: string;
+  dDayHHMM: string;
+  onSaved: () => void;
+}) {
+  const ref = useRef<HTMLFormElement>(null);
+  return (
+    <form
+      ref={ref}
+      action={async (fd) => {
+        await addLogEntryAction(fd);
+        ref.current?.reset();
+        onSaved();
+      }}
+      className="space-y-3 p-4 text-sm"
+    >
+      <input type="hidden" name="exerciseId" value={exerciseId} />
+      <input type="hidden" name="dDayTime" value={dDayHHMM} />
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Kind
+        </span>
+        <select
+          name="kind"
+          required
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        >
+          <option value="OBSERVATION">Observation — what you saw</option>
+          <option value="ACTION">Action — what you did</option>
+          <option value="RISK">Risk — what could go wrong</option>
+          <option value="ASK">Ask — need from someone else</option>
+          <option value="EVIDENCE">Evidence — artefact / screenshot</option>
+          <option value="CHALLENGE">Challenge — push-back / disagreement</option>
+          <option value="RESOURCE">Resource — system / doc / person</option>
+          <option value="NOTE">Note — general memo</option>
+        </select>
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Body
+        </span>
+        <textarea
+          name="body"
+          required
+          rows={3}
+          placeholder="What happened? (use Decision for formal decisions.)"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <button
+        type="submit"
+        className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+      >
+        Add to log
+      </button>
+    </form>
   );
 }
 
@@ -209,15 +209,15 @@ function DecisionForm({
   incidentId,
   recentInjects,
   orgDecisionPresets,
+  onSaved,
 }: {
   exerciseId: string;
   incidentId: string;
   recentInjects: RecentInject[];
   orgDecisionPresets: OrgDecisionPreset[];
+  onSaved: () => void;
 }) {
   const ref = useRef<HTMLFormElement>(null);
-  // Pre-select the most recently released inject as the likely trigger.
-  // Authors can override or clear it before submitting.
   const suggestedTriggerId = recentInjects[0]?.id ?? "";
   return (
     <form
@@ -225,67 +225,84 @@ function DecisionForm({
       action={async (fd) => {
         await recordDecisionAction(fd);
         ref.current?.reset();
+        onSaved();
       }}
-      className="grid grid-cols-2 gap-2 p-3 text-sm"
+      className="space-y-3 p-4 text-sm"
     >
       <input type="hidden" name="exerciseId" value={exerciseId} />
       <input type="hidden" name="incidentId" value={incidentId} />
-      <select
-        name="decisionPick"
-        required
-        defaultValue="builtin:OTHER"
-        className="rounded border border-line-strong px-2 py-1.5 text-sm"
-      >
-        <optgroup label="Built-in IMT decisions">
-          <option value="builtin:ACTIVATE_BCP">Activate BCP (CEO + CRO joint)</option>
-          <option value="builtin:DEACTIVATE_BCP">Deactivate BCP</option>
-          <option value="builtin:NOTIFY_FCA">Notify FCA (within 4h)</option>
-          <option value="builtin:NOTIFY_PRA">Notify PRA (within 4h)</option>
-          <option value="builtin:NOTIFY_ICO">Notify ICO (within 72h)</option>
-          <option value="builtin:CONVENE_ACTION_COMMITTEE">Convene Board Action Committee</option>
-          <option value="builtin:APPROVE_CRISIS_COMMS">Approve crisis communications</option>
-          <option value="builtin:APPROVE_REGULATOR_COMMS">Approve regulator notification text</option>
-          <option value="builtin:CFO_EMERGENCY_SPEND">CFO emergency spend (£100k cap)</option>
-          <option value="builtin:DRAW_CONTINGENT_LIQUIDITY">Draw contingent liquidity</option>
-          <option value="builtin:DO_NOT_PAY_RANSOM">Do not pay ransom (Board + Legal)</option>
-          <option value="builtin:INSURANCE_INVOCATION">Invoke insurance</option>
-          <option value="builtin:RECOVERY_OPTION_CHOSEN">Recovery option chosen</option>
-          <option value="builtin:OTHER">Other</option>
-        </optgroup>
-        {orgDecisionPresets.length > 0 && (
-          <optgroup label="Org-specific">
-            {orgDecisionPresets.map((p) => (
-              <option key={p.id} value={`org:${p.id}`} title={p.hint ?? undefined}>
-                {p.label}
-              </option>
-            ))}
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Decision type
+        </span>
+        <select
+          name="decisionPick"
+          required
+          defaultValue="builtin:OTHER"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        >
+          <optgroup label="Built-in IMT decisions">
+            <option value="builtin:ACTIVATE_BCP">Activate BCP (CEO + CRO joint)</option>
+            <option value="builtin:DEACTIVATE_BCP">Deactivate BCP</option>
+            <option value="builtin:NOTIFY_FCA">Notify FCA (within 4h)</option>
+            <option value="builtin:NOTIFY_PRA">Notify PRA (within 4h)</option>
+            <option value="builtin:NOTIFY_ICO">Notify ICO (within 72h)</option>
+            <option value="builtin:CONVENE_ACTION_COMMITTEE">Convene Board Action Committee</option>
+            <option value="builtin:APPROVE_CRISIS_COMMS">Approve crisis communications</option>
+            <option value="builtin:APPROVE_REGULATOR_COMMS">Approve regulator notification text</option>
+            <option value="builtin:CFO_EMERGENCY_SPEND">CFO emergency spend (£100k cap)</option>
+            <option value="builtin:DRAW_CONTINGENT_LIQUIDITY">Draw contingent liquidity</option>
+            <option value="builtin:DO_NOT_PAY_RANSOM">Do not pay ransom (Board + Legal)</option>
+            <option value="builtin:INSURANCE_INVOCATION">Invoke insurance</option>
+            <option value="builtin:RECOVERY_OPTION_CHOSEN">Recovery option chosen</option>
+            <option value="builtin:OTHER">Other</option>
           </optgroup>
-        )}
-      </select>
-      <input
-        name="title"
-        required
-        placeholder="One-line decision (e.g. 'Activate BCP — Tier 1 outage')"
-        className="rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <textarea
-        name="rationale"
-        rows={2}
-        placeholder="Why this decision? (rationale for the audit trail)"
-        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
+          {orgDecisionPresets.length > 0 && (
+            <optgroup label="Org-specific">
+              {orgDecisionPresets.map((p) => (
+                <option key={p.id} value={`org:${p.id}`} title={p.hint ?? undefined}>
+                  {p.label}
+                </option>
+              ))}
+            </optgroup>
+          )}
+        </select>
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Title *
+        </span>
+        <input
+          name="title"
+          required
+          placeholder="e.g. 'Activate BCP — Tier 1 outage'"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Rationale
+        </span>
+        <textarea
+          name="rationale"
+          rows={3}
+          placeholder="Why this decision? (rationale for the audit trail)"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
       {recentInjects.length > 0 && (
-        <label className="col-span-2 flex flex-col gap-1 text-[11px] text-muted">
-          <span>
-            Triggered by inject{" "}
-            <span className="text-soft">
-              (auto-suggested from the most recent release — clear if not applicable)
-            </span>
+        <label className="block">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+            Triggered by inject
           </span>
           <select
             name="triggeredByInjectId"
             defaultValue={suggestedTriggerId}
-            className="rounded border border-line-strong px-2 py-1.5 text-sm text-ink"
+            className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
           >
             <option value="">— none —</option>
             {recentInjects.map((i) => (
@@ -294,16 +311,31 @@ function DecisionForm({
               </option>
             ))}
           </select>
+          <p className="mt-1 text-[10px] text-soft">
+            Auto-suggested from most recent release — clear if not applicable.
+          </p>
         </label>
       )}
-      <button className="col-span-2 rounded-md bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-500">
+
+      <button
+        type="submit"
+        className="w-full rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-500"
+      >
         Record decision
       </button>
     </form>
   );
 }
 
-function SitrepForm({ exerciseId, incidentId }: { exerciseId: string; incidentId: string }) {
+function SitrepForm({
+  exerciseId,
+  incidentId,
+  onSaved,
+}: {
+  exerciseId: string;
+  incidentId: string;
+  onSaved: () => void;
+}) {
   const ref = useRef<HTMLFormElement>(null);
   return (
     <form
@@ -311,52 +343,93 @@ function SitrepForm({ exerciseId, incidentId }: { exerciseId: string; incidentId
       action={async (fd) => {
         await addSitrepAction(fd);
         ref.current?.reset();
+        onSaved();
       }}
-      className="grid grid-cols-2 gap-2 p-3 text-sm"
+      className="space-y-3 p-4 text-sm"
     >
       <input type="hidden" name="exerciseId" value={exerciseId} />
       <input type="hidden" name="incidentId" value={incidentId} />
-      <input
-        name="businessUnit"
-        required
-        placeholder="Business unit (e.g. Tech Recovery)"
-        className="rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <select
-        name="status"
-        required
-        defaultValue="AMBER"
-        className="rounded border border-line-strong px-2 py-1.5 text-sm"
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Business unit *
+        </span>
+        <input
+          name="businessUnit"
+          required
+          placeholder="e.g. Tech Recovery, Payments"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Status *
+        </span>
+        <select
+          name="status"
+          required
+          defaultValue="AMBER"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        >
+          <option value="GREEN">🟢 Green</option>
+          <option value="AMBER">🟡 Amber</option>
+          <option value="RED">🔴 Red</option>
+        </select>
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Summary *
+        </span>
+        <textarea
+          name="summary"
+          required
+          rows={3}
+          placeholder="Two-line state-of-the-world for the IMT."
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Issues
+        </span>
+        <textarea
+          name="issues"
+          rows={2}
+          placeholder="Anything broken or at risk."
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Asks
+        </span>
+        <textarea
+          name="asks"
+          rows={2}
+          placeholder="What you need from the IMT."
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Next update due (D-Day HH:MM)
+        </span>
+        <input
+          name="nextUpdateDDayTime"
+          placeholder="e.g. 10:30"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <button
+        type="submit"
+        className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
       >
-        <option value="GREEN">🟢 Green</option>
-        <option value="AMBER">🟡 Amber</option>
-        <option value="RED">🔴 Red</option>
-      </select>
-      <textarea
-        name="summary"
-        required
-        rows={2}
-        placeholder="Situation summary"
-        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <textarea
-        name="issues"
-        rows={2}
-        placeholder="Issues / blockers"
-        className="rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <textarea
-        name="asks"
-        rows={2}
-        placeholder="Asks of the IMT"
-        className="rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <input
-        name="nextUpdateDDayTime"
-        placeholder="Next update at D-Day HH:MM"
-        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
         File sitrep
       </button>
     </form>
@@ -367,10 +440,12 @@ function MeetingForm({
   exerciseId,
   incidentId,
   dDayHHMM,
+  onSaved,
 }: {
   exerciseId: string;
   incidentId: string;
   dDayHHMM: string;
+  onSaved: () => void;
 }) {
   const ref = useRef<HTMLFormElement>(null);
   return (
@@ -379,47 +454,175 @@ function MeetingForm({
       action={async (fd) => {
         await recordIMTMeetingAction(fd);
         ref.current?.reset();
+        onSaved();
       }}
-      className="grid grid-cols-2 gap-2 p-3 text-sm"
+      className="space-y-3 p-4 text-sm"
     >
       <input type="hidden" name="exerciseId" value={exerciseId} />
       <input type="hidden" name="incidentId" value={incidentId} />
-      <p className="col-span-2 text-[11px] text-muted">
+      <p className="text-[11px] text-soft">
         Standing agenda — next meeting time is required as the meeting&apos;s
         formal output.
       </p>
-      <textarea
-        name="situation"
-        rows={2}
-        placeholder="Current situation"
-        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <textarea
-        name="decisions"
-        rows={2}
-        placeholder="Decisions taken in this meeting"
-        className="rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <textarea
-        name="actions"
-        rows={2}
-        placeholder="Actions assigned (owner, due time)"
-        className="rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <textarea
-        name="risks"
-        rows={2}
-        placeholder="Risks flagged"
-        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <input
-        name="nextMeetingDDay"
-        required
-        placeholder={`Next meeting at D-Day HH:MM (started at ${dDayHHMM})`}
-        className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
-      />
-      <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Situation
+        </span>
+        <textarea
+          name="situation"
+          rows={2}
+          placeholder="Current situation"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Decisions
+        </span>
+        <textarea
+          name="decisions"
+          rows={2}
+          placeholder="Decisions taken in this meeting"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Actions
+        </span>
+        <textarea
+          name="actions"
+          rows={2}
+          placeholder="Actions assigned (owner, due time)"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Risks
+        </span>
+        <textarea
+          name="risks"
+          rows={2}
+          placeholder="Risks flagged"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Next meeting at D-Day HH:MM *
+        </span>
+        <input
+          name="nextMeetingDDay"
+          required
+          placeholder={`started at ${dDayHHMM}`}
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <button
+        type="submit"
+        className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+      >
         Record IMT meeting
+      </button>
+    </form>
+  );
+}
+
+function CommsForm({
+  exerciseId,
+  onSaved,
+}: {
+  exerciseId: string;
+  onSaved: () => void;
+}) {
+  const ref = useRef<HTMLFormElement>(null);
+  return (
+    <form
+      ref={ref}
+      action={async (fd) => {
+        await createCommsDraftAction(fd);
+        ref.current?.reset();
+        onSaved();
+      }}
+      className="space-y-3 p-4 text-sm"
+    >
+      <input type="hidden" name="exerciseId" value={exerciseId} />
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Audience *
+        </span>
+        <select
+          name="audience"
+          required
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        >
+          <option value="CUSTOMER">Customer</option>
+          <option value="REGULATOR">Regulator</option>
+          <option value="INTERNAL">Internal team</option>
+          <option value="SENIOR_MGMT">Senior management</option>
+          <option value="MEDIA">Media</option>
+        </select>
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Policy stakeholder
+        </span>
+        <select
+          name="stakeholder"
+          defaultValue=""
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        >
+          <option value="">— Policy stakeholder —</option>
+          <option value="EMPLOYEES">Employees (must come BEFORE customers)</option>
+          <option value="CUSTOMERS">Customers</option>
+          <option value="REGULATORS">Regulators (PRA/FCA)</option>
+          <option value="ICO">ICO</option>
+          <option value="MEDIA">Media (AFTER customers)</option>
+          <option value="THIRD_PARTY_VENDORS">Third-party vendors</option>
+          <option value="INTERMEDIARIES">Intermediaries</option>
+          <option value="SHAREHOLDERS">Shareholders</option>
+          <option value="INSURERS">Insurers</option>
+        </select>
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Subject *
+        </span>
+        <input
+          name="subject"
+          required
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          Body *
+        </span>
+        <textarea
+          name="body"
+          required
+          rows={5}
+          placeholder="Draft body…"
+          className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
+        />
+      </label>
+
+      <button
+        type="submit"
+        className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+      >
+        Save draft
       </button>
     </form>
   );
