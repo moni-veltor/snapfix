@@ -188,6 +188,7 @@ model User {
   createdRunbooks            Runbook[]                  @relation("RunbookCreator")
   reviewedRunbooks           Runbook[]                  @relation("RunbookReviewer")
   activatedRunbookExecutions RunbookExecution[]         @relation("RunbookExecutionActivator")
+  facilitatorAnnouncements   FacilitatorAnnouncement[]  @relation("FacilitatorAnnouncementAuthor")
   achievementUnlocks         AchievementUnlock[]        @relation("AchievementUnlockUser")
   exerciseParticipations     ExerciseParticipant[]
   incidentLogEntries         IncidentLogEntry[]
@@ -625,40 +626,80 @@ model Exercise {
   dDayAnchor      DateTime?
   speedMultiplier Float     @default(1.0)
 
-  teams              ExerciseTeam[]
-  participants       ExerciseParticipant[]
-  eventReleases      EventRelease[]
-  injectReleases     InjectRelease[]
-  incidentLog        IncidentLogEntry[]
-  responses          ParticipantResponse[]
-  comms              CommunicationDraft[]
-  recoveryPlans      RecoveryPlan[]
-  debriefAnswers     DebriefAnswer[]
-  impactBreaches     ImpactBreach[]
-  aar                AfterActionReport?
-  artefacts          Artefact[]
-  ibsLinks           ExerciseIBSLink[]
-  actionItems        ExerciseActionItem[]
-  incidents          Incident[]
-  retrospective      Retrospective?
-  seats              ExerciseSeat[]
-  chatMessages       ChatMessage[]
-  scratchpad         ExerciseScratchpad?
+  teams                    ExerciseTeam[]
+  participants             ExerciseParticipant[]
+  eventReleases            EventRelease[]
+  injectReleases           InjectRelease[]
+  incidentLog              IncidentLogEntry[]
+  responses                ParticipantResponse[]
+  comms                    CommunicationDraft[]
+  recoveryPlans            RecoveryPlan[]
+  debriefAnswers           DebriefAnswer[]
+  impactBreaches           ImpactBreach[]
+  aar                      AfterActionReport?
+  artefacts                Artefact[]
+  ibsLinks                 ExerciseIBSLink[]
+  actionItems              ExerciseActionItem[]
+  incidents                Incident[]
+  retrospective            Retrospective?
+  seats                    ExerciseSeat[]
+  chatMessages             ChatMessage[]
+  scratchpad               ExerciseScratchpad?
   // ─── Wizard-era relations ─────────────────────────────────────────────────
-  chainedScenarios   ExerciseScenarioLink[]
-  vendorParticipants ExerciseVendorParticipant[]
-  approvals          ExerciseApproval[]
-  injectOverrides    ExerciseInjectOverride[]
-  hotWash            ExerciseHotWash?
-  wellbeingChecks    ExerciseWellbeingCheck[]
-  classifiedReads    ExerciseClassifiedReader[]
-  auditHashChain     ExerciseAuditHashEntry[]
+  chainedScenarios         ExerciseScenarioLink[]
+  vendorParticipants       ExerciseVendorParticipant[]
+  approvals                ExerciseApproval[]
+  injectOverrides          ExerciseInjectOverride[]
+  hotWash                  ExerciseHotWash?
+  wellbeingChecks          ExerciseWellbeingCheck[]
+  classifiedReads          ExerciseClassifiedReader[]
+  auditHashChain           ExerciseAuditHashEntry[]
+  facilitatorAnnouncements FacilitatorAnnouncement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([orgId, status])
   @@index([orgId, plannedDate])
+}
+
+/// Out-of-band signals from the facilitator that participants need to see
+/// as a discrete event rather than a buried log row — broadcasts ("pause
+/// for a sitrep check"), bulk releases ("released 8 items up to D-Day
+/// 09:00"), recalls ("inject X was un-released"), and clock scrubs
+/// ("skipped 15 mins of dead time"). The participant /live view subscribes
+/// to these via polling and surfaces toasts + a sticky banner.
+model FacilitatorAnnouncement {
+  id         String                      @id @default(cuid())
+  exerciseId String
+  exercise   Exercise                    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  authorId   String?
+  author     User?                       @relation("FacilitatorAnnouncementAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  kind       FacilitatorAnnouncementKind
+  /// Human-readable message shown in the toast + banner.
+  message    String
+  /// Structured detail. Shape depends on kind:
+  ///   BULK_RELEASE: { upToHHMM, eventCount, injectCount }
+  ///   RECALL:       { kind: "EVENT"|"INJECT", summary }
+  ///   SCRUB:        { deltaMinutes, direction: "FORWARD"|"BACKWARD" }
+  ///   BROADCAST:    null
+  metadata   Json?
+  /// D-Day time captured at emission; null if exercise hasn't started.
+  dDayTime   String?
+  /// When non-null, the participant banner pins this announcement at the
+  /// top until the participant dismisses it. Used for BROADCAST so the
+  /// IMT chair's instruction can't be missed.
+  pinned     Boolean                     @default(false)
+  createdAt  DateTime                    @default(now())
+
+  @@index([exerciseId, createdAt])
+}
+
+enum FacilitatorAnnouncementKind {
+  BROADCAST
+  BULK_RELEASE
+  RECALL
+  SCRUB
 }
 
 model ExerciseTeam {

@@ -45,6 +45,9 @@ import FirstTimeLiveTour from "@/components/live/FirstTimeLiveTour";
 import SitrepCadenceBanner from "@/components/live/SitrepCadenceBanner";
 import MyApprovalsDock from "@/components/live/MyApprovalsDock";
 import { loadApprovalsQueue } from "@/lib/approvals";
+import FacilitatorAnnouncementsBanner, {
+  type Announcement,
+} from "@/components/live/FacilitatorAnnouncementsBanner";
 
 export default async function LiveWorkspacePage({
   params,
@@ -122,6 +125,7 @@ export default async function LiveWorkspacePage({
     recentReleases,
     orgDecisionPresets,
     approvalsQueue,
+    announcementRows,
     recentSitreps,
   ] = await Promise.all([
     loadInbox(exercise.id, { roleTitle: participant.roleTitle, participantId: participant.id }),
@@ -208,6 +212,14 @@ export default async function LiveWorkspacePage({
     // role's sign-off). Renders inline in MyApprovalsDock — see
     // src/lib/approvals.ts for the matching policy.
     loadApprovalsQueue(exercise.id, me.id),
+    // Out-of-band facilitator signals — broadcasts pin sticky, the rest
+    // are toast-only and auto-fade from the banner stack client-side.
+    prisma.facilitatorAnnouncement.findMany({
+      where: { exerciseId: exercise.id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: { author: { select: { name: true, email: true } } },
+    }),
     // Sitreps filed against any incident in this exercise — drives the
     // cadence banner (regular sitreps per business unit are expected).
     prisma.sitrep.findMany({
@@ -499,6 +511,19 @@ export default async function LiveWorkspacePage({
       </header>
 
       <IncidentBanner exerciseId={exercise.id} incident={incidentForBanner} />
+
+      <FacilitatorAnnouncementsBanner
+        exerciseId={exercise.id}
+        announcements={announcementRows.map<Announcement>((a) => ({
+          id: a.id,
+          kind: a.kind,
+          message: a.message,
+          authorName: a.author?.name ?? a.author?.email ?? null,
+          dDayTime: a.dDayTime,
+          pinned: a.pinned,
+          createdAt: a.createdAt,
+        }))}
+      />
 
       <MyApprovalsDock
         exerciseId={exercise.id}
