@@ -28,7 +28,7 @@ import {
   restoreRunbookAction,
 } from "@/app/actions/runbooks";
 import type { RunbookCategory, RunbookStatus } from "@/generated/prisma/enums";
-import { withToast } from "@/lib/toast-action";
+import ToastForm from "@/components/ui/ToastForm";
 import {
   evaluateRunbookPreflight,
   runbookFreshness,
@@ -608,7 +608,10 @@ function PreflightPanel({
           )}
           <DrillChip ageDays={drillAgeDays} />
           {canManage && (
-            <form action={withToast(markRunbookReviewedAction, { success: "Marked reviewed" })}>
+            <ToastForm
+              action={markRunbookReviewedAction}
+              toast={{ success: "Marked reviewed" }}
+            >
               <input type="hidden" name="id" value={runbookId} />
               <button
                 type="submit"
@@ -617,7 +620,7 @@ function PreflightPanel({
                 <CheckCircle2 size={12} />
                 Mark reviewed
               </button>
-            </form>
+            </ToastForm>
           )}
         </div>
       </header>
