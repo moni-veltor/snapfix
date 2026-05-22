@@ -2485,6 +2485,8 @@ model Runbook {
   scenarioLinks RunbookScenarioLink[]
   trigger       RunbookTriggerCondition?
   executions    RunbookExecution[]
+  escalatesTo   RunbookEscalation[]      @relation("RunbookEscalationSource")
+  escalatedFrom RunbookEscalation[]      @relation("RunbookEscalationTarget")
 
   createdById String?
   createdBy   User?    @relation("RunbookCreator", fields: [createdById], references: [id], onDelete: SetNull)
@@ -2585,6 +2587,37 @@ model RunbookTriggerCondition {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// Escalation chain — when this source runbook is activated, the target
+/// runbook is the natural downstream playbook to activate next (e.g.
+/// "RANSOMWARE → FCA material incident notification"). The chain is
+/// data-driven so /runbooks/[id] can render "this triggers…" + "this is
+/// triggered by…" panels, and the activation flow can prompt the
+/// facilitator to fire downstream runbooks rather than relying on
+/// implicit knowledge in the IMT chair's head.
+model RunbookEscalation {
+  id              String  @id @default(cuid())
+  sourceRunbookId String
+  source          Runbook @relation("RunbookEscalationSource", fields: [sourceRunbookId], references: [id], onDelete: Cascade)
+  targetRunbookId String
+  target          Runbook @relation("RunbookEscalationTarget", fields: [targetRunbookId], references: [id], onDelete: Cascade)
+
+  /// Optional severity gate. When set, the escalation only fires once
+  /// the incident reaches this severity ("LOW"|"MEDIUM"|"HIGH"|"CRITICAL").
+  /// Null = always escalate when the source is activated.
+  severityAtLeast String?
+  /// Optional short reason ("data exfiltration triggers ICO 72h").
+  rationale       String?
+  /// Sparse-integer ordering so escalations render in a stable sequence
+  /// when a single source has multiple downstream playbooks.
+  orderIdx        Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sourceRunbookId, targetRunbookId])
+  @@index([targetRunbookId])
 }
 
 // ─── Runbook execution (live activation + step progress) ───────────────────

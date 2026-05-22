@@ -4,24 +4,30 @@ import {
   AlertTriangle,
   Archive,
   ArrowLeft,
+  ArrowRight,
   BookOpen,
   CheckCircle2,
   CircleCheck,
   Clock,
+  GitBranch,
   PlayCircle,
   Trash2,
+  X,
 } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import RunbookEditor from "@/components/runbooks/RunbookEditor";
 import {
+  addRunbookEscalationAction,
   archiveRunbookAction,
   deleteRunbookAction,
   drillRunbookAction,
   markRunbookReviewedAction,
+  removeRunbookEscalationAction,
   restoreRunbookAction,
 } from "@/app/actions/runbooks";
+import type { RunbookCategory, RunbookStatus } from "@/generated/prisma/enums";
 import { withToast } from "@/lib/toast-action";
 import {
   evaluateRunbookPreflight,
@@ -45,13 +51,35 @@ export default async function RunbookDetailPage({
       trigger: true,
       ibsLinks: { select: { ibsId: true } },
       scenarioLinks: { select: { scenarioId: true } },
+      escalatesTo: {
+        orderBy: [{ orderIdx: "asc" }],
+        select: {
+          id: true,
+          severityAtLeast: true,
+          rationale: true,
+          target: {
+            select: { id: true, title: true, status: true, category: true },
+          },
+        },
+      },
+      escalatedFrom: {
+        orderBy: [{ orderIdx: "asc" }],
+        select: {
+          id: true,
+          severityAtLeast: true,
+          rationale: true,
+          source: {
+            select: { id: true, title: true, status: true, category: true },
+          },
+        },
+      },
     },
   });
   if (!runbook) notFound();
 
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
 
-  const [ibsOptions, scenarioOptions, orgRoles, reviewer] = await Promise.all([
+  const [ibsOptions, scenarioOptions, orgRoles, reviewer, otherRunbooks] = await Promise.all([
     prisma.organizationIBS.findMany({
       where: { orgId: me.orgId },
       orderBy: { code: "asc" },
@@ -72,6 +100,15 @@ export default async function RunbookDetailPage({
           select: { name: true, email: true },
         })
       : Promise.resolve(null),
+    prisma.runbook.findMany({
+      where: {
+        orgId: me.orgId,
+        id: { not: runbook.id },
+        status: { not: "ARCHIVED" },
+      },
+      orderBy: [{ category: "asc" }, { title: "asc" }],
+      select: { id: true, title: true, category: true, status: true },
+    }),
   ]);
 
   const orgRoleCatalogue = new Set<string>();
@@ -89,6 +126,11 @@ export default async function RunbookDetailPage({
     ibsLinkCount: runbook.ibsLinks.length,
     hasTrigger: runbook.trigger !== null,
     orgRoleCatalogue,
+    escalationTargets: runbook.escalatesTo.map((e) => ({
+      id: e.target.id,
+      title: e.target.title,
+      status: e.target.status,
+    })),
     now: nowSnapshot,
   });
   const freshness = runbookFreshness(runbook.lastReviewedAt, nowSnapshot);
@@ -172,6 +214,18 @@ export default async function RunbookDetailPage({
               )
             : null
         }
+        canManage={canManage}
+      />
+
+      <EscalationsPanel
+        runbookId={runbook.id}
+        escalatesTo={runbook.escalatesTo}
+        escalatedFrom={runbook.escalatedFrom}
+        otherRunbooks={otherRunbooks.filter(
+          (r) =>
+            !runbook.escalatesTo.some((e) => e.target.id === r.id) &&
+            r.id !== runbook.id,
+        )}
         canManage={canManage}
       />
 
@@ -260,6 +314,225 @@ export default async function RunbookDetailPage({
         </section>
       )}
     </div>
+  );
+}
+
+type EscalationLink = {
+  id: string;
+  severityAtLeast: string | null;
+  rationale: string | null;
+  target: {
+    id: string;
+    title: string;
+    status: RunbookStatus;
+    category: RunbookCategory;
+  };
+};
+
+type ReverseEscalationLink = {
+  id: string;
+  severityAtLeast: string | null;
+  rationale: string | null;
+  source: {
+    id: string;
+    title: string;
+    status: RunbookStatus;
+    category: RunbookCategory;
+  };
+};
+
+function EscalationsPanel({
+  runbookId,
+  escalatesTo,
+  escalatedFrom,
+  otherRunbooks,
+  canManage,
+}: {
+  runbookId: string;
+  escalatesTo: EscalationLink[];
+  escalatedFrom: ReverseEscalationLink[];
+  otherRunbooks: ReadonlyArray<{
+    id: string;
+    title: string;
+    category: RunbookCategory;
+    status: RunbookStatus;
+  }>;
+  canManage: boolean;
+}) {
+  return (
+    <section className="grid gap-3 lg:grid-cols-2">
+      <div className="rounded-xl border border-line bg-surface-1 p-4">
+        <header className="flex items-center gap-2">
+          <GitBranch size={14} className="text-indigo-600 dark:text-indigo-300" />
+          <h2 className="font-display text-sm font-semibold text-ink">Escalates to</h2>
+          <span className="text-[11px] text-soft">{escalatesTo.length}</span>
+        </header>
+        <p className="mt-1 text-[11px] text-soft">
+          Downstream playbooks the IMT should activate when this one fires.
+        </p>
+        {escalatesTo.length === 0 ? (
+          <p className="mt-3 rounded-md bg-surface-2 px-3 py-2 text-[12px] text-soft">
+            No escalation links yet.
+          </p>
+        ) : (
+          <ul className="mt-3 space-y-1.5">
+            {escalatesTo.map((link) => (
+              <EscalationRow
+                key={link.id}
+                escalationId={link.id}
+                otherId={link.target.id}
+                otherTitle={link.target.title}
+                otherStatus={link.target.status}
+                severityAtLeast={link.severityAtLeast}
+                rationale={link.rationale}
+                direction="to"
+                canManage={canManage}
+              />
+            ))}
+          </ul>
+        )}
+
+        {canManage && otherRunbooks.length > 0 && (
+          <form
+            action={addRunbookEscalationAction}
+            className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3"
+          >
+            <input type="hidden" name="sourceId" value={runbookId} />
+            <select
+              name="targetId"
+              required
+              defaultValue=""
+              className="min-w-0 flex-1 rounded-md border border-line bg-surface-1 px-2 py-1.5 text-[12px]"
+            >
+              <option value="" disabled>
+                Pick a downstream runbook…
+              </option>
+              {otherRunbooks.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.title}
+                  {r.status === "DRAFT" ? " (draft)" : ""}
+                </option>
+              ))}
+            </select>
+            <select
+              name="severityAtLeast"
+              defaultValue=""
+              className="rounded-md border border-line bg-surface-1 px-2 py-1.5 text-[12px]"
+              title="Severity gate"
+            >
+              <option value="">Always</option>
+              <option value="LOW">≥ LOW</option>
+              <option value="MEDIUM">≥ MEDIUM</option>
+              <option value="HIGH">≥ HIGH</option>
+              <option value="CRITICAL">CRITICAL only</option>
+            </select>
+            <button
+              type="submit"
+              className="rounded-md bg-slate-900 px-3 py-1.5 text-[12px] font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+            >
+              Link
+            </button>
+          </form>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-line bg-surface-1 p-4">
+        <header className="flex items-center gap-2">
+          <GitBranch size={14} className="text-indigo-600 dark:text-indigo-300 rotate-180" />
+          <h2 className="font-display text-sm font-semibold text-ink">Triggered by</h2>
+          <span className="text-[11px] text-soft">{escalatedFrom.length}</span>
+        </header>
+        <p className="mt-1 text-[11px] text-soft">
+          Upstream playbooks that route to this one when they fire.
+        </p>
+        {escalatedFrom.length === 0 ? (
+          <p className="mt-3 rounded-md bg-surface-2 px-3 py-2 text-[12px] text-soft">
+            Not linked from any upstream playbook.
+          </p>
+        ) : (
+          <ul className="mt-3 space-y-1.5">
+            {escalatedFrom.map((link) => (
+              <EscalationRow
+                key={link.id}
+                escalationId={link.id}
+                otherId={link.source.id}
+                otherTitle={link.source.title}
+                otherStatus={link.source.status}
+                severityAtLeast={link.severityAtLeast}
+                rationale={link.rationale}
+                direction="from"
+                canManage={canManage}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function EscalationRow({
+  escalationId,
+  otherId,
+  otherTitle,
+  otherStatus,
+  severityAtLeast,
+  rationale,
+  direction,
+  canManage,
+}: {
+  escalationId: string;
+  otherId: string;
+  otherTitle: string;
+  otherStatus: RunbookStatus;
+  severityAtLeast: string | null;
+  rationale: string | null;
+  direction: "to" | "from";
+  canManage: boolean;
+}) {
+  const draft = otherStatus === "DRAFT";
+  return (
+    <li className="flex items-start gap-2 rounded-md border border-line bg-surface-2/40 p-2.5 text-[12px]">
+      <ArrowRight
+        size={14}
+        className={`mt-0.5 shrink-0 ${direction === "from" ? "rotate-180 text-soft" : "text-indigo-600 dark:text-indigo-300"}`}
+      />
+      <div className="min-w-0 flex-1">
+        <Link
+          href={`/runbooks/${otherId}`}
+          className="font-medium text-ink hover:underline"
+        >
+          {otherTitle}
+        </Link>
+        <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px] text-soft">
+          {severityAtLeast ? (
+            <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+              ≥ {severityAtLeast}
+            </span>
+          ) : (
+            <span className="rounded-full bg-surface-2 px-1.5 py-0.5">Always</span>
+          )}
+          {draft && (
+            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+              Target is DRAFT
+            </span>
+          )}
+        </div>
+        {rationale && <p className="mt-1 text-soft">{rationale}</p>}
+      </div>
+      {canManage && direction === "to" && (
+        <form action={removeRunbookEscalationAction}>
+          <input type="hidden" name="id" value={escalationId} />
+          <button
+            type="submit"
+            className="shrink-0 rounded-md p-1 text-soft hover:bg-surface-1 hover:text-ink"
+            title="Remove escalation"
+          >
+            <X size={12} />
+          </button>
+        </form>
+      )}
+    </li>
   );
 }
 

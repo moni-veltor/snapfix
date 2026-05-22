@@ -70,6 +70,11 @@ export default async function RunbooksPage() {
         _count: { select: { steps: true, ibsLinks: true, scenarioLinks: true } },
         trigger: true,
         steps: { select: { ownerRoleTitle: true } },
+        escalatesTo: {
+          select: {
+            target: { select: { id: true, title: true, status: true } },
+          },
+        },
       },
     }),
     prisma.organization.findUniqueOrThrow({
@@ -107,6 +112,11 @@ export default async function RunbooksPage() {
         ibsLinkCount: r._count.ibsLinks,
         hasTrigger: r.trigger !== null,
         orgRoleCatalogue,
+        escalationTargets: r.escalatesTo.map((e) => ({
+          id: e.target.id,
+          title: e.target.title,
+          status: e.target.status,
+        })),
         now: nowSnapshot,
       }),
     );

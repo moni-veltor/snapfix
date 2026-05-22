@@ -50,6 +50,18 @@ export type LibraryRunbookStep = {
   };
 };
 
+/** Escalation declared on a library template. Resolved to a real
+ *  RunbookEscalation row at clone time if the target slug also exists in
+ *  the org's catalogue. */
+export type LibraryRunbookEscalation = {
+  /** Slug of another LibraryRunbook entry. */
+  targetSlug: string;
+  /** Severity gate for the escalation ("LOW"|…|"CRITICAL"). */
+  severityAtLeast?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  /** Short reason — e.g. "Data exfiltration triggers ICO 72h notification". */
+  rationale?: string;
+};
+
 export type LibraryRunbook = {
   slug: string;
   title: string;
@@ -66,6 +78,8 @@ export type LibraryRunbook = {
     severityAtLeast?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
     scenarioCategoryEquals?: string;
   };
+  /** Downstream runbooks the IMT should activate when this one fires. */
+  escalates?: ReadonlyArray<LibraryRunbookEscalation>;
   steps: LibraryRunbookStep[];
 };
 
@@ -78,6 +92,12 @@ const RANSOMWARE: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "HIGH", scenarioCategoryEquals: "Technology & Data (Cyber)" },
+  escalates: [
+    { targetSlug: "bcp-activation", severityAtLeast: "HIGH", rationale: "Severe cyber outages usually need BCP-side workarounds in parallel." },
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Likely material under FCA rules — file the 4h notification." },
+    { targetSlug: "ico-72h-breach", rationale: "Any personal-data exposure triggers ICO 72h clock." },
+    { targetSlug: "dora-major-ict-incident", severityAtLeast: "HIGH", rationale: "EU DORA major ICT-incident classification likely." },
+  ],
   steps: [
     {
       slug: "isolate-segments",
@@ -198,6 +218,11 @@ const CLOUD_REGION_OUTAGE: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "HIGH" },
+  escalates: [
+    { targetSlug: "bcp-activation", severityAtLeast: "HIGH", rationale: "Region loss usually breaches an IBS impact tolerance." },
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Likely material under FCA SS1/21 thresholds." },
+    { targetSlug: "dora-major-ict-incident", severityAtLeast: "HIGH", rationale: "EU DORA classification likely." },
+  ],
   steps: [
     {
       slug: "confirm-scope",
@@ -286,6 +311,10 @@ const VENDOR_FAILURE: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Procurement",
   trigger: { severityAtLeast: "MEDIUM" },
+  escalates: [
+    { targetSlug: "fca-material-incident", rationale: "Material outsource disruption notifiable to the FCA." },
+    { targetSlug: "dora-major-ict-incident", severityAtLeast: "HIGH", rationale: "If the vendor is a critical ICT third party under DORA." },
+  ],
   steps: [
     {
       slug: "confirm-status",
@@ -383,6 +412,9 @@ const BCP_ACTIVATION: LibraryRunbook = {
   category: "BCP_ACTIVATION",
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CRO",
+  escalates: [
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "BCP invocation typically meets FCA materiality." },
+  ],
   steps: [
     {
       slug: "trigger-met",
@@ -460,6 +492,10 @@ const DDOS_RESPONSE: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "MEDIUM" },
+  escalates: [
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Customer-impacting DDoS is FCA-notifiable." },
+    { targetSlug: "bcp-activation", severityAtLeast: "CRITICAL", rationale: "Persistent or wide-blast DDoS needs BCP workarounds." },
+  ],
   steps: [
     {
       slug: "characterise",
@@ -557,6 +593,10 @@ const SUPPLY_CHAIN_COMPROMISE: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "HIGH" },
+  escalates: [
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Material customer impact — FCA notification." },
+    { targetSlug: "dora-major-ict-incident", severityAtLeast: "HIGH", rationale: "EU DORA major ICT-incident classification likely." },
+  ],
   steps: [
     { slug: "halt-builds", title: "Halt all production deploys", description: "Freeze CD pipelines + lock production change windows.", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 5, successCriteria: "No new deploys in flight." },
     { slug: "scope-affected", title: "Scope affected artefacts", description: "SBOM scan for the compromised dependency across all services + container images.", kind: "ACTION", ownerRoleTitle: "CISO", estimatedMin: 30, dependsOn: ["halt-builds"] },
@@ -577,6 +617,9 @@ const INSIDER_THREAT: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "HIGH" },
+  escalates: [
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Privileged-user abuse is FCA-notifiable when customer harm is likely." },
+  ],
   steps: [
     { slug: "preserve-evidence", title: "Preserve evidence first", description: "Snapshot logs, mail, endpoints BEFORE access changes — chain of custody.", kind: "ACTION", ownerRoleTitle: "CISO", estimatedMin: 30 },
     { slug: "legal-hr-loop", title: "Loop in Legal + HR", description: "Standing legal privilege + HR process must run in parallel from minute zero.", kind: "DECISION", ownerRoleTitle: "Chief Legal Officer", estimatedMin: 15, dependsOn: ["preserve-evidence"] },
@@ -615,6 +658,9 @@ const LOST_DEVICE_WITH_DATA: LibraryRunbook = {
   category: "CYBER",
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
+  escalates: [
+    { targetSlug: "ico-72h-breach", rationale: "Confirmed loss of personal data — ICO 72h." },
+  ],
   steps: [
     { slug: "remote-wipe", title: "Initiate remote wipe", description: "MDM-driven wipe + remote lock; confirm device check-in status.", kind: "ACTION", ownerRoleTitle: "CISO", estimatedMin: 15 },
     { slug: "revoke-credentials", title: "Revoke device-bound credentials", description: "Rotate any client certs, hardware-bound passkeys, refresh tokens on that device.", kind: "ACTION", ownerRoleTitle: "CISO", estimatedMin: 20, dependsOn: ["remote-wipe"] },
@@ -634,6 +680,10 @@ const DATA_EXFILTRATION: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "CRITICAL" },
+  escalates: [
+    { targetSlug: "ico-72h-breach", rationale: "Confirmed exfiltration of personal data triggers ICO 72h." },
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Material customer harm — FCA notification." },
+  ],
   steps: [
     { slug: "block-egress", title: "Block the egress channel", description: "DNS sinkhole / firewall block of the destination; preserve flow logs.", kind: "ACTION", ownerRoleTitle: "CISO", estimatedMin: 10 },
     { slug: "preserve-evidence", title: "Preserve evidence", description: "Snapshot affected hosts, capture netflow / proxy logs; document time-stamps.", kind: "ACTION", ownerRoleTitle: "CISO", estimatedMin: 30, dependsOn: ["block-egress"] },
@@ -674,6 +724,9 @@ const WIRE_FRAUD_SURGE: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Financial Crime",
   trigger: { severityAtLeast: "MEDIUM" },
+  escalates: [
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Surge in wire fraud is FCA-notifiable." },
+  ],
   steps: [
     { slug: "tighten-controls", title: "Tighten step-up + velocity controls", description: "Lower thresholds for step-up auth, increase friction on first-payee.", kind: "ACTION", ownerRoleTitle: "Head of Financial Crime", estimatedMin: 30 },
     { slug: "stop-payments", title: "Decide on payment-block list", description: "Block confirmed mule accounts at the scheme level via Confirmation of Payee.", kind: "DECISION", ownerRoleTitle: "Head of Financial Crime", estimatedMin: 15, dependsOn: ["tighten-controls"] },
@@ -694,6 +747,10 @@ const HYPERSCALER_SERVICE_OUTAGE: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "MEDIUM" },
+  escalates: [
+    { targetSlug: "bcp-activation", severityAtLeast: "HIGH", rationale: "Hyperscaler outage usually breaches an IBS impact tolerance." },
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Likely material under FCA SS1/21." },
+  ],
   steps: [
     { slug: "confirm-status", title: "Confirm hyperscaler status", description: "Cross-reference vendor status page vs internal canaries.", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 10 },
     { slug: "scope-blast", title: "Scope dependent services", description: "Which of our services use the affected hyperscaler service?", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 15, dependsOn: ["confirm-status"] },
@@ -746,6 +803,10 @@ const DB_FAILOVER_GONE_WRONG: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "HIGH" },
+  escalates: [
+    { targetSlug: "bcp-activation", severityAtLeast: "HIGH", rationale: "Botched failover usually requires BCP workarounds while recovery runs." },
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Customer-impacting recovery failure — FCA notification." },
+  ],
   steps: [
     { slug: "stop-writes", title: "Stop application writes", description: "Mark IBSs as IMPACTED; queue writes if possible.", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 10 },
     { slug: "diagnose-state", title: "Diagnose DB state", description: "Determine which replica has the authoritative state; identify divergence window.", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 30, dependsOn: ["stop-writes"] },
@@ -764,6 +825,9 @@ const KUBERNETES_CLUSTER_OUTAGE: LibraryRunbook = {
   category: "CLOUD_REGION_OUTAGE",
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
+  escalates: [
+    { targetSlug: "bcp-activation", severityAtLeast: "HIGH", rationale: "Cluster-level outage usually breaches an IBS impact tolerance." },
+  ],
   steps: [
     { slug: "confirm-scope", title: "Confirm cluster scope", description: "Control plane alone or worker nodes too? Multi-cluster or single?", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 10 },
     { slug: "failover-secondary", title: "Failover to secondary cluster", description: "If GitOps + multi-cluster is set up, reroute traffic.", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 30, dependsOn: ["confirm-scope"] },
@@ -784,6 +848,10 @@ const PAYMENTS_SCHEME_OUTAGE: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Payments",
   trigger: { severityAtLeast: "HIGH" },
+  escalates: [
+    { targetSlug: "boe-settlement-incident", rationale: "Payments-scheme disruption notifiable to BoE." },
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Material customer harm — FCA notification." },
+  ],
   steps: [
     { slug: "confirm-scheme", title: "Confirm scheme status", description: "Cross-reference Pay.UK / BoE / SWIFT status with internal payment-gateway logs.", kind: "ACTION", ownerRoleTitle: "Head of Payments", estimatedMin: 10 },
     { slug: "queue-outbound", title: "Queue outbound payments", description: "Hold customer-initiated outbound; allow inbound to settle if possible.", kind: "ACTION", ownerRoleTitle: "Head of Payments", estimatedMin: 15, dependsOn: ["confirm-scheme"] },
@@ -906,6 +974,9 @@ const OFFICE_INACCESSIBLE: LibraryRunbook = {
   category: "BCP_ACTIVATION",
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "COO",
+  escalates: [
+    { targetSlug: "bcp-activation", rationale: "Site loss invokes the BCP." },
+  ],
   steps: [
     { slug: "confirm-inaccessible", title: "Confirm inaccessibility window", description: "Police / building management timeline; expected duration.", kind: "ACTION", ownerRoleTitle: "COO", estimatedMin: 30 },
     { slug: "remote-shift", title: "Shift to fully-remote posture", description: "Email + Slack announce; trading desks already on home-trading kit (if Tier-1).", kind: "ACTION", ownerRoleTitle: "Head of People", estimatedMin: 60, dependsOn: ["confirm-inaccessible"] },
@@ -923,6 +994,9 @@ const SEVERE_WEATHER: LibraryRunbook = {
   category: "BCP_ACTIVATION",
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "COO",
+  escalates: [
+    { targetSlug: "bcp-activation", severityAtLeast: "HIGH", rationale: "Region-wide weather event invokes BCP-side workarounds." },
+  ],
   steps: [
     { slug: "monitor-warnings", title: "Monitor Met Office / equivalent", description: "Track regional warnings; identify staff at risk.", kind: "ACTION", ownerRoleTitle: "COO", estimatedMin: 30 },
     { slug: "remote-day", title: "Declare optional remote day", description: "Send by 4pm prior day so commuters can plan.", kind: "DECISION", ownerRoleTitle: "COO", estimatedMin: 15, dependsOn: ["monitor-warnings"] },
@@ -976,6 +1050,10 @@ const MASS_DATA_BREACH: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "DPO",
   trigger: { severityAtLeast: "CRITICAL" },
+  escalates: [
+    { targetSlug: "ico-72h-breach", rationale: "Mass breach triggers ICO 72h irrespective of severity." },
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Material customer harm — FCA notification." },
+  ],
   steps: [
     { slug: "contain-exposure", title: "Contain ongoing exposure", description: "Stop the bleed before scoping; revoke any active leakage vector.", kind: "ACTION", ownerRoleTitle: "CISO", estimatedMin: 30 },
     { slug: "invoke-imt", title: "Invoke IMT", description: "Mass breach = mandatory IMT.", kind: "DECISION", ownerRoleTitle: "CRO", estimatedMin: 5, decisionTypeCode: "INVOKE_IMT", dependsOn: ["contain-exposure"] },
@@ -1014,6 +1092,9 @@ const BACKUP_INTEGRITY_FAILURE: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "HIGH" },
+  escalates: [
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Loss of recovery confidence is FCA-notifiable." },
+  ],
   steps: [
     { slug: "scope-failure", title: "Scope which backups failed", description: "Single system? All systems? Single region?", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 60 },
     { slug: "older-snapshot", title: "Verify older snapshots", description: "Test-restore against the next-oldest viable snapshot.", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 120, dependsOn: ["scope-failure"] },
@@ -1220,6 +1301,10 @@ const BOE_SETTLEMENT_INCIDENT: LibraryRunbook = {
   applicableTiers: GSIB,
   ownerRoleTitle: "CRO",
   trigger: { severityAtLeast: "HIGH" },
+  escalates: [
+    { targetSlug: "fca-material-incident", rationale: "Settlement disruption usually requires parallel FCA notification." },
+    { targetSlug: "pra-material-incident", rationale: "PRA-supervised firms file in parallel." },
+  ],
   steps: [
     { slug: "confirm-scope", title: "Confirm settlement scope", description: "Which scheme, what window of disruption.", kind: "ACTION", ownerRoleTitle: "Head of Payments", estimatedMin: 30 },
     { slug: "notify-boe", title: "Notify Bank of England", description: "CHAPS member notification per scheme rules.", kind: "NOTIFICATION", ownerRoleTitle: "CRO", estimatedMin: 30, regulatorTrigger: { regulator: "BANK_OF_ENGLAND", slaHours: 1, trigger: "POST_AWARENESS" }, dependsOn: ["confirm-scope"] },
@@ -1308,6 +1393,9 @@ const ACTIVE_MAJOR_FRAUD: LibraryRunbook = {
   applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Financial Crime",
   trigger: { severityAtLeast: "CRITICAL" },
+  escalates: [
+    { targetSlug: "fca-material-incident", severityAtLeast: "HIGH", rationale: "Active major fraud triggers FCA notification." },
+  ],
   steps: [
     { slug: "stop-the-loss", title: "Stop the loss", description: "Freeze the accounts / payments involved.", kind: "ACTION", ownerRoleTitle: "Head of Financial Crime", estimatedMin: 30 },
     { slug: "preserve-evidence", title: "Preserve evidence", description: "Chain of custody, image affected systems.", kind: "ACTION", ownerRoleTitle: "CISO", estimatedMin: 60, dependsOn: ["stop-the-loss"] },

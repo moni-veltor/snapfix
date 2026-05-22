@@ -65,6 +65,7 @@ export async function addRunbookFromLibraryAction(formData: FormData) {
   if (!lib) return;
 
   const created = await cloneLibraryRunbookIntoOrg(lib, me.orgId, me.id);
+  await resolveLibraryEscalations(me.orgId);
 
   await audit({
     orgId: me.orgId,
@@ -143,6 +144,7 @@ export async function seedAllLibraryRunbooksAction() {
     if (existingTitles.has(lib.title)) continue;
     await cloneLibraryRunbookIntoOrg(lib, me.orgId, me.id);
   }
+  await resolveLibraryEscalations(me.orgId);
 
   await audit({
     orgId: me.orgId,
@@ -640,6 +642,76 @@ export async function drillRunbookAction(formData: FormData) {
   redirect(`/exercises/${exercise.id}`);
 }
 
+export async function addRunbookEscalationAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const sourceId = optStr(formData.get("sourceId"));
+  const targetId = optStr(formData.get("targetId"));
+  if (!sourceId || !targetId || sourceId === targetId) return;
+  const sevRaw = optStr(formData.get("severityAtLeast"));
+  const allowedSev = new Set(["LOW", "MEDIUM", "HIGH", "CRITICAL"]);
+  const severityAtLeast = sevRaw && allowedSev.has(sevRaw) ? sevRaw : null;
+  const rationale = optStr(formData.get("rationale"));
+
+  // Confirm both runbooks belong to the caller's org before linking.
+  const [source, target] = await Promise.all([
+    prisma.runbook.findFirst({
+      where: { id: sourceId, orgId: me.orgId },
+      select: { id: true, title: true },
+    }),
+    prisma.runbook.findFirst({
+      where: { id: targetId, orgId: me.orgId },
+      select: { id: true, title: true },
+    }),
+  ]);
+  if (!source || !target) return;
+
+  await prisma.runbookEscalation.upsert({
+    where: { sourceRunbookId_targetRunbookId: { sourceRunbookId: sourceId, targetRunbookId: targetId } },
+    update: { severityAtLeast, rationale },
+    create: { sourceRunbookId: sourceId, targetRunbookId: targetId, severityAtLeast, rationale },
+  });
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.escalation.added",
+    targetType: "Runbook",
+    targetId: source.id,
+    summary: `Linked "${source.title}" → "${target.title}"`,
+    metadata: { targetRunbookId: target.id, severityAtLeast },
+  });
+  revalidatePath(`/runbooks/${sourceId}`);
+  revalidatePath(`/runbooks/${targetId}`);
+}
+
+export async function removeRunbookEscalationAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const escalationId = optStr(formData.get("id"));
+  if (!escalationId) return;
+  const link = await prisma.runbookEscalation.findUnique({
+    where: { id: escalationId },
+    select: {
+      id: true,
+      sourceRunbookId: true,
+      targetRunbookId: true,
+      source: { select: { orgId: true, title: true } },
+      target: { select: { title: true } },
+    },
+  });
+  if (!link || link.source.orgId !== me.orgId) return;
+
+  await prisma.runbookEscalation.delete({ where: { id: link.id } });
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.escalation.removed",
+    targetType: "Runbook",
+    targetId: link.sourceRunbookId,
+    summary: `Removed link "${link.source.title}" → "${link.target.title}"`,
+  });
+  revalidatePath(`/runbooks/${link.sourceRunbookId}`);
+  revalidatePath(`/runbooks/${link.targetRunbookId}`);
+}
+
 export async function markRunbookReviewedAction(formData: FormData) {
   const me = await requireOrgRole("OWNER", "ADMIN");
   const id = optStr(formData.get("id"));
@@ -663,6 +735,51 @@ export async function markRunbookReviewedAction(formData: FormData) {
   });
   revalidatePath(`/runbooks/${id}`);
   revalidatePath("/runbooks");
+}
+
+/**
+ * Resolve all library-declared escalation chains into RunbookEscalation
+ * rows for the given org. Idempotent: runs after every clone (single or
+ * bulk) so chains backfill in both directions as more templates land in
+ * the org. Library entries are matched to org runbooks by title.
+ */
+async function resolveLibraryEscalations(orgId: string) {
+  const orgRunbooks = await prisma.runbook.findMany({
+    where: { orgId },
+    select: { id: true, title: true },
+  });
+  const titleToOrgId = new Map<string, string>();
+  for (const r of orgRunbooks) titleToOrgId.set(r.title, r.id);
+
+  // Library-slug → library-title so we can resolve targetSlug to a title
+  // and then to an org runbook id.
+  const slugToTitle = new Map<string, string>();
+  for (const lib of LIBRARY_RUNBOOKS) slugToTitle.set(lib.slug, lib.title);
+
+  const toCreate: { sourceRunbookId: string; targetRunbookId: string; severityAtLeast: string | null; rationale: string | null; orderIdx: number }[] = [];
+  for (const lib of LIBRARY_RUNBOOKS) {
+    if (!lib.escalates || lib.escalates.length === 0) continue;
+    const sourceId = titleToOrgId.get(lib.title);
+    if (!sourceId) continue;
+    lib.escalates.forEach((esc, idx) => {
+      const targetTitle = slugToTitle.get(esc.targetSlug);
+      if (!targetTitle) return;
+      const targetId = titleToOrgId.get(targetTitle);
+      if (!targetId || targetId === sourceId) return;
+      toCreate.push({
+        sourceRunbookId: sourceId,
+        targetRunbookId: targetId,
+        severityAtLeast: esc.severityAtLeast ?? null,
+        rationale: esc.rationale ?? null,
+        orderIdx: idx,
+      });
+    });
+  }
+  if (toCreate.length === 0) return;
+  await prisma.runbookEscalation.createMany({
+    data: toCreate,
+    skipDuplicates: true,
+  });
 }
 
 async function cloneLibraryRunbookIntoOrg(

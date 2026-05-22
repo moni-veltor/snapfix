@@ -29,7 +29,8 @@ export type PreflightIssue = {
     | "NO_TRIGGER"
     | "NO_OWNER_ROLE"
     | "NEVER_REVIEWED"
-    | "STALE_REVIEW";
+    | "STALE_REVIEW"
+    | "ESCALATION_TARGET_DRAFT";
   severity: "blocker" | "warning";
   /** Single-line summary shown as the chip label / list item. */
   message: string;
@@ -57,6 +58,11 @@ export type PreflightInput = {
   hasTrigger: boolean;
   /** Set of role titles in the org's catalogue, lower-cased + trimmed. */
   orgRoleCatalogue: ReadonlySet<string>;
+  /**
+   * Downstream escalation targets (this runbook → target). Used to flag
+   * draft-status targets that won't be activatable in a live exercise.
+   */
+  escalationTargets?: ReadonlyArray<{ id: string; title: string; status: RunbookStatus }>;
   /** "Now" — injected so callers can pin to a snapshot if needed. */
   now?: Date;
 };
@@ -157,6 +163,20 @@ export function evaluateRunbookPreflight(input: PreflightInput): PreflightResult
       severity: "warning",
       message: "No auto-activation trigger",
       detail: "Manual activation only. Add a trigger so this runbook fires at the right severity.",
+      fixHref: `/runbooks/${input.id}`,
+    });
+  }
+
+  const draftTargets = (input.escalationTargets ?? []).filter((t) => t.status === "DRAFT");
+  if (draftTargets.length > 0) {
+    issues.push({
+      code: "ESCALATION_TARGET_DRAFT",
+      severity: "warning",
+      message: `${draftTargets.length} escalation target${draftTargets.length === 1 ? "" : "s"} still DRAFT`,
+      detail:
+        draftTargets.slice(0, 3).map((t) => t.title).join(", ") +
+        (draftTargets.length > 3 ? "…" : "") +
+        " — publish so they can fire in a live exercise.",
       fixHref: `/runbooks/${input.id}`,
     });
   }

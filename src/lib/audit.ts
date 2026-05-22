@@ -25,6 +25,7 @@ export type AuditAction =
   | "runbook.created" | "runbook.cloned_from_library" | "runbook.library_seeded"
   | "runbook.archived" | "runbook.deleted" | "runbook.updated" | "runbook.published"
   | "runbook.reviewed" | "runbook.drilled"
+  | "runbook.escalation.added" | "runbook.escalation.removed"
   | "runbook.step.added" | "runbook.step.updated" | "runbook.step.deleted"
   | "runbook.step.reordered" | "runbook.ibs.linked" | "runbook.scenarios.linked"
   | "runbook.trigger.updated"
