@@ -107,9 +107,22 @@ type Props = {
    *  Used by the create-mode drawer so MTP fields submit alongside wizard
    *  fields under one parent <form>. */
   embedded?: boolean;
+  /** Hide the inline ReadinessHeader (used when the parent renders it as a
+   *  sticky badge above the tab bar). */
+  hideReadiness?: boolean;
+  /** Hide the inline AssessmentsPanel (used when the parent renders it in a
+   *  separate Assessments tab). */
+  hideAssessments?: boolean;
 };
 
-export default function MtpEditor({ vendor, readiness, canEdit, embedded = false }: Props) {
+export default function MtpEditor({
+  vendor,
+  readiness,
+  canEdit,
+  embedded = false,
+  hideReadiness = false,
+  hideAssessments = false,
+}: Props) {
   const [isMTP, setIsMTP] = useState(vendor.isMaterialThirdParty);
   const [supportsIBS, setSupportsIBS] = useState<boolean | null>(vendor.supportsCoreIBSElement);
 
@@ -411,7 +424,7 @@ export default function MtpEditor({ vendor, readiness, canEdit, embedded = false
 
   return (
     <div className="space-y-6">
-      <ReadinessHeader readiness={readiness} isMTP={isMTP} />
+      {!hideReadiness && <ReadinessHeader readiness={readiness} isMTP={isMTP} />}
 
       <form action={upsertVendorMtpFieldsAction} className="space-y-5">
         <input type="hidden" name="vendorId" value={vendor.id} />
@@ -427,13 +440,14 @@ export default function MtpEditor({ vendor, readiness, canEdit, embedded = false
         )}
       </form>
 
-      {/* 4 Assessment history (out-of-form because it's append-only) */}
-      <AssessmentsPanel vendorId={vendor.id} assessments={vendor.assessments} canEdit={canEdit} />
+      {!hideAssessments && (
+        <AssessmentsPanel vendorId={vendor.id} assessments={vendor.assessments} canEdit={canEdit} />
+      )}
     </div>
   );
 }
 
-function ReadinessHeader({ readiness, isMTP }: { readiness: Readiness; isMTP: boolean }) {
+export function ReadinessHeader({ readiness, isMTP }: { readiness: Readiness; isMTP: boolean }) {
   const pct = readiness.total === 0 ? 100 : Math.round((readiness.passed / readiness.total) * 100);
   const tone = readiness.isRegisterReady
     ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/30"
@@ -495,7 +509,7 @@ function ReadinessHeader({ readiness, isMTP }: { readiness: Readiness; isMTP: bo
   );
 }
 
-function AssessmentsPanel({
+export function AssessmentsPanel({
   vendorId,
   assessments,
   canEdit,
