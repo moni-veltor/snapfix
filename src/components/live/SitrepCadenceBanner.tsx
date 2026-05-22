@@ -1,4 +1,5 @@
 import { AlertTriangle, Clock, MessageSquareWarning } from "lucide-react";
+import SitrepDrawer from "./SitrepDrawer";
 
 type Sitrep = {
   id: string;
@@ -17,6 +18,10 @@ type Props = {
   minutesSinceLastSitrep: number | null;
   /** Has an incident been invoked? Hide the banner entirely if not. */
   incidentActive: boolean;
+  /** Exercise + incident ids passed to the sitrep drawer button. Null
+   *  when there's no incident; banner is hidden then anyway. */
+  exerciseId: string;
+  incidentId: string | null;
 };
 
 /**
@@ -36,8 +41,10 @@ export default function SitrepCadenceBanner({
   dDayHHMM,
   minutesSinceLastSitrep,
   incidentActive,
+  exerciseId,
+  incidentId,
 }: Props) {
-  if (!incidentActive) return null;
+  if (!incidentActive || !incidentId) return null;
 
   const dDayMins = ddayToMinutes(dDayHHMM);
 
@@ -45,16 +52,20 @@ export default function SitrepCadenceBanner({
     return (
       <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs dark:border-amber-800/60 dark:bg-amber-950/30">
         <MessageSquareWarning size={14} className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300" />
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-semibold text-amber-900 dark:text-amber-100">
             No sitreps filed yet
           </p>
           <p className="mt-0.5 text-amber-800 dark:text-amber-200">
             Each affected business unit should file an initial sitrep within 15 min of
-            incident invocation. Use the <span className="font-semibold">Sitrep</span> tab
-            on the Decisions panel to file the first one.
+            incident invocation.
           </p>
         </div>
+        <SitrepDrawer
+          exerciseId={exerciseId}
+          incidentId={incidentId}
+          dDayHHMM={dDayHHMM}
+        />
       </div>
     );
   }
@@ -86,12 +97,21 @@ export default function SitrepCadenceBanner({
 
   if (overdue.length === 0 && !staleSinceLast) return null;
 
+  const overdueBU = overdue[0]?.businessUnit;
   return (
     <div className="space-y-1 rounded-md border border-rose-200 bg-rose-50 p-3 text-xs dark:border-rose-800/60 dark:bg-rose-950/30">
-      <p className="flex items-center gap-1.5 font-semibold text-rose-900 dark:text-rose-100">
-        <AlertTriangle size={13} />
-        Sitrep cadence is slipping
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 font-semibold text-rose-900 dark:text-rose-100">
+          <AlertTriangle size={13} />
+          Sitrep cadence is slipping
+        </p>
+        <SitrepDrawer
+          exerciseId={exerciseId}
+          incidentId={incidentId}
+          dDayHHMM={dDayHHMM}
+          defaultBusinessUnit={overdueBU}
+        />
+      </div>
       {overdue.length > 0 && (
         <ul className="space-y-0.5 pl-5 text-rose-800 dark:text-rose-200">
           {overdue.map((s) => (

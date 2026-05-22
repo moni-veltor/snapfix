@@ -557,6 +557,8 @@ export default async function LiveWorkspacePage({
               dDayHHMM={clock.hhmm}
               minutesSinceLastSitrep={minutesSinceLastSitrep}
               incidentActive={!!activeIncident}
+              exerciseId={exercise.id}
+              incidentId={activeIncident?.id ?? null}
             />
             <MyRunbookQueue
               exerciseId={exercise.id}

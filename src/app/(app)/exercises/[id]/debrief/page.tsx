@@ -13,6 +13,8 @@ import PostIncidentReportForm from "@/components/debrief/PostIncidentReportForm"
 import DebriefAnswerCompare from "@/components/debrief/DebriefAnswerCompare";
 import HotWashForm from "@/components/debrief/HotWashForm";
 import WellbeingCheckForm from "@/components/debrief/WellbeingCheckForm";
+import DebriefTabs, { type DebriefTabKey } from "@/components/debrief/DebriefTabs";
+import type { ReactNode } from "react";
 import { evaluateToleranceBreaches } from "@/lib/rto-rpo-check";
 import { promoteDebriefAnswerToActionAction } from "@/app/actions/exercise-runtime";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
@@ -80,19 +82,8 @@ export default async function DebriefPage({
     answersByQuestion.set(a.questionId, list);
   }
 
-  return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Debrief — {exercise.title}</h1>
-        <p className="text-sm text-muted">
-          <Link href={`/exercises/${exercise.id}`} className="underline">Back to exercise</Link>
-          {" · "}
-          {exercise.scenario.title}
-          {" · "}
-          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{exercise.status}</span>
-        </p>
-      </header>
-
+  const overviewPanel: ReactNode = (
+    <div className="space-y-6">
       {score && score.closedAt && (
         <ClosureCelebration
           closedAt={score.closedAt}
@@ -103,8 +94,38 @@ export default async function DebriefPage({
       {score && <PerformanceCard score={score} />}
       {highlights.length > 0 && <HighlightReel highlights={highlights} />}
       {runbookTimeline.length > 0 && <RunbookTimeline executions={runbookTimeline} />}
+      {toleranceBreaches.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">IBS impact tolerance</h2>
+          <ul className="space-y-1.5 text-sm">
+            {toleranceBreaches.map((tb) => (
+              <li
+                key={tb.ibsName}
+                className={`rounded-md border p-3 ${
+                  tb.isBreached
+                    ? "border-rose-300 bg-rose-50 dark:border-rose-700 dark:bg-rose-950/40"
+                    : "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40"
+                }`}
+              >
+                <p className="flex items-center gap-1.5 font-medium">
+                  {tb.isBreached ? (
+                    <AlertTriangle size={13} className="text-rose-700 dark:text-rose-300" />
+                  ) : (
+                    <CheckCircle2 size={13} className="text-emerald-700 dark:text-emerald-300" />
+                  )}
+                  {tb.ibsName}
+                </p>
+                <p className="mt-1 text-xs text-muted">{tb.summary}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
 
-      <section className="space-y-4">
+  const findingsPanel: ReactNode = (
+    <section className="space-y-4">
         <header className="flex items-baseline justify-between">
           <h2 className="text-lg font-semibold">Debrief questions</h2>
           <p className="text-xs text-muted">
@@ -157,7 +178,10 @@ export default async function DebriefPage({
           </ul>
         </details>
       </section>
+  );
 
+  const actionsPanel: ReactNode = (
+    <div className="space-y-6">
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">After-Action Report</h2>
         {isFacilitator ? (
@@ -285,65 +309,6 @@ export default async function DebriefPage({
         </form>
       </section>
 
-      {closedIncident?.postIncidentReport && (
-        <section className="space-y-3">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-lg font-semibold">Post-Incident Report</h2>
-            <p className="text-xs text-muted">
-              {closedIncident.postIncidentReport.submittedAt
-                ? `Submitted ${closedIncident.postIncidentReport.submittedAt.toISOString().slice(0, 10)}`
-                : `Due ${closedIncident.postIncidentReport.dueAt.toISOString().slice(0, 10)} · best practice (10 business days)`}
-            </p>
-          </div>
-          <PostIncidentReportForm
-            exerciseId={exercise.id}
-            incidentId={closedIncident.id}
-            alreadySubmitted={!!closedIncident.postIncidentReport.submittedAt}
-            defaults={{
-              incidentSummary: closedIncident.postIncidentReport.incidentSummary ?? "",
-              timeline: closedIncident.postIncidentReport.timeline ?? "",
-              rootCause: closedIncident.postIncidentReport.rootCause ?? "",
-              customerImpact: closedIncident.postIncidentReport.customerImpact ?? "",
-              regulatoryImpact: closedIncident.postIncidentReport.regulatoryImpact ?? "",
-              controlFailures: closedIncident.postIncidentReport.controlFailures ?? "",
-              whatWorkedWell: closedIncident.postIncidentReport.whatWorkedWell ?? "",
-              remediationCommitments:
-                closedIncident.postIncidentReport.remediationCommitments ?? "",
-            }}
-          />
-        </section>
-      )}
-
-      {toleranceBreaches.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-lg font-semibold">IBS impact tolerance</h2>
-          <ul className="space-y-1.5 text-sm">
-            {toleranceBreaches.map((tb) => (
-              <li
-                key={tb.ibsName}
-                className={`rounded-md border p-3 ${
-                  tb.isBreached
-                    ? "border-rose-300 bg-rose-50 dark:border-rose-700 dark:bg-rose-950/40"
-                    : "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40"
-                }`}
-              >
-                <p className="flex items-center gap-1.5 font-medium">
-                  {tb.isBreached ? (
-                    <AlertTriangle size={13} className="text-rose-700 dark:text-rose-300" />
-                  ) : (
-                    <CheckCircle2 size={13} className="text-emerald-700 dark:text-emerald-300" />
-                  )}
-                  {tb.ibsName}
-                </p>
-                <p className="mt-1 text-xs text-muted">{tb.summary}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <WellbeingCheckForm exerciseId={exercise.id} />
-
       {isFacilitator && exercise.debriefAnswers.length > 0 && (
         <section className="space-y-2 rounded-xl border border-line bg-surface-1 p-5">
           <header>
@@ -408,6 +373,39 @@ export default async function DebriefPage({
           </form>
         </section>
       )}
+    </div>
+  );
+
+  const reportPanel: ReactNode = closedIncident?.postIncidentReport || isFacilitator ? (
+    <div className="space-y-6">
+      {closedIncident?.postIncidentReport && (
+        <section className="space-y-3">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold">Post-Incident Report</h2>
+            <p className="text-xs text-muted">
+              {closedIncident.postIncidentReport.submittedAt
+                ? `Submitted ${closedIncident.postIncidentReport.submittedAt.toISOString().slice(0, 10)}`
+                : `Due ${closedIncident.postIncidentReport.dueAt.toISOString().slice(0, 10)} · best practice (10 business days)`}
+            </p>
+          </div>
+          <PostIncidentReportForm
+            exerciseId={exercise.id}
+            incidentId={closedIncident.id}
+            alreadySubmitted={!!closedIncident.postIncidentReport.submittedAt}
+            defaults={{
+              incidentSummary: closedIncident.postIncidentReport.incidentSummary ?? "",
+              timeline: closedIncident.postIncidentReport.timeline ?? "",
+              rootCause: closedIncident.postIncidentReport.rootCause ?? "",
+              customerImpact: closedIncident.postIncidentReport.customerImpact ?? "",
+              regulatoryImpact: closedIncident.postIncidentReport.regulatoryImpact ?? "",
+              controlFailures: closedIncident.postIncidentReport.controlFailures ?? "",
+              whatWorkedWell: closedIncident.postIncidentReport.whatWorkedWell ?? "",
+              remediationCommitments:
+                closedIncident.postIncidentReport.remediationCommitments ?? "",
+            }}
+          />
+        </section>
+      )}
 
       {isFacilitator && (
         <HotWashForm
@@ -425,6 +423,12 @@ export default async function DebriefPage({
           }
         />
       )}
+    </div>
+  ) : null;
+
+  const retroPanel: ReactNode = (
+    <div className="space-y-6">
+      <WellbeingCheckForm exerciseId={exercise.id} />
 
       {retrospective && (
         <section className="space-y-3">
@@ -452,6 +456,34 @@ export default async function DebriefPage({
           </form>
         </section>
       )}
+    </div>
+  );
+
+  const panels: Partial<Record<DebriefTabKey, ReactNode>> = {
+    overview: overviewPanel,
+    findings: findingsPanel,
+    actions: actionsPanel,
+    report: reportPanel ?? undefined,
+    retro: retroPanel,
+  };
+  const counts: Partial<Record<DebriefTabKey, number>> = {
+    findings: exercise.scenario.debriefQuestions.length,
+    actions: actionItems.length,
+  };
+
+  return (
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight">Debrief — {exercise.title}</h1>
+        <p className="text-sm text-muted">
+          <Link href={`/exercises/${exercise.id}`} className="underline">Back to exercise</Link>
+          {" · "}
+          {exercise.scenario.title}
+          {" · "}
+          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs">{exercise.status}</span>
+        </p>
+      </header>
+      <DebriefTabs exerciseId={exercise.id} panels={panels} counts={counts} />
     </div>
   );
 }
