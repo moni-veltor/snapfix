@@ -8,6 +8,7 @@ import {
   Database,
   ListChecks,
   Megaphone,
+  PlayCircle,
   Plus,
   Server,
   ShieldAlert,
@@ -221,6 +222,13 @@ export default async function RunbooksPage() {
                         runbook={r}
                         preflight={preflightById.get(r.id)!}
                         freshness={freshnessById.get(r.id)!}
+                        drillAgeDays={
+                          r.lastDrilledAt
+                            ? Math.floor(
+                                (nowSnapshot.getTime() - r.lastDrilledAt.getTime()) / 86_400_000,
+                              )
+                            : null
+                        }
                       />
                     </li>
                   ))}
@@ -258,6 +266,7 @@ function RunbookCard({
   runbook,
   preflight,
   freshness,
+  drillAgeDays,
 }: {
   runbook: {
     id: string;
@@ -273,6 +282,7 @@ function RunbookCard({
   };
   preflight: PreflightResult;
   freshness: FreshnessChip;
+  drillAgeDays: number | null;
 }) {
   const Icon = CATEGORY_ICON[runbook.category];
   return (
@@ -308,6 +318,7 @@ function RunbookCard({
       <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10px]">
         <ReadinessChip preflight={preflight} />
         <FreshnessChipView chip={freshness} />
+        <DrillChipCard ageDays={drillAgeDays} />
         {runbook.ownerRoleTitle && (
           <span className="rounded-full bg-surface-2 px-2 py-0.5 text-soft">
             {runbook.ownerRoleTitle}
@@ -320,6 +331,23 @@ function RunbookCard({
         )}
       </div>
     </Link>
+  );
+}
+
+function DrillChipCard({ ageDays }: { ageDays: number | null }) {
+  if (ageDays === null) return null;
+  const tone =
+    ageDays > 180
+      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+      : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${tone}`}
+      title={ageDays > 180 ? "Drilled over 6 months ago — consider another walkthrough." : "Last drilled with the team."}
+    >
+      <PlayCircle size={10} />
+      {ageDays === 0 ? "Drilled today" : `Drilled ${ageDays}d ago`}
+    </span>
   );
 }
 

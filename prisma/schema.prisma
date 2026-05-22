@@ -2474,6 +2474,12 @@ model Runbook {
   lastReviewedById String?
   lastReviewedBy   User?     @relation("RunbookReviewer", fields: [lastReviewedById], references: [id], onDelete: SetNull)
 
+  /// Drill timestamp. Stamped when a facilitator clicks "Drill this runbook"
+  /// — it spins up a lightweight WALKTHROUGH exercise whose scenario is
+  /// linked back to this runbook. Surfaced as a chip on the card + detail
+  /// page so it's visible whether the team has actually walked through it.
+  lastDrilledAt DateTime?
+
   steps         RunbookStep[]
   ibsLinks      RunbookIBSLink[]
   scenarioLinks RunbookScenarioLink[]

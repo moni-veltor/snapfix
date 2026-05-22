@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   CircleCheck,
   Clock,
+  PlayCircle,
   Trash2,
 } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
@@ -17,6 +18,7 @@ import RunbookEditor from "@/components/runbooks/RunbookEditor";
 import {
   archiveRunbookAction,
   deleteRunbookAction,
+  drillRunbookAction,
   markRunbookReviewedAction,
   restoreRunbookAction,
 } from "@/app/actions/runbooks";
@@ -108,13 +110,28 @@ export default async function RunbookDetailPage({
         title={runbook.title}
         pitch={runbook.description ?? "IMT playbook"}
         actions={
-          <Link
-            href="/runbooks"
-            className="inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:bg-surface-2"
-          >
-            <ArrowLeft size={14} />
-            Back
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {canManage && runbook.status !== "ARCHIVED" && runbook.steps.length > 0 && (
+              <form action={drillRunbookAction}>
+                <input type="hidden" name="id" value={runbook.id} />
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+                  title="Spin up a walkthrough exercise that walks just this runbook"
+                >
+                  <PlayCircle size={14} />
+                  Drill this runbook
+                </button>
+              </form>
+            )}
+            <Link
+              href="/runbooks"
+              className="inline-flex items-center gap-1.5 rounded-md border border-line-strong bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:bg-surface-2"
+            >
+              <ArrowLeft size={14} />
+              Back
+            </Link>
+          </div>
         }
       />
 
@@ -148,6 +165,13 @@ export default async function RunbookDetailPage({
         freshnessTone={freshness.tone}
         lastReviewedAt={runbook.lastReviewedAt}
         reviewerName={reviewer?.name ?? reviewer?.email ?? null}
+        drillAgeDays={
+          runbook.lastDrilledAt
+            ? Math.floor(
+                (nowSnapshot.getTime() - runbook.lastDrilledAt.getTime()) / 86_400_000,
+              )
+            : null
+        }
         canManage={canManage}
       />
 
@@ -256,6 +280,7 @@ function PreflightPanel({
   freshnessTone,
   lastReviewedAt,
   reviewerName,
+  drillAgeDays,
   canManage,
 }: {
   runbookId: string;
@@ -264,6 +289,7 @@ function PreflightPanel({
   freshnessTone: "ok" | "warn" | "bad" | "neutral";
   lastReviewedAt: Date | null;
   reviewerName: string | null;
+  drillAgeDays: number | null;
   canManage: boolean;
 }) {
   const panelTone =
@@ -307,6 +333,7 @@ function PreflightPanel({
               by {reviewerName} on {lastReviewedAt.toISOString().slice(0, 10)}
             </span>
           )}
+          <DrillChip ageDays={drillAgeDays} />
           {canManage && (
             <form action={withToast(markRunbookReviewedAction, { success: "Marked reviewed" })}>
               <input type="hidden" name="id" value={runbookId} />
@@ -359,6 +386,31 @@ function IssueRow({ issue }: { issue: PreflightIssue }) {
         </Link>
       )}
     </li>
+  );
+}
+
+function DrillChip({ ageDays }: { ageDays: number | null }) {
+  if (ageDays === null) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-soft"
+        title="No drill recorded — click 'Drill this runbook' to walk it with the team."
+      >
+        <PlayCircle size={10} />
+        Never drilled
+      </span>
+    );
+  }
+  const label = ageDays === 0 ? "Drilled today" : `Drilled ${ageDays}d ago`;
+  const tone =
+    ageDays > 180
+      ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+      : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200";
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${tone}`}>
+      <PlayCircle size={10} />
+      {label}
+    </span>
   );
 }
 

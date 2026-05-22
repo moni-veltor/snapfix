@@ -534,6 +534,112 @@ export async function unpublishRunbookAction(formData: FormData) {
   revalidatePath("/runbooks");
 }
 
+/**
+ * One-click "drill this runbook" — spins up a lightweight WALKTHROUGH
+ * exercise in DRY_RUN mode whose scenario is auto-generated and linked
+ * back to this runbook. The facilitator lands on the exercise page and
+ * can walk the steps with the team without dragging the multi-step
+ * exercise wizard or polluting production evidence.
+ *
+ * Design notes:
+ *   • mode=DRY_RUN → purged after 30d, no regulator evidence, no annual count
+ *   • exerciseType=WALKTHROUGH → lowest-realism, talk-through format
+ *   • durationMin = sum of step estimates (falls back to 60)
+ *   • RunbookScenarioLink ties the runbook to the ephemeral scenario so
+ *     the auto-activation logic fires the runbook in this drill
+ *   • lastDrilledAt stamped on the runbook for the freshness chip
+ */
+export async function drillRunbookAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const id = optStr(formData.get("id"));
+  if (!id) return;
+
+  const runbook = await prisma.runbook.findFirst({
+    where: { id, orgId: me.orgId, status: { not: "ARCHIVED" } },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      category: true,
+      steps: { select: { estimatedMin: true } },
+    },
+  });
+  if (!runbook) return;
+
+  const totalEstimated = runbook.steps.reduce(
+    (sum, s) => sum + (s.estimatedMin ?? 0),
+    0,
+  );
+  const drillDurationMin = totalEstimated > 0 ? Math.max(totalEstimated, 30) : 60;
+
+  // Ephemeral scenario for the drill. Not flagged as a template — lives
+  // alongside the exercise so the drill is self-contained and disposable.
+  const scenarioBackground = [
+    `Walk-through drill of the "${runbook.title}" runbook.`,
+    runbook.description ?? "",
+    `Use this drill to walk through the steps, surface unknowns, and capture follow-ups against the runbook itself rather than against a hypothetical incident.`,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const now = new Date();
+  const exercise = await prisma.$transaction(async (tx) => {
+    const scenario = await tx.scenario.create({
+      data: {
+        orgId: me.orgId,
+        title: `Drill: ${runbook.title}`,
+        background: scenarioBackground,
+        dDayDate: now,
+        durationMin: drillDurationMin,
+        createdById: me.id,
+        category: runbook.category.replace(/_/g, " "),
+      },
+      select: { id: true },
+    });
+
+    await tx.runbookScenarioLink.create({
+      data: { runbookId: runbook.id, scenarioId: scenario.id },
+    });
+
+    const ex = await tx.exercise.create({
+      data: {
+        orgId: me.orgId,
+        scenarioId: scenario.id,
+        facilitatorId: me.id,
+        title: `Drill: ${runbook.title}`,
+        description: `Walk-through drill of the "${runbook.title}" runbook.`,
+        exerciseType: "WALKTHROUGH",
+        mode: "DRY_RUN",
+        durationMin: drillDurationMin,
+        plannedDate: now,
+        objectives: [`Walk every step of "${runbook.title}" and capture follow-ups.`],
+      },
+      select: { id: true },
+    });
+
+    await tx.runbook.update({
+      where: { id: runbook.id },
+      data: { lastDrilledAt: now },
+    });
+
+    return ex;
+  });
+
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.drilled",
+    targetType: "Runbook",
+    targetId: runbook.id,
+    summary: `Started drill of "${runbook.title}"`,
+    metadata: { exerciseId: exercise.id },
+  });
+
+  revalidatePath(`/runbooks/${runbook.id}`);
+  revalidatePath("/runbooks");
+  redirect(`/exercises/${exercise.id}`);
+}
+
 export async function markRunbookReviewedAction(formData: FormData) {
   const me = await requireOrgRole("OWNER", "ADMIN");
   const id = optStr(formData.get("id"));
