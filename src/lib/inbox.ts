@@ -43,6 +43,11 @@ export type InboxItem = {
   cc: string[];
   addressing: "TO" | "CC";
   unread: boolean;
+  /** True when this item was fabricated by the facilitator at runtime
+   *  (a "curveball" via ExerciseInjectOverride with injectId=null) rather
+   *  than scripted into the scenario. UI flags these with a [TEST INJECT]
+   *  chip so participants can tell scripted from fabricated. */
+  isCurveball: boolean;
   attachments: InboxAttachment[];
 };
 
@@ -64,6 +69,7 @@ export async function loadInbox(exerciseId: string, me: Roles): Promise<InboxIte
       },
       eventReleases: true,
       injectReleases: true,
+      injectOverrides: { where: { injectId: null, hidden: false } },
     },
   });
   if (!exercise) return [];
@@ -108,6 +114,7 @@ export async function loadInbox(exerciseId: string, me: Roles): Promise<InboxIte
       cc: e.ccRoleTitles,
       addressing,
       unread: !readEventIds.has(e.id),
+      isCurveball: false,
       attachments: e.artefacts.map((a) => ({
         id: a.id,
         kind: a.kind,
@@ -139,6 +146,7 @@ export async function loadInbox(exerciseId: string, me: Roles): Promise<InboxIte
       cc: j.ccRoleTitles,
       addressing,
       unread: !readInjectIds.has(j.id),
+      isCurveball: false,
       attachments: j.artefacts.map((a) => ({
         id: a.id,
         kind: a.kind,
@@ -147,6 +155,31 @@ export async function loadInbox(exerciseId: string, me: Roles): Promise<InboxIte
         contentType: a.contentType,
         sizeBytes: a.sizeBytes,
       })),
+    });
+  }
+
+  // Facilitator-fabricated curveballs — ExerciseInjectOverride with
+  // injectId=null. These have no scenario origin so no release row; they
+  // are "released the moment they're created" by the facilitator and
+  // routed to participants whose role matches toRoleTitles/ccRoleTitles.
+  for (const o of exercise.injectOverrides) {
+    const addressing = addressedTo(me.roleTitle, o.toRoleTitles, o.ccRoleTitles);
+    if (!addressing) continue;
+    items.push({
+      kind: "INJECT",
+      id: `curveball:${o.id}`,
+      scheduledTime: o.scheduledTime ?? clock.hhmm,
+      released: true,
+      releasedAt: o.createdAt,
+      title: o.summary ?? "(Facilitator curveball)",
+      summary: (o.description ?? "").slice(0, 240),
+      from: o.senderRoleTitle ?? "Facilitator",
+      to: o.toRoleTitles,
+      cc: o.ccRoleTitles,
+      addressing,
+      unread: true,
+      isCurveball: true,
+      attachments: [],
     });
   }
 

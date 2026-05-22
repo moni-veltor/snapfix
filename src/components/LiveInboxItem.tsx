@@ -50,6 +50,14 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
             {item.unread && (
               <span className="rounded-full bg-rose-600 px-1.5 py-0.5 text-white">unread</span>
             )}
+            {item.isCurveball && (
+              <span
+                className="rounded-full bg-fuchsia-100 px-1.5 py-0.5 font-semibold uppercase tracking-wider text-fuchsia-800 dark:bg-fuchsia-950/40 dark:text-fuchsia-200"
+                title="Curveball — fabricated by the facilitator mid-exercise, not part of the scripted scenario."
+              >
+                Test inject
+              </span>
+            )}
             {item.from && <span>· from {item.from}</span>}
           </div>
           <div className="mt-1 truncate font-medium text-ink">{item.title}</div>

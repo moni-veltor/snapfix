@@ -48,6 +48,7 @@ import { loadApprovalsQueue } from "@/lib/approvals";
 import FacilitatorAnnouncementsBanner, {
   type Announcement,
 } from "@/components/live/FacilitatorAnnouncementsBanner";
+import MyRunbookQueue from "@/components/live/MyRunbookQueue";
 
 export default async function LiveWorkspacePage({
   params,
@@ -556,6 +557,11 @@ export default async function LiveWorkspacePage({
               dDayHHMM={clock.hhmm}
               minutesSinceLastSitrep={minutesSinceLastSitrep}
               incidentActive={!!activeIncident}
+            />
+            <MyRunbookQueue
+              exerciseId={exercise.id}
+              executions={liveExecutions}
+              myRoleTitle={participant.roleTitle}
             />
             <MyExerciseActionItems
               items={myActionItems}
