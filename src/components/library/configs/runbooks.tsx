@@ -4,6 +4,7 @@ import {
   BookOpen,
   CheckCircle2,
   Cloud,
+  Crown,
   Database,
   ListChecks,
   Megaphone,
@@ -16,7 +17,20 @@ import {
 import { addRunbookFromLibraryAction } from "@/app/actions/runbooks";
 import { withToast } from "@/lib/toast-action";
 import type { LibraryRunbook } from "@/lib/library/runbooks";
+import type { FirmTier } from "@/generated/prisma/enums";
 import type { LibraryBrowserConfig, LibraryCardContext } from "../types";
+
+const TIER_LABEL: Record<FirmTier, string> = {
+  TIER_1: "Tier 1 — G-SIB",
+  TIER_2: "Tier 2 — Challenger",
+  TIER_3: "Tier 3 — Neobank / EMI",
+};
+
+const TIER_TONE: Record<FirmTier, string> = {
+  TIER_1: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200",
+  TIER_2: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+  TIER_3: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200",
+};
 
 const CATEGORY_LABEL: Record<string, string> = {
   CYBER: "Cyber",
@@ -93,6 +107,17 @@ export const RUNBOOK_LIBRARY_CONFIG: LibraryBrowserConfig<LibraryRunbook> = {
       ],
       getValue: (r) => r.trigger?.severityAtLeast ?? null,
     },
+    {
+      kind: "multi-chip",
+      key: "tier",
+      label: "Applies to firm tier",
+      options: (Object.keys(TIER_LABEL) as FirmTier[]).map((t) => ({
+        value: t,
+        label: TIER_LABEL[t],
+        tone: TIER_TONE[t],
+      })),
+      getValues: (r) => r.applicableTiers as readonly string[],
+    },
   ],
   card: (runbook, ctx) => <RunbookCard runbook={runbook} ctx={ctx} />,
 };
@@ -141,6 +166,17 @@ function RunbookCard({
           {runbook.trigger?.severityAtLeast && (
             <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
               Auto ≥ {runbook.trigger.severityAtLeast}
+            </span>
+          )}
+          {runbook.applicableTiers.length < 3 && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200"
+              title={`Applicable to: ${runbook.applicableTiers.map((t) => TIER_LABEL[t]).join(", ")}`}
+            >
+              <Crown size={9} />
+              {runbook.applicableTiers.length === 1
+                ? "G-SIB only"
+                : "Bank-only"}
             </span>
           )}
         </div>

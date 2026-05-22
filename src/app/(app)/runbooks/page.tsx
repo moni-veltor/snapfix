@@ -52,19 +52,38 @@ export default async function RunbooksPage() {
   const me = await requireOrgUser();
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
 
-  const runbooks = await prisma.runbook.findMany({
-    where: { orgId: me.orgId },
-    orderBy: [{ status: "asc" }, { category: "asc" }, { title: "asc" }],
-    include: {
-      _count: { select: { steps: true, ibsLinks: true, scenarioLinks: true } },
-      trigger: true,
-    },
-  });
+  const [runbooks, org] = await Promise.all([
+    prisma.runbook.findMany({
+      where: { orgId: me.orgId },
+      orderBy: [{ status: "asc" }, { category: "asc" }, { title: "asc" }],
+      include: {
+        _count: { select: { steps: true, ibsLinks: true, scenarioLinks: true } },
+        trigger: true,
+      },
+    }),
+    prisma.organization.findUniqueOrThrow({
+      where: { id: me.orgId },
+      select: { tier: true },
+    }),
+  ]);
 
   const existingTitles = runbooks.map((r) => r.title);
+  const existingTitleSet = new Set(existingTitles);
 
   const active = runbooks.filter((r) => r.status !== "ARCHIVED");
   const archived = runbooks.filter((r) => r.status === "ARCHIVED");
+
+  // Tier-aware library stats. "Applicable" templates are the ones tagged
+  // for the firm's tier; we surface how many are still un-added so admins
+  // know how much there is to seed without opening the drawer.
+  const applicableLibrary = org.tier
+    ? LIBRARY_RUNBOOKS.filter((l) =>
+        (l.applicableTiers as readonly string[]).includes(org.tier as string),
+      )
+    : LIBRARY_RUNBOOKS;
+  const addedApplicable = applicableLibrary.filter((l) =>
+    existingTitleSet.has(l.title),
+  ).length;
 
   // Group active runbooks by category for readability.
   const byCategory = new Map<RunbookCategory, typeof runbooks>();
@@ -83,7 +102,11 @@ export default async function RunbooksPage() {
         eyebrow="Operational playbooks"
         icon={BookOpen}
         title="Runbooks"
-        pitch="IMT playbooks · exercise + real-incident"
+        pitch={
+          org.tier
+            ? `${addedApplicable} of ${applicableLibrary.length} tier-applicable templates added · ${LIBRARY_RUNBOOKS.length} total in library`
+            : `${runbooks.length} active · ${LIBRARY_RUNBOOKS.length} library templates available`
+        }
         actions={
           canManage ? (
             <div className="flex flex-wrap items-center gap-2">
@@ -107,7 +130,12 @@ export default async function RunbooksPage() {
       />
 
       {active.length === 0 ? (
-        <EmptyState canManage={canManage} libraryCount={LIBRARY_RUNBOOKS.filter((l) => !new Set(existingTitles).has(l.title)).length} />
+        <EmptyState
+          canManage={canManage}
+          libraryCount={
+            applicableLibrary.filter((l) => !existingTitleSet.has(l.title)).length
+          }
+        />
       ) : (
         <div className="space-y-6">
           {orderedCategories.map((cat) => {

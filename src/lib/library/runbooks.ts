@@ -1,4 +1,17 @@
-import type { RunbookCategory, RunbookStepKind } from "@/generated/prisma/enums";
+import type { FirmTier, RunbookCategory, RunbookStepKind } from "@/generated/prisma/enums";
+
+/**
+ * Tier applicability presets. Runbook templates are tagged with the firm
+ * tiers they apply to so /runbooks can filter the library to "what's
+ * relevant for our tier" without hiding anything from curious admins.
+ *
+ * - ALL_TIERS  → universally applicable (cyber, outage, BCP, comms…)
+ * - BANKS      → bank-authorised firms only (TIER_1 G-SIB + TIER_2 challenger)
+ * - GSIB       → systemically important banks only (TIER_1)
+ */
+const ALL_TIERS: readonly FirmTier[] = ["TIER_1", "TIER_2", "TIER_3"] as const;
+const BANKS: readonly FirmTier[] = ["TIER_1", "TIER_2"] as const;
+const GSIB: readonly FirmTier[] = ["TIER_1"] as const;
 
 /**
  * Best-practice runbook templates seeded into the library. An org admin
@@ -43,6 +56,12 @@ export type LibraryRunbook = {
   description: string;
   category: RunbookCategory;
   ownerRoleTitle: string;
+  /**
+   * Firm tiers this template applies to. /runbooks shows non-applicable
+   * templates dimmed-and-tagged rather than hiding them — admins can still
+   * clone them if their firm has a non-standard structure.
+   */
+  applicableTiers: readonly FirmTier[];
   trigger?: {
     severityAtLeast?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
     scenarioCategoryEquals?: string;
@@ -56,6 +75,7 @@ const RANSOMWARE: LibraryRunbook = {
   description:
     "First-90-minute playbook for confirmed or suspected ransomware. Isolates the blast radius, stands up the IMT, files regulator notifications on the right clocks, and pre-stages customer comms.",
   category: "RANSOMWARE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "HIGH", scenarioCategoryEquals: "Technology & Data (Cyber)" },
   steps: [
@@ -175,6 +195,7 @@ const CLOUD_REGION_OUTAGE: LibraryRunbook = {
   description:
     "Hyperscaler region failure playbook (AWS/Azure/GCP). Confirms scope from status sources, triggers multi-region failover if available, and pre-empts the regulator's concentration question.",
   category: "CLOUD_REGION_OUTAGE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -262,6 +283,7 @@ const VENDOR_FAILURE: LibraryRunbook = {
   description:
     "Material third-party outage. Verifies impact, opens the contracted escalation path, and runs the customer-comms cascade in the right order.",
   category: "VENDOR_FAILURE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Procurement",
   trigger: { severityAtLeast: "MEDIUM" },
   steps: [
@@ -359,6 +381,7 @@ const BCP_ACTIVATION: LibraryRunbook = {
   description:
     "Business Continuity Plan activation. Joint CEO + CRO decision, BU stand-up checklist, and the regulator-facing notifications.",
   category: "BCP_ACTIVATION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CRO",
   steps: [
     {
@@ -434,6 +457,7 @@ const DDOS_RESPONSE: LibraryRunbook = {
   description:
     "Volumetric or application-layer denial-of-service. Triages traffic, engages upstream scrubbing, and manages customer-comms tempo while the noise resolves.",
   category: "CYBER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "MEDIUM" },
   steps: [
@@ -509,6 +533,7 @@ const PHISHING_CREDENTIAL_COMPROMISE: LibraryRunbook = {
   description:
     "Confirmed phishing campaign where employee credentials are believed harvested. Disables affected accounts, sweeps for further compromise, decides on a forced password reset.",
   category: "CYBER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "MEDIUM", scenarioCategoryEquals: "Technology & Data (Cyber)" },
   steps: [
@@ -529,6 +554,7 @@ const SUPPLY_CHAIN_COMPROMISE: LibraryRunbook = {
   description:
     "Trusted upstream package (NPM/PyPI/Maven/Docker image) or build tool has been compromised. Halts the build pipeline, audits affected releases, decides on rollback.",
   category: "CYBER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -548,6 +574,7 @@ const INSIDER_THREAT: LibraryRunbook = {
   description:
     "Credible evidence of malicious activity by a privileged employee. Revokes access without tipping off, preserves evidence, coordinates with HR + legal.",
   category: "CYBER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -567,6 +594,7 @@ const ZERO_DAY_DISCLOSURE: LibraryRunbook = {
   description:
     "A critical vendor or open-source dependency publishes a 0-day with public exploit. Inventory exposure, patch on emergency change, monitor for active exploitation.",
   category: "CYBER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -585,6 +613,7 @@ const LOST_DEVICE_WITH_DATA: LibraryRunbook = {
   description:
     "Employee reports a laptop / phone with corporate data lost or stolen. Remote wipe + access audit + ICO assessment.",
   category: "CYBER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   steps: [
     { slug: "remote-wipe", title: "Initiate remote wipe", description: "MDM-driven wipe + remote lock; confirm device check-in status.", kind: "ACTION", ownerRoleTitle: "CISO", estimatedMin: 15 },
@@ -602,6 +631,7 @@ const DATA_EXFILTRATION: LibraryRunbook = {
   description:
     "DLP / SIEM detects large-volume egress to an unknown destination. Cuts off the egress path, scopes the dataset, runs the breach-notification clock.",
   category: "CYBER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "CRITICAL" },
   steps: [
@@ -622,6 +652,7 @@ const COMPROMISED_ADMIN_CREDS: LibraryRunbook = {
   description:
     "Privileged-access credential (root, breakglass, IaC service account) confirmed leaked. Rotate, audit, and post-mortem.",
   category: "CYBER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -640,6 +671,7 @@ const WIRE_FRAUD_SURGE: LibraryRunbook = {
   description:
     "Authorised Push Payment fraud volumes spike past threshold. Tightens controls, briefs comms, coordinates with scheme reimbursement processes.",
   category: "CYBER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Financial Crime",
   trigger: { severityAtLeast: "MEDIUM" },
   steps: [
@@ -659,6 +691,7 @@ const HYPERSCALER_SERVICE_OUTAGE: LibraryRunbook = {
   description:
     "Single AWS/Azure/GCP service (S3, RDS, IAM, etc.) degraded — not a full region outage. Confirms scope, decides on workaround / failover, manages customer impact.",
   category: "CLOUD_REGION_OUTAGE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "MEDIUM" },
   steps: [
@@ -676,6 +709,7 @@ const DNS_PROVIDER_OUTAGE: LibraryRunbook = {
   description:
     "Authoritative DNS provider is degraded. Failover to secondary / lower TTLs / customer comms.",
   category: "CLOUD_REGION_OUTAGE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   steps: [
     { slug: "confirm-dns", title: "Confirm DNS degradation", description: "Test resolution from multiple resolvers in multiple regions.", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 5 },
@@ -692,6 +726,7 @@ const CDN_OUTAGE: LibraryRunbook = {
   description:
     "Edge CDN serving customer traffic is degraded. Failover or origin-direct, plus DDoS-resilience considerations.",
   category: "CLOUD_REGION_OUTAGE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   steps: [
     { slug: "confirm-cdn", title: "Confirm CDN degradation", description: "RUM + synthetic monitoring confirms scope.", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 5 },
@@ -708,6 +743,7 @@ const DB_FAILOVER_GONE_WRONG: LibraryRunbook = {
   description:
     "Planned or unplanned DB failover triggered split-brain / data divergence / extended downtime. Rolls back, reconciles, runs ledger integrity checks.",
   category: "DATA_INCIDENT",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -726,6 +762,7 @@ const KUBERNETES_CLUSTER_OUTAGE: LibraryRunbook = {
   description:
     "Production Kubernetes cluster degraded — control plane down, etcd issues, or mass node failure. Failover or rebuild.",
   category: "CLOUD_REGION_OUTAGE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   steps: [
     { slug: "confirm-scope", title: "Confirm cluster scope", description: "Control plane alone or worker nodes too? Multi-cluster or single?", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 10 },
@@ -744,6 +781,7 @@ const PAYMENTS_SCHEME_OUTAGE: LibraryRunbook = {
   description:
     "Faster Payments / BACS / CHAPS / SEPA scheme is degraded. Queues outbound, coordinates with scheme operator, files BoE notification if CHAPS.",
   category: "VENDOR_FAILURE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Payments",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -763,6 +801,7 @@ const CARD_SCHEME_OUTAGE: LibraryRunbook = {
   description:
     "Card scheme degraded — authorisations failing. Stand-in processing, customer comms, scheme coordination.",
   category: "VENDOR_FAILURE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Payments",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -781,6 +820,7 @@ const KYC_VENDOR_OUTAGE: LibraryRunbook = {
   description:
     "ID-verification provider (Onfido/Jumio/Trulioo) is down. Decide whether to pause onboarding or run with stricter manual review.",
   category: "VENDOR_FAILURE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Onboarding",
   steps: [
     { slug: "confirm-status", title: "Confirm vendor outage", description: "Status page + API health checks.", kind: "ACTION", ownerRoleTitle: "Head of Onboarding", estimatedMin: 5 },
@@ -797,6 +837,7 @@ const SMS_OTP_FAILURE: LibraryRunbook = {
   description:
     "OTP delivery is degraded — customers can't log in or step up. Switch to in-app push, lower step-up thresholds, brief support.",
   category: "VENDOR_FAILURE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CISO",
   steps: [
     { slug: "confirm-scope", title: "Confirm SMS scope", description: "Which carriers, which countries?", kind: "ACTION", ownerRoleTitle: "CISO", estimatedMin: 10 },
@@ -813,6 +854,7 @@ const EMAIL_PROVIDER_OUTAGE: LibraryRunbook = {
   description:
     "Transactional email (statements, OTP fallback, customer-comms) is degraded. Switch to fallback provider, queue critical mail.",
   category: "VENDOR_FAILURE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   steps: [
     { slug: "confirm-status", title: "Confirm provider status", description: "Provider status + delivery telemetry.", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 5 },
@@ -828,6 +870,7 @@ const SAAS_CRITICAL_OUTAGE: LibraryRunbook = {
   description:
     "Salesforce / Slack / M365 / Zoom is down. Switch to fallback channels; preserve customer-service continuity.",
   category: "VENDOR_FAILURE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "COO",
   steps: [
     { slug: "confirm-status", title: "Confirm SaaS scope", description: "Vendor status + per-feature impact.", kind: "ACTION", ownerRoleTitle: "COO", estimatedMin: 5 },
@@ -843,6 +886,7 @@ const CONTACT_CENTRE_OUTAGE: LibraryRunbook = {
   description:
     "Inbound call routing degraded. Customer wait times spike. Switch to IVR self-service + secondary provider.",
   category: "VENDOR_FAILURE",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Customer Service",
   steps: [
     { slug: "confirm-status", title: "Confirm telephony scope", description: "Inbound only? Outbound? Recording?", kind: "ACTION", ownerRoleTitle: "Head of Customer Service", estimatedMin: 10 },
@@ -860,6 +904,7 @@ const OFFICE_INACCESSIBLE: LibraryRunbook = {
   description:
     "Fire / police cordon / structural / strike action — primary office cannot be entered. Activate remote-working posture + secondary site.",
   category: "BCP_ACTIVATION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "COO",
   steps: [
     { slug: "confirm-inaccessible", title: "Confirm inaccessibility window", description: "Police / building management timeline; expected duration.", kind: "ACTION", ownerRoleTitle: "COO", estimatedMin: 30 },
@@ -876,6 +921,7 @@ const SEVERE_WEATHER: LibraryRunbook = {
   description:
     "Named storm / heatwave / flood expected to affect staff access. Pre-emptive remote-working + safety-first messaging.",
   category: "BCP_ACTIVATION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "COO",
   steps: [
     { slug: "monitor-warnings", title: "Monitor Met Office / equivalent", description: "Track regional warnings; identify staff at risk.", kind: "ACTION", ownerRoleTitle: "COO", estimatedMin: 30 },
@@ -891,6 +937,7 @@ const PANDEMIC_ABSENCE: LibraryRunbook = {
   description:
     "≥ 30% of staff out simultaneously due to illness or quarantine. Activate minimum-viable team mode.",
   category: "BCP_ACTIVATION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "COO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -908,6 +955,7 @@ const WAN_LOSS: LibraryRunbook = {
   description:
     "Corporate network connectivity lost — staff can't reach internal systems. Switch to zero-trust posture, run on cloud-only services.",
   category: "BCP_ACTIVATION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   steps: [
     { slug: "confirm-loss", title: "Confirm scope of WAN loss", description: "ISP outage? Internal WAN provider? VPN concentrator?", kind: "ACTION", ownerRoleTitle: "CTO", estimatedMin: 10 },
@@ -925,6 +973,7 @@ const MASS_DATA_BREACH: LibraryRunbook = {
   description:
     "Confirmed exposure of personal data affecting > 5,000 individuals. ICO 72h clock + bespoke customer notifications + class-action defence prep.",
   category: "DATA_INCIDENT",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "DPO",
   trigger: { severityAtLeast: "CRITICAL" },
   steps: [
@@ -944,6 +993,7 @@ const DATA_QUALITY_LEDGER: LibraryRunbook = {
   description:
     "Reconciliation breaks — customer balances or GL totals diverge from source-of-truth. Halt postings, reconcile, communicate.",
   category: "DATA_INCIDENT",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CFO",
   steps: [
     { slug: "halt-postings", title: "Halt new postings to affected ledger", description: "Prevent the discrepancy widening.", kind: "ACTION", ownerRoleTitle: "CFO", estimatedMin: 15 },
@@ -961,6 +1011,7 @@ const BACKUP_INTEGRITY_FAILURE: LibraryRunbook = {
   description:
     "Routine restore test fails — backups are corrupt or unavailable. Investigate scope, restore from older snapshots, urgent fix.",
   category: "DATA_INCIDENT",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -978,6 +1029,7 @@ const SAR_OVERLOAD: LibraryRunbook = {
   description:
     "SAR / erasure request volume spikes past capacity. Triage, automate, prevent statutory-clock breach.",
   category: "DATA_INCIDENT",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "DPO",
   steps: [
     { slug: "measure-backlog", title: "Measure backlog vs SLA", description: "How many SARs vs 30-day statutory clock.", kind: "ACTION", ownerRoleTitle: "DPO", estimatedMin: 30 },
@@ -994,6 +1046,7 @@ const CROSS_BORDER_DATA_BLOCK: LibraryRunbook = {
   description:
     "Regulator or court order halts a specific cross-border data transfer (e.g. EU-US data flow). Reroute, repatriate, or comply.",
   category: "DATA_INCIDENT",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "DPO",
   steps: [
     { slug: "scope-flows", title: "Scope affected flows", description: "Which services, which categories of data, which destinations.", kind: "ACTION", ownerRoleTitle: "DPO", estimatedMin: 120 },
@@ -1009,6 +1062,7 @@ const DATA_CORRUPTION: LibraryRunbook = {
   description:
     "Confirmed corruption in a primary data store. Halt writes, restore, validate.",
   category: "DATA_INCIDENT",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CTO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -1028,6 +1082,7 @@ const KEY_PERSON_LOSS: LibraryRunbook = {
   description:
     "Sudden departure (death / arrest / resignation) of an SMF or single-shoulder critical operator. Activate deputy, transfer accountabilities, regulator notifications.",
   category: "PEOPLE_DISRUPTION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Chief People Officer",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -1046,6 +1101,7 @@ const SMF_EMERGENCY_LEAVE: LibraryRunbook = {
   description:
     "Senior Management Function holder taken out by health or family emergency. Deputy steps in for the duration; regulator filed within 10 business days.",
   category: "PEOPLE_DISRUPTION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Chief People Officer",
   steps: [
     { slug: "activate-deputy", title: "Activate deputy", description: "Per catalogue chain; brief them on live items.", kind: "ACTION", ownerRoleTitle: "Chief People Officer", estimatedMin: 30 },
@@ -1061,6 +1117,7 @@ const MASS_ABSENCE_STRIKE: LibraryRunbook = {
   description:
     "Union strike or coordinated walkout affecting > 20% of staff. Activate continuity plan, brief customers if customer-visible.",
   category: "PEOPLE_DISRUPTION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Chief People Officer",
   steps: [
     { slug: "confirm-scope", title: "Confirm absence scope", description: "Which teams, what duration is expected.", kind: "ACTION", ownerRoleTitle: "Chief People Officer", estimatedMin: 60 },
@@ -1076,6 +1133,7 @@ const OUTSOURCE_CENTRE_CLOSURE: LibraryRunbook = {
   description:
     "An outsourced operations centre (KYC, ops, contact-centre) unexpectedly stops providing service. Activate vendor exit plan, in-source critical functions.",
   category: "PEOPLE_DISRUPTION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "COO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -1093,6 +1151,7 @@ const SOLO_OPERATOR_UNAVAILABLE: LibraryRunbook = {
   description:
     "A function with no documented backup is unstaffed (illness, holiday, departure). Activate cross-training plan, document properly.",
   category: "PEOPLE_DISRUPTION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Chief People Officer",
   steps: [
     { slug: "identify-cover", title: "Identify nearest-skilled cover", description: "Look across teams; brief them on the function urgently.", kind: "ACTION", ownerRoleTitle: "Chief People Officer", estimatedMin: 60 },
@@ -1109,6 +1168,7 @@ const FCA_MATERIAL_INCIDENT: LibraryRunbook = {
   description:
     "Standalone runbook for filing the FCA 4-hour material-incident notification. Used when a parent runbook has not already covered it.",
   category: "REGULATORY_NOTIFICATION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CRO",
   steps: [
     { slug: "confirm-materiality", title: "Confirm materiality", description: "Customer harm / market integrity / supervisability test.", kind: "DECISION", ownerRoleTitle: "CRO", estimatedMin: 30 },
@@ -1125,6 +1185,7 @@ const PRA_MATERIAL_INCIDENT: LibraryRunbook = {
   description:
     "Standalone PRA notification for PRA-supervised firms.",
   category: "REGULATORY_NOTIFICATION",
+  applicableTiers: BANKS,
   ownerRoleTitle: "CRO",
   steps: [
     { slug: "confirm-pra-scope", title: "Confirm PRA-scope materiality", description: "Safety + soundness, financial stability, policyholder protection.", kind: "DECISION", ownerRoleTitle: "CRO", estimatedMin: 30 },
@@ -1140,6 +1201,7 @@ const ICO_72H_BREACH: LibraryRunbook = {
   description:
     "Standalone runbook for filing the ICO 72-hour breach notification.",
   category: "REGULATORY_NOTIFICATION",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "DPO",
   steps: [
     { slug: "confirm-pd", title: "Confirm personal data is in scope", description: "Categories + likely number of individuals.", kind: "DECISION", ownerRoleTitle: "DPO", estimatedMin: 60 },
@@ -1155,6 +1217,7 @@ const BOE_SETTLEMENT_INCIDENT: LibraryRunbook = {
   description:
     "Incident affecting BoE settlement systems (CHAPS / RTGS). Notification within scheme rules + heightened cadence.",
   category: "REGULATORY_NOTIFICATION",
+  applicableTiers: GSIB,
   ownerRoleTitle: "CRO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -1171,6 +1234,7 @@ const DORA_MAJOR_ICT_INCIDENT: LibraryRunbook = {
   description:
     "EU DORA major-incident classification and report. Initial notification within 4 hours.",
   category: "REGULATORY_NOTIFICATION",
+  applicableTiers: BANKS,
   ownerRoleTitle: "CRO",
   steps: [
     { slug: "classify-major", title: "Classify as major", description: "Apply DORA's classification thresholds.", kind: "DECISION", ownerRoleTitle: "CRO", estimatedMin: 30 },
@@ -1188,6 +1252,7 @@ const MARKET_DISLOCATION: LibraryRunbook = {
   description:
     "Market-wide event affecting pricing, liquidity, or trading. Activate liquidity-stress posture, hedge urgent positions, brief CRO.",
   category: "OTHER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "CFO",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -1205,6 +1270,7 @@ const SANCTIONS_HIT_CASCADE: LibraryRunbook = {
   description:
     "New sanctions list addition triggers many alerts. Freeze, screen, prioritise, file SAR.",
   category: "OTHER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Financial Crime",
   trigger: { severityAtLeast: "HIGH" },
   steps: [
@@ -1222,6 +1288,7 @@ const HOSTILE_INSPECTION: LibraryRunbook = {
   description:
     "Regulator arrives unannounced. Preserve evidence, give them the documents they ask for, brief executives.",
   category: "OTHER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Chief Legal Officer",
   steps: [
     { slug: "verify-credentials", title: "Verify inspector credentials", description: "ID + warrant / authority; document.", kind: "ACTION", ownerRoleTitle: "Chief Legal Officer", estimatedMin: 15 },
@@ -1238,6 +1305,7 @@ const ACTIVE_MAJOR_FRAUD: LibraryRunbook = {
   description:
     "Sizeable fraud (insider / external) ongoing. Freeze the loss, preserve evidence, coordinate with law enforcement.",
   category: "OTHER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Head of Financial Crime",
   trigger: { severityAtLeast: "CRITICAL" },
   steps: [
@@ -1255,6 +1323,7 @@ const EXEC_SUCCESSION_CRISIS: LibraryRunbook = {
   description:
     "Multiple executives unavailable simultaneously. Activate full succession matrix, brief board + regulators.",
   category: "OTHER",
+  applicableTiers: ALL_TIERS,
   ownerRoleTitle: "Chair",
   trigger: { severityAtLeast: "CRITICAL" },
   steps: [
