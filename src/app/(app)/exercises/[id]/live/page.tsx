@@ -178,6 +178,7 @@ export default async function LiveWorkspacePage({
         status: true,
         dueAt: true,
         createdAt: true,
+        updatedAt: true,
       },
     }),
     // Injects released in the last hour — offered as the likely trigger

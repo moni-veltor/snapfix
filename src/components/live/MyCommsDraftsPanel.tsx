@@ -1,12 +1,16 @@
 "use client";
 
+import { useCallback } from "react";
+import { toast } from "sonner";
 import {
   CheckCircle2,
   Clock,
   Mail,
   Send,
+  Sparkles,
   XCircle,
 } from "lucide-react";
+import { useChangeDetector, type ChangeEvent } from "@/lib/use-change-detector";
 
 type MyDraft = {
   id: string;
@@ -60,6 +64,30 @@ const STATUS_TONE: Record<string, { pill: string; icon: typeof Clock; label: str
  * without scrolling through the whole stakeholder cascade.
  */
 export default function MyCommsDraftsPanel({ drafts }: Props) {
+  const onChange = useCallback((event: ChangeEvent<MyDraft>) => {
+    const d = event.item;
+    const stakeholder = d.stakeholder ? d.stakeholder.replace(/_/g, " ").toLowerCase() : "stakeholder";
+    if (event.kind === "added") return; // own-drafts list — author already knows they created it
+    switch (d.status) {
+      case "APPROVED":
+        toast.success(`Your ${stakeholder} comms was approved`, {
+          description: d.subject,
+        });
+        return;
+      case "REJECTED":
+        toast.error(`Your ${stakeholder} comms was rejected`, {
+          description: d.rejectionReason ?? "See the panel for the reason.",
+        });
+        return;
+      case "SENT":
+        toast.success(`Your ${stakeholder} comms was sent`, {
+          description: d.subject,
+        });
+        return;
+    }
+  }, []);
+  const flashing = useChangeDetector(drafts, signatureOf, onChange);
+
   if (drafts.length === 0) return null;
 
   const sorted = [...drafts].sort(
@@ -105,10 +133,11 @@ export default function MyCommsDraftsPanel({ drafts }: Props) {
         {sorted.map((d) => {
           const tone = STATUS_TONE[d.status] ?? STATUS_TONE.DRAFT;
           const Icon = tone.icon;
+          const isFlashing = flashing.has(d.id);
           return (
             <li
               key={d.id}
-              className={`rounded-md border p-2.5 text-sm ${borderFromStatus(d.status)}`}
+              className={`rounded-md border p-2.5 text-sm ${borderFromStatus(d.status)} ${isFlashing ? "ring-2 ring-amber-300 ring-offset-1 dark:ring-amber-400/60" : ""}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -128,8 +157,14 @@ export default function MyCommsDraftsPanel({ drafts }: Props) {
                       {d.createdAt.toISOString().slice(11, 16)}
                     </span>
                   </div>
-                  <div className="mt-1 truncate text-sm font-medium text-ink">
-                    {d.subject}
+                  <div className="mt-1 flex items-center gap-1 text-sm font-medium text-ink">
+                    <span className="truncate">{d.subject}</span>
+                    {isFlashing && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
+                        <Sparkles size={9} />
+                        Updated
+                      </span>
+                    )}
                   </div>
                   <p className="mt-0.5 line-clamp-2 text-[11px] text-muted">{d.body}</p>
                   <p className="mt-1 text-[10px] text-soft">{tone.label}</p>
@@ -153,6 +188,10 @@ export default function MyCommsDraftsPanel({ drafts }: Props) {
       </ul>
     </section>
   );
+}
+
+function signatureOf(d: MyDraft): string {
+  return `${d.status}::${d.rejectionReason ?? ""}`;
 }
 
 function labelShort(status: string): string {
