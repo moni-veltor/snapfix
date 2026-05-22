@@ -534,6 +534,31 @@ export async function unpublishRunbookAction(formData: FormData) {
   revalidatePath("/runbooks");
 }
 
+export async function markRunbookReviewedAction(formData: FormData) {
+  const me = await requireOrgRole("OWNER", "ADMIN");
+  const id = optStr(formData.get("id"));
+  if (!id) return;
+  const runbook = await prisma.runbook.findFirst({
+    where: { id, orgId: me.orgId },
+    select: { id: true, title: true },
+  });
+  if (!runbook) return;
+  await prisma.runbook.update({
+    where: { id },
+    data: { lastReviewedAt: new Date(), lastReviewedById: me.id },
+  });
+  await audit({
+    orgId: me.orgId,
+    actorId: me.id,
+    action: "runbook.reviewed",
+    targetType: "Runbook",
+    targetId: id,
+    summary: `Marked "${runbook.title}" reviewed`,
+  });
+  revalidatePath(`/runbooks/${id}`);
+  revalidatePath("/runbooks");
+}
+
 async function cloneLibraryRunbookIntoOrg(
   lib: LibraryRunbook,
   orgId: string,

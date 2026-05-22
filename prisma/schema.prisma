@@ -25,40 +25,40 @@ enum FirmTier {
 }
 
 model Organization {
-  id           String    @id @default(cuid())
-  name         String
-  slug         String    @unique
-  tier         FirmTier?
-  logoBlobUrl  String?
-  logoBlobPath String?
+  id                   String    @id @default(cuid())
+  name                 String
+  slug                 String    @unique
+  tier                 FirmTier?
+  logoBlobUrl          String?
+  logoBlobPath         String?
   /// Hex accent colour ("#4f46e5") — overrides the brand --accent token
   /// across the app shell. Null = default indigo.
-  accentHex    String?
+  accentHex            String?
   /// Default fully-loaded hourly cost per IMT role abbreviation, used to
   /// estimate exercise cost. JSON shape: { "CEO": 500, "CRO": 400, ... }
   /// in major currency units (GBP/EUR/USD). Null = use sector defaults.
   defaultExerciseRates Json?
   /// ISO 4217 currency code for cost surfacing (GBP / EUR / USD).
-  exerciseCostCurrency String  @default("GBP")
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  exerciseCostCurrency String    @default("GBP")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-  users         User[]
-  invitations   Invitation[]
-  scenarios     Scenario[]
-  exercises     Exercise[]
-  ibsRegister   OrganizationIBS[]
-  actionItems   ExerciseActionItem[]
-  auditLog      AuditLogEntry[]
-  teamTemplates OrganizationTeamTemplate[]
-  vendors       Vendor[]
-  roles         OrganizationRole[]
-  techSystems   TechSystem[]
-  departments   Department[]
-  decisionTypes OrgDecisionType[]
+  users                   User[]
+  invitations             Invitation[]
+  scenarios               Scenario[]
+  exercises               Exercise[]
+  ibsRegister             OrganizationIBS[]
+  actionItems             ExerciseActionItem[]
+  auditLog                AuditLogEntry[]
+  teamTemplates           OrganizationTeamTemplate[]
+  vendors                 Vendor[]
+  roles                   OrganizationRole[]
+  techSystems             TechSystem[]
+  departments             Department[]
+  decisionTypes           OrgDecisionType[]
   vendorRegisterSnapshots VendorRegisterSnapshot[]
-  runbooks      Runbook[]
-  achievementUnlocks AchievementUnlock[]
+  runbooks                Runbook[]
+  achievementUnlocks      AchievementUnlock[]
 }
 
 /// Departmental org-chart node — a business unit / team / function. Separate
@@ -72,10 +72,10 @@ model Department {
   orgId String
   org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
-  name        String // "Retail Banking Technology"
+  name         String // "Retail Banking Technology"
   abbreviation String? // "RBT"
-  description String? // 1-line purpose statement
-  orderIdx    Int    @default(0)
+  description  String? // 1-line purpose statement
+  orderIdx     Int     @default(0)
 
   // Hierarchy — null parent = top-level department
   parentId String?
@@ -93,7 +93,7 @@ model Department {
   ownedIBS OrganizationIBS[] @relation("IBSOwnerDepartment")
 
   // IBS resource-map links pointing at this department.
-  ibsResources IBSResource[]   @relation("IBSResourceDepartment")
+  ibsResources IBSResource[] @relation("IBSResourceDepartment")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -170,53 +170,54 @@ model User {
   orgRole OrgRole?
 
   // Departmental org-chart membership (optional, separate from IMT roles).
-  departmentId String?
-  department   Department? @relation("DepartmentMember", fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentId   String?
+  department     Department?  @relation("DepartmentMember", fields: [departmentId], references: [id], onDelete: SetNull)
   ledDepartments Department[] @relation("DepartmentLead")
 
   accounts Account[]
   sessions Session[]
 
-  createdScenarios        Scenario[]              @relation("ScenarioCreator")
-  facilitatedExercises    Exercise[]              @relation("ExerciseFacilitator")
-  coFacilitatedExercises  Exercise[]              @relation("ExerciseCoFacilitator")
-  exerciseApprovalsGiven  ExerciseApproval[]      @relation("ExerciseApprover")
-  classifiedReadsByMe     ExerciseClassifiedReader[] @relation("ClassifiedReadReader")
-  vendorAssessmentsRecorded VendorAssessment[]    @relation("VendorAssessmentRecorder")
-  mtpNotificationsCreated   VendorMtpNotification[] @relation("MtpNotificationCreator")
-  registerSnapshotsCreated  VendorRegisterSnapshot[] @relation("RegisterSnapshotCreator")
-  createdRunbooks           Runbook[]               @relation("RunbookCreator")
-  activatedRunbookExecutions RunbookExecution[]     @relation("RunbookExecutionActivator")
-  achievementUnlocks         AchievementUnlock[]    @relation("AchievementUnlockUser")
-  exerciseParticipations  ExerciseParticipant[]
-  incidentLogEntries      IncidentLogEntry[]
-  responses               ParticipantResponse[]
-  commsAuthored           CommunicationDraft[]    @relation("CommsAuthor")
-  commsApproved           CommunicationDraft[]    @relation("CommsApprover")
-  debriefAnswers          DebriefAnswer[]
-  invitationsSent         Invitation[]            @relation("InvitationInvitedBy")
-  uploadedArtefacts       Artefact[]              @relation("ArtefactUploader")
-  ownedIBS                OrganizationIBS[]       @relation("IBSProcessOwner")
-  createdIBS              OrganizationIBS[]       @relation("IBSCreatedBy")
-  ownedActionItems        ExerciseActionItem[]    @relation("ActionItemOwner")
-  createdActionItems      ExerciseActionItem[]    @relation("ActionItemCreatedBy")
-  auditActions            AuditLogEntry[]         @relation("AuditActor")
-  incidentsInvoked        Incident[]              @relation("IncidentInvoker")
-  incidentsClosed         Incident[]              @relation("IncidentCloser")
-  decisionsAuthoredByUser DecisionRecord[]        @relation("DecisionAuthorUser")
-  decisionsApprovedByUser DecisionRecord[]        @relation("DecisionApproverUser")
-  regulatorNotifications  RegulatorNotification[] @relation("RegulatorNotificationOwner")
-  postIncidentReports     PostIncidentReport[]    @relation("PIRAuthor")
-  imtMeetingsRecorded     IMTMeeting[]            @relation("IMTMeetingScribe")
-  bcpActivations          BCPActivation[]         @relation("BCPActivator")
-  bcpDeactivations        BCPActivation[]         @relation("BCPDeactivator")
-  defaultRoleHoldings     OrganizationRole[]      @relation("RoleDefaultHolder")
-  ibsAttestationsReviewed IBSAttestation[]        @relation("AttestationReviewer")
-  drTestsAttested         DRTest[]                @relation("DRTestAttester")
-  heldSeats               ExerciseSeat[]          @relation("SeatHolder")
-  chatMessages            ChatMessage[]           @relation("ChatAuthor")
-  reactions               Reaction[]              @relation("ReactionAuthor")
-  scratchpadEdits         ExerciseScratchpad[]    @relation("ScratchpadEditor")
+  createdScenarios           Scenario[]                 @relation("ScenarioCreator")
+  facilitatedExercises       Exercise[]                 @relation("ExerciseFacilitator")
+  coFacilitatedExercises     Exercise[]                 @relation("ExerciseCoFacilitator")
+  exerciseApprovalsGiven     ExerciseApproval[]         @relation("ExerciseApprover")
+  classifiedReadsByMe        ExerciseClassifiedReader[] @relation("ClassifiedReadReader")
+  vendorAssessmentsRecorded  VendorAssessment[]         @relation("VendorAssessmentRecorder")
+  mtpNotificationsCreated    VendorMtpNotification[]    @relation("MtpNotificationCreator")
+  registerSnapshotsCreated   VendorRegisterSnapshot[]   @relation("RegisterSnapshotCreator")
+  createdRunbooks            Runbook[]                  @relation("RunbookCreator")
+  reviewedRunbooks           Runbook[]                  @relation("RunbookReviewer")
+  activatedRunbookExecutions RunbookExecution[]         @relation("RunbookExecutionActivator")
+  achievementUnlocks         AchievementUnlock[]        @relation("AchievementUnlockUser")
+  exerciseParticipations     ExerciseParticipant[]
+  incidentLogEntries         IncidentLogEntry[]
+  responses                  ParticipantResponse[]
+  commsAuthored              CommunicationDraft[]       @relation("CommsAuthor")
+  commsApproved              CommunicationDraft[]       @relation("CommsApprover")
+  debriefAnswers             DebriefAnswer[]
+  invitationsSent            Invitation[]               @relation("InvitationInvitedBy")
+  uploadedArtefacts          Artefact[]                 @relation("ArtefactUploader")
+  ownedIBS                   OrganizationIBS[]          @relation("IBSProcessOwner")
+  createdIBS                 OrganizationIBS[]          @relation("IBSCreatedBy")
+  ownedActionItems           ExerciseActionItem[]       @relation("ActionItemOwner")
+  createdActionItems         ExerciseActionItem[]       @relation("ActionItemCreatedBy")
+  auditActions               AuditLogEntry[]            @relation("AuditActor")
+  incidentsInvoked           Incident[]                 @relation("IncidentInvoker")
+  incidentsClosed            Incident[]                 @relation("IncidentCloser")
+  decisionsAuthoredByUser    DecisionRecord[]           @relation("DecisionAuthorUser")
+  decisionsApprovedByUser    DecisionRecord[]           @relation("DecisionApproverUser")
+  regulatorNotifications     RegulatorNotification[]    @relation("RegulatorNotificationOwner")
+  postIncidentReports        PostIncidentReport[]       @relation("PIRAuthor")
+  imtMeetingsRecorded        IMTMeeting[]               @relation("IMTMeetingScribe")
+  bcpActivations             BCPActivation[]            @relation("BCPActivator")
+  bcpDeactivations           BCPActivation[]            @relation("BCPDeactivator")
+  defaultRoleHoldings        OrganizationRole[]         @relation("RoleDefaultHolder")
+  ibsAttestationsReviewed    IBSAttestation[]           @relation("AttestationReviewer")
+  drTestsAttested            DRTest[]                   @relation("DRTestAttester")
+  heldSeats                  ExerciseSeat[]             @relation("SeatHolder")
+  chatMessages               ChatMessage[]              @relation("ChatAuthor")
+  reactions                  Reaction[]                 @relation("ReactionAuthor")
+  scratchpadEdits            ExerciseScratchpad[]       @relation("ScratchpadEditor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -294,10 +295,10 @@ model Scenario {
 
   // Annual programme planning — which year + quarter this scenario is
   // slotted into, and whether it satisfies a named regulatory commitment.
-  programmeYear     Int? // 2026
-  programmeQuarter  Int? // 1..4
-  regulatoryReq     String? // free text: "FCA SS1/21 annual cyber exercise", "BoE SSE 2026", etc.
-  mandatoryUntil    DateTime? // if set, the scenario must be exercised by this date
+  programmeYear    Int? // 2026
+  programmeQuarter Int? // 1..4
+  regulatoryReq    String? // free text: "FCA SS1/21 annual cyber exercise", "BoE SSE 2026", etc.
+  mandatoryUntil   DateTime? // if set, the scenario must be exercised by this date
 
   // 6-box Risk Coverage matrix from the DSL
   coversPeople           Boolean @default(false)
@@ -387,7 +388,7 @@ model EventIBS {
 }
 
 enum InjectKind {
-  BUSINESS  // ops / customer / comms / regulator-driven pressure
+  BUSINESS // ops / customer / comms / regulator-driven pressure
   TECHNICAL // monitoring signals, observability alerts, system fault patterns
 }
 
@@ -411,12 +412,12 @@ model Inject {
   toRoleTitles    String[]
   ccRoleTitles    String[]
 
-  artefacts        Artefact[]
-  releases         InjectRelease[]
-  responses        ParticipantResponse[]
-  receipts         InjectReceipt[]
-  triggeredDecisions DecisionRecord[] @relation("DecisionTriggerInject")
-  exerciseOverrides ExerciseInjectOverride[]
+  artefacts          Artefact[]
+  releases           InjectRelease[]
+  responses          ParticipantResponse[]
+  receipts           InjectReceipt[]
+  triggeredDecisions DecisionRecord[]         @relation("DecisionTriggerInject")
+  exerciseOverrides  ExerciseInjectOverride[]
 
   createdAt DateTime @default(now())
 
@@ -527,18 +528,18 @@ enum ExerciseRole {
 }
 
 model Exercise {
-  id            String       @id @default(cuid())
-  orgId         String
-  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  scenarioId    String
-  scenario      Scenario     @relation(fields: [scenarioId], references: [id])
-  facilitatorId String?
-  facilitator   User?        @relation("ExerciseFacilitator", fields: [facilitatorId], references: [id])
+  id              String       @id @default(cuid())
+  orgId           String
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  scenarioId      String
+  scenario        Scenario     @relation(fields: [scenarioId], references: [id])
+  facilitatorId   String?
+  facilitator     User?        @relation("ExerciseFacilitator", fields: [facilitatorId], references: [id])
   /// Optional backup facilitator. Single-facilitator design is anti-resilience;
   /// a named co-facilitator can take over if the primary becomes unavailable
   /// (and is the first port-of-call for participant questions during the live run).
   coFacilitatorId String?
-  coFacilitator   User?   @relation("ExerciseCoFacilitator", fields: [coFacilitatorId], references: [id])
+  coFacilitator   User?        @relation("ExerciseCoFacilitator", fields: [coFacilitatorId], references: [id])
 
   title       String
   description String?
@@ -549,65 +550,65 @@ model Exercise {
   // ─── Wizard-era planning fields ───────────────────────────────────────────
   /// LIVE = real-time war-room; TABLETOP = facilitated discussion;
   /// WALKTHROUGH = explanatory tour, lowest realism.
-  exerciseType   ExerciseType    @default(TABLETOP)
+  exerciseType         ExerciseType    @default(TABLETOP)
   /// Planned wall-clock duration in minutes. Used to size the briefing email,
   /// cost estimate, calendar invite, and pre-flight summary.
-  durationMin    Int?
+  durationMin          Int?
   /// IANA time-zone string (e.g. "Europe/London"). When set, D-Day is interpreted
   /// in this zone; participants in other zones see localised times. Null defaults
   /// to UTC interpretation.
-  timeZone       String?
+  timeZone             String?
   /// OPEN = whole org sees the exercise in lists; RESTRICTED = only roster +
   /// explicit observers see it.
-  confidentiality Confidentiality @default(OPEN)
+  confidentiality      Confidentiality @default(OPEN)
   /// 1-5 short outcome statements the exercise is intended to test
   /// (e.g. "Test 4h FCA notification path under cyber pressure"). Scored
   /// against in the debrief.
-  objectives     String[]
+  objectives           String[]
   /// Optional jurisdictional scope. Drives which regulator-clock thresholds
   /// and notification helpers apply during severity classification.
-  jurisdiction   Jurisdiction    @default(UK)
+  jurisdiction         Jurisdiction    @default(UK)
   /// Information-security classification. SECRET / CONFIDENTIAL enable
   /// watermarking and per-exercise restricted reader lists.
-  classification Classification  @default(INTERNAL)
+  classification       Classification  @default(INTERNAL)
   /// Optional one-line classification caveat (e.g. "MNPI", "DEAL-RELATED",
   /// "INSIDER LIST"). Surfaced in the page-header pill.
   classificationCaveat String?
   /// PRODUCTION exercises generate evidence and count toward annual obligations.
   /// DRY_RUN exercises are private facilitator rehearsals — purged after 30 days,
   /// excluded from regulator evidence packs, do not satisfy annual testing.
-  mode           ExerciseMode    @default(PRODUCTION)
+  mode                 ExerciseMode    @default(PRODUCTION)
   /// When set, this exercise was cloned from another exercise's design
   /// (template). Lets the programme view show "X used as template by N others".
-  templateOfId   String?
-  templateOf     Exercise?  @relation("ExerciseTemplate", fields: [templateOfId], references: [id], onDelete: SetNull)
-  templateClones Exercise[] @relation("ExerciseTemplate")
+  templateOfId         String?
+  templateOf           Exercise?       @relation("ExerciseTemplate", fields: [templateOfId], references: [id], onDelete: SetNull)
+  templateClones       Exercise[]      @relation("ExerciseTemplate")
   /// RFC 5545 RRULE string for recurring exercises (e.g. quarterly cyber drill).
   /// Null = one-off.
-  recurrenceRule String?
+  recurrenceRule       String?
 
   // ─── Briefing tracking ────────────────────────────────────────────────────
-  briefingSentAt         DateTime?
+  briefingSentAt        DateTime?
   /// Reason given when the facilitator skipped the pre-read briefing email
   /// (e.g. "Verbal brief in person at kickoff").
-  briefingSkippedReason  String?
+  briefingSkippedReason String?
 
   // ─── Cost (snapshot, GBP minor units / pence) ─────────────────────────────
   /// Estimated cost computed at planning time from roster × duration × role rates.
   /// Snapshot so rate changes don't retroactively alter past evidence.
-  estimatedCostMinor     Int?
+  estimatedCostMinor Int?
   /// Actual cost computed at closure from attended-time × role rates.
-  actualCostMinor        Int?
+  actualCostMinor    Int?
 
   // ─── Regulator-evidence mode ──────────────────────────────────────────────
   /// When true, all post-kickoff edits are locked, all decisions require an
   /// approver, comms require explicit sign-off, closure gates are strict-no-waivers,
   /// audit log writes are chained for tamper-evidence, and closure auto-generates
   /// a regulator evidence pack.
-  regulatorMode          Boolean  @default(false)
+  regulatorMode            Boolean @default(false)
   /// Free-text label of the audience this evidence is being prepared for
   /// (e.g. "PRA SS1/21", "FCA SYSC 15A", "BoE FMI", "DORA Art. 25").
-  regulatorAudience      String?
+  regulatorAudience        String?
   /// URL to the generated evidence pack (Vercel Blob), set on closure when
   /// regulatorMode is true.
   regulatorEvidencePackUrl String?
@@ -615,8 +616,8 @@ model Exercise {
   // ─── Real-incident abort path ─────────────────────────────────────────────
   /// Set when the exercise was aborted because a real incident took over.
   /// Distinguishes ABANDONED-for-real-incident from ABANDONED-because-no-show.
-  abortedAt    DateTime?
-  abortReason  String?
+  abortedAt   DateTime?
+  abortReason String?
 
   startedAt       DateTime?
   pausedAt        DateTime?
@@ -624,34 +625,34 @@ model Exercise {
   dDayAnchor      DateTime?
   speedMultiplier Float     @default(1.0)
 
-  teams          ExerciseTeam[]
-  participants   ExerciseParticipant[]
-  eventReleases  EventRelease[]
-  injectReleases InjectRelease[]
-  incidentLog    IncidentLogEntry[]
-  responses      ParticipantResponse[]
-  comms          CommunicationDraft[]
-  recoveryPlans  RecoveryPlan[]
-  debriefAnswers DebriefAnswer[]
-  impactBreaches ImpactBreach[]
-  aar            AfterActionReport?
-  artefacts      Artefact[]
-  ibsLinks       ExerciseIBSLink[]
-  actionItems    ExerciseActionItem[]
-  incidents      Incident[]
-  retrospective  Retrospective?
-  seats          ExerciseSeat[]
-  chatMessages   ChatMessage[]
-  scratchpad     ExerciseScratchpad?
+  teams              ExerciseTeam[]
+  participants       ExerciseParticipant[]
+  eventReleases      EventRelease[]
+  injectReleases     InjectRelease[]
+  incidentLog        IncidentLogEntry[]
+  responses          ParticipantResponse[]
+  comms              CommunicationDraft[]
+  recoveryPlans      RecoveryPlan[]
+  debriefAnswers     DebriefAnswer[]
+  impactBreaches     ImpactBreach[]
+  aar                AfterActionReport?
+  artefacts          Artefact[]
+  ibsLinks           ExerciseIBSLink[]
+  actionItems        ExerciseActionItem[]
+  incidents          Incident[]
+  retrospective      Retrospective?
+  seats              ExerciseSeat[]
+  chatMessages       ChatMessage[]
+  scratchpad         ExerciseScratchpad?
   // ─── Wizard-era relations ─────────────────────────────────────────────────
-  chainedScenarios ExerciseScenarioLink[]
+  chainedScenarios   ExerciseScenarioLink[]
   vendorParticipants ExerciseVendorParticipant[]
-  approvals        ExerciseApproval[]
-  injectOverrides  ExerciseInjectOverride[]
-  hotWash          ExerciseHotWash?
-  wellbeingChecks  ExerciseWellbeingCheck[]
-  classifiedReads  ExerciseClassifiedReader[]
-  auditHashChain   ExerciseAuditHashEntry[]
+  approvals          ExerciseApproval[]
+  injectOverrides    ExerciseInjectOverride[]
+  hotWash            ExerciseHotWash?
+  wellbeingChecks    ExerciseWellbeingCheck[]
+  classifiedReads    ExerciseClassifiedReader[]
+  auditHashChain     ExerciseAuditHashEntry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -721,27 +722,27 @@ model ExerciseParticipant {
   /// When the participant actually first joined the live war room.
   /// Used for actual-cost computation (vs estimated cost) and for
   /// the "X arrived 12 min late" coaching finding.
-  attendedFromAt   DateTime?
+  attendedFromAt  DateTime?
   /// When the participant left or the exercise closed for them.
-  attendedUntilAt  DateTime?
+  attendedUntilAt DateTime?
   /// Set when the participant clicks "I've read the pre-read & I'm ready".
   /// Drives the pre-flight summary's "10/12 acked" counter.
-  preReadAckedAt   DateTime?
+  preReadAckedAt  DateTime?
   /// Observer = sees everything read-only, no inbox / no decisions / no comms.
   /// Stakeholder = sees only the executive-summary view (status + closure + PIR).
   /// These flags don't replace exerciseRole; they layer scope on top of it.
-  isObserver       Boolean   @default(false)
-  isStakeholder    Boolean   @default(false)
+  isObserver      Boolean   @default(false)
+  isStakeholder   Boolean   @default(false)
 
   eventReceipts  EventReceipt[]
   injectReceipts InjectReceipt[]
 
-  decisionsAuthored  DecisionRecord[] @relation("DecisionAuthor")
-  decisionsApproved  DecisionRecord[] @relation("DecisionApprover")
-  sitrepsAuthored    Sitrep[]
-  imtMeetingsChaired IMTMeeting[]     @relation("IMTMeetingChair")
-  wellbeingChecks    ExerciseWellbeingCheck[]
-  completedRunbookSteps RunbookStepExecution[] @relation("RunbookStepCompletedBy")
+  decisionsAuthored     DecisionRecord[]         @relation("DecisionAuthor")
+  decisionsApproved     DecisionRecord[]         @relation("DecisionApprover")
+  sitrepsAuthored       Sitrep[]
+  imtMeetingsChaired    IMTMeeting[]             @relation("IMTMeetingChair")
+  wellbeingChecks       ExerciseWellbeingCheck[]
+  completedRunbookSteps RunbookStepExecution[]   @relation("RunbookStepCompletedBy")
 
   @@unique([exerciseId, userId])
 }
@@ -1009,8 +1010,8 @@ model OrganizationIBS {
   reviewDueAt        DateTime?
 
   // Departmental ownership — which business unit owns this IBS end-to-end.
-  ownerDepartmentId  String?
-  ownerDepartment    Department? @relation("IBSOwnerDepartment", fields: [ownerDepartmentId], references: [id], onDelete: SetNull)
+  ownerDepartmentId String?
+  ownerDepartment   Department? @relation("IBSOwnerDepartment", fields: [ownerDepartmentId], references: [id], onDelete: SetNull)
 
   // Annual self-attestation chain (FCA SS1/21 expects an annual review
   // signed by 1st-line, 2nd-line, and the executive accountable.)
@@ -1041,7 +1042,7 @@ model OrganizationIBS {
   // Structured resource map — each dependency is a row that can link to a
   // first-class entity (Vendor / TechSystem / Department), carries a
   // criticality, and groups by kind. Replaces the string-arrays above.
-  resources    IBSResource[]
+  resources IBSResource[]
 
   // Importance assessment (six standard dimensions)
   impactCustomerFinancial  ImpactLevel?
@@ -1094,9 +1095,9 @@ enum AttestationStatus {
 }
 
 model IBSAttestation {
-  id     String          @id @default(cuid())
+  id     String            @id @default(cuid())
   ibsId  String
-  ibs    OrganizationIBS @relation(fields: [ibsId], references: [id], onDelete: Cascade)
+  ibs    OrganizationIBS   @relation(fields: [ibsId], references: [id], onDelete: Cascade)
   orgId  String // denormalised for cross-IBS queries
   cycle  String // human label for the attestation cycle e.g. "2025-Q1", "2025-FY"
   line   AttestationLine
@@ -1109,9 +1110,9 @@ model IBSAttestation {
   comment    String?
   createdAt  DateTime  @default(now())
 
+  @@unique([ibsId, cycle, line])
   @@index([ibsId])
   @@index([orgId, status])
-  @@unique([ibsId, cycle, line])
 }
 
 /// Which org-level IBSs an exercise is testing.
@@ -1345,16 +1346,16 @@ model OrgDecisionType {
   org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   /// Short stable code (kebab-case) used in audit logs. Unique per org.
-  code  String
+  code          String
   /// User-facing label shown in the dropdown.
-  label String
+  label         String
   /// Roles whose approval policy expects for this decision. Same shape
   /// as DecisionRecord.approverRolesRequired.
   approverRoles String[]
   /// Optional one-line guidance shown as a tooltip on the option.
-  hint      String?
-  archived  Boolean  @default(false)
-  sortOrder Int      @default(0)
+  hint          String?
+  archived      Boolean  @default(false)
+  sortOrder     Int      @default(0)
 
   decisions DecisionRecord[]
 
@@ -1527,10 +1528,10 @@ model Vendor {
   notes        String?
 
   // ─── DORA / ICT-third-party register ───────────────────────────────
-  isDoraCritical  Boolean    @default(false)
-  doraIctTier     VendorTier? // ICT-third-party tier; may differ from commercial tier
-  hyperscaler     String?     // "AWS", "GCP", "Azure", "OCI", etc. — for 4th-party concentration
-  region          String?     // e.g. "eu-west-2", used to detect regional concentration
+  isDoraCritical Boolean     @default(false)
+  doraIctTier    VendorTier? // ICT-third-party tier; may differ from commercial tier
+  hyperscaler    String? // "AWS", "GCP", "Azure", "OCI", etc. — for 4th-party concentration
+  region         String? // e.g. "eu-west-2", used to detect regional concentration
 
   // ─── Contract ──────────────────────────────────────────────────────
   contractStartAt           DateTime?
@@ -1540,12 +1541,12 @@ model Vendor {
 
   // ─── Assurance ─────────────────────────────────────────────────────
   /// "SOC2_TYPE_2" | "SOC2_TYPE_1" | "ISAE3402" | "ISO27001" | "NONE"
-  assuranceKind   String?
+  assuranceKind     String?
   assuranceExpiryAt DateTime?
 
   // ─── Exit plan ─────────────────────────────────────────────────────
   exitPlanReviewedAt DateTime?
-  exitPlanRTOMin     Int?     // time to exit & switch in minutes
+  exitPlanRTOMin     Int? // time to exit & switch in minutes
   exitPlanNotes      String?
 
   // 4th-party register — JSON array of { name, role, hyperscaler?, region? }
@@ -1556,87 +1557,87 @@ model Vendor {
   //
   // 2 Service-provider primary data
   /// Firm's internal reference for the contractual arrangement (the regulator 2.01)
-  contractRef                  String?
+  contractRef               String?
   /// Legal name of the service provider as stated in the contract (the regulator 2.02).
   /// Distinct from Vendor.name which is the day-to-day label.
-  legalName                    String?
+  legalName                 String?
   /// Legal Entity Identifier — 20 alphanumeric chars (the regulator 2.03)
-  legalEntityIdentifier        String?
+  legalEntityIdentifier     String?
   /// Firm-declared MTP flag. We don't auto-classify materiality; the firm decides.
-  isMaterialThirdParty         Boolean @default(false)
+  isMaterialThirdParty      Boolean          @default(false)
   /// the regulator 2.04: MTP outsourcing or non-outsourcing
-  isOutsourcing                Boolean?
+  isOutsourcing             Boolean?
   /// the regulator 2.05: enumerated type-of-service from the regulator taxonomy
-  serviceTypeTaxonomy          String?
+  serviceTypeTaxonomy       String?
   /// the regulator 2.06: cloud deployment model (Public/Private/Hybrid/Non-cloud)
-  cloudDeployment              CloudDeployment?
+  cloudDeployment           CloudDeployment?
   /// the regulator 2.07: short product/service description
-  productServiceDescription    String?
+  productServiceDescription String?
   /// the regulator 2.08: supply-chain ranking integer (intra-group = 0, direct provider = 1, etc.)
-  supplyChainRanking           Int?
+  supplyChainRanking        Int?
   /// the regulator 2.10: date service started (distinct from 2.09 contract start)
-  serviceCommencedAt           DateTime?
+  serviceCommencedAt        DateTime?
   /// the regulator 2.12: notice period (days) the firm must give the provider on termination
-  noticePeriodVendorDays       Int?
+  noticePeriodVendorDays    Int?
   /// the regulator 2.13: notice period (days) the provider must give the firm
-  noticePeriodFirmDays         Int?
+  noticePeriodFirmDays      Int?
   /// the regulator 2.14: jurisdiction whose laws govern the contract
-  governingLaw                 String?
+  governingLaw              String?
 
   // 3 Materiality + IBS link
   /// the regulator 3.01: enumerated reason the contract is material
-  materialityReason            MaterialityReason?
+  materialityReason           MaterialityReason?
   /// the regulator 3.02: date of most recent materiality assessment
-  materialityAssessedAt        DateTime?
+  materialityAssessedAt       DateTime?
   /// the regulator 3.03: function category from the regulator taxonomy
-  functionCategory             FunctionCategory?
+  functionCategory            FunctionCategory?
   /// the regulator 3.06: whether the vendor supports a *core* element of an IBS
-  supportsCoreIBSElement       Boolean?
+  supportsCoreIBSElement      Boolean?
   /// the regulator 3.07: impact tolerance — PRA Safety & Soundness
-  itPRASafetySoundness         String?
+  itPRASafetySoundness        String?
   /// the regulator 3.08: impact tolerance — PRA Financial Stability
-  itPRAFinancialStability      String?
+  itPRAFinancialStability     String?
   /// the regulator 3.09: impact tolerance — PRA Policyholder Protection
-  itPRAPolicyholderProtection  String?
+  itPRAPolicyholderProtection String?
   /// the regulator 3.10: impact tolerance — FCA Client Harm
-  itFCAClientHarm              String?
+  itFCAClientHarm             String?
   /// the regulator 3.11: impact tolerance — FCA Market Integrity
-  itFCAMarketIntegrity         String?
+  itFCAMarketIntegrity        String?
   /// the regulator 3.12: impact tolerance — Bank as FMI Regulator
-  itBankFMIRegulator           String?
+  itBankFMIRegulator          String?
   /// the regulator 3.13: country where data is stored at rest
-  countryDataStored            String?
+  countryDataStored           String?
   /// the regulator 3.14: country where the service is delivered from
-  countryServiceDeliveredFrom  String?
+  countryServiceDeliveredFrom String?
 
   // 4 Compliance + governance (assessment history lives in VendorAssessment)
   /// the regulator 4.10: does the contract comply with relevant rules (FCA SS21/3, PRA SS2/21, FMI)
-  compliesWithRules            ComplianceStatus?
+  compliesWithRules    ComplianceStatus?
   /// the regulator 4.11: assurance summary when compliesWithRules = NO
-  assuranceSummary             String?
+  assuranceSummary     String?
   /// the regulator 4.12: SMF / accountable person sign-off
-  smfSignedOff                 Boolean?
+  smfSignedOff         Boolean?
   /// the regulator 4.13: governance committee name when SMF sign-off = No
-  governanceCommittee          String?
+  governanceCommittee  String?
   /// the regulator 4.14: date governance approval recorded
-  governanceApprovedAt         DateTime?
+  governanceApprovedAt DateTime?
 
   // 5 Exit + substitutability
   /// the regulator 5.01: firm's ability to substitute the service provider
-  substitutability             Substitutability?
+  substitutability      Substitutability?
   /// the regulator 5.02: ability to reintegrate the service in-house
-  reintegrationAbility         ReintegrationAbility?
+  reintegrationAbility  ReintegrationAbility?
   /// the regulator 5.03: impact on firm if the contract is discontinued
-  impactOfDiscontinuing        ImpactDiscontinuation?
+  impactOfDiscontinuing ImpactDiscontinuation?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ibsLinks                VendorIBSLink[]
-  exerciseParticipations  ExerciseVendorParticipant[]
-  assessments             VendorAssessment[]
-  notifications           VendorMtpNotification[]
-  ibsResources            IBSResource[]                @relation("IBSResourceVendor")
+  ibsLinks               VendorIBSLink[]
+  exerciseParticipations ExerciseVendorParticipant[]
+  assessments            VendorAssessment[]
+  notifications          VendorMtpNotification[]
+  ibsResources           IBSResource[]               @relation("IBSResourceVendor")
 
   @@unique([orgId, name])
   @@index([orgId, isMaterialThirdParty])
@@ -1962,10 +1963,10 @@ enum TechSystemKind {
 }
 
 enum TechSystemTier {
-  CRITICAL  // RTO < 1h, RPO measured in minutes
+  CRITICAL // RTO < 1h, RPO measured in minutes
   ESSENTIAL // RTO < 4h
   IMPORTANT // RTO < 24h
-  ROUTINE   // best effort
+  ROUTINE // best effort
 }
 
 enum TechFailoverKind {
@@ -2018,7 +2019,7 @@ model TechSystem {
 
   notes String?
 
-  drTests DRTest[]
+  drTests      DRTest[]
   ibsResources IBSResource[] @relation("IBSResourceTechSystem")
 
   createdAt DateTime @default(now())
@@ -2061,22 +2062,22 @@ model DRTest {
 /// walkthrough at +180m). Exercise.scenarioId remains the *primary* scenario
 /// for backwards compatibility; this table adds the others.
 model ExerciseScenarioLink {
-  id          String   @id @default(cuid())
-  exerciseId  String
-  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  scenarioId  String
-  scenario    Scenario @relation(fields: [scenarioId], references: [id])
+  id         String   @id @default(cuid())
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  scenarioId String
+  scenario   Scenario @relation(fields: [scenarioId], references: [id])
   /// 0 = primary (mirror of Exercise.scenarioId); 1+ = chained in order
-  sequence    Int
+  sequence   Int
   /// Offset in minutes from exercise D-Day start. 0 = fires concurrently;
   /// > 0 = fires later in the timeline.
-  offsetMin   Int      @default(0)
+  offsetMin  Int      @default(0)
   /// Optional facilitator label shown in the timeline so participants
   /// understand the source ("this inject is from the vendor-loss
   /// scenario, not the cyber one").
-  label       String?
+  label      String?
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([exerciseId, sequence])
   @@index([exerciseId])
@@ -2086,23 +2087,23 @@ model ExerciseScenarioLink {
 /// exercise. Scoped, time-bounded access via signed token URL. Every page
 /// view logged for evidence.
 model ExerciseVendorParticipant {
-  id           String   @id @default(cuid())
-  exerciseId   String
-  exercise     Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  vendorId     String
-  vendor       Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  contactName  String
-  contactEmail String
+  id             String                 @id @default(cuid())
+  exerciseId     String
+  exercise       Exercise               @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  vendorId       String
+  vendor         Vendor                 @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  contactName    String
+  contactEmail   String
   /// One-time-use signed URL token used to access the exercise without
   /// requiring a SnapFix login. Expires at tokenExpiresAt.
-  accessToken    String    @unique
+  accessToken    String                 @unique
   tokenExpiresAt DateTime
   scope          VendorParticipantScope
-  invitedAt      DateTime  @default(now())
+  invitedAt      DateTime               @default(now())
   joinedAt       DateTime?
   leftAt         DateTime?
   /// Number of audited reads — incremented per page view by the vendor.
-  readCount      Int       @default(0)
+  readCount      Int                    @default(0)
 
   @@index([exerciseId])
   @@index([vendorId])
@@ -2112,17 +2113,17 @@ model ExerciseVendorParticipant {
 /// added, hidden, or retimed for this specific exercise. Scenario.injects
 /// remains the canonical template; this layers on overrides.
 model ExerciseInjectOverride {
-  id          String   @id @default(cuid())
-  exerciseId  String
-  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  id              String      @id @default(cuid())
+  exerciseId      String
+  exercise        Exercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   /// Null = brand-new inject custom to this exercise.
   /// Non-null = override of the scenario inject with this id.
-  injectId    String?
-  inject      Inject?  @relation(fields: [injectId], references: [id], onDelete: Cascade)
+  injectId        String?
+  inject          Inject?     @relation(fields: [injectId], references: [id], onDelete: Cascade)
   /// When true, suppress the underlying scenario inject from this exercise's run.
-  hidden      Boolean  @default(false)
+  hidden          Boolean     @default(false)
   /// Override the scenario's scheduledTime (HH:MM on D-Day).
-  scheduledTime String?
+  scheduledTime   String?
   // ── Custom-inject fields (mirror Inject when injectId is null) ────────────
   summary         String?
   description     String?
@@ -2141,19 +2142,19 @@ model ExerciseInjectOverride {
 /// Sign-off captured before a high-cost / high-classification / regulator-mode
 /// exercise can transition from PLANNING to READY. Append-only audit record.
 model ExerciseApproval {
-  id           String   @id @default(cuid())
-  exerciseId   String
-  exercise     Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  approverUserId String
-  approverUser   User   @relation("ExerciseApprover", fields: [approverUserId], references: [id], onDelete: Cascade)
+  id                   String                 @id @default(cuid())
+  exerciseId           String
+  exercise             Exercise               @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  approverUserId       String
+  approverUser         User                   @relation("ExerciseApprover", fields: [approverUserId], references: [id], onDelete: Cascade)
   /// Snapshot of approver's name + role at the time, so later renames
   /// don't rewrite the evidence trail.
   approverNameSnapshot String
   approverRoleSnapshot String?
-  status   ExerciseApprovalStatus @default(PENDING)
-  comment  String?
-  signedAt DateTime?
-  createdAt DateTime @default(now())
+  status               ExerciseApprovalStatus @default(PENDING)
+  comment              String?
+  signedAt             DateTime?
+  createdAt            DateTime               @default(now())
 
   @@index([exerciseId])
 }
@@ -2162,10 +2163,10 @@ model ExerciseApproval {
 /// before the team disperses. Distinct from the formal Retrospective (5 days
 /// later) and the AfterActionReport (publish-grade summary).
 model ExerciseHotWash {
-  id           String   @id @default(cuid())
-  exerciseId   String   @unique
-  exercise     Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  heldAt       DateTime @default(now())
+  id               String   @id @default(cuid())
+  exerciseId       String   @unique
+  exercise         Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  heldAt           DateTime @default(now())
   /// Quick summary written live by the facilitator while the team is still in the room.
   summary          String?
   /// The 1-3 things that hurt most during this run.
@@ -2182,9 +2183,9 @@ model ExerciseHotWash {
 /// Anonymous one-question wellbeing check shown to participants at the end
 /// of an exercise. Aggregates feed a programme-level burnout indicator.
 model ExerciseWellbeingCheck {
-  id            String   @id @default(cuid())
+  id            String               @id @default(cuid())
   exerciseId    String
-  exercise      Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exercise      Exercise             @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   /// Nullable for anonymous submission (default). When non-null, identifies
   /// the participant who chose to attribute their response.
   participantId String?
@@ -2192,7 +2193,7 @@ model ExerciseWellbeingCheck {
   /// 1 = energising; 5 = severely draining.
   stressLevel   Int
   note          String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime             @default(now())
 
   @@index([exerciseId])
 }
@@ -2224,18 +2225,18 @@ model ExerciseClassifiedReader {
 /// the exercise is in regulator-evidence mode; otherwise standard AuditLogEntry
 /// is sufficient.
 model ExerciseAuditHashEntry {
-  id              String   @id @default(cuid())
-  exerciseId      String
-  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
-  sequence        Int
+  id         String   @id @default(cuid())
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  sequence   Int
   /// SHA-256 hex of: prevHash || canonical(payload) || timestamp.
-  hash            String
+  hash       String
   /// SHA-256 hex of the previous entry, or 64 zero-chars for sequence 0.
-  prevHash        String
+  prevHash   String
   /// Canonical JSON payload of the audited event.
-  payload         Json
+  payload    Json
   /// Monotonic timestamp; used in hash input.
-  occurredAt      DateTime @default(now())
+  occurredAt DateTime @default(now())
 
   @@unique([exerciseId, sequence])
   @@index([exerciseId])
@@ -2247,19 +2248,19 @@ model ExerciseAuditHashEntry {
 /// assessment streams (risk / audit / financial DD / cyber DD); the latest
 /// row of each kind populates the register submission.
 model VendorAssessment {
-  id        String   @id @default(cuid())
-  vendorId  String
-  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  kind      AssessmentKind
+  id               String            @id @default(cuid())
+  vendorId         String
+  vendor           Vendor            @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  kind             AssessmentKind
   /// the regulator 4.01 / 4.04 / 4.06 / 4.08 — date of this assessment
-  assessedAt DateTime
+  assessedAt       DateTime
   /// the regulator 4.02 / 4.05 / 4.07 / 4.09 — outcome
-  outcome   AssessmentOutcome
+  outcome          AssessmentOutcome
   /// the regulator 4.03 — commentary (only required when outcome != Satisfactory)
-  commentary String?
+  commentary       String?
   /// User who recorded this assessment, for audit trail
   recordedByUserId String?
-  recordedByUser   User?    @relation("VendorAssessmentRecorder", fields: [recordedByUserId], references: [id], onDelete: SetNull)
+  recordedByUser   User?             @relation("VendorAssessmentRecorder", fields: [recordedByUserId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 
@@ -2270,32 +2271,32 @@ model VendorAssessment {
 /// once SUBMITTED. The XLSX file generated for the submission is uploaded
 /// to Vercel Blob and the URL stored here.
 model VendorMtpNotification {
-  id        String   @id @default(cuid())
-  vendorId  String
-  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
   /// the regulator 1.03 — what kind of event is being notified
-  submissionType MtpSubmissionType
+  submissionType   MtpSubmissionType
   /// the regulator 1.02 — auto-incremented per (firm, vendor) so resubmissions can
   /// be tracked. Computed at create-time.
-  submissionId   Int
+  submissionId     Int
   /// the regulator 1.01 — when the notification was prepared
-  reportingDate  DateTime
+  reportingDate    DateTime
   /// the regulator 1.07 — short narrative of changes when type=CONTRACT_RENEWAL
-  changeNarrative String?
+  changeNarrative  String?
   /// Free-text reason / context the firm captures alongside the XLSX
   notificationNote String?
 
-  status        MtpSubmissionStatus @default(DRAFT)
+  status         MtpSubmissionStatus @default(DRAFT)
   /// When the firm actually files the notification with the regulator.
-  submittedAt   DateTime?
+  submittedAt    DateTime?
   /// Optional regulator acknowledgement reference once they confirm receipt.
   acknowledgedAt DateTime?
-  ackReference  String?
+  ackReference   String?
 
   /// Vercel Blob URL of the generated XLSX in the official template format.
-  xlsxBlobUrl   String?
-  xlsxBlobPath  String?
+  xlsxBlobUrl  String?
+  xlsxBlobPath String?
 
   createdByUserId String?
   createdByUser   User?   @relation("MtpNotificationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
@@ -2303,17 +2304,17 @@ model VendorMtpNotification {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([vendorId, createdAt])
   @@unique([vendorId, submissionId])
+  @@index([vendorId, createdAt])
 }
 
 /// Annual snapshot of every Material Third Party. the regulator expects firms to
 /// file the Annual MTP Register once a year. Snapshots are immutable; later
 /// changes go into next year's snapshot or as notifications.
 model VendorRegisterSnapshot {
-  id            String   @id @default(cuid())
-  orgId         String
-  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   /// the regulator 1.01 — as-of date the snapshot represents
   reportingDate DateTime
@@ -2326,8 +2327,8 @@ model VendorRegisterSnapshot {
   vendorSnapshots Json
 
   /// Vercel Blob URL of the generated XLSX in the official register format.
-  xlsxBlobUrl   String?
-  xlsxBlobPath  String?
+  xlsxBlobUrl  String?
+  xlsxBlobPath String?
 
   createdByUserId String?
   createdByUser   User?   @relation("RegisterSnapshotCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
@@ -2362,28 +2363,28 @@ enum IBSResourceCriticality {
 /// IBSs (so "AWS" linked to a vendor row is matchable with another IBS's
 /// "AWS" string).
 model IBSResource {
-  id          String                  @id @default(cuid())
-  ibsId       String
-  ibs         OrganizationIBS         @relation(fields: [ibsId], references: [id], onDelete: Cascade)
+  id    String          @id @default(cuid())
+  ibsId String
+  ibs   OrganizationIBS @relation(fields: [ibsId], references: [id], onDelete: Cascade)
 
   kind        IBSResourceKind
   label       String
-  criticality IBSResourceCriticality  @default(SUPPORTING)
+  criticality IBSResourceCriticality @default(SUPPORTING)
 
   // Optional entity links. At most one of vendorId / techSystemId /
   // departmentId is set on any given row. When linked, label can be derived
   // from the entity's name.
-  vendorId      String?
-  vendor        Vendor?      @relation("IBSResourceVendor", fields: [vendorId], references: [id], onDelete: SetNull)
-  techSystemId  String?
-  techSystem    TechSystem?  @relation("IBSResourceTechSystem", fields: [techSystemId], references: [id], onDelete: SetNull)
-  departmentId  String?
-  department    Department?  @relation("IBSResourceDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+  vendorId     String?
+  vendor       Vendor?     @relation("IBSResourceVendor", fields: [vendorId], references: [id], onDelete: SetNull)
+  techSystemId String?
+  techSystem   TechSystem? @relation("IBSResourceTechSystem", fields: [techSystemId], references: [id], onDelete: SetNull)
+  departmentId String?
+  department   Department? @relation("IBSResourceDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
 
   /// Optional free-text annotation visible in the editor's expanded view.
-  note      String?
+  note     String?
   /// Ordering within (ibsId, kind) so the UI stays stable across edits.
-  orderIdx  Int      @default(0)
+  orderIdx Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2453,7 +2454,7 @@ model Runbook {
 
   /// Bumps on publishRunbookAction. RunbookExecution (later commit) snapshots
   /// the runbook at this version so historical evidence stays reproducible.
-  version    Int           @default(1)
+  version     Int           @default(1)
   publishedAt DateTime?
   status      RunbookStatus @default(DRAFT)
 
@@ -2464,6 +2465,14 @@ model Runbook {
   clones           Runbook[] @relation("RunbookTemplate")
 
   archivedAt DateTime?
+
+  /// Freshness stamp. Bumped by markRunbookReviewedAction — the pre-flight
+  /// flags a runbook as stale when this is null or older than the org's
+  /// review cadence (default 180d). Independent of publishedAt so a
+  /// runbook can be re-reviewed without forcing a version bump.
+  lastReviewedAt   DateTime?
+  lastReviewedById String?
+  lastReviewedBy   User?     @relation("RunbookReviewer", fields: [lastReviewedById], references: [id], onDelete: SetNull)
 
   steps         RunbookStep[]
   ibsLinks      RunbookIBSLink[]
@@ -2481,16 +2490,16 @@ model Runbook {
 }
 
 model RunbookStep {
-  id         String  @id @default(cuid())
-  runbookId  String
-  runbook    Runbook @relation(fields: [runbookId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  runbookId String
+  runbook   Runbook @relation(fields: [runbookId], references: [id], onDelete: Cascade)
 
   /// Ordering within the runbook. Sparse-integer style — reorders rewrite
   /// the column rather than inserting fractional positions.
   orderIdx Int
 
   title       String
-  description String?         // markdown
+  description String? // markdown
   kind        RunbookStepKind @default(ACTION)
 
   /// Role title that owns this step (e.g. "CTO", "Head of Comms"). Used to
@@ -2603,7 +2612,7 @@ enum RunbookStepExecutionStatus {
 }
 
 model RunbookExecution {
-  id         String @id @default(cuid())
+  id         String   @id @default(cuid())
   incidentId String
   incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
   runbookId  String
@@ -2614,17 +2623,17 @@ model RunbookExecution {
   /// that ran without joining back to the live records.
   runbookJson Json
 
-  status        RunbookExecutionStatus  @default(ACTIVE)
-  activatedBy   RunbookExecutionTrigger @default(AUTO)
+  status            RunbookExecutionStatus  @default(ACTIVE)
+  activatedBy       RunbookExecutionTrigger @default(AUTO)
   activatedByUserId String?
-  activatedByUser   User?   @relation("RunbookExecutionActivator", fields: [activatedByUserId], references: [id], onDelete: SetNull)
+  activatedByUser   User?                   @relation("RunbookExecutionActivator", fields: [activatedByUserId], references: [id], onDelete: SetNull)
 
   /// Snapshot at activation time so future severity changes don't void the
   /// trigger reason. Helps the post-mortem read "activated because…".
   activationReason String?
 
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
   abandonedReason String?
 
   stepExecutions RunbookStepExecution[]
@@ -2645,11 +2654,11 @@ model RunbookStepExecution {
 
   status RunbookStepExecutionStatus @default(PENDING)
 
-  startedAt              DateTime?
-  completedAt            DateTime?
+  startedAt                DateTime?
+  completedAt              DateTime?
   completedByParticipantId String?
   completedByParticipant   ExerciseParticipant? @relation("RunbookStepCompletedBy", fields: [completedByParticipantId], references: [id], onDelete: SetNull)
-  notes                  String?
+  notes                    String?
 
   /// Reverse links to the artefacts produced by this step. Populated in
   /// Commit D — completing a DECISION step writes linkedDecisionId, a
@@ -2678,13 +2687,13 @@ model RunbookStepExecution {
 // as distinct (so a plain nullable userId wouldn't work).
 
 model AchievementUnlock {
-  id            String @id @default(cuid())
-  orgId         String
-  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   /// Set when the achievement is personal. Null for org-wide unlocks.
-  userId        String?
-  user          User?    @relation("AchievementUnlockUser", fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
+  user   User?   @relation("AchievementUnlockUser", fields: [userId], references: [id], onDelete: SetNull)
 
   /// Synthetic key: "org" or "user:{userId}". Lets us index uniquely.
   scope         String
@@ -2695,7 +2704,7 @@ model AchievementUnlock {
   /// the amount so historic XP doesn't shift if weights change.
   xpAwarded     Int
 
-  unlockedAt    DateTime @default(now())
+  unlockedAt DateTime @default(now())
 
   @@unique([orgId, scope, achievementId])
   @@index([orgId, unlockedAt])
