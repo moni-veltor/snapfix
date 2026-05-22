@@ -56,6 +56,63 @@ const DecisionInput = z.object({
   triggeredByInjectId: z.string().optional(),
 });
 
+const ApproveDecisionInput = z.object({
+  exerciseId: z.string(),
+  decisionId: z.string(),
+});
+
+/**
+ * Approve a decision from the role-routed approvals dock. The caller's
+ * role must be one of `approverRolesRequired` on the decision (case-
+ * insensitive title/abbreviation match) and they cannot approve their own
+ * decision. First-approver-wins — the schema models a single approver
+ * stamp, so for joint-approval rows the second matching role's click is
+ * a no-op rather than blocking on the first.
+ */
+export async function approveDecisionAction(formData: FormData) {
+  const ctx = await ctxFor(String(formData.get("exerciseId")));
+  if (!ctx) return;
+  const data = ApproveDecisionInput.parse(Object.fromEntries(formData));
+
+  const decision = await prisma.decisionRecord.findFirst({
+    where: { id: data.decisionId, incident: { exerciseId: ctx.exercise.id } },
+    select: {
+      id: true,
+      approverRolesRequired: true,
+      approvedAt: true,
+      authorUserId: true,
+    },
+  });
+  if (!decision || decision.approvedAt) return;
+  if (decision.authorUserId === ctx.me.id) return; // can't self-approve
+
+  // Role-match check — participant's role title OR seat abbreviation must
+  // appear in approverRolesRequired (case-insensitive).
+  const seat = await prisma.exerciseSeat.findFirst({
+    where: { exerciseId: ctx.exercise.id, holderUserId: ctx.me.id },
+    include: { role: { select: { title: true, abbreviation: true } } },
+  });
+  const myRoleTokens = new Set<string>();
+  if (ctx.participant.roleTitle) myRoleTokens.add(ctx.participant.roleTitle.toLowerCase());
+  if (seat?.role.title) myRoleTokens.add(seat.role.title.toLowerCase());
+  if (seat?.role.abbreviation) myRoleTokens.add(seat.role.abbreviation.toLowerCase());
+  const required = decision.approverRolesRequired.map((r) => r.toLowerCase());
+  const ok = required.some((r) => myRoleTokens.has(r));
+  if (!ok) return;
+
+  await prisma.decisionRecord.update({
+    where: { id: decision.id },
+    data: {
+      approverParticipantId: ctx.participant.id,
+      approverUserId: ctx.me.id,
+      approvedAt: new Date(),
+    },
+  });
+
+  revalidatePath(`/exercises/${ctx.exercise.id}/live`);
+  revalidatePath(`/exercises/${ctx.exercise.id}/facilitator`);
+}
+
 export async function recordDecisionAction(formData: FormData) {
   const ctx = await ctxFor(String(formData.get("exerciseId")));
   if (!ctx) return;

@@ -43,6 +43,8 @@ import LivePoller from "@/components/live/LivePoller";
 import InjectArrivalNotifier from "@/components/live/InjectArrivalNotifier";
 import FirstTimeLiveTour from "@/components/live/FirstTimeLiveTour";
 import SitrepCadenceBanner from "@/components/live/SitrepCadenceBanner";
+import MyApprovalsDock from "@/components/live/MyApprovalsDock";
+import { loadApprovalsQueue } from "@/lib/approvals";
 
 export default async function LiveWorkspacePage({
   params,
@@ -119,6 +121,7 @@ export default async function LiveWorkspacePage({
     myActionItems,
     recentReleases,
     orgDecisionPresets,
+    approvalsQueue,
     recentSitreps,
   ] = await Promise.all([
     loadInbox(exercise.id, { roleTitle: participant.roleTitle, participantId: participant.id }),
@@ -200,6 +203,10 @@ export default async function LiveWorkspacePage({
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       select: { id: true, label: true, hint: true },
     }),
+    // Role-routed approvals queue (decisions + comms drafts awaiting my
+    // role's sign-off). Renders inline in MyApprovalsDock — see
+    // src/lib/approvals.ts for the matching policy.
+    loadApprovalsQueue(exercise.id, me.id),
     // Sitreps filed against any incident in this exercise — drives the
     // cadence banner (regular sitreps per business unit are expected).
     prisma.sitrep.findMany({
@@ -491,6 +498,12 @@ export default async function LiveWorkspacePage({
       </header>
 
       <IncidentBanner exerciseId={exercise.id} incident={incidentForBanner} />
+
+      <MyApprovalsDock
+        exerciseId={exercise.id}
+        decisions={approvalsQueue.decisions}
+        comms={approvalsQueue.comms}
+      />
 
       {tickerEntries.length > 0 && <ActivityTicker entries={tickerEntries} />}
 
