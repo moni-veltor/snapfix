@@ -4,12 +4,15 @@ import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import DORAInsights from "@/components/vendors/DORAInsights";
+import DORAInsightsCollapsible from "@/components/vendors/DORAInsightsCollapsible";
 import VendorGrid from "@/components/vendors/VendorGrid";
 import VendorAddButton from "@/components/vendors/VendorAddButton";
 import VendorDoraExportButton, {
   type DoraExportRow,
 } from "@/components/vendors/VendorDoraExportButton";
 import type { VendorLite } from "@/lib/dora";
+import { deriveVendorState, type VendorState } from "@/lib/vendor-state";
+import { evaluateVendorReadiness } from "@/lib/vendor-mtp-readiness";
 import LibraryBrowserButton from "@/components/library/LibraryBrowserButton";
 import { VENDOR_LIBRARY_CONFIG } from "@/components/library/configs/vendors";
 import { VENDOR_LIBRARY } from "@/lib/vendor-library";
@@ -22,6 +25,7 @@ export default async function VendorsPage() {
       orderBy: [{ tier: "asc" }, { name: "asc" }],
       include: {
         ibsLinks: { include: { ibs: { select: { id: true, code: true, name: true } } } },
+        assessments: { orderBy: [{ kind: "asc" }, { assessedAt: "desc" }] },
         _count: { select: { ibsLinks: true } },
       },
     }),
@@ -32,6 +36,56 @@ export default async function VendorsPage() {
     }),
   ]);
   const canManage = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
+
+  // Per-vendor lifecycle state. MTP readiness is only meaningful for MTPs
+  // and needs the assessments to be loaded — both are cheap here.
+  const stateById = new Map<string, VendorState>();
+  const now = new Date();
+  for (const v of vendors) {
+    const mtpIncomplete = v.isMaterialThirdParty
+      ? !evaluateVendorReadiness(v).isRegisterReady
+      : false;
+    stateById.set(
+      v.id,
+      deriveVendorState(
+        {
+          id: v.id,
+          name: v.name,
+          tier: v.tier,
+          isDoraCritical: v.isDoraCritical,
+          doraIctTier: v.doraIctTier,
+          hyperscaler: v.hyperscaler,
+          region: v.region,
+          contractStartAt: v.contractStartAt,
+          contractEndAt: v.contractEndAt,
+          contractRenewalNoticeDays: v.contractRenewalNoticeDays,
+          contractAnnualValueGBP: v.contractAnnualValueGBP,
+          assuranceKind: v.assuranceKind,
+          assuranceExpiryAt: v.assuranceExpiryAt,
+          exitPlanReviewedAt: v.exitPlanReviewedAt,
+          exitPlanRTOMin: v.exitPlanRTOMin,
+          exitPlanNotes: v.exitPlanNotes,
+          fourthParties: v.fourthParties,
+          ibsLinkCount: v._count.ibsLinks,
+          isMaterialThirdParty: v.isMaterialThirdParty,
+          mtpIncomplete,
+        },
+        now,
+      ),
+    );
+  }
+
+  // Summary numbers for the collapsed DORA insights band header. Pulled
+  // from the lifecycle alerts we just computed so the band counts match
+  // the chips on each card exactly.
+  const hasAlert = (id: string, code: string) =>
+    stateById.get(id)?.alerts.some((a) => a.code === code) ?? false;
+  const insightsSummary = {
+    totalVendors: vendors.length,
+    doraCritical: vendors.filter((v) => v.isDoraCritical).length,
+    assuranceExpired: vendors.filter((v) => hasAlert(v.id, "ASSURANCE_EXPIRED")).length,
+    contractsRenewing: vendors.filter((v) => hasAlert(v.id, "CONTRACT_PAST_NOTICE")).length,
+  };
 
   const doraExportRows: DoraExportRow[] = vendors.map((v) => ({
     id: v.id,
@@ -120,7 +174,9 @@ export default async function VendorsPage() {
         }
       />
 
-      <DORAInsights vendors={vendorsLite} />
+      <DORAInsightsCollapsible summary={insightsSummary}>
+        <DORAInsights vendors={vendorsLite} />
+      </DORAInsightsCollapsible>
 
       {vendors.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line-strong bg-surface-1 p-8 text-center text-sm text-muted">
@@ -147,11 +203,14 @@ export default async function VendorsPage() {
             region: v.region,
             assuranceKind: v.assuranceKind,
             assuranceExpiryAt: v.assuranceExpiryAt,
+            contractEndAt: v.contractEndAt,
+            contractRenewalNoticeDays: v.contractRenewalNoticeDays,
             exitPlanReviewedAt: v.exitPlanReviewedAt,
             ibsLinks: v.ibsLinks.map((l) => ({
               ibsId: l.ibsId,
               ibs: { id: l.ibs.id, code: l.ibs.code, name: l.ibs.name },
             })),
+            state: stateById.get(v.id) ?? { alerts: [], attentionLevel: "OK" },
           }))}
           ibsList={ibsList}
           canManage={canManage}
