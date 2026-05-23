@@ -19,7 +19,56 @@ export type LifecycleAlert =
   | "ASSURANCE_MISSING"
   | "CONTRACT_PAST_NOTICE"
   | "CONTRACT_EXPIRED"
-  | "MTP_INCOMPLETE";
+  | "MTP_INCOMPLETE"
+  | "ASSESSMENT_OVERDUE";
+
+export type AssessmentRow = {
+  kind: "RISK" | "AUDIT" | "FINANCIAL_DD" | "CYBER_DD";
+  assessedAt: Date;
+};
+
+/** Days an MTP assessment can age before we flag it overdue. */
+export const ASSESSMENT_OVERDUE_DAYS = 60;
+const REQUIRED_ASSESSMENT_KINDS: AssessmentRow["kind"][] = [
+  "RISK",
+  "AUDIT",
+  "FINANCIAL_DD",
+  "CYBER_DD",
+];
+
+export type AssessmentGap = {
+  kind: AssessmentRow["kind"];
+  ageDays: number | null; // null = never assessed
+};
+
+/**
+ * Returns the assessment-kinds that are overdue (or never recorded) for
+ * a Material Third Party. Non-MTPs return an empty list — assessments
+ * are only mandatory for MTPs.
+ */
+export function assessmentGaps(
+  vendor: { isMaterialThirdParty?: boolean },
+  assessments: ReadonlyArray<AssessmentRow>,
+  now: Date = new Date(),
+): AssessmentGap[] {
+  if (!vendor.isMaterialThirdParty) return [];
+  const latestByKind = new Map<AssessmentRow["kind"], Date>();
+  for (const a of assessments) {
+    const prev = latestByKind.get(a.kind);
+    if (!prev || a.assessedAt > prev) latestByKind.set(a.kind, a.assessedAt);
+  }
+  const gaps: AssessmentGap[] = [];
+  for (const kind of REQUIRED_ASSESSMENT_KINDS) {
+    const latest = latestByKind.get(kind);
+    if (!latest) {
+      gaps.push({ kind, ageDays: null });
+      continue;
+    }
+    const ageDays = Math.floor((now.getTime() - latest.getTime()) / 86_400_000);
+    if (ageDays > ASSESSMENT_OVERDUE_DAYS) gaps.push({ kind, ageDays });
+  }
+  return gaps;
+}
 
 export type AlertChip = {
   code: LifecycleAlert;
@@ -42,6 +91,7 @@ export type VendorForState = VendorLite & {
 export function deriveVendorState(
   v: VendorForState,
   now: Date = new Date(),
+  assessments: ReadonlyArray<AssessmentRow> = [],
 ): VendorState {
   const alerts: AlertChip[] = [];
 
@@ -88,8 +138,31 @@ export function deriveVendorState(
     });
   }
 
+  const gaps = assessmentGaps(v, assessments, now);
+  if (gaps.length > 0) {
+    const label =
+      gaps.length === 1
+        ? `${KIND_LABEL[gaps[0].kind]} assessment overdue`
+        : `${gaps.length} assessments overdue`;
+    alerts.push({
+      code: "ASSESSMENT_OVERDUE",
+      label,
+      detail: `Required MTP assessments missing or older than ${ASSESSMENT_OVERDUE_DAYS}d: ${gaps
+        .map((g) => `${KIND_LABEL[g.kind]}${g.ageDays == null ? " (never)" : ` (${g.ageDays}d)`}`)
+        .join(", ")}.`,
+    });
+  }
+
   return {
     alerts,
     attentionLevel: alerts.length > 0 ? "ACTION_REQUIRED" : "OK",
   };
 }
+
+const KIND_LABEL: Record<AssessmentRow["kind"], string> = {
+  RISK: "Risk",
+  AUDIT: "Audit",
+  FINANCIAL_DD: "Financial DD",
+  CYBER_DD: "Cyber DD",
+};
+export { KIND_LABEL as ASSESSMENT_KIND_LABEL };

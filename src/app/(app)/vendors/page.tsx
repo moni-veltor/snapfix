@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Boxes, CalendarClock, FileSignature, ShieldCheck } from "lucide-react";
+import { Boxes, CalendarClock, FileSignature, ShieldAlert, ShieldCheck } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
@@ -71,6 +71,7 @@ export default async function VendorsPage() {
           mtpIncomplete,
         },
         now,
+        v.assessments.map((a) => ({ kind: a.kind, assessedAt: a.assessedAt })),
       ),
     );
   }
@@ -146,6 +147,13 @@ export default async function VendorsPage() {
                 existingKeys={vendors.map((v) => v.name)}
                 canAdd={canManage}
               />
+              <Link
+                href="/vendors/risk"
+                className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-900 hover:border-rose-400 hover:bg-rose-100 dark:border-rose-700/60 dark:bg-rose-950/30 dark:text-rose-200 dark:hover:bg-rose-950/50"
+              >
+                <ShieldAlert size={14} strokeWidth={2.2} />
+                At risk
+              </Link>
               <Link
                 href="/vendors/contracts"
                 className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-3 py-2 text-sm font-medium text-ink hover:border-line-strong hover:bg-surface-2"
