@@ -3,6 +3,7 @@ import { ArrowLeft, CalendarClock, Clock, ExternalLink } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
+import ListUrlControls from "@/components/ui/ListUrlControls";
 
 export const metadata = { title: "Vendor contracts — SnapFix" };
 
@@ -58,11 +59,33 @@ const BUCKETS: Bucket[] = [
   },
 ];
 
-export default async function VendorContractsPage() {
+export default async function VendorContractsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; tier?: string }>;
+}) {
   const me = await requireOrgUser();
+  const params = await searchParams;
+  const q = (params.q ?? "").trim().toLowerCase();
+  const rawTier = (params.tier ?? "all") as "all" | "TIER_1" | "TIER_2" | "TIER_3";
+  const tier: typeof rawTier = (["all", "TIER_1", "TIER_2", "TIER_3"] as const).includes(rawTier)
+    ? rawTier
+    : "all";
 
   const vendors = await prisma.vendor.findMany({
-    where: { orgId: me.orgId, contractEndAt: { not: null } },
+    where: {
+      orgId: me.orgId,
+      contractEndAt: { not: null },
+      ...(tier !== "all" ? { tier } : {}),
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" as const } },
+              { serviceKind: { contains: q, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    },
     orderBy: { contractEndAt: "asc" },
     select: {
       id: true,
@@ -77,6 +100,17 @@ export default async function VendorContractsPage() {
       assuranceExpiryAt: true,
     },
   });
+
+  // Tile / chip totals are computed across the whole register, not the
+  // filtered view, so the chip badges keep their meaning.
+  const tierTotals = await prisma.vendor.groupBy({
+    by: ["tier"],
+    where: { orgId: me.orgId, contractEndAt: { not: null } },
+    _count: { _all: true },
+  });
+  const tierCount = (k: string) =>
+    tierTotals.find((t) => t.tier === k)?._count._all ?? 0;
+  const totalCount = tierTotals.reduce((acc, t) => acc + t._count._all, 0);
 
   // Server component — Date.now() is stable per request. Lint rule is
   // conservative; this is the canonical "now" for the rendered page.
@@ -119,6 +153,38 @@ export default async function VendorContractsPage() {
         pitch={`${vendors.length} on a schedule · £${(totalAnnualValue / 1000).toLocaleString("en-GB", { maximumFractionDigits: 0 })}k combined`}
       />
 
+      <ListUrlControls
+        searchPlaceholder="Search by vendor or service…"
+        filters={[
+          {
+            key: "tier",
+            label: "Tier",
+            defaultValue: "all",
+            options: [
+              { value: "all", label: "All tiers", count: totalCount },
+              {
+                value: "TIER_1",
+                label: "Tier 1",
+                count: tierCount("TIER_1"),
+                tone: "bg-rose-600 text-white",
+              },
+              {
+                value: "TIER_2",
+                label: "Tier 2",
+                count: tierCount("TIER_2"),
+                tone: "bg-amber-600 text-white",
+              },
+              {
+                value: "TIER_3",
+                label: "Tier 3",
+                count: tierCount("TIER_3"),
+                tone: "bg-cyan-600 text-white",
+              },
+            ],
+          },
+        ]}
+      />
+
       {vendors.length === 0 ? (
         <div className="rounded-xl border border-dashed border-line bg-surface-1 p-10 text-center text-sm text-muted">
           No vendors have a recorded contract end-date yet. Add dates via the vendor wizard
@@ -159,7 +225,7 @@ export default async function VendorContractsPage() {
                     return (
                       <li key={v.id}>
                         <Link
-                          href="/vendors"
+                          href={`/vendors/${v.id}`}
                           className="flex flex-wrap items-center gap-3 rounded-md border border-line bg-surface-1 p-3 text-sm transition-all hover:-translate-y-px hover:border-line-strong hover:bg-surface-2"
                         >
                           <div className="min-w-0 flex-1">

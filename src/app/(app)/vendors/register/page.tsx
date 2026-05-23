@@ -3,45 +3,83 @@ import { ArrowLeft, CheckCircle2, Download, FileSpreadsheet, ShieldCheck } from 
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
+import Pagination from "@/components/ui/Pagination";
+import ListUrlControls from "@/components/ui/ListUrlControls";
 import { evaluateVendorReadiness } from "@/lib/vendor-mtp-readiness";
 import { generateAnnualRegisterAction } from "@/app/actions/vendor-register";
 
 export const metadata = { title: "MTP register — SnapFix" };
 
-export default async function VendorRegisterPage() {
+const PAGE_SIZE = 25;
+
+type Filter = "all" | "ready" | "notready";
+
+export default async function VendorRegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
+}) {
   const me = await requireOrgUser();
   const canGenerate = me.orgRole === "OWNER" || me.orgRole === "ADMIN";
+  const params = await searchParams;
+  const q = (params.q ?? "").trim();
+  const statusParam = (params.status ?? "all") as Filter;
+  const status: Filter = ["all", "ready", "notready"].includes(statusParam)
+    ? statusParam
+    : "all";
+  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
 
-  const [vendors, snapshots] = await Promise.all([
-    prisma.vendor.findMany({
-      where: { orgId: me.orgId, isMaterialThirdParty: true },
-      orderBy: { name: "asc" },
-      include: { assessments: { orderBy: { assessedAt: "desc" } } },
-    }),
-    prisma.vendorRegisterSnapshot.findMany({
-      where: { orgId: me.orgId },
-      orderBy: { reportingDate: "desc" },
-      take: 10,
-      include: { createdByUser: { select: { name: true, email: true } } },
-    }),
-  ]);
-
-  const rows = vendors.map((v) => {
-    const r = evaluateVendorReadiness(v);
-    return {
-      id: v.id,
-      name: v.name,
-      legalName: v.legalName ?? v.name,
-      contractRef: v.contractRef,
-      serviceType: v.serviceTypeTaxonomy,
-      annualValue: v.contractAnnualValueGBP,
-      country: v.countryServiceDeliveredFrom,
-      passed: r.passed,
-      total: r.total,
-      ready: r.isRegisterReady,
-    };
+  // Snapshots are independent of the MTP filter set.
+  const snapshots = await prisma.vendorRegisterSnapshot.findMany({
+    where: { orgId: me.orgId },
+    orderBy: { reportingDate: "desc" },
+    take: 10,
+    include: { createdByUser: { select: { name: true, email: true } } },
   });
-  const readyCount = rows.filter((r) => r.ready).length;
+
+  // Load every MTP first so we can compute the readiness-driven filter +
+  // accurate counts (the ready/not-ready split lives in code, not in the
+  // database). 100s of vendors is fine; the assessments include is
+  // already what evaluateVendorReadiness needs.
+  const allMtp = await prisma.vendor.findMany({
+    where: {
+      orgId: me.orgId,
+      isMaterialThirdParty: true,
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" } },
+              { legalName: { contains: q, mode: "insensitive" } },
+              { contractRef: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: { name: "asc" },
+    include: { assessments: { orderBy: { assessedAt: "desc" } } },
+  });
+
+  const withReadiness = allMtp.map((v) => {
+    const r = evaluateVendorReadiness(v);
+    return { v, r };
+  });
+
+  const matchedAll = withReadiness.filter(({ r }) => {
+    if (status === "ready") return r.isRegisterReady;
+    if (status === "notready") return !r.isRegisterReady;
+    return true;
+  });
+  const matched = matchedAll.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalMatched = matchedAll.length;
+  const totalPages = Math.max(1, Math.ceil(totalMatched / PAGE_SIZE));
+
+  // For tile counts we want totals across the whole MTP set, not the
+  // current page or search.
+  const totalMtp = await prisma.vendor.count({
+    where: { orgId: me.orgId, isMaterialThirdParty: true },
+  });
+  const readyCount = withReadiness.filter(({ r }) => r.isRegisterReady).length;
+  const notReadyCount = withReadiness.length - readyCount;
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -63,28 +101,22 @@ export default async function VendorRegisterPage() {
         }
       />
 
-      {/* ─── Coverage summary ─────────────────────────────────────────── */}
       <section className="grid gap-3 sm:grid-cols-4">
-        <Tile label="Material Third Parties" value={String(vendors.length)} />
+        <Tile label="Material Third Parties" value={String(totalMtp)} />
         <Tile
           label="Register-ready"
-          value={`${readyCount}/${vendors.length}`}
-          tone={readyCount === vendors.length ? "ok" : readyCount >= vendors.length / 2 ? "warn" : "critical"}
-          sub={vendors.length === 0 ? "no MTPs yet" : `${Math.round((readyCount / vendors.length) * 100)}%`}
+          value={`${readyCount}/${totalMtp}`}
+          tone={readyCount === totalMtp && totalMtp > 0 ? "ok" : readyCount >= totalMtp / 2 ? "warn" : "critical"}
+          sub={totalMtp === 0 ? "no MTPs yet" : `${Math.round((readyCount / totalMtp) * 100)}%`}
         />
         <Tile
           label="Snapshots filed"
           value={String(snapshots.length)}
           sub={snapshots[0]?.reportingDate.toISOString().slice(0, 10) ?? "—"}
         />
-        <Tile
-          label="Next reporting date"
-          value={today}
-          sub="default — change before generating"
-        />
+        <Tile label="Next reporting date" value={today} sub="default — change before generating" />
       </section>
 
-      {/* ─── Generate ─────────────────────────────────────────────────── */}
       {canGenerate && (
         <section className="rounded-xl border border-line bg-surface-1 p-5">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
@@ -107,13 +139,13 @@ export default async function VendorRegisterPage() {
               />
             </label>
             <button
-              disabled={vendors.length === 0}
+              disabled={totalMtp === 0}
               className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-[var(--shadow-card)] hover:-translate-y-px hover:bg-indigo-500 disabled:bg-surface-2 disabled:text-soft disabled:shadow-none disabled:hover:translate-y-0"
             >
               <FileSpreadsheet size={13} />
               Generate snapshot
             </button>
-            {vendors.length === 0 && (
+            {totalMtp === 0 && (
               <p className="w-full text-[11px] text-rose-700 dark:text-rose-300">
                 Mark at least one vendor as Material Third Party first.
               </p>
@@ -122,16 +154,46 @@ export default async function VendorRegisterPage() {
         </section>
       )}
 
-      {/* ─── MTP roll-call ────────────────────────────────────────────── */}
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-ink">Material Third Parties ({vendors.length})</h2>
-        {rows.length === 0 ? (
+        <h2 className="text-sm font-semibold text-ink">Material Third Parties</h2>
+        <ListUrlControls
+          searchPlaceholder="Search by name, legal name, contract ref…"
+          filters={[
+            {
+              key: "status",
+              label: "Readiness",
+              defaultValue: "all",
+              options: [
+                { value: "all", label: "All", count: totalMtp },
+                {
+                  value: "ready",
+                  label: "Ready",
+                  count: readyCount,
+                  tone: "bg-emerald-600 text-white",
+                },
+                {
+                  value: "notready",
+                  label: "Not ready",
+                  count: notReadyCount,
+                  tone: "bg-amber-600 text-white",
+                },
+              ],
+            },
+          ]}
+        />
+
+        {matched.length === 0 ? (
           <p className="rounded-md border border-dashed border-line bg-surface-1 p-4 text-sm text-muted">
-            No vendors flagged as Material Third Party.{" "}
-            <Link href="/vendors" className="font-medium text-indigo-600 underline">
-              Open a vendor
-            </Link>{" "}
-            to flip the switch.
+            No vendors match this view.
+            {totalMtp === 0 && (
+              <>
+                {" "}
+                <Link href="/vendors" className="font-medium text-indigo-600 underline">
+                  Open a vendor
+                </Link>{" "}
+                to flip the MTP switch.
+              </>
+            )}
           </p>
         ) : (
           <div className="overflow-hidden rounded-xl border border-line">
@@ -148,33 +210,35 @@ export default async function VendorRegisterPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-line bg-surface-1">
-                {rows.map((r) => (
-                  <tr key={r.id}>
+                {matched.map(({ v, r }) => (
+                  <tr key={v.id}>
                     <td className="px-3 py-2">
-                      <div className="font-medium text-ink">{r.name}</div>
-                      <div className="text-[10px] text-soft">{r.legalName}</div>
+                      <div className="font-medium text-ink">{v.name}</div>
+                      <div className="text-[10px] text-soft">{v.legalName ?? v.name}</div>
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs">{r.contractRef ?? "—"}</td>
-                    <td className="px-3 py-2 text-xs text-muted">{r.serviceType ?? "—"}</td>
-                    <td className="px-3 py-2 text-xs text-muted">{r.country ?? "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{v.contractRef ?? "—"}</td>
+                    <td className="px-3 py-2 text-xs text-muted">{v.serviceTypeTaxonomy ?? "—"}</td>
+                    <td className="px-3 py-2 text-xs text-muted">{v.countryServiceDeliveredFrom ?? "—"}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs">
-                      {r.annualValue ? `£${r.annualValue.toLocaleString()}` : "—"}
+                      {v.contractAnnualValueGBP
+                        ? `£${v.contractAnnualValueGBP.toLocaleString()}`
+                        : "—"}
                     </td>
                     <td className="px-3 py-2 text-right">
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-                          r.ready
+                          r.isRegisterReady
                             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
                             : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
                         }`}
                       >
-                        {r.ready ? <CheckCircle2 size={9} /> : null}
+                        {r.isRegisterReady ? <CheckCircle2 size={9} /> : null}
                         {r.passed}/{r.total}
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right">
                       <Link
-                        href={`/vendors/${r.id}`}
+                        href={`/vendors/${v.id}`}
                         className="text-[11px] text-indigo-600 hover:underline dark:text-indigo-300"
                       >
                         Open →
@@ -184,11 +248,22 @@ export default async function VendorRegisterPage() {
                 ))}
               </tbody>
             </table>
+            <Pagination
+              basePath="/vendors/register"
+              currentPage={page}
+              totalPages={totalPages}
+              total={totalMatched}
+              pageSize={PAGE_SIZE}
+              itemLabel="vendors"
+              otherParams={{
+                q: q || undefined,
+                status: status !== "all" ? status : undefined,
+              }}
+            />
           </div>
         )}
       </section>
 
-      {/* ─── Past snapshots ──────────────────────────────────────────── */}
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-ink">Past snapshots</h2>
         {snapshots.length === 0 ? (
@@ -207,8 +282,7 @@ export default async function VendorRegisterPage() {
                     {s.reportingDate.toISOString().slice(0, 10)} · submission #{s.submissionId}
                   </p>
                   <p className="text-[10px] text-soft">
-                    Generated{" "}
-                    {s.createdAt.toISOString().slice(0, 16).replace("T", " ")} by{" "}
+                    Generated {s.createdAt.toISOString().slice(0, 16).replace("T", " ")} by{" "}
                     {s.createdByUser?.name ?? s.createdByUser?.email ?? "—"}
                   </p>
                 </div>
