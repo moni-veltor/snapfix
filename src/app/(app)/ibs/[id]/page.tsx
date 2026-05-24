@@ -194,24 +194,12 @@ export default async function IBSDetailPage({
         </div>
       </header>
 
-      <IBSAttestationPanel
-        ibsId={ibs.id}
-        ibsCode={ibs.code}
-        canManage={canManage}
-        attestations={ibs.attestations.map((a) => ({
-          id: a.id,
-          cycle: a.cycle,
-          line: a.line,
-          status: a.status,
-          reviewer: a.reviewer,
-          reviewedAt: a.reviewedAt ? a.reviewedAt.toISOString() : null,
-          comment: a.comment,
-        }))}
-      />
-
       <IBSDetailTabs
         ibsId={ibs.id}
-        counts={{ history: ibs.exerciseLinks.length }}
+        counts={{
+          history: ibs.exerciseLinks.length,
+          governance: ibs.attestations.length,
+        }}
         panels={{
           overview: (
             <div className="space-y-5">
@@ -300,6 +288,20 @@ export default async function IBSDetailPage({
           ),
           governance: (
             <div className="space-y-5">
+              <IBSAttestationPanel
+                ibsId={ibs.id}
+                ibsCode={ibs.code}
+                canManage={canManage}
+                attestations={ibs.attestations.map((a) => ({
+                  id: a.id,
+                  cycle: a.cycle,
+                  line: a.line,
+                  status: a.status,
+                  reviewer: a.reviewer,
+                  reviewedAt: a.reviewedAt ? a.reviewedAt.toISOString() : null,
+                  comment: a.comment,
+                }))}
+              />
               <Card title="Governance & ownership">
                 <KV k="Process type" v={ibs.processType ?? "—"} />
                 <KV k="Process owner" v={ibs.processOwner ?? "—"} />

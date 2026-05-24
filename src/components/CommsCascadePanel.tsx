@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Eye, X } from "lucide-react";
+import Drawer from "@/components/ui/Drawer";
 import {
   approveCommsAction,
   rejectCommsAction,
@@ -97,6 +99,7 @@ function DraftRow({ exerciseId, draft }: { exerciseId: string; draft: Draft }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const send = () =>
     start(async () => {
@@ -128,6 +131,15 @@ function DraftRow({ exerciseId, draft }: { exerciseId: string; draft: Draft }) {
           {error && <p className="mt-1 text-[11px] text-rose-700">{error}</p>}
         </div>
         <div className="flex flex-col gap-1">
+          <button
+            type="button"
+            onClick={() => setDetailOpen(true)}
+            className="inline-flex items-center gap-1 rounded border border-line px-2 py-0.5 text-[11px] text-ink hover:bg-surface-2"
+            aria-label="Open comms detail"
+          >
+            <Eye size={11} />
+            View
+          </button>
           {draft.status === "DRAFT" && (
             <form action={submitCommsForApprovalAction}>
               <input type="hidden" name="exerciseId" value={exerciseId} />
@@ -188,6 +200,69 @@ function DraftRow({ exerciseId, draft }: { exerciseId: string; draft: Draft }) {
           </button>
         </form>
       )}
+
+      <Drawer
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        title={draft.subject}
+        subtitle={`${draft.audience}${draft.stakeholder ? ` · ${STAKEHOLDER_LABEL[draft.stakeholder] ?? draft.stakeholder}` : ""}`}
+        width="md"
+      >
+        <div className="space-y-4 p-4 text-sm">
+          <section className="rounded-md border border-line bg-surface-2/40 p-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">Body</p>
+            <p className="mt-1 whitespace-pre-wrap text-ink">{draft.body}</p>
+          </section>
+
+          <section className="space-y-1.5 text-[12px]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+              Status timeline
+            </p>
+            <ul className="space-y-1 rounded-md border border-line bg-surface-1 p-3 text-soft">
+              <li className="flex items-center justify-between">
+                <span>Drafted by {draft.author}</span>
+                <span className="font-mono text-[10px]">
+                  {draft.createdAt.toISOString().slice(0, 16).replace("T", " ")}
+                </span>
+              </li>
+              {draft.approvedAt && (
+                <li className="flex items-center justify-between">
+                  <span>
+                    Approved{draft.approver ? ` by ${draft.approver}` : ""}
+                  </span>
+                  <span className="font-mono text-[10px]">
+                    {draft.approvedAt.toISOString().slice(0, 16).replace("T", " ")}
+                  </span>
+                </li>
+              )}
+              {draft.rejectionReason && (
+                <li className="text-rose-700 dark:text-rose-300">
+                  Rejected{draft.approver ? ` by ${draft.approver}` : ""}: {draft.rejectionReason}
+                </li>
+              )}
+              {draft.sentAt && (
+                <li className="flex items-center justify-between">
+                  <span>Sent</span>
+                  <span className="font-mono text-[10px]">
+                    {draft.sentAt.toISOString().slice(0, 16).replace("T", " ")}
+                  </span>
+                </li>
+              )}
+            </ul>
+          </section>
+
+          <footer className="flex justify-end border-t border-line pt-3">
+            <button
+              type="button"
+              onClick={() => setDetailOpen(false)}
+              className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-1 px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-2"
+            >
+              <X size={13} />
+              Close
+            </button>
+          </footer>
+        </div>
+      </Drawer>
     </li>
   );
 }

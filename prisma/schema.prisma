@@ -1387,16 +1387,21 @@ model OrgDecisionType {
   org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   /// Short stable code (kebab-case) used in audit logs. Unique per org.
-  code          String
+  code                String
   /// User-facing label shown in the dropdown.
-  label         String
+  label               String
   /// Roles whose approval policy expects for this decision. Same shape
   /// as DecisionRecord.approverRolesRequired.
-  approverRoles String[]
+  approverRoles       String[]
   /// Optional one-line guidance shown as a tooltip on the option.
-  hint          String?
-  archived      Boolean  @default(false)
-  sortOrder     Int      @default(0)
+  hint                String?
+  /// 4-eyes / dual-control flag. When true, the decision is surfaced
+  /// with a "requires 2 approvers" chip and the approvals dock expects
+  /// two independent approver-role clicks before stamping approvedAt
+  /// (enforcement lands in a follow-up commit; the flag wires the UX).
+  requiresDualControl Boolean  @default(false)
+  archived            Boolean  @default(false)
+  sortOrder           Int      @default(0)
 
   decisions DecisionRecord[]
 

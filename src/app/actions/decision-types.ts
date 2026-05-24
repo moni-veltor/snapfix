@@ -14,6 +14,7 @@ const CreateInput = z.object({
   label: z.string().min(1).max(120),
   hint: z.string().max(200).optional(),
   approverRolesCsv: z.string().max(200).optional(),
+  requiresDualControl: z.string().optional(),
 });
 
 export async function createOrgDecisionTypeAction(formData: FormData) {
@@ -25,6 +26,7 @@ export async function createOrgDecisionTypeAction(formData: FormData) {
       ?.split(",")
       .map((s) => s.trim())
       .filter(Boolean) ?? [];
+  const requiresDualControl = data.requiresDualControl === "on";
 
   const existing = await prisma.orgDecisionType.findUnique({
     where: { orgId_code: { orgId: me.orgId, code: data.code } },
@@ -45,6 +47,7 @@ export async function createOrgDecisionTypeAction(formData: FormData) {
       label: data.label,
       hint: data.hint ?? null,
       approverRoles,
+      requiresDualControl,
       sortOrder: (maxSort._max.sortOrder ?? 0) + 10,
     },
   });
@@ -57,6 +60,7 @@ const UpdateInput = z.object({
   label: z.string().min(1).max(120),
   hint: z.string().max(200).optional(),
   approverRolesCsv: z.string().max(200).optional(),
+  requiresDualControl: z.string().optional(),
 });
 
 export async function updateOrgDecisionTypeAction(formData: FormData) {
@@ -68,6 +72,7 @@ export async function updateOrgDecisionTypeAction(formData: FormData) {
       ?.split(",")
       .map((s) => s.trim())
       .filter(Boolean) ?? [];
+  const requiresDualControl = data.requiresDualControl === "on";
 
   await prisma.orgDecisionType.updateMany({
     where: { id: data.id, orgId: me.orgId },
@@ -75,6 +80,7 @@ export async function updateOrgDecisionTypeAction(formData: FormData) {
       label: data.label,
       hint: data.hint ?? null,
       approverRoles,
+      requiresDualControl,
     },
   });
 
