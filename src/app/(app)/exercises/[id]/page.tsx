@@ -206,6 +206,7 @@ export default async function ExerciseOverviewPage({
             briefingSentAt: exercise.briefingSentAt,
             briefingSkippedReason: exercise.briefingSkippedReason,
             ibsIds: exercise.ibsLinks.map((l) => l.ibsId),
+            scenarioId: exercise.scenario.id,
             scenarioTitle: exercise.scenario.title,
             totalInjects: injects.length,
             visibleInjects,

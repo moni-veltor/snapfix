@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   AlertOctagon,
   CalendarClock,
   CheckCircle2,
-  ChevronDown,
-  ChevronRight,
   Crown,
   Edit3,
   Globe,
@@ -50,8 +49,6 @@ type Participant = {
   deputyParticipantId: string | null;
 };
 
-type Stage = "BASICS" | "SCENARIOS" | "TEAM" | "INJECTS" | "PREFLIGHT";
-
 type Readiness = {
   checks: {
     id: string;
@@ -59,7 +56,7 @@ type Readiness = {
     why: string;
     ok: boolean;
     required: boolean;
-    stage: Stage;
+    stage: StageKey;
     fixHref?: string;
   }[];
   canGoReady: boolean;
@@ -84,6 +81,7 @@ type ExerciseSnapshot = {
   briefingSentAt: Date | null;
   briefingSkippedReason: string | null;
   ibsIds: string[];
+  scenarioId: string;
   scenarioTitle: string;
   totalInjects: number;
   visibleInjects: number;
@@ -102,6 +100,16 @@ type Props = {
 const TZ_PRESETS = ["Europe/London", "Europe/Dublin", "Europe/Paris", "America/New_York", "Asia/Singapore"];
 const DURATION_PRESETS = [60, 90, 120, 180, 240, 480];
 
+type StageKey = "BASICS" | "SCENARIOS" | "TEAM" | "INJECTS" | "PREFLIGHT";
+
+const STAGES: { key: StageKey; label: string; hint: string; step: number }[] = [
+  { key: "BASICS", label: "Basics", hint: "Date, duration, jurisdiction", step: 1 },
+  { key: "SCENARIOS", label: "Scenarios", hint: "IBSs + objectives", step: 2 },
+  { key: "TEAM", label: "Team", hint: "Facilitator + roster", step: 3 },
+  { key: "INJECTS", label: "Injects", hint: "Timeline + coverage", step: 4 },
+  { key: "PREFLIGHT", label: "Pre-flight", hint: "Briefing + sign-off", step: 5 },
+];
+
 export default function PlanningWorkspace({
   exercise,
   readiness,
@@ -117,6 +125,54 @@ export default function PlanningWorkspace({
   const failedRequired = readiness.checks.filter((c) => !c.ok && (c.required || readiness.strict));
   const tone =
     readiness.canGoReady ? "bg-emerald-500" : pct >= 60 ? "bg-amber-500" : "bg-rose-500";
+
+  // ─── Tab state ──────────────────────────────────────────────────────
+  // URL is the source of truth (?stage=BASICS|…). The first render with no
+  // ?stage param picks a smart default and pushes it into the URL via the
+  // hydration effect below. localStorage seeds the default on return visits.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const STORAGE_KEY = `planning:${exercise.id}:stage`;
+  const urlStage = searchParams.get("stage");
+
+  const smartDefault = useMemo<StageKey>(() => {
+    for (const s of STAGES) {
+      const stageChecks = readiness.checks.filter((c) => c.stage === s.key);
+      if (stageChecks.some((c) => !c.ok && (c.required || readiness.strict))) {
+        return s.key;
+      }
+    }
+    return "PREFLIGHT";
+  }, [readiness]);
+
+  const active: StageKey =
+    urlStage && isStageKey(urlStage) ? (urlStage as StageKey) : smartDefault;
+
+  // One-shot mount hydration: if URL has no ?stage, prefer localStorage's
+  // last-used tab, else the smart default. Runs once; subsequent changes
+  // come from setActive (user click) and flow through router.replace.
+  useEffect(() => {
+    if (urlStage && isStageKey(urlStage)) return;
+    let seed: StageKey = smartDefault;
+    if (typeof window !== "undefined") {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (stored && isStageKey(stored)) seed = stored as StageKey;
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("stage", seed);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const setActive = (next: StageKey) => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, next);
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("stage", next);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <div className="space-y-5">
@@ -169,7 +225,13 @@ export default function PlanningWorkspace({
               {failedRequired.map((c) => (
                 <li key={c.id} className="flex items-center gap-1.5">
                   <AlertOctagon size={10} />
-                  {c.label}
+                  <button
+                    type="button"
+                    onClick={() => setActive(c.stage)}
+                    className="text-left underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+                  >
+                    {c.label}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -177,45 +239,58 @@ export default function PlanningWorkspace({
         )}
       </section>
 
-      {/* ─── Stage breakdown (Basics / Scenarios / Team / Injects / Pre-flight) ─ */}
-      <StageBreakdown exerciseId={exercise.id} readiness={readiness} />
-
-      {/* ─── Schedule ─────────────────────────────────────────────────── */}
-      <ScheduleCard exercise={exercise} canEdit={canEdit} />
-
-      {/* ─── Roster ──────────────────────────────────────────────────── */}
-      <RosterCard
-        exercise={exercise}
-        participants={participants}
-        orgUsers={orgUsers}
-        orgRoles={orgRoles}
-        canEdit={canEdit}
+      {/* ─── Tab list (the 5 planning stages) ─────────────────────────── */}
+      <PlanningTabs
+        readiness={readiness}
+        active={active}
+        onChange={setActive}
       />
 
-      {/* ─── Coverage (IBSs + objectives + injects summary) ──────────── */}
-      <CoverageCard
-        exercise={exercise}
-        orgIBSs={orgIBSs}
-        canEdit={canEdit}
-      />
+      {/* ─── Active stage panel ───────────────────────────────────────── */}
+      <div
+        role="tabpanel"
+        id={`stage-panel-${active.toLowerCase()}`}
+        aria-labelledby={`stage-tab-${active.toLowerCase()}`}
+        className="space-y-4"
+      >
+        {active === "BASICS" && <ScheduleCard exercise={exercise} canEdit={canEdit} />}
+        {active === "SCENARIOS" && (
+          <ScenariosPanel exercise={exercise} orgIBSs={orgIBSs} canEdit={canEdit} />
+        )}
+        {active === "TEAM" && (
+          <RosterCard
+            exercise={exercise}
+            participants={participants}
+            orgUsers={orgUsers}
+            orgRoles={orgRoles}
+            canEdit={canEdit}
+          />
+        )}
+        {active === "INJECTS" && <InjectsPanel exercise={exercise} canEdit={canEdit} />}
+        {active === "PREFLIGHT" && <BriefingCard exercise={exercise} canEdit={canEdit} />}
 
-      {/* ─── Briefing ────────────────────────────────────────────────── */}
-      <BriefingCard exercise={exercise} canEdit={canEdit} />
-
-      {/* ─── Power-user link to the full wizard ─────────────────────── */}
-      {canEdit && exercise.status === "PLANNING" && (
-        <p className="text-center text-[11px] text-soft">
-          Prefer the guided 5-step wizard?{" "}
-          <Link
-            href={`/exercises/new?step=3&id=${exercise.id}`}
-            className="font-medium text-indigo-600 hover:underline dark:text-indigo-300"
-          >
-            Open it →
-          </Link>
-        </p>
-      )}
+        {canEdit && exercise.status === "PLANNING" && (
+          <p className="text-center text-[11px] text-soft">
+            Prefer the guided 5-step wizard for this stage?{" "}
+            <Link
+              href={`/exercises/new?step=${stageStep(active)}&id=${exercise.id}`}
+              className="font-medium text-indigo-600 hover:underline dark:text-indigo-300"
+            >
+              Open in wizard →
+            </Link>
+          </p>
+        )}
+      </div>
     </div>
   );
+}
+
+function isStageKey(s: string): s is StageKey {
+  return s === "BASICS" || s === "SCENARIOS" || s === "TEAM" || s === "INJECTS" || s === "PREFLIGHT";
+}
+
+function stageStep(s: StageKey): number {
+  return STAGES.find((x) => x.key === s)?.step ?? 1;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -223,21 +298,21 @@ export default function PlanningWorkspace({
 // ────────────────────────────────────────────────────────────────────────────
 
 // ────────────────────────────────────────────────────────────────────────────
-// Stage breakdown — mirrors the 5 wizard steps so the admin can see what's
-// missing PER STAGE without having to scroll through every card below.
+// Planning tabs — the 5 wizard stages turned into a click-to-show tab list.
+// Each tab is one stage; the active stage's panel renders below.
 // ────────────────────────────────────────────────────────────────────────────
 
-const STAGES: { key: Stage; label: string; hint: string; step: number }[] = [
-  { key: "BASICS", label: "Basics", hint: "Date, duration, jurisdiction", step: 1 },
-  { key: "SCENARIOS", label: "Scenarios", hint: "Scenario chain, IBSs, objectives", step: 2 },
-  { key: "TEAM", label: "Team", hint: "Facilitator + roster", step: 3 },
-  { key: "INJECTS", label: "Injects", hint: "Timeline + coverage", step: 4 },
-  { key: "PREFLIGHT", label: "Pre-flight", hint: "Briefing + sign-off", step: 5 },
-];
-
-function StageBreakdown({ exerciseId, readiness }: { exerciseId: string; readiness: Readiness }) {
+function PlanningTabs({
+  readiness,
+  active,
+  onChange,
+}: {
+  readiness: Readiness;
+  active: StageKey;
+  onChange: (s: StageKey) => void;
+}) {
   const byStage = useMemo(() => {
-    const map = new Map<Stage, Readiness["checks"]>();
+    const map = new Map<StageKey, Readiness["checks"]>();
     for (const s of STAGES) map.set(s.key, []);
     for (const c of readiness.checks) {
       const list = map.get(c.stage);
@@ -246,83 +321,109 @@ function StageBreakdown({ exerciseId, readiness }: { exerciseId: string; readine
     return map;
   }, [readiness.checks]);
 
+  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const onKeyDown = (e: React.KeyboardEvent, idx: number) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
+    e.preventDefault();
+    let next = idx;
+    if (e.key === "ArrowLeft") next = (idx - 1 + STAGES.length) % STAGES.length;
+    if (e.key === "ArrowRight") next = (idx + 1) % STAGES.length;
+    if (e.key === "Home") next = 0;
+    if (e.key === "End") next = STAGES.length - 1;
+    const nextKey = STAGES[next].key;
+    onChange(nextKey);
+    refs.current[nextKey]?.focus();
+  };
+
   return (
-    <section className="rounded-xl border border-line bg-surface-1 p-4">
-      <header className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-ink">Planning stages</h3>
-        <p className="text-[11px] text-soft">
-          Each tile = one wizard step. Click &quot;Open&quot; to jump straight to it.
-        </p>
-      </header>
-      <ol className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
-        {STAGES.map((s) => {
-          const list = byStage.get(s.key) ?? [];
-          const passed = list.filter((c) => c.ok).length;
-          const total = list.length;
-          const failedRequired = list.filter((c) => !c.ok && (c.required || readiness.strict));
-          const allPass = total > 0 && passed === total;
-          const hasBlocker = failedRequired.length > 0;
-          const pct = total === 0 ? 100 : Math.round((passed / total) * 100);
-          const tone = allPass
-            ? "border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30"
-            : hasBlocker
-              ? "border-rose-300 bg-rose-50 dark:border-rose-800/60 dark:bg-rose-950/30"
-              : "border-amber-300 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30";
-          const fillTone = allPass ? "bg-emerald-500" : hasBlocker ? "bg-rose-500" : "bg-amber-500";
-          return (
-            <li
-              key={s.key}
-              className={`rounded-lg border p-3 transition-shadow ${tone}`}
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink">
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/60 font-mono text-[9px] text-ink dark:bg-black/30">
-                    {s.step}
-                  </span>
-                  {s.label}
-                </p>
-                {allPass ? (
-                  <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-300" />
-                ) : hasBlocker ? (
-                  <AlertOctagon size={12} className="text-rose-600 dark:text-rose-300" />
-                ) : (
-                  <AlertOctagon size={12} className="text-amber-600 dark:text-amber-300" />
-                )}
-              </div>
-              <p className="mt-0.5 text-[10px] text-soft">{s.hint}</p>
-              <div className="mt-2 flex items-center gap-1.5 text-[10px]">
-                <span className="font-mono font-semibold text-ink">
-                  {passed}/{total || 0}
+    <div
+      role="tablist"
+      aria-label="Planning stages"
+      className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5"
+    >
+      {STAGES.map((s, idx) => {
+        const list = byStage.get(s.key) ?? [];
+        const passed = list.filter((c) => c.ok).length;
+        const total = list.length;
+        const failedRequired = list.filter((c) => !c.ok && (c.required || readiness.strict));
+        const allPass = total > 0 && passed === total;
+        const hasBlocker = failedRequired.length > 0;
+        const pct = total === 0 ? 100 : Math.round((passed / total) * 100);
+        const isActive = active === s.key;
+        const tone = allPass
+          ? "border-emerald-400 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30"
+          : hasBlocker
+            ? "border-rose-300 bg-rose-50 dark:border-rose-800/60 dark:bg-rose-950/30"
+            : "border-amber-300 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30";
+        const fillTone = allPass ? "bg-emerald-500" : hasBlocker ? "bg-rose-500" : "bg-amber-500";
+        return (
+          <button
+            key={s.key}
+            ref={(el) => {
+              refs.current[s.key] = el;
+            }}
+            id={`stage-tab-${s.key.toLowerCase()}`}
+            role="tab"
+            type="button"
+            aria-selected={isActive}
+            aria-controls={`stage-panel-${s.key.toLowerCase()}`}
+            tabIndex={isActive ? 0 : -1}
+            onClick={() => onChange(s.key)}
+            onKeyDown={(e) => onKeyDown(e, idx)}
+            className={`rounded-lg border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${tone} ${
+              isActive
+                ? "shadow-[var(--shadow-card-md)] ring-2 ring-indigo-500"
+                : "opacity-80 hover:opacity-100 hover:shadow-[var(--shadow-card)]"
+            }`}
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-ink">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/60 font-mono text-[9px] text-ink dark:bg-black/30">
+                  {s.step}
                 </span>
-                <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/50 dark:bg-black/20">
-                  <div className={`h-full ${fillTone}`} style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-              {failedRequired.length > 0 && (
-                <ul className="mt-1.5 space-y-0.5 text-[10px] text-rose-800 dark:text-rose-200">
-                  {failedRequired.slice(0, 3).map((c) => (
-                    <li key={c.id} className="truncate">
-                      · {c.label}
-                    </li>
-                  ))}
-                  {failedRequired.length > 3 && (
-                    <li className="italic text-rose-700/80 dark:text-rose-300/80">
-                      + {failedRequired.length - 3} more
-                    </li>
-                  )}
-                </ul>
+                {s.label}
+              </p>
+              {allPass ? (
+                <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-300" />
+              ) : (
+                <AlertOctagon
+                  size={12}
+                  className={
+                    hasBlocker
+                      ? "text-rose-600 dark:text-rose-300"
+                      : "text-amber-600 dark:text-amber-300"
+                  }
+                />
               )}
-              <Link
-                href={`/exercises/new?step=${s.step}&id=${exerciseId}`}
-                className="mt-2 inline-flex items-center gap-1 text-[10px] text-indigo-600 hover:underline dark:text-indigo-300"
-              >
-                Open stage →
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
+            </div>
+            <p className="mt-0.5 text-[10px] text-soft">{s.hint}</p>
+            <div className="mt-2 flex items-center gap-1.5 text-[10px]">
+              <span className="font-mono font-semibold text-ink">
+                {passed}/{total || 0}
+              </span>
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/50 dark:bg-black/20">
+                <div className={`h-full ${fillTone}`} style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+            {failedRequired.length > 0 && (
+              <ul className="mt-1.5 space-y-0.5 text-[10px] text-rose-800 dark:text-rose-200">
+                {failedRequired.slice(0, 2).map((c) => (
+                  <li key={c.id} className="truncate">
+                    · {c.label}
+                  </li>
+                ))}
+                {failedRequired.length > 2 && (
+                  <li className="italic text-rose-700/80 dark:text-rose-300/80">
+                    + {failedRequired.length - 2} more
+                  </li>
+                )}
+              </ul>
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -696,10 +797,10 @@ function SmfQuickAdd({
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Coverage card (IBSs + objectives + injects summary)
+// Scenarios panel — objectives + IBSs. (Injects moved to their own tab.)
 // ────────────────────────────────────────────────────────────────────────────
 
-function CoverageCard({
+function ScenariosPanel({
   exercise,
   orgIBSs,
   canEdit,
@@ -710,9 +811,13 @@ function CoverageCard({
 }) {
   const ok = exercise.ibsIds.length > 0 && exercise.objectives.length > 0;
   return (
-    <Card icon={Target} title="Coverage" ok={ok}>
+    <Card
+      icon={Target}
+      title="Scenarios — objectives + IBSs"
+      ok={ok}
+      subtitle={`${exercise.objectives.length} objective${exercise.objectives.length === 1 ? "" : "s"} · ${exercise.ibsIds.length} IBS${exercise.ibsIds.length === 1 ? "" : "s"} linked · scenario: ${exercise.scenarioTitle}`}
+    >
       <div className="space-y-4">
-        {/* Objectives */}
         <form action={setExerciseObjectivesAction}>
           <input type="hidden" name="exerciseId" value={exercise.id} />
           <label className="block text-sm">
@@ -726,7 +831,8 @@ function CoverageCard({
               maxLength={2000}
               disabled={!canEdit}
               defaultValue={exercise.objectives.join("\n")}
-              placeholder={"e.g.\n- Test 4h FCA notification path under cyber pressure\n- Validate CRO + CEO joint BCP-activation decision"} aria-label={"e.g.\n- Test 4h FCA notification path under cyber pressure\n- Validate CRO + CEO joint BCP-activation decision"}
+              placeholder={"e.g.\n- Test 4h FCA notification path under cyber pressure\n- Validate dual-approval continuity-activation decision"}
+              aria-label="Objectives, one per line"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
             />
           </label>
@@ -739,27 +845,54 @@ function CoverageCard({
           )}
         </form>
 
-        {/* IBS multi-select */}
         <IbsMultiSelect exercise={exercise} orgIBSs={orgIBSs} canEdit={canEdit} />
+      </div>
+    </Card>
+  );
+}
 
-        {/* Injects summary + link to wizard */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-surface-0 p-2 text-xs">
-          <div>
-            <p className="flex items-center gap-1.5 font-medium text-ink">
-              <Layers size={11} />
-              {exercise.visibleInjects} injects scheduled
-            </p>
-            <p className="text-[10px] text-soft">Scenario: {exercise.scenarioTitle}</p>
-          </div>
+// ────────────────────────────────────────────────────────────────────────────
+// Injects panel — scheduled count, scenario context, deep-link to timeline.
+// ────────────────────────────────────────────────────────────────────────────
+
+function InjectsPanel({
+  exercise,
+  canEdit,
+}: {
+  exercise: ExerciseSnapshot;
+  canEdit: boolean;
+}) {
+  const ok = exercise.visibleInjects > 0;
+  return (
+    <Card
+      icon={Layers}
+      title="Injects"
+      ok={ok}
+      subtitle={`${exercise.visibleInjects} of ${exercise.totalInjects} inject${exercise.totalInjects === 1 ? "" : "s"} visible · scenario: ${exercise.scenarioTitle}`}
+    >
+      <div className="space-y-3 text-sm">
+        <p className="text-muted">
+          Injects are the events and stimuli that drop into the war-room during the run. They live
+          in the scenario; the inject editor lets you reorder, hide, or address them for this
+          exercise.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
           {canEdit && (
             <Link
               href={`/exercises/new?step=4&id=${exercise.id}`}
-              className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-1 px-2 py-1 text-[11px] text-ink hover:border-line-strong"
+              className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
             >
-              <Edit3 size={11} />
+              <Edit3 size={12} />
               Open inject timeline
             </Link>
           )}
+          <Link
+            href={`/scenarios/${exercise.scenarioId}`}
+            className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-0 px-2 py-1 text-[11px] text-ink hover:border-line-strong"
+          >
+            <Edit3 size={11} />
+            Edit the source scenario
+          </Link>
         </div>
       </div>
     </Card>
@@ -920,30 +1053,21 @@ function Card({
   subtitle?: string;
   children: React.ReactNode;
 }) {
-  const [expanded, setExpanded] = useState(!ok);
   return (
     <section className="rounded-xl border border-line bg-surface-1">
-      <button
-        type="button"
-        onClick={() => setExpanded((x) => !x)}
-        className="flex w-full items-center justify-between gap-3 p-4 text-left"
-        aria-expanded={expanded}
-      >
-        <div className="flex items-center gap-2">
-          {ok ? (
-            <CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-300" />
-          ) : (
-            <AlertOctagon size={16} className="shrink-0 text-amber-600 dark:text-amber-300" />
-          )}
-          <Icon size={14} className="text-soft" />
-          <div>
-            <p className="text-sm font-semibold text-ink">{title}</p>
-            {subtitle && <p className="text-[11px] text-soft">{subtitle}</p>}
-          </div>
+      <header className="flex items-center gap-2 p-4">
+        {ok ? (
+          <CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-300" />
+        ) : (
+          <AlertOctagon size={16} className="shrink-0 text-amber-600 dark:text-amber-300" />
+        )}
+        <Icon size={14} className="text-soft" />
+        <div>
+          <p className="text-sm font-semibold text-ink">{title}</p>
+          {subtitle && <p className="text-[11px] text-soft">{subtitle}</p>}
         </div>
-        {expanded ? <ChevronDown size={14} className="text-soft" /> : <ChevronRight size={14} className="text-soft" />}
-      </button>
-      {expanded && <div className="border-t border-line p-4">{children}</div>}
+      </header>
+      <div className="border-t border-line p-4">{children}</div>
     </section>
   );
 }
