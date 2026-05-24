@@ -32,6 +32,17 @@ Small change but useful only after a critical mass of cross-sector library entri
 * **`/templates` content stale.** The 14 DB-backed CMORG templates date from the project's early phase. They're still good but could be refreshed with more recent incident patterns.
 * **Vendor library: 4th-parties.** `Vendor.fourthParties` is present on the model but the library entries don't populate it. Worth adding for hyperscalers (AWS → Equinix DCs, etc.) and SWIFT (→ correspondents).
 
+## Recently shipped
+
+* **Audit-log URL-driven pagination + CSV export** — `/audit` is now ADMIN-only with debounced search, action / actor / date-range filters, and `/api/audit/export` streaming up to 50k rows.
+* **Sitrep auto-escalation** — INFO → DUE → ESCALATED → CRITICAL tiers driven by `deriveSitrepCadence`, surfaced on the participant Status tab and the facilitator overview.
+* **Live tolerance burn-down** — per-IBS progress bar (OK → AT_RISK → BREACHED) on the live workspace, recomputed every poll tick.
+* **Settings split + IBS attestation tab + comms detail drawer** — bundled settings split into focused tabs; IBS attestation history surfaced as a dedicated tab; communications now have a per-row drawer with full body + read-receipt grid (paginated).
+* **Vendor admin redesign** — drawer-based wizards, lifecycle alert chips, MTP register page, `/vendors/risk` dashboard, next-actions panel.
+* **Runbook redesign** — pre-flight engine, drill flow, escalation chain resolver, library tier filter, execution snapshots.
+* **Participant-view redesign** — tabbed live workspace, capture drawers, facilitator announcements, approvals dock.
+* **Dark-mode + a11y sweep** — every screen audited; semantic tokens enforced; StatusBadge component lands so colour-only status pills are gone.
+
 ## Features deferred to v2
 
 | Item | Status |
@@ -41,7 +52,7 @@ Small change but useful only after a critical mass of cross-sector library entri
 | AAR PDF / DOCX export | Today the report is in-app only. |
 | File artefact uploads (Vercel Blob) | Schema + storage wired; UI deferred. |
 | Fine-grained per-team participant permissions | Today: role-based gating only. |
-| Audit-log CSV export | Manual via Prisma Studio today. |
+| Hard-enforced dual-control approvals | `OrgDecisionType.requiresDualControl` ships as a soft chip; blocking single-approver completion is the follow-up. |
 | Sentry / Datadog instrumentation | Pre-customer; deferred. See [Monitoring](operations/monitoring.md). |
 | Customer-facing status page | Not yet needed. |
 

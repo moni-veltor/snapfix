@@ -31,16 +31,16 @@ Rules:
 * Buttons inside `actions` order: tertiary links first, primary button last (right-most).
 * Two- and three-button hero is fine; four feels crowded — overflow into a menu.
 
-## Pattern 2 — Modal-opening Add button
+## Pattern 2 — Drawer-launching Add button
 
-The canonical "+ Add X" entry point. Lives in the page hero's `actions` slot, opens a wizard inside a `Modal`. Auto-opens when `?new=1` is in the URL (so global Compose menu can deep-link).
+The canonical "+ Add X" entry point. Lives in the page hero's `actions` slot, opens a wizard inside a right-edge `Drawer`. Auto-opens when `?new=1` is in the URL (so the global Compose menu can deep-link).
 
 ```tsx
 "use client";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
-import Modal from "@/components/ui/Modal";
+import Drawer from "@/components/ui/Drawer";
 import VendorAddWizard from "./VendorAddWizard";
 
 export default function VendorAddButton() {
@@ -57,17 +57,18 @@ export default function VendorAddButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-4 py-2
-          text-sm font-medium text-white shadow-[var(--shadow-card)] transition-all
-          hover:-translate-y-px hover:bg-slate-700 hover:shadow-[var(--shadow-card-md)]
-          dark:bg-indigo-500 dark:hover:bg-indigo-400"
+        className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2
+          text-sm font-medium text-on-accent shadow-[var(--shadow-card)] transition-all
+          hover:-translate-y-px hover:shadow-[var(--shadow-card-md)]
+          focus-visible:ring-2 focus-visible:ring-brand"
+        aria-label="Add a vendor"
       >
         <Plus size={14} strokeWidth={2.4} />
         Add vendor
       </button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Add a vendor" size="lg">
+      <Drawer open={open} onClose={() => setOpen(false)} title="Add a vendor" size="lg">
         <VendorAddWizard onDone={() => setOpen(false)} />
-      </Modal>
+      </Drawer>
     </>
   );
 }
@@ -75,9 +76,9 @@ export default function VendorAddButton() {
 
 Five canonical instances exist: `ScenarioAddButton`, `ExerciseAddButton`, `IBSAddButton`, `VendorAddButton`, `SystemAddButton`. Plus `OrgInviteButton` and `OrgBulkImportButton` follow the same shape.
 
-## Pattern 3 — Modal wizard
+## Pattern 3 — Drawer wizard
 
-Multi-step wizard inside a `Modal`. All fields render in the DOM (visually hidden for inactive steps) so a single form submission carries every value.
+Multi-step wizard inside a `Drawer`. All fields render in the DOM (visually hidden for inactive steps) so a single form submission carries every value.
 
 ```tsx
 "use client";
@@ -261,3 +262,79 @@ const BUCKETS = [
 ```
 
 The tone gradient (rose → amber → cyan → emerald) is consistent across every bucketed view.
+
+## Pattern 9 — Tabbed detail page
+
+Long detail surfaces split into 3–5 tabs to avoid long-scroll. Used on `/ibs/[id]`, `/vendors/[id]`, `/runbooks/[id]`, `/exercises/[id]/debrief`, `/settings`.
+
+```tsx
+<TabsRoot defaultValue={initial} value={active} onValueChange={setActive}>
+  <TabsList aria-label="Vendor sections">
+    <TabsTrigger value="basics">Basics</TabsTrigger>
+    <TabsTrigger value="mtp">MTP register</TabsTrigger>
+    <TabsTrigger value="assessments">Assessments</TabsTrigger>
+    <TabsTrigger value="notifications">Notifications</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basics"><VendorBasicsTab /></TabsContent>
+  {/* ... */}
+</TabsRoot>
+```
+
+Initial-state precedence:
+1. `?tab=<key>` from the URL (so deep-links from next-action panels land on the right tab)
+2. `localStorage` (sticky across visits)
+3. component default
+
+`useSearchParams` re-syncs the active tab when the URL changes — clicking a suggestion that links to `?tab=mtp` while on `?tab=basics` jumps the tab without a full reload.
+
+## Pattern 10 — StatusBadge with icon
+
+Status pills never communicate state by colour alone. Use `<StatusBadge>` instead of hand-rolling chips.
+
+```tsx
+<StatusBadge tone="warning" icon="alert">3 overdue</StatusBadge>
+<StatusBadge tone="ok" icon="check">Ready</StatusBadge>
+<StatusBadge tone="critical" icon="flame">Tolerance breached</StatusBadge>
+```
+
+Tones: `ok | info | warning | critical | neutral`. Icons are paired so the meaning survives colour-blindness or monochrome printing of the audit log CSV.
+
+## Pattern 11 — ListUrlControls + Pagination
+
+Register pages share a URL-driven control bar: search, filter chips, sort, page. The server reads the same params, so deep-links, refreshes, and history-back all preserve state.
+
+```tsx
+<ListUrlControls
+  searchKey="q"
+  filterKey="filter"
+  filters={[
+    { value: "", label: "All" },
+    { value: "action-required", label: "Action required" },
+    { value: "mtp", label: "MTP only" },
+  ]}
+/>
+{/* list */}
+<Pagination
+  currentPage={page}
+  totalPages={totalPages}
+  pageSize={25}
+  totalItems={total}
+/>
+```
+
+Used on `/vendors`, `/vendors/notifications`, `/vendors/register`, `/runbooks`, `/audit`, `/action-items`.
+
+## Pattern 12 — Approvals dock
+
+A sticky dock on the live workspace that surfaces `ApprovalRequest` rows pending the current viewer's sign-off. Acts as both a queue (browse all pending) and a CTA (approve / reject inline).
+
+```tsx
+<ApprovalsDock
+  pending={pendingForMe}
+  onApprove={(id) => approveAction({ id })}
+  onReject={(id, reason) => rejectAction({ id, reason })}
+/>
+```
+
+The header chip mirrors the dock's count so an IMT chair away from the dock still sees pressure. Dual-control requests render a "requires 2 approvers" sub-line; once your sign-off is recorded the row stays in the dock for the next approver but flips to a different visual state.
+

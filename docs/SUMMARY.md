@@ -1,8 +1,19 @@
 # Table of contents
 
-* [SnapFix engineering docs](README.md)
+* [SnapFix docs](README.md)
 
-## Getting started
+## User guide
+
+* [Getting started as an admin](user-guide/getting-started.md)
+* [Your organisation](user-guide/your-organisation.md)
+* [The vendor register](user-guide/vendors.md)
+* [Runbooks](user-guide/runbooks.md)
+* [Designing exercises](user-guide/exercises-design.md)
+* [During the run — live workspace](user-guide/exercises-live.md)
+* [After the run — debrief](user-guide/exercises-debrief.md)
+* [Audit log & compliance](user-guide/audit-and-compliance.md)
+
+## Getting started (engineering)
 
 * [Local setup](getting-started/local-setup.md)
 * [Seeded accounts](getting-started/seeded-accounts.md)
@@ -13,6 +24,9 @@
 * [App Router layout](architecture/app-router-layout.md)
 * [Server actions](architecture/server-actions.md)
 * [Auth & permissions](architecture/auth-and-permissions.md)
+* [Live workspace](architecture/live-workspace.md)
+* [Runbooks subsystem](architecture/runbooks.md)
+* [Vendor-state engine](architecture/vendor-state-engine.md)
 
 ## Domain model
 
@@ -29,6 +43,7 @@
 * [Scenario library](libraries/scenarios.md)
 * [IBS library](libraries/ibs.md)
 * [Vendor library](libraries/vendors.md)
+* [Runbook library](libraries/runbooks.md)
 * [Tech-system library](libraries/tech-systems.md)
 * [Sector taxonomy](libraries/sector-taxonomy.md)
 

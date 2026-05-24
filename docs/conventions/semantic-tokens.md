@@ -14,7 +14,7 @@ Defined in `src/app/globals.css` under `@theme inline` + `@custom-variant dark`:
 | `bg-surface-0` | Base background |
 | `bg-surface-1` | Card / panel surface |
 | `bg-surface-2` | Inset / pressed surface |
-| `bg-surface-elev` | Elevated surface (modals, popovers) |
+| `bg-surface-elev` | Elevated surface (modals, drawers, popovers) |
 | `bg-accent-soft` | Accent-tinted background for highlighted regions |
 | `border-line` | Default borders |
 | `border-line-strong` | Stronger borders (inputs, focused state) |
@@ -37,27 +37,29 @@ When you *must* differentiate, use the `dark:` modifier on a semantic token:
 
 But this is rare. Most things "just work" if you use the tokens.
 
+The full dark-mode sweep audited every screen for contrast and `text-slate-*` leaks — any new code that ships dark-broken text is a regression of that work.
+
 ## What not to do
 
 ```tsx
-// ❌ Raw slate utility
+// Bad — raw slate utility
 <p className="text-slate-700">...</p>
 
-// ❌ Hard-coded hex
+// Bad — hard-coded hex
 <div style={{ background: "#1f2937" }}>...</div>
 
-// ❌ Dark-mode duplication for things that have a token
+// Bad — dark-mode duplication for things that have a token
 <div className="bg-white dark:bg-slate-900">...</div>
 ```
 
 ```tsx
-// ✅ Semantic token
+// Good — semantic token
 <p className="text-ink">...</p>
 
-// ✅ Surface token (handles both modes)
+// Good — surface token (handles both modes)
 <div className="bg-surface-1">...</div>
 
-// ✅ Dark-mode modifier only when semantic doesn't suffice
+// Good — dark-mode modifier only when semantic doesn't suffice
 <div className="text-ink dark:text-slate-200">...</div>
 ```
 
@@ -66,7 +68,6 @@ But this is rare. Most things "just work" if you use the tokens.
 Categorical tones are *fine* to use raw — they're stable across mode shifts:
 
 ```tsx
-// Tier chips, sector chips, etc.
 "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200"
 "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
 "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
@@ -74,16 +75,19 @@ Categorical tones are *fine* to use raw — they're stable across mode shifts:
 
 These live in lookup objects like `SECTOR_TONE` and `CATEGORY_TONE`. Don't reach for them on text or chrome — only badges / chips.
 
+For status states (ok / warning / critical), prefer `<StatusBadge tone="warning">` over a hand-rolled chip — it pairs the colour with an icon so the meaning isn't colour-only. See [Forms, actions & toasts](forms-and-actions.md#statusbadge).
+
 ## Why we bother
 
 Semantic tokens are one of three durable UX gates established for the project:
 
-1. Semantic tokens (no hard slate text)
-2. Tabbed / panelled views preferred over long scroll
-3. Interactive over informational
+1. **Semantic tokens** — no hard slate text, no colour-only status
+2. **Tabbed / panelled views** — preferred over long scroll on detail surfaces
+3. **Interactive over informational** — every dashboard row deep-links to a fix surface
 
 If a PR breaks #1, request a fix before merging.
 
 ## See also
 
 * [Code style](code-style.md)
+* [Forms, actions & toasts](forms-and-actions.md) — `<StatusBadge>` + the wider primitive set
