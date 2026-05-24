@@ -64,7 +64,7 @@ export default function MemberProfileEditButton({
               <input
                 name="name"
                 defaultValue={user.name ?? ""}
-                placeholder="Jane Doe"
+                placeholder="Jane Doe" aria-label="Jane Doe"
                 className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
               />
             </label>
@@ -81,7 +81,7 @@ export default function MemberProfileEditButton({
               <input
                 name="jobTitle"
                 defaultValue={user.jobTitle ?? ""}
-                placeholder="Group CRO · Head of Tech Ops"
+                placeholder="Group CRO · Head of Tech Ops" aria-label="Group CRO · Head of Tech Ops"
                 className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
               />
             </label>
@@ -90,7 +90,7 @@ export default function MemberProfileEditButton({
               <input
                 name="location"
                 defaultValue={user.location ?? ""}
-                placeholder="London HQ · Manchester ops · Remote (Edinburgh)"
+                placeholder="London HQ · Manchester ops · Remote (Edinburgh)" aria-label="London HQ · Manchester ops · Remote (Edinburgh)"
                 className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
               />
             </label>
@@ -107,7 +107,7 @@ export default function MemberProfileEditButton({
                   name="phone"
                   type="tel"
                   defaultValue={user.phone ?? ""}
-                  placeholder="+44 20 7946 0958"
+                  placeholder="+44 20 7946 0958" aria-label="+44 20 7946 0958"
                   className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2 text-sm"
                 />
               </label>
@@ -117,7 +117,7 @@ export default function MemberProfileEditButton({
                   name="outOfHoursPhone"
                   type="tel"
                   defaultValue={user.outOfHoursPhone ?? ""}
-                  placeholder="+44 7700 900000"
+                  placeholder="+44 7700 900000" aria-label="+44 7700 900000"
                   className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2 text-sm"
                 />
                 <span className="mt-1 block text-[10px] text-soft">
@@ -130,7 +130,7 @@ export default function MemberProfileEditButton({
                   name="altEmail"
                   type="email"
                   defaultValue={user.altEmail ?? ""}
-                  placeholder="personal@gmail.com"
+                  placeholder="personal@gmail.com" aria-label="personal@gmail.com"
                   className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2 text-sm"
                 />
               </label>
@@ -143,7 +143,7 @@ export default function MemberProfileEditButton({
               name="bio"
               rows={3}
               defaultValue={user.bio ?? ""}
-              placeholder="IMT Gold-Commander qualified · MBCI · Chartered Risk Practitioner · CISSP"
+              placeholder="IMT Gold-Commander qualified · MBCI · Chartered Risk Practitioner · CISSP" aria-label="IMT Gold-Commander qualified · MBCI · Chartered Risk Practitioner · CISSP"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
             />
             <span className="mt-1 block text-[10px] text-soft">

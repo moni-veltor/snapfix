@@ -445,7 +445,7 @@ function RoleForm({
             required
             maxLength={40}
             defaultValue={role?.abbreviation ?? ""}
-            placeholder="CTO"
+            placeholder="CTO" aria-label="CTO"
             className="mt-1 w-full rounded-md border border-line bg-surface-0 px-2 py-1.5 font-mono text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
           />
         </div>
@@ -458,7 +458,7 @@ function RoleForm({
             required
             maxLength={120}
             defaultValue={role?.title ?? ""}
-            placeholder="Chief Technology Officer"
+            placeholder="Chief Technology Officer" aria-label="Chief Technology Officer"
             className="mt-1 w-full rounded-md border border-line bg-surface-0 px-2 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
           />
         </div>
@@ -472,7 +472,7 @@ function RoleForm({
           name="responsibility"
           maxLength={500}
           defaultValue={role?.responsibility ?? ""}
-          placeholder="Authorises infrastructure decisions; liaises with critical vendors."
+          placeholder="Authorises infrastructure decisions; liaises with critical vendors." aria-label="Authorises infrastructure decisions; liaises with critical vendors."
           className="mt-1 w-full rounded-md border border-line bg-surface-0 px-2 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
         />
       </div>

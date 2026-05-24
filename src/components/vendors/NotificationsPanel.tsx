@@ -142,7 +142,7 @@ export default function NotificationsPanel({
               <textarea
                 name="changeNarrative"
                 rows={3}
-                placeholder="Short description of the changes made to the renewed contract"
+                placeholder="Short description of the changes made to the renewed contract" aria-label="Short description of the changes made to the renewed contract"
                 className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
               />
             </label>
@@ -152,7 +152,7 @@ export default function NotificationsPanel({
             <textarea
               name="notificationNote"
               rows={2}
-              placeholder="Why you're filing this notification + any context for future audit"
+              placeholder="Why you're filing this notification + any context for future audit" aria-label="Why you're filing this notification + any context for future audit"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
             />
           </label>
@@ -229,7 +229,7 @@ export default function NotificationsPanel({
                     <input
                       type="text"
                       name="ackReference"
-                      placeholder="Ack ref"
+                      placeholder="Ack ref" aria-label="Ack ref"
                       maxLength={120}
                       className="w-24 rounded border border-line-strong bg-surface-1 px-1.5 py-0.5 text-[10px]"
                     />

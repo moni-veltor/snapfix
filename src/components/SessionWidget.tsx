@@ -7,7 +7,7 @@ export default function SessionWidget({ session }: { session: Session | null }) 
     return (
       <Link
         href="/sign-in"
-        className="rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700"
+        className="rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
       >
         Sign in
       </Link>

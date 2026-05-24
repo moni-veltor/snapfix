@@ -206,7 +206,7 @@ function AttestationRow({ att }: { att: Att }) {
             <textarea
               name="comment"
               rows={2}
-              placeholder="Anything the next reviewer needs to know — caveats, follow-ups, evidence references."
+              placeholder="Anything the next reviewer needs to know — caveats, follow-ups, evidence references." aria-label="Anything the next reviewer needs to know — caveats, follow-ups, evidence references."
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2 text-xs"
             />
           </label>

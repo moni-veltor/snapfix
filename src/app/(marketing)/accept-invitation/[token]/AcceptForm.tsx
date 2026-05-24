@@ -30,7 +30,7 @@ export default function AcceptForm({ token, mode, email }: Props) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700 disabled:opacity-50"
+        className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
       >
         {pending ? "Accepting…" : mode === "new-account" ? "Create account and join" : "Accept invitation"}
       </button>

@@ -42,7 +42,7 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
             <span className="rounded-full bg-surface-2 px-1.5 py-0.5">{item.kind}</span>
             <span
               className={`rounded-full px-1.5 py-0.5 ${
-                item.addressing === "TO" ? "bg-slate-900 text-white" : "bg-surface-2 text-ink"
+                item.addressing === "TO" ? "bg-slate-900 text-white dark:bg-indigo-600" : "bg-surface-2 text-ink"
               }`}
             >
               {item.addressing}
@@ -109,7 +109,7 @@ export default function LiveInboxItem({ exerciseId, item, existingResponse }: Pr
               <button
                 type="button"
                 onClick={() => setShowResponse((s) => !s)}
-                className="rounded-md bg-slate-900 px-3 py-1 text-xs text-white hover:bg-slate-700"
+                className="rounded-md bg-slate-900 px-3 py-1 text-xs text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
               >
                 {existingResponse ? "Edit response" : showResponse ? "Hide response" : "Respond"}
               </button>

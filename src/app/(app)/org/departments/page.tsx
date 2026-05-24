@@ -118,7 +118,7 @@ export default async function DepartmentsPage() {
               name="name"
               required
               maxLength={120}
-              placeholder="Retail Banking Technology"
+              placeholder="Retail Banking Technology" aria-label="Retail Banking Technology"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
             />
           </label>
@@ -127,7 +127,7 @@ export default async function DepartmentsPage() {
             <input
               name="abbreviation"
               maxLength={20}
-              placeholder="RBT"
+              placeholder="RBT" aria-label="RBT"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
             />
           </label>
@@ -166,7 +166,7 @@ export default async function DepartmentsPage() {
             <input
               name="description"
               maxLength={500}
-              placeholder="What this department does in one line"
+              placeholder="What this department does in one line" aria-label="What this department does in one line"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
             />
           </label>

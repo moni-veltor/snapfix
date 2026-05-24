@@ -63,7 +63,7 @@ export default function SitrepDrawer({
               name="businessUnit"
               required
               defaultValue={defaultBusinessUnit ?? ""}
-              placeholder="e.g. Core Banking, Payments, KYC Ops"
+              placeholder="e.g. Core Banking, Payments, KYC Ops" aria-label="e.g. Core Banking, Payments, KYC Ops"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
             />
           </label>
@@ -103,7 +103,7 @@ export default function SitrepDrawer({
               name="summary"
               required
               rows={3}
-              placeholder="Two-line state-of-the-world for the IMT. What's the situation right now."
+              placeholder="Two-line state-of-the-world for the IMT. What's the situation right now." aria-label="Two-line state-of-the-world for the IMT. What's the situation right now."
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
             />
           </label>
@@ -115,7 +115,7 @@ export default function SitrepDrawer({
             <textarea
               name="issues"
               rows={2}
-              placeholder="Anything that's broken or at risk."
+              placeholder="Anything that's broken or at risk." aria-label="Anything that's broken or at risk."
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
             />
           </label>
@@ -127,7 +127,7 @@ export default function SitrepDrawer({
             <textarea
               name="asks"
               rows={2}
-              placeholder="What you need from the IMT (decisions, resources, escalations)."
+              placeholder="What you need from the IMT (decisions, resources, escalations)." aria-label="What you need from the IMT (decisions, resources, escalations)."
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
             />
           </label>
@@ -140,7 +140,7 @@ export default function SitrepDrawer({
               name="nextUpdateDDayTime"
               type="text"
               pattern="\d{1,2}:\d{2}"
-              placeholder="e.g. 10:30"
+              placeholder="e.g. 10:30" aria-label="e.g. 10:30"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
             />
             <p className="mt-1 text-[10px] text-soft">

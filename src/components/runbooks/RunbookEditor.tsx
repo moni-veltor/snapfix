@@ -302,7 +302,7 @@ function MetadataPanel({ runbook }: { runbook: RunbookEditorProps["runbook"] }) 
             <input
               name="ownerRoleTitle"
               defaultValue={runbook.ownerRoleTitle ?? ""}
-              placeholder="e.g. CISO, CRO"
+              placeholder="e.g. CISO, CRO" aria-label="e.g. CISO, CRO"
               className="w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm text-ink focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </FormRow>
@@ -610,7 +610,7 @@ function StepEditForm({
           <input
             name="ownerRoleTitle"
             defaultValue={step.ownerRoleTitle ?? ""}
-            placeholder="e.g. CTO, Head of Comms"
+            placeholder="e.g. CTO, Head of Comms" aria-label="e.g. CTO, Head of Comms"
             className="w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2 text-sm text-ink focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </FormRow>
@@ -631,7 +631,7 @@ function StepEditForm({
           defaultValue={step.description ?? ""}
           rows={3}
           className="w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2 text-sm text-ink focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          placeholder="What does this step do? Markdown is supported."
+          placeholder="What does this step do? Markdown is supported." aria-label="What does this step do? Markdown is supported."
         />
       </FormRow>
 
@@ -639,7 +639,7 @@ function StepEditForm({
         <input
           name="successCriteria"
           defaultValue={step.successCriteria ?? ""}
-          placeholder='"How do we know this step is done?"'
+          placeholder='"How do we know this step is done?"' aria-label='"How do we know this step is done?"'
           className="w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2 text-sm text-ink focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
       </FormRow>

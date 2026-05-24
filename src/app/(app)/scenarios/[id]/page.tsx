@@ -502,13 +502,13 @@ export default async function ScenarioDetailPage({
                   <input
                     name="code"
                     required
-                    placeholder="IBS_06"
+                    placeholder="IBS_06" aria-label="IBS_06"
                     className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
                   />
                   <input
                     name="name"
                     required
-                    placeholder="Name"
+                    placeholder="Name" aria-label="Name"
                     className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
                   />
                   <input
@@ -516,7 +516,7 @@ export default async function ScenarioDetailPage({
                     type="number"
                     min={0}
                     required
-                    placeholder="Impact tolerance (min)"
+                    placeholder="Impact tolerance (min)" aria-label="Impact tolerance (min)"
                     className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
                   />
                   <select
@@ -532,12 +532,12 @@ export default async function ScenarioDetailPage({
                   </select>
                   <input
                     name="impactMetrics"
-                    placeholder="Impact metrics (optional)"
+                    placeholder="Impact metrics (optional)" aria-label="Impact metrics (optional)"
                     className="col-span-2 rounded-md border border-line bg-surface-0 px-2 py-1.5"
                   />
                   <textarea
                     name="description"
-                    placeholder="Description (optional)"
+                    placeholder="Description (optional)" aria-label="Description (optional)"
                     rows={2}
                     className="col-span-2 rounded-md border border-line bg-surface-0 px-2 py-1.5"
                   />

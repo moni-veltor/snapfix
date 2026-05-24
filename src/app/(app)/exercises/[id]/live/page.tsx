@@ -805,13 +805,13 @@ export default async function LiveWorkspacePage({
 function statusBadge(status: string): string {
   switch (status) {
     case "IN_PROGRESS":
-      return "bg-emerald-100 text-emerald-800";
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200";
     case "PAUSED":
-      return "bg-amber-100 text-amber-800";
+      return "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200";
     case "COMPLETED":
       return "bg-surface-2 text-ink";
     case "READY":
-      return "bg-indigo-100 text-indigo-800";
+      return "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200";
     default:
       return "bg-surface-2 text-ink";
   }

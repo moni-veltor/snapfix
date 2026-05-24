@@ -382,7 +382,7 @@ export default function StepTeam({
               name="csv"
               required
               rows={6}
-              placeholder="email,roleTitle,teamName&#10;jane.smith@example.com,CRO,Incident Management&#10;tom.jones@example.com,CTO,Tech Recovery"
+              placeholder="email,roleTitle,teamName&#10;jane.smith@example.com,CRO,Incident Management&#10;tom.jones@example.com,CTO,Tech Recovery" aria-label="email,roleTitle,teamName&#10;jane.smith@example.com,CRO,Incident Management&#10;tom.jones@example.com,CTO,Tech Recovery"
               className="w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2 font-mono text-xs"
             />
             <div className="flex justify-end gap-2">

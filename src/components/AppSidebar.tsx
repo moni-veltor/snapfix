@@ -144,7 +144,7 @@ export default function AppSidebar({
       {/* Mobile drawer backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-sm md:hidden dark:bg-slate-950/60"
           onClick={() => setMobileOpen(false)}
           aria-hidden
         />

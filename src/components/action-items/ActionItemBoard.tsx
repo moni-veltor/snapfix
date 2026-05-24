@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { updateActionItemStatusAction } from "@/app/actions/action-items";
 import MineToggle, { useMineToggle } from "@/components/ui/MineToggle";
+import StatusBadge, { type StatusKind } from "@/components/ui/StatusBadge";
 
 type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 type Status = "OPEN" | "IN_PROGRESS" | "BLOCKED" | "DONE" | "WONT_FIX";
@@ -58,14 +59,6 @@ const PRIORITY_TONE: Record<string, { chip: string; bar: string }> = {
     chip: "bg-surface-2 text-muted",
     bar: "bg-line-strong",
   },
-};
-
-const STATUS_TONE: Record<string, string> = {
-  OPEN: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
-  IN_PROGRESS: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-200",
-  BLOCKED: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200",
-  DONE: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200",
-  WONT_FIX: "bg-surface-2 text-muted",
 };
 
 export default function ActionItemBoard({
@@ -247,11 +240,7 @@ function ActionCard({ item, overdue }: { item: ActionItemRow; overdue: boolean }
       <div className="flex flex-col gap-2 p-3 text-sm">
         <div className="flex items-start justify-between gap-2">
           <h3 className="line-clamp-2 font-medium text-ink">{item.title}</h3>
-          <span
-            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${STATUS_TONE[item.status] ?? STATUS_TONE.OPEN}`}
-          >
-            {item.status.replace("_", " ")}
-          </span>
+          <StatusBadge status={item.status as StatusKind} size="xs" className="shrink-0" />
         </div>
 
         {item.description && (

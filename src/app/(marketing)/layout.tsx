@@ -83,7 +83,7 @@ export default async function MarketingLayout({
                   name="newsletter"
                   type="email"
                   required
-                  placeholder="you@firm.com"
+                  placeholder="you@firm.com" aria-label="you@firm.com"
                   className="flex-1 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none"
                 />
                 <button className="rounded-md bg-indigo-500 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-400">

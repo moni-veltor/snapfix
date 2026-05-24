@@ -240,7 +240,7 @@ export default function PostIncidentReportForm({
                     id={`pir-${section.name}`}
                     name={section.name}
                     rows={6}
-                    placeholder={section.placeholder}
+                    placeholder={section.placeholder} aria-label={section.placeholder}
                     value={content}
                     onChange={(e) =>
                       setValues((v) => ({ ...v, [section.name]: e.target.value }))

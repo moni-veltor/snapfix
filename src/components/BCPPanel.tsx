@@ -51,7 +51,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
           <input type="hidden" name="activationId" value={activation.id} />
           <input
             name="notes"
-            placeholder="Standdown notes"
+            placeholder="Standdown notes" aria-label="Standdown notes"
             className="flex-1 rounded border border-line-strong px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-900"
           />
           <Button variant="outline" size="sm" type="submit">
@@ -118,7 +118,7 @@ export default function BCPPanel({ exerciseId, incidentId, activation, orgUsers 
           <textarea
             name="rationale"
             rows={2}
-            placeholder="Rationale (e.g. Tier 1 system down, RTO exceeded)"
+            placeholder="Rationale (e.g. Tier 1 system down, RTO exceeded)" aria-label="Rationale (e.g. Tier 1 system down, RTO exceeded)"
             className="rounded border border-line-strong px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
           />
           <Button variant="gradient" size="md" icon={Power} type="submit">

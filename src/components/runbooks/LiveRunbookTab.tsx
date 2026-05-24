@@ -416,7 +416,7 @@ function AbandonStrip({ executionId }: { executionId: string }) {
             name="reason"
             required
             rows={4}
-            placeholder='e.g. "Scope changed; switching to ransomware-response runbook" or "Severity downgraded; standing down."'
+            placeholder='e.g. "Scope changed; switching to ransomware-response runbook" or "Severity downgraded; standing down."' aria-label='e.g. "Scope changed; switching to ransomware-response runbook" or "Severity downgraded; standing down."'
             className="w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm text-ink focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
           <div className="flex justify-end gap-2">
@@ -732,7 +732,7 @@ function StepActionForms({
               name="decisionRationale"
               required
               rows={4}
-              placeholder='e.g. "Severity classified HIGH; standing up IMT per policy" or "BCP activated — recovery RTO 45m exceeded"'
+              placeholder='e.g. "Severity classified HIGH; standing up IMT per policy" or "BCP activated — recovery RTO 45m exceeded"' aria-label='e.g. "Severity classified HIGH; standing up IMT per policy" or "BCP activated — recovery RTO 45m exceeded"'
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm text-ink focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </label>
@@ -771,7 +771,7 @@ function StepActionForms({
             name="notes"
             required
             rows={3}
-            placeholder='e.g. "Not applicable — no personal data in scope" or "Vendor already engaged via separate channel"'
+            placeholder='e.g. "Not applicable — no personal data in scope" or "Vendor already engaged via separate channel"' aria-label='e.g. "Not applicable — no personal data in scope" or "Vendor already engaged via separate channel"'
             className="w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm text-ink focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
           <div className="flex justify-end gap-2">

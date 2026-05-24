@@ -303,7 +303,7 @@ export default function StepInjects({
                 name="summary"
                 required
                 maxLength={200}
-                placeholder="e.g. CEO call from regulator's private secretary"
+                placeholder="e.g. CEO call from regulator's private secretary" aria-label="e.g. CEO call from regulator's private secretary"
                 className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
               />
             </label>
@@ -313,7 +313,7 @@ export default function StepInjects({
                 name="description"
                 rows={3}
                 maxLength={2000}
-                placeholder="Full text of the inject as it'll appear in the participant's inbox."
+                placeholder="Full text of the inject as it'll appear in the participant's inbox." aria-label="Full text of the inject as it'll appear in the participant's inbox."
                 className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
               />
             </label>
@@ -348,7 +348,7 @@ export default function StepInjects({
               <input
                 name="senderRoleTitle"
                 maxLength={120}
-                placeholder="e.g. FCA Supervisor"
+                placeholder="e.g. FCA Supervisor" aria-label="e.g. FCA Supervisor"
                 className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
               />
             </label>
@@ -356,7 +356,7 @@ export default function StepInjects({
               <span className="text-muted">To (comma-separated role titles)</span>
               <input
                 name="toRoleTitlesCsv"
-                placeholder="CRO, CEO"
+                placeholder="CRO, CEO" aria-label="CRO, CEO"
                 className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
               />
             </label>
@@ -364,7 +364,7 @@ export default function StepInjects({
               <span className="text-muted">CC (optional)</span>
               <input
                 name="ccRoleTitlesCsv"
-                placeholder="Head of Compliance"
+                placeholder="Head of Compliance" aria-label="Head of Compliance"
                 className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
               />
             </label>

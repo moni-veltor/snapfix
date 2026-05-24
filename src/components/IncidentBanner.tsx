@@ -57,12 +57,12 @@ export default function IncidentBanner({ exerciseId, incident }: Props) {
             <SeverityPill level={incident.severitySystems} label="Sys" />
             <SeverityPill level={incident.severityReputational} label="Rep" />
             {incident.consumerDutyTrigger && (
-              <span className="rounded-full bg-amber-200 px-2 py-0.5 text-amber-900">
+              <span className="rounded-full bg-amber-200 px-2 py-0.5 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
                 Consumer Duty trigger
               </span>
             )}
             {incident.cyberDefaultHigh && (
-              <span className="rounded-full bg-violet-200 px-2 py-0.5 text-violet-900">
+              <span className="rounded-full bg-violet-200 px-2 py-0.5 text-violet-900 dark:bg-violet-950/40 dark:text-violet-200">
                 Cyber → High
               </span>
             )}
@@ -122,7 +122,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
             <input
               name="title"
               required
-              placeholder="e.g. Core banking outage"
+              placeholder="e.g. Core banking outage" aria-label="e.g. Core banking outage"
               className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 text-sm"
             />
           </label>
@@ -138,7 +138,7 @@ function NoIncidentBanner({ exerciseId }: { exerciseId: string }) {
             <span className="font-medium text-ink">Why invoke now? (rationale)</span>
             <input
               name="rationale"
-              placeholder="e.g. customer-facing impact, regulator notification window"
+              placeholder="e.g. customer-facing impact, regulator notification window" aria-label="e.g. customer-facing impact, regulator notification window"
               className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 text-sm"
             />
           </label>
@@ -185,7 +185,7 @@ function StandDownButton({ exerciseId, incidentId }: { exerciseId: string; incid
                 name="reason"
                 rows={2}
                 required
-                placeholder="Why are you standing down?"
+                placeholder="Why are you standing down?" aria-label="Why are you standing down?"
                 className="w-full rounded-md border border-line-strong px-2 py-1.5 text-sm"
               />
               <div className="flex gap-2">
@@ -198,7 +198,7 @@ function StandDownButton({ exerciseId, incidentId }: { exerciseId: string; incid
                 </button>
                 <button
                   disabled={pending}
-                  className="flex-1 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white disabled:bg-slate-400"
+                  className="flex-1 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white disabled:bg-slate-400 dark:bg-indigo-500 dark:hover:bg-indigo-400 dark:disabled:bg-slate-700"
                 >
                   Stand down
                 </button>
@@ -277,7 +277,7 @@ function SeverityWizard({
         >
           Cancel
         </button>
-        <button className="flex-1 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white">
+        <button className="flex-1 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white dark:bg-indigo-500 dark:hover:bg-indigo-400">
           Record severity
         </button>
       </div>

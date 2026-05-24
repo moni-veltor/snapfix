@@ -231,7 +231,7 @@ export default async function ScenarioProgrammePage({
                       <span className="text-soft">Regulatory commitment (optional)</span>
                       <input
                         name="regulatoryReq"
-                        placeholder="e.g. FCA SS1/21 annual cyber exercise"
+                        placeholder="e.g. FCA SS1/21 annual cyber exercise" aria-label="e.g. FCA SS1/21 annual cyber exercise"
                         className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1 text-sm"
                       />
                     </label>

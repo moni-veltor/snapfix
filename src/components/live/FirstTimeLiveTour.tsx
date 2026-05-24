@@ -90,7 +90,7 @@ export default function FirstTimeLiveTour() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="tour-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm dark:bg-slate-950/75"
     >
       <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-line bg-surface-1 shadow-[var(--shadow-card-lg)]">
         <button

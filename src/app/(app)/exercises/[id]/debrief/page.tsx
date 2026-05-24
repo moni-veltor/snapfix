@@ -166,7 +166,7 @@ export default async function DebriefPage({
                     name="body"
                     required
                     rows={2}
-                    placeholder="Your answer…"
+                    placeholder="Your answer…" aria-label="Your answer…"
                     className="flex-1 rounded border border-line-strong bg-surface-1 px-2 py-1 text-xs"
                   />
                   <button className="self-start rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white dark:bg-indigo-500">
@@ -191,7 +191,7 @@ export default async function DebriefPage({
             <TextArea label="Strengths" name="strengths" defaultValue={exercise.aar?.strengths ?? ""} />
             <TextArea label="Gaps & weaknesses" name="gaps" defaultValue={exercise.aar?.gaps ?? ""} />
             <TextArea label="Actions & next steps" name="actions" defaultValue={exercise.aar?.actions ?? ""} />
-            <button className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white">
+            <button className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white dark:bg-indigo-500 dark:hover:bg-indigo-400">
               {exercise.aar ? "Update AAR" : "Save AAR"}
             </button>
           </form>
@@ -274,18 +274,18 @@ export default async function DebriefPage({
             name="title"
             required
             maxLength={200}
-            placeholder="Action item title (e.g. 'Update Sumsub fallback runbook')"
+            placeholder="Action item title (e.g. 'Update Sumsub fallback runbook')" aria-label="Action item title (e.g. 'Update Sumsub fallback runbook')"
             className="rounded border border-line-strong px-2 py-1 sm:col-span-2"
           />
           <textarea
             name="description"
             rows={2}
-            placeholder="Description (optional)"
+            placeholder="Description (optional)" aria-label="Description (optional)"
             className="rounded border border-line-strong px-2 py-1 sm:col-span-2"
           />
           <input
             name="ownerText"
-            placeholder="Owner (free text)"
+            placeholder="Owner (free text)" aria-label="Owner (free text)"
             className="rounded border border-line-strong px-2 py-1"
           />
           <input
@@ -303,7 +303,7 @@ export default async function DebriefPage({
             <option value="HIGH">HIGH</option>
             <option value="CRITICAL">CRITICAL</option>
           </select>
-          <button className="rounded-md bg-slate-900 px-3 py-1.5 text-white">
+          <button className="rounded-md bg-slate-900 px-3 py-1.5 text-white dark:bg-indigo-500 dark:hover:bg-indigo-400">
             Add action item
           </button>
         </form>
@@ -348,7 +348,7 @@ export default async function DebriefPage({
                 name="title"
                 required
                 maxLength={200}
-                placeholder="What we'll do about it"
+                placeholder="What we'll do about it" aria-label="What we'll do about it"
                 className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
               />
             </label>
@@ -452,7 +452,7 @@ export default async function DebriefPage({
               <input type="checkbox" name="held" />
               Mark retrospective as held
             </label>
-            <button className="rounded-md bg-slate-900 px-3 py-1.5 text-white">Save retrospective</button>
+            <button className="rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">Save retrospective</button>
           </form>
         </section>
       )}

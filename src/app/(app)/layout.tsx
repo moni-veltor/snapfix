@@ -49,8 +49,21 @@ export default async function AppLayout({
           }))}
         />
       )}
+      {/* Skip-to-content link for keyboard users — visually hidden until focused. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-md focus:bg-indigo-600 focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
       <ZoneFrame>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+        <main
+          id="main-content"
+          aria-label="Main content"
+          className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8"
+        >
+          {children}
+        </main>
         <footer className="border-t border-line bg-surface-1 py-4 text-center text-xs text-soft">
           SnapFix Simulator · part of the SnapFix platform
         </footer>

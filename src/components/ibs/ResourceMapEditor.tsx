@@ -669,7 +669,7 @@ function SidePanel({
           </div>
           <p className="mt-2 text-xs text-muted">
             Click a tag to see which other IBSs share it. Tags marked{" "}
-            <span className="rounded-full bg-amber-100 px-1 text-amber-700">+N</span> are shared with
+            <span className="rounded-full bg-amber-100 px-1 text-amber-700 dark:bg-amber-950/40 dark:text-amber-200">+N</span> are shared with
             N other services — your cross-IBS single-points-of-failure.
           </p>
           <p className="mt-2 text-[10px] text-soft">

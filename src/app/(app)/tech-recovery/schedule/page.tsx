@@ -320,7 +320,7 @@ function ScheduledRow({
                 min={1}
                 max={36}
                 defaultValue={system.drTestCadenceMonths ?? ""}
-                placeholder="3"
+                placeholder="3" aria-label="3"
                 className="mt-1 w-24 rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
               />
             </label>

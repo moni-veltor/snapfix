@@ -83,7 +83,7 @@ export default function FacilitatorRuntimeControls({
               name="summary"
               required
               maxLength={200}
-              placeholder="e.g. CEO call from FCA — they've seen the news"
+              placeholder="e.g. CEO call from FCA — they've seen the news" aria-label="e.g. CEO call from FCA — they've seen the news"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
             />
           </label>
@@ -94,7 +94,7 @@ export default function FacilitatorRuntimeControls({
               required
               rows={3}
               maxLength={2000}
-              placeholder="Full text the team will see in their inbox"
+              placeholder="Full text the team will see in their inbox" aria-label="Full text the team will see in their inbox"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
             />
           </label>
@@ -129,7 +129,7 @@ export default function FacilitatorRuntimeControls({
             <input
               name="toRoleTitlesCsv"
               required
-              placeholder="CRO, CEO"
+              placeholder="CRO, CEO" aria-label="CRO, CEO"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
             />
           </label>
@@ -137,7 +137,7 @@ export default function FacilitatorRuntimeControls({
             <span className="text-amber-900 dark:text-amber-100">CC (optional)</span>
             <input
               name="ccRoleTitlesCsv"
-              placeholder="Head of Compliance"
+              placeholder="Head of Compliance" aria-label="Head of Compliance"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
             />
           </label>
@@ -187,7 +187,7 @@ export default function FacilitatorRuntimeControls({
               required
               rows={2}
               maxLength={500}
-              placeholder="e.g. Real major incident at payments rail — IMT standing up live"
+              placeholder="e.g. Real major incident at payments rail — IMT standing up live" aria-label="e.g. Real major incident at payments rail — IMT standing up live"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
             />
           </label>

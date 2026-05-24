@@ -56,7 +56,7 @@ export default function ConfirmButton({
         {label}
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 dark:bg-slate-950/70">
           <div className="w-full max-w-sm rounded-lg border border-line bg-surface-1 p-5 shadow-xl">
             <h2 className="text-base font-semibold text-ink">{title}</h2>
             {body && <p className="mt-2 text-sm text-muted">{body}</p>}
@@ -90,7 +90,7 @@ export default function ConfirmButton({
                   className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                     destructive
                       ? "bg-rose-600 text-white hover:bg-rose-700"
-                      : "bg-slate-900 text-white hover:bg-slate-700"
+                      : "bg-slate-900 text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
                   }`}
                 >
                   {confirmLabel}

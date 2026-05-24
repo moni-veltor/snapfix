@@ -399,7 +399,7 @@ function ScheduleCard({ exercise, canEdit }: { exercise: ExerciseSnapshot; canEd
             maxLength={200}
             defaultValue={exercise.location ?? ""}
             disabled={!canEdit}
-            placeholder="e.g. London war-room · distributed · hybrid"
+            placeholder="e.g. London war-room · distributed · hybrid" aria-label="e.g. London war-room · distributed · hybrid"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
           />
         </label>
@@ -437,7 +437,7 @@ function RegulatorAudienceInline({
           name="regulatorAudience"
           maxLength={120}
           defaultValue={exercise.regulatorAudience ?? ""}
-          placeholder="e.g. PRA SS1/21 · FCA SYSC 15A · BoE FMI · DORA Art. 25"
+          placeholder="e.g. PRA SS1/21 · FCA SYSC 15A · BoE FMI · DORA Art. 25" aria-label="e.g. PRA SS1/21 · FCA SYSC 15A · BoE FMI · DORA Art. 25"
           disabled={!canEdit}
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
         />
@@ -624,7 +624,7 @@ function RosterCard({
                     name="roleTitle"
                     required
                     maxLength={120}
-                    placeholder="e.g. CRO"
+                    placeholder="e.g. CRO" aria-label="e.g. CRO"
                     list={`role-suggestions-${exercise.id}`}
                     className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1 text-sm"
                   />
@@ -726,7 +726,7 @@ function CoverageCard({
               maxLength={2000}
               disabled={!canEdit}
               defaultValue={exercise.objectives.join("\n")}
-              placeholder={"e.g.\n- Test 4h FCA notification path under cyber pressure\n- Validate CRO + CEO joint BCP-activation decision"}
+              placeholder={"e.g.\n- Test 4h FCA notification path under cyber pressure\n- Validate CRO + CEO joint BCP-activation decision"} aria-label={"e.g.\n- Test 4h FCA notification path under cyber pressure\n- Validate CRO + CEO joint BCP-activation decision"}
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
             />
           </label>
@@ -889,7 +889,7 @@ function BriefingCard({ exercise, canEdit }: { exercise: ExerciseSnapshot; canEd
                 name="reason"
                 required
                 maxLength={200}
-                placeholder="Reason for skipping…"
+                placeholder="Reason for skipping…" aria-label="Reason for skipping…"
                 className="rounded-md border border-line-strong bg-surface-1 px-2 py-1 text-[11px]"
               />
               <button className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-1 px-2 py-1 text-[11px] text-ink hover:border-line-strong">

@@ -54,10 +54,10 @@ export default function IncidentLogPanel({
         <input
           name="body"
           required
-          placeholder="What happened / decision made / action taken"
+          placeholder="What happened / decision made / action taken" aria-label="What happened / decision made / action taken"
           className="col-span-3 rounded border border-line-strong px-2 py-1"
         />
-        <button className="col-span-1 rounded-md bg-slate-900 px-2 py-1 text-white">Log</button>
+        <button className="col-span-1 rounded-md bg-slate-900 px-2 py-1 text-white dark:bg-indigo-500 dark:hover:bg-indigo-400">Log</button>
       </form>
     </div>
   );

@@ -234,7 +234,7 @@ export default function DependencyMap({
                 </div>
                 <p className="mt-2 text-xs text-muted">
                   Click any tag in the resource map to see which other IBSs share that
-                  dependency. Tags marked <span className="rounded-full bg-amber-100 px-1 text-amber-700">+N</span> are
+                  dependency. Tags marked <span className="rounded-full bg-amber-100 px-1 text-amber-700 dark:bg-amber-950/40 dark:text-amber-200">+N</span> are
                   shared with N other services — those are your cross-IBS single-points-of-failure.
                 </p>
               </div>

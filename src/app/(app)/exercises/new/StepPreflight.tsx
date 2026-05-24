@@ -220,7 +220,7 @@ export default async function StepPreflight({ exerciseId }: Props) {
               name="reason"
               required
               maxLength={200}
-              placeholder="Reason for skipping…"
+              placeholder="Reason for skipping…" aria-label="Reason for skipping…"
               className="rounded-md border border-line-strong bg-surface-1 px-2 py-1 text-[11px]"
             />
             <button className="inline-flex items-center gap-1 rounded-md border border-line bg-surface-1 px-2 py-1 text-[11px] text-ink hover:border-line-strong">

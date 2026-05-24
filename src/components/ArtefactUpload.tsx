@@ -62,7 +62,7 @@ export default function ArtefactUpload({
             name="title"
             required
             maxLength={200}
-            placeholder="e.g. AWS CloudWatch Alert — 08:00"
+            placeholder="e.g. AWS CloudWatch Alert — 08:00" aria-label="e.g. AWS CloudWatch Alert — 08:00"
             className="mt-1 w-full rounded border border-line-strong px-2 py-1"
           />
         </label>
@@ -72,7 +72,7 @@ export default function ArtefactUpload({
           name="title"
           required
           maxLength={200}
-          placeholder="Title"
+          placeholder="Title" aria-label="Title"
           className="rounded border border-line-strong px-2 py-1"
         />
       )}
@@ -97,7 +97,7 @@ export default function ArtefactUpload({
       {!compact && (
         <textarea
           name="description"
-          placeholder="Description (optional)"
+          placeholder="Description (optional)" aria-label="Description (optional)"
           rows={2}
           className="rounded border border-line-strong px-2 py-1 sm:col-span-2"
         />
@@ -105,7 +105,7 @@ export default function ArtefactUpload({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700 disabled:opacity-50"
+        className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-400"
       >
         {pending ? "Uploading…" : "Upload"}
       </button>

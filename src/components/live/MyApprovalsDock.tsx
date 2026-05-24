@@ -284,7 +284,7 @@ function CommsApprovalBody({
               name="reason"
               required
               rows={3}
-              placeholder="e.g. Adjust language re: customer impact; resubmit"
+              placeholder="e.g. Adjust language re: customer impact; resubmit" aria-label="e.g. Adjust language re: customer impact; resubmit"
               className="w-full rounded-md border border-line bg-surface-1 px-2 py-1.5 text-[12px]"
             />
             <button

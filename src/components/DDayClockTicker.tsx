@@ -32,7 +32,7 @@ export default function DDayClockTicker({ anchor, speedMultiplier, status, pollM
 
   const clock = currentDDay(anchor ? new Date(anchor) : null, speedMultiplier, now);
   return (
-    <div className="rounded-md bg-slate-900 px-3 py-2 font-mono text-lg text-white">
+    <div className="rounded-md bg-slate-900 px-3 py-2 font-mono text-lg text-white dark:bg-slate-800">
       D-Day {clock.hhmm}
       {speedMultiplier !== 1 && (
         <span className="ml-2 text-xs text-soft">×{speedMultiplier}</span>

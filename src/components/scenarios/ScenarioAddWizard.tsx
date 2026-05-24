@@ -183,7 +183,7 @@ function IdentityStep() {
           name="title"
           required
           maxLength={200}
-          placeholder="Q3 functional exercise — Cyber attack on core ledger"
+          placeholder="Q3 functional exercise — Cyber attack on core ledger" aria-label="Q3 functional exercise — Cyber attack on core ledger"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
         <span className="mt-1 block text-[10px] text-soft">
@@ -197,7 +197,7 @@ function IdentityStep() {
           name="background"
           required
           rows={4}
-          placeholder="The framing the facilitator reads aloud at the start of the exercise. Set the scene — what happened, where, when, who knows what."
+          placeholder="The framing the facilitator reads aloud at the start of the exercise. Set the scene — what happened, where, when, who knows what." aria-label="The framing the facilitator reads aloud at the start of the exercise. Set the scene — what happened, where, when, who knows what."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
       </label>
@@ -207,7 +207,7 @@ function IdentityStep() {
         <textarea
           name="agenda"
           rows={3}
-          placeholder="Bullet points: pre-brief 15m · MSEL play 90m · debrief 30m."
+          placeholder="Bullet points: pre-brief 15m · MSEL play 90m · debrief 30m." aria-label="Bullet points: pre-brief 15m · MSEL play 90m · debrief 30m."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
       </label>
@@ -291,7 +291,7 @@ function FramingStep() {
         <textarea
           name="characteristics"
           rows={3}
-          placeholder={`Single-vendor concentration in the ledger layer\nSettlement deadlines are scheme-controlled\nDR site not live-tested in 14 months`}
+          placeholder={`Single-vendor concentration in the ledger layer\nSettlement deadlines are scheme-controlled\nDR site not live-tested in 14 months`} aria-label={`Single-vendor concentration in the ledger layer\nSettlement deadlines are scheme-controlled\nDR site not live-tested in 14 months`}
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
         <span className="mt-1 block text-[10px] text-soft">
@@ -304,7 +304,7 @@ function FramingStep() {
         <textarea
           name="assumptions"
           rows={3}
-          placeholder={`Card auth is unaffected (independent service)\nPress monitor incident-status pages\nPRA notification clock starts at confirmation`}
+          placeholder={`Card auth is unaffected (independent service)\nPress monitor incident-status pages\nPRA notification clock starts at confirmation`} aria-label={`Card auth is unaffected (independent service)\nPress monitor incident-status pages\nPRA notification clock starts at confirmation`}
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
         <span className="mt-1 block text-[10px] text-soft">
@@ -317,7 +317,7 @@ function FramingStep() {
         <textarea
           name="takeaways"
           rows={2}
-          placeholder="What you want the debrief to surface. One sentence is enough."
+          placeholder="What you want the debrief to surface. One sentence is enough." aria-label="What you want the debrief to surface. One sentence is enough."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
       </label>

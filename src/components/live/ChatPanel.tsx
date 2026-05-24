@@ -70,7 +70,7 @@ export default function ChatPanel({ exerciseId, meId, messages }: Props) {
           name="body"
           required
           maxLength={2000}
-          placeholder="Say something to the team…"
+          placeholder="Say something to the team…" aria-label="Say something to the team…"
           autoComplete="off"
           className="flex-1 rounded-md border border-line bg-surface-0 px-2.5 py-1.5 text-sm placeholder:text-soft focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
         />

@@ -93,7 +93,7 @@ function Field({
         name={name}
         rows={3}
         defaultValue={defaultValue}
-        placeholder={placeholder}
+        placeholder={placeholder} aria-label={placeholder}
         className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-3 py-2 text-sm"
       />
     </label>

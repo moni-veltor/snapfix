@@ -838,7 +838,7 @@ function LandingPage() {
         <div className="flex gap-3 pt-2">
           <Link
             href="/sign-up"
-            className="rounded-md bg-slate-900 px-4 py-2 text-white hover:bg-slate-700"
+            className="rounded-md bg-slate-900 px-4 py-2 text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
           >
             Create an organisation
           </Link>

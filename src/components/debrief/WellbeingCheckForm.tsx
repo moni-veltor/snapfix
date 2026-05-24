@@ -82,7 +82,7 @@ export default function WellbeingCheckForm({ exerciseId }: Props) {
         <input
           name="note"
           maxLength={500}
-          placeholder="What contributed (or what helped)"
+          placeholder="What contributed (or what helped)" aria-label="What contributed (or what helped)"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
         />
       </label>

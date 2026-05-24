@@ -284,7 +284,7 @@ function BasicsStep({ existing }: { existing?: VendorExisting }) {
             name="name"
             required
             defaultValue={existing?.name ?? ""}
-            placeholder="Thought Machine"
+            placeholder="Thought Machine" aria-label="Thought Machine"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -306,7 +306,7 @@ function BasicsStep({ existing }: { existing?: VendorExisting }) {
           <input
             name="serviceKind"
             defaultValue={existing?.serviceKind ?? ""}
-            placeholder="Core banking / Payments / Reconciliations"
+            placeholder="Core banking / Payments / Reconciliations" aria-label="Core banking / Payments / Reconciliations"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -315,7 +315,7 @@ function BasicsStep({ existing }: { existing?: VendorExisting }) {
           <input
             name="statusUrl"
             defaultValue={existing?.statusUrl ?? ""}
-            placeholder="https://status.vendor.com"
+            placeholder="https://status.vendor.com" aria-label="https://status.vendor.com"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -324,7 +324,7 @@ function BasicsStep({ existing }: { existing?: VendorExisting }) {
           <input
             name="contactName"
             defaultValue={existing?.contactName ?? ""}
-            placeholder="Name"
+            placeholder="Name" aria-label="Name"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -334,7 +334,7 @@ function BasicsStep({ existing }: { existing?: VendorExisting }) {
             name="contactEmail"
             type="email"
             defaultValue={existing?.contactEmail ?? ""}
-            placeholder="contact@vendor.com"
+            placeholder="contact@vendor.com" aria-label="contact@vendor.com"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -345,7 +345,7 @@ function BasicsStep({ existing }: { existing?: VendorExisting }) {
           name="description"
           rows={2}
           defaultValue={existing?.description ?? ""}
-          placeholder="What they do and which capability they underpin."
+          placeholder="What they do and which capability they underpin." aria-label="What they do and which capability they underpin."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
       </label>
@@ -392,7 +392,7 @@ function DoraStep({ existing }: { existing?: VendorExisting }) {
           <input
             name="hyperscaler"
             defaultValue={existing?.hyperscaler ?? ""}
-            placeholder="AWS / GCP / Azure / on-prem"
+            placeholder="AWS / GCP / Azure / on-prem" aria-label="AWS / GCP / Azure / on-prem"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -401,7 +401,7 @@ function DoraStep({ existing }: { existing?: VendorExisting }) {
           <input
             name="region"
             defaultValue={existing?.region ?? ""}
-            placeholder="eu-west-2"
+            placeholder="eu-west-2" aria-label="eu-west-2"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -439,7 +439,7 @@ function ContractStep({ existing }: { existing?: VendorExisting }) {
             name="contractRenewalNoticeDays"
             min={0}
             defaultValue={existing?.contractRenewalNoticeDays ?? ""}
-            placeholder="90"
+            placeholder="90" aria-label="90"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
           />
         </label>
@@ -450,7 +450,7 @@ function ContractStep({ existing }: { existing?: VendorExisting }) {
             name="contractAnnualValueGBP"
             min={0}
             defaultValue={existing?.contractAnnualValueGBP ?? ""}
-            placeholder="250000"
+            placeholder="250000" aria-label="250000"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
           />
         </label>
@@ -519,7 +519,7 @@ function ExitStep({ existing }: { existing?: VendorExisting }) {
             name="exitPlanRTOMin"
             min={0}
             defaultValue={existing?.exitPlanRTOMin ?? ""}
-            placeholder="2880"
+            placeholder="2880" aria-label="2880"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-2 py-1.5 text-sm"
           />
         </label>
@@ -530,7 +530,7 @@ function ExitStep({ existing }: { existing?: VendorExisting }) {
           name="exitPlanNotes"
           rows={4}
           defaultValue={existing?.exitPlanNotes ?? ""}
-          placeholder="Trigger conditions, target alternative provider, switching steps, data extraction approach."
+          placeholder="Trigger conditions, target alternative provider, switching steps, data extraction approach." aria-label="Trigger conditions, target alternative provider, switching steps, data extraction approach."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
       </label>

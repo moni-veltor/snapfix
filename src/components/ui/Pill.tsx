@@ -58,6 +58,6 @@ const TONE: Record<Tone, Record<Variant, string>> = {
     warn: "bg-amber-600 text-white",
     ok: "bg-emerald-600 text-white",
     info: "bg-indigo-600 text-white",
-    mono: "bg-slate-900 text-white",
+    mono: "bg-slate-900 text-white dark:bg-slate-800",
   },
 };

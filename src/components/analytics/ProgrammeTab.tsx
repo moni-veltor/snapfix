@@ -270,11 +270,11 @@ export default async function ProgrammeTab({
                     <td className="p-3">{e}</td>
                     <td className="p-3">
                       {gap ? (
-                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">
+                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
                           Untested
                         </span>
                       ) : (e as number) > 0 ? (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
                           Covered
                         </span>
                       ) : (
@@ -310,7 +310,7 @@ export default async function ProgrammeTab({
                   <td className="p-3">
                     {v.exec}
                     {v.lib > 0 && v.exec === 0 && (
-                      <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">
+                      <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
                         Untested
                       </span>
                     )}
@@ -358,7 +358,7 @@ export default async function ProgrammeTab({
                     </td>
                     <td className="p-3 text-right font-mono">
                       {r.executionsCount === 0 ? (
-                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">
+                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
                           0
                         </span>
                       ) : (
@@ -425,8 +425,8 @@ export default async function ProgrammeTab({
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs ${
                       i._count.exerciseLinks === 0
-                        ? "bg-rose-100 text-rose-800"
-                        : "bg-emerald-100 text-emerald-800"
+                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
+                        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
                     }`}
                   >
                     {i._count.exerciseLinks} tested

@@ -89,7 +89,7 @@ function OnboardFormBody({
             type="email"
             required
             autoFocus
-            placeholder="teammate@company.com"
+            placeholder="teammate@company.com" aria-label="teammate@company.com"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -129,7 +129,7 @@ function OnboardFormBody({
           <input
             name="prefillJobTitle"
             required={stricter}
-            placeholder="e.g. Head of Operational Resilience"
+            placeholder="e.g. Head of Operational Resilience" aria-label="e.g. Head of Operational Resilience"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -138,7 +138,7 @@ function OnboardFormBody({
             <span className="text-soft">Phone</span>
             <input
               name="prefillPhone"
-              placeholder="+44 …"
+              placeholder="+44 …" aria-label="+44 …"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
             />
           </label>
@@ -149,7 +149,7 @@ function OnboardFormBody({
             <input
               name="prefillOutOfHoursPhone"
               required={stricter}
-              placeholder="+44 …"
+              placeholder="+44 …" aria-label="+44 …"
               className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
             />
           </label>
@@ -158,7 +158,7 @@ function OnboardFormBody({
           <span className="text-soft">Location</span>
           <input
             name="prefillLocation"
-            placeholder="e.g. London HQ"
+            placeholder="e.g. London HQ" aria-label="e.g. London HQ"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>

@@ -376,9 +376,9 @@ function Pill({
 }) {
   const cls =
     kind === "ok"
-      ? "bg-emerald-100 text-emerald-800"
+      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
       : kind === "warn"
-        ? "bg-amber-100 text-amber-800"
+        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
         : kind === "muted"
           ? "bg-surface-2 text-ink"
           : "bg-surface-2 text-ink";
@@ -497,7 +497,7 @@ function CoverageMatrix({
           key={b.label}
           className={`rounded-md border p-2 text-center text-xs ${
             b.on
-              ? "border-slate-900 bg-slate-900 text-white"
+              ? "border-slate-900 bg-slate-900 text-white dark:border-indigo-500 dark:bg-indigo-500"
               : "border-line bg-surface-1 text-soft"
           }`}
         >

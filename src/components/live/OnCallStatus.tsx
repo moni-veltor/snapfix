@@ -89,7 +89,7 @@ export default function OnCallStatus({ exerciseId, currentStatus, currentSince }
             <input type="hidden" name="exerciseId" value={exerciseId} />
             <input
               name="status"
-              placeholder="Custom status…"
+              placeholder="Custom status…" aria-label="Custom status…"
               maxLength={120}
               className="w-full rounded-md border border-line bg-surface-0 px-2 py-1 text-xs placeholder:text-soft focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />

@@ -189,7 +189,7 @@ function LogForm({
           name="body"
           required
           rows={3}
-          placeholder="What happened? (use Decision for formal decisions.)"
+          placeholder="What happened? (use Decision for formal decisions.)" aria-label="What happened? (use Decision for formal decisions.)"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -277,7 +277,7 @@ function DecisionForm({
         <input
           name="title"
           required
-          placeholder="e.g. 'Activate BCP — Tier 1 outage'"
+          placeholder="e.g. 'Activate BCP — Tier 1 outage'" aria-label="e.g. 'Activate BCP — Tier 1 outage'"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -289,7 +289,7 @@ function DecisionForm({
         <textarea
           name="rationale"
           rows={3}
-          placeholder="Why this decision? (rationale for the audit trail)"
+          placeholder="Why this decision? (rationale for the audit trail)" aria-label="Why this decision? (rationale for the audit trail)"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -357,7 +357,7 @@ function SitrepForm({
         <input
           name="businessUnit"
           required
-          placeholder="e.g. Tech Recovery, Payments"
+          placeholder="e.g. Tech Recovery, Payments" aria-label="e.g. Tech Recovery, Payments"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -386,7 +386,7 @@ function SitrepForm({
           name="summary"
           required
           rows={3}
-          placeholder="Two-line state-of-the-world for the IMT."
+          placeholder="Two-line state-of-the-world for the IMT." aria-label="Two-line state-of-the-world for the IMT."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -398,7 +398,7 @@ function SitrepForm({
         <textarea
           name="issues"
           rows={2}
-          placeholder="Anything broken or at risk."
+          placeholder="Anything broken or at risk." aria-label="Anything broken or at risk."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -410,7 +410,7 @@ function SitrepForm({
         <textarea
           name="asks"
           rows={2}
-          placeholder="What you need from the IMT."
+          placeholder="What you need from the IMT." aria-label="What you need from the IMT."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -421,7 +421,7 @@ function SitrepForm({
         </span>
         <input
           name="nextUpdateDDayTime"
-          placeholder="e.g. 10:30"
+          placeholder="e.g. 10:30" aria-label="e.g. 10:30"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -472,7 +472,7 @@ function MeetingForm({
         <textarea
           name="situation"
           rows={2}
-          placeholder="Current situation"
+          placeholder="Current situation" aria-label="Current situation"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -484,7 +484,7 @@ function MeetingForm({
         <textarea
           name="decisions"
           rows={2}
-          placeholder="Decisions taken in this meeting"
+          placeholder="Decisions taken in this meeting" aria-label="Decisions taken in this meeting"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -496,7 +496,7 @@ function MeetingForm({
         <textarea
           name="actions"
           rows={2}
-          placeholder="Actions assigned (owner, due time)"
+          placeholder="Actions assigned (owner, due time)" aria-label="Actions assigned (owner, due time)"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -508,7 +508,7 @@ function MeetingForm({
         <textarea
           name="risks"
           rows={2}
-          placeholder="Risks flagged"
+          placeholder="Risks flagged" aria-label="Risks flagged"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -521,6 +521,7 @@ function MeetingForm({
           name="nextMeetingDDay"
           required
           placeholder={`started at ${dDayHHMM}`}
+          aria-label={`Next meeting at D-Day HH:MM, started at ${dDayHHMM}`}
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>
@@ -613,7 +614,7 @@ function CommsForm({
           name="body"
           required
           rows={5}
-          placeholder="Draft body…"
+          placeholder="Draft body…" aria-label="Draft body…"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5"
         />
       </label>

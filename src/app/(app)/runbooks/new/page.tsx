@@ -77,7 +77,7 @@ export default async function NewRunbookPage() {
             name="description"
             rows={4}
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm text-ink focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            placeholder="One paragraph: when this runbook fires, what it covers, who walks it."
+            placeholder="One paragraph: when this runbook fires, what it covers, who walks it." aria-label="One paragraph: when this runbook fires, what it covers, who walks it."
           />
         </div>
 
@@ -121,7 +121,7 @@ function Field({
         name={name}
         required={required}
         autoFocus={autoFocus}
-        placeholder={placeholder}
+        placeholder={placeholder} aria-label={placeholder}
         className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm text-ink focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
       />
     </div>

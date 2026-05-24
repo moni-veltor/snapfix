@@ -228,7 +228,7 @@ function ScheduleStep() {
           <span className="text-soft">Location</span>
           <input
             name="location"
-            placeholder="London HQ, 10 Chiswell St — Sprint Room 1"
+            placeholder="London HQ, 10 Chiswell St — Sprint Room 1" aria-label="London HQ, 10 Chiswell St — Sprint Room 1"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
           <span className="mt-1 block text-[10px] text-soft">
@@ -263,7 +263,7 @@ function DetailsStep({ defaultTitle }: { defaultTitle: string }) {
           required
           maxLength={200}
           defaultValue={defaultTitle}
-          placeholder="Q3 Functional Exercise — Cyber Disruption"
+          placeholder="Q3 Functional Exercise — Cyber Disruption" aria-label="Q3 Functional Exercise — Cyber Disruption"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
         <span className="mt-1 block text-[10px] text-soft">
@@ -276,7 +276,7 @@ function DetailsStep({ defaultTitle }: { defaultTitle: string }) {
         <textarea
           name="description"
           rows={3}
-          placeholder="Anything specific about this run — observer list, business context, regulatory test it satisfies."
+          placeholder="Anything specific about this run — observer list, business context, regulatory test it satisfies." aria-label="Anything specific about this run — observer list, business context, regulatory test it satisfies."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
       </label>

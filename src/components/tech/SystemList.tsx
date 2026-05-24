@@ -440,13 +440,13 @@ function SystemForm({
           name="name"
           required
           defaultValue={system?.name ?? ""}
-          placeholder="System name (e.g. Core ledger)"
+          placeholder="System name (e.g. Core ledger)" aria-label="System name (e.g. Core ledger)"
           className="rounded border border-line-strong bg-surface-0 px-3 py-2"
         />
         <input
           name="owner"
           defaultValue={system?.owner ?? ""}
-          placeholder="Owner team or person"
+          placeholder="Owner team or person" aria-label="Owner team or person"
           className="rounded border border-line-strong bg-surface-0 px-3 py-2"
         />
         <select
@@ -477,7 +477,7 @@ function SystemForm({
         name="description"
         rows={2}
         defaultValue={system?.description ?? ""}
-        placeholder="What this system does"
+        placeholder="What this system does" aria-label="What this system does"
         className="w-full rounded border border-line-strong bg-surface-0 px-3 py-2"
       />
 
@@ -490,7 +490,7 @@ function SystemForm({
           name="rtoMin"
           min={0}
           defaultValue={system?.rtoMin ?? ""}
-          placeholder="RTO"
+          placeholder="RTO" aria-label="RTO"
           className="rounded border border-line-strong bg-surface-0 px-2 py-1.5"
         />
         <input
@@ -498,7 +498,7 @@ function SystemForm({
           name="rpoMin"
           min={0}
           defaultValue={system?.rpoMin ?? ""}
-          placeholder="RPO"
+          placeholder="RPO" aria-label="RPO"
           className="rounded border border-line-strong bg-surface-0 px-2 py-1.5"
         />
         <input
@@ -506,7 +506,7 @@ function SystemForm({
           name="mtpdMin"
           min={0}
           defaultValue={system?.mtpdMin ?? ""}
-          placeholder="MTPD"
+          placeholder="MTPD" aria-label="MTPD"
           className="rounded border border-line-strong bg-surface-0 px-2 py-1.5"
         />
       </fieldset>
@@ -529,13 +529,13 @@ function SystemForm({
         <input
           name="primaryRegion"
           defaultValue={system?.primaryRegion ?? ""}
-          placeholder="Primary region"
+          placeholder="Primary region" aria-label="Primary region"
           className="rounded border border-line-strong bg-surface-0 px-2 py-1.5"
         />
         <input
           name="failoverRegion"
           defaultValue={system?.failoverRegion ?? ""}
-          placeholder="Failover region"
+          placeholder="Failover region" aria-label="Failover region"
           className="rounded border border-line-strong bg-surface-0 px-2 py-1.5"
         />
       </fieldset>
@@ -547,7 +547,7 @@ function SystemForm({
         <input
           name="backupFrequency"
           defaultValue={system?.backupFrequency ?? ""}
-          placeholder="Frequency (continuous/hourly/daily/…)"
+          placeholder="Frequency (continuous/hourly/daily/…)" aria-label="Frequency (continuous/hourly/daily/…)"
           className="rounded border border-line-strong bg-surface-0 px-2 py-1.5"
         />
         <input
@@ -555,7 +555,7 @@ function SystemForm({
           name="backupRetentionDays"
           min={0}
           defaultValue={system?.backupRetentionDays ?? ""}
-          placeholder="Retention (days)"
+          placeholder="Retention (days)" aria-label="Retention (days)"
           className="rounded border border-line-strong bg-surface-0 px-2 py-1.5"
         />
         <input
@@ -574,7 +574,7 @@ function SystemForm({
         name="notes"
         rows={2}
         defaultValue={system?.notes ?? ""}
-        placeholder="Notes — runbook URL, on-call rota, escalation path…"
+        placeholder="Notes — runbook URL, on-call rota, escalation path…" aria-label="Notes — runbook URL, on-call rota, escalation path…"
         className="w-full rounded border border-line-strong bg-surface-0 px-3 py-2 text-xs"
       />
 
@@ -650,13 +650,13 @@ function DRTestForm({ systemId, onDone }: { systemId: string; onDone: () => void
       </div>
       <input
         name="participants"
-        placeholder="Who ran the test"
+        placeholder="Who ran the test" aria-label="Who ran the test"
         className="w-full rounded border border-line bg-surface-0 px-2 py-1.5"
       />
       <textarea
         name="notes"
         rows={2}
-        placeholder="Notes — what worked, what didn't, follow-ups"
+        placeholder="Notes — what worked, what didn't, follow-ups" aria-label="Notes — what worked, what didn't, follow-ups"
         className="w-full rounded border border-line bg-surface-0 px-2 py-1.5"
       />
       <div className="flex justify-end gap-2">

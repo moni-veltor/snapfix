@@ -61,10 +61,10 @@ export default function LiveQuickCapture({ exerciseId, dDayHHMM }: Props) {
           <input
             name="body"
             required
-            placeholder="What happened? (e.g. 'CTO authorised public statement')"
+            placeholder="What happened? (e.g. 'CTO authorised public statement')" aria-label="What happened? (e.g. 'CTO authorised public statement')"
             className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
           />
-          <button className="col-span-3 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
+          <button className="col-span-3 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">
             Add to log
           </button>
         </form>
@@ -94,17 +94,17 @@ export default function LiveQuickCapture({ exerciseId, dDayHHMM }: Props) {
           <input
             name="subject"
             required
-            placeholder="Subject"
+            placeholder="Subject" aria-label="Subject"
             className="rounded border border-line-strong px-2 py-1.5 text-sm"
           />
           <textarea
             name="body"
             required
             rows={3}
-            placeholder="Draft message body…"
+            placeholder="Draft message body…" aria-label="Draft message body…"
             className="col-span-2 rounded border border-line-strong px-2 py-1.5 text-sm"
           />
-          <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700">
+          <button className="col-span-2 rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400">
             Save draft
           </button>
         </form>

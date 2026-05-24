@@ -179,7 +179,7 @@ function BasicsStep() {
           <input
             name="name"
             required
-            placeholder="Core ledger"
+            placeholder="Core ledger" aria-label="Core ledger"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -187,7 +187,7 @@ function BasicsStep() {
           <span className="text-soft">Owner</span>
           <input
             name="owner"
-            placeholder="Team or named owner"
+            placeholder="Team or named owner" aria-label="Team or named owner"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -225,7 +225,7 @@ function BasicsStep() {
         <textarea
           name="description"
           rows={2}
-          placeholder="What this system does and which IBSs depend on it."
+          placeholder="What this system does and which IBSs depend on it." aria-label="What this system does and which IBSs depend on it."
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
       </label>
@@ -243,7 +243,7 @@ function ObjectivesStep() {
             type="number"
             name="rtoMin"
             min={0}
-            placeholder="30"
+            placeholder="30" aria-label="30"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
           <span className="mt-1 block text-[10px] text-soft">
@@ -256,7 +256,7 @@ function ObjectivesStep() {
             type="number"
             name="rpoMin"
             min={0}
-            placeholder="5"
+            placeholder="5" aria-label="5"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
           <span className="mt-1 block text-[10px] text-soft">
@@ -269,7 +269,7 @@ function ObjectivesStep() {
             type="number"
             name="mtpdMin"
             min={0}
-            placeholder="240"
+            placeholder="240" aria-label="240"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
           <span className="mt-1 block text-[10px] text-soft">
@@ -307,7 +307,7 @@ function FailoverStep() {
           <span className="text-soft">Primary region</span>
           <input
             name="primaryRegion"
-            placeholder="eu-west-2"
+            placeholder="eu-west-2" aria-label="eu-west-2"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -315,7 +315,7 @@ function FailoverStep() {
           <span className="text-soft">Failover region</span>
           <input
             name="failoverRegion"
-            placeholder="eu-west-1"
+            placeholder="eu-west-1" aria-label="eu-west-1"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -336,7 +336,7 @@ function BackupsStep() {
           <span className="text-soft">Frequency</span>
           <input
             name="backupFrequency"
-            placeholder="continuous / hourly / daily"
+            placeholder="continuous / hourly / daily" aria-label="continuous / hourly / daily"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -346,7 +346,7 @@ function BackupsStep() {
             type="number"
             name="backupRetentionDays"
             min={0}
-            placeholder="2555"
+            placeholder="2555" aria-label="2555"
             className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
           />
         </label>
@@ -364,7 +364,7 @@ function BackupsStep() {
         <textarea
           name="notes"
           rows={3}
-          placeholder="Runbook URL, on-call rota, escalation path…"
+          placeholder="Runbook URL, on-call rota, escalation path…" aria-label="Runbook URL, on-call rota, escalation path…"
           className="mt-1 w-full rounded-md border border-line-strong bg-surface-0 px-3 py-2 text-sm"
         />
       </label>

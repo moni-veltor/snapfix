@@ -57,7 +57,7 @@ export default async function DecisionTypesSettingsPage() {
                 name="code"
                 required
                 pattern="[a-z0-9\-]+"
-                placeholder="halt-outbound-payments"
+                placeholder="halt-outbound-payments" aria-label="halt-outbound-payments"
                 className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 font-mono text-sm text-ink"
               />
             </label>
@@ -66,7 +66,7 @@ export default async function DecisionTypesSettingsPage() {
               <input
                 name="label"
                 required
-                placeholder="Halt outbound payments"
+                placeholder="Halt outbound payments" aria-label="Halt outbound payments"
                 className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 text-sm text-ink"
               />
             </label>
@@ -74,7 +74,7 @@ export default async function DecisionTypesSettingsPage() {
               <span className="text-muted">Hint (optional)</span>
               <input
                 name="hint"
-                placeholder="One-line guidance shown when this preset is selected"
+                placeholder="One-line guidance shown when this preset is selected" aria-label="One-line guidance shown when this preset is selected"
                 className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 text-sm text-ink"
               />
             </label>
@@ -82,7 +82,7 @@ export default async function DecisionTypesSettingsPage() {
               <span className="text-muted">Approver roles (comma-separated)</span>
               <input
                 name="approverRolesCsv"
-                placeholder="CRO, CFO"
+                placeholder="CRO, CFO" aria-label="CRO, CFO"
                 className="mt-1 w-full rounded-md border border-line-strong px-2 py-1.5 text-sm text-ink"
               />
             </label>

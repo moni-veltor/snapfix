@@ -222,7 +222,7 @@ function RegulatorNotificationDetail({
                 name="waiverRationale"
                 required
                 rows={3}
-                placeholder="Why is no notification required? (e.g. severity below threshold; supervisor verbally agreed)"
+                placeholder="Why is no notification required? (e.g. severity below threshold; supervisor verbally agreed)" aria-label="Why is no notification required? (e.g. severity below threshold; supervisor verbally agreed)"
                 className="w-full rounded-md border border-line-strong bg-surface-1 px-2 py-1.5 text-sm"
               />
               <button

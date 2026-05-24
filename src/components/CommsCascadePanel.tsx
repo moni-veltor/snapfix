@@ -77,7 +77,7 @@ export default function CommsCascadePanel({ exerciseId, drafts }: Props) {
               {STAKEHOLDER_LABEL[stakeholder] ?? stakeholder}
             </span>
             {!employeeSent && CASCADE_BLOCKED_UNTIL_EMPLOYEES.includes(stakeholder) && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800">
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 blocked until employee comms sent
               </span>
             )}
@@ -159,7 +159,7 @@ function DraftRow({ exerciseId, draft }: { exerciseId: string; draft: Draft }) {
             <button
               onClick={send}
               disabled={pending}
-              className="rounded bg-slate-900 px-2 py-0.5 text-[11px] text-white disabled:bg-slate-400"
+              className="rounded bg-slate-900 px-2 py-0.5 text-[11px] text-white disabled:bg-slate-400 dark:bg-indigo-500 dark:hover:bg-indigo-400"
             >
               {pending ? "Sending…" : "Send"}
             </button>
@@ -180,7 +180,7 @@ function DraftRow({ exerciseId, draft }: { exerciseId: string; draft: Draft }) {
           <input
             name="reason"
             required
-            placeholder="Reason for rejection"
+            placeholder="Reason for rejection" aria-label="Reason for rejection"
             className="flex-1 rounded border border-line-strong px-2 py-1 text-xs"
           />
           <button className="rounded bg-rose-600 px-2 py-1 text-[11px] text-white">

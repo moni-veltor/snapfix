@@ -652,7 +652,7 @@ function KindBlock({
           <textarea
             name="commentary"
             rows={2}
-            placeholder="Commentary (required if Non-satisfactory)"
+            placeholder="Commentary (required if Non-satisfactory)" aria-label="Commentary (required if Non-satisfactory)"
             className="w-full rounded border border-line-strong bg-surface-1 px-1.5 py-1 text-[10px]"
           />
           <div className="flex justify-between gap-1">
