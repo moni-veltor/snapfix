@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { type ReactNode } from "react";
+import ConsultingCTA from "./ConsultingCTA";
 
 type Props = {
   badge: string;
@@ -9,6 +10,11 @@ type Props = {
   outcomes: string[];
   exercises: { title: string; description: string }[];
   cta?: { label: string; href: string };
+  consulting?: {
+    headline?: string;
+    pitch?: string;
+    bullets?: string[];
+  };
   children?: ReactNode;
 };
 
@@ -20,6 +26,7 @@ export default function UseCaseLayout({
   outcomes,
   exercises,
   cta,
+  consulting,
   children,
 }: Props) {
   return (
@@ -91,11 +98,23 @@ export default function UseCaseLayout({
         </section>
       )}
 
-      <section className="mx-auto max-w-3xl px-6 pb-24">
-        <div className="rounded-lg border border-indigo-400/30 bg-indigo-500/[0.08] p-6 text-center">
-          <h2 className="text-xl font-semibold text-white">Want to run an exercise like this?</h2>
-          <p className="mt-2 text-sm text-slate-300">
-            All these scenarios are in the SnapFix library — clone, adapt, and run with your team.
+      <ConsultingCTA
+        headline={consulting?.headline ?? "Run this with us, not just on us."}
+        pitch={
+          consulting?.pitch ??
+          "We facilitate this exact use-case for tier-1 and tier-2 firms — scenario tailoring, IMT facilitation, regulator-grade reporting. A short call is the fastest way to scope it."
+        }
+        bullets={consulting?.bullets}
+        contactInterest="consulting"
+      />
+
+      <section className="mx-auto max-w-3xl px-6 py-16">
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-6 text-center">
+          <h2 className="text-lg font-semibold text-white">
+            Or run it yourself — the scenarios ship with the platform.
+          </h2>
+          <p className="mt-2 text-sm text-slate-400">
+            Clone any of these into your SnapFix workspace and run them with your own team.
           </p>
           <div className="mt-4 flex justify-center gap-3">
             <Link
@@ -105,10 +124,10 @@ export default function UseCaseLayout({
               {cta?.label ?? "Get started free"}
             </Link>
             <Link
-              href="/contact"
+              href="/product/simulator"
               className="rounded-md border border-white/15 px-4 py-2 text-sm font-medium text-white hover:bg-white/[0.04]"
             >
-              Talk to us
+              See the Simulator →
             </Link>
           </div>
         </div>

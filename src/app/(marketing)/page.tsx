@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import AnimatedHero from "@/components/marketing/AnimatedHero";
+import ConsultingCTA from "@/components/marketing/ConsultingCTA";
 
 export const metadata = {
   title: "SnapFix — Practise the disruptions that matter, before they happen",
@@ -55,6 +56,16 @@ export default async function MarketingHome() {
               </div>
               <p className="mt-4 text-xs text-slate-500">
                 No card. Free for up to 5 members. CMORG library + 26 ready-made scenarios.
+              </p>
+              <p className="mt-6 max-w-xl text-sm text-slate-400">
+                Or run your next exercise <em>with us</em> — we facilitate annual cycles for
+                Tier&nbsp;1 and Tier&nbsp;2 firms.{" "}
+                <Link
+                  href="/contact?interest=consulting"
+                  className="font-medium text-indigo-300 hover:text-indigo-200"
+                >
+                  Book a 30-min call →
+                </Link>
               </p>
             </div>
             <AnimatedHero />
@@ -154,6 +165,11 @@ export default async function MarketingHome() {
           </div>
         </div>
       </section>
+
+      <ConsultingCTA
+        headline="The platform, plus the people who'll run it with you."
+        pitch="SnapFix isn't just software — we facilitate exercises, coach IBS registers through their first regulator review, and design the bespoke scenarios that don't fit any library. Most customers blend platform + consulting."
+      />
 
       {/* CTA */}
       <section className="bg-night-hero">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ConsultingCTA from "@/components/marketing/ConsultingCTA";
 
 export const metadata = {
   title: "SnapFix Simulator — Operational Resilience Exercises",
@@ -128,6 +129,17 @@ export default function SimulatorProductPage() {
           </div>
         </div>
       </section>
+
+      <ConsultingCTA
+        headline="Don't just buy the simulator — run your first cycle with the team who built it."
+        pitch="We facilitate annual exercise cycles end-to-end: scenario design, live facilitation, regulator-grade reporting. The platform earns its keep faster when the first three exercises are run with us alongside your IMT."
+        bullets={[
+          "Annual exercise programme designed against your IBS register",
+          "We facilitate the first 1–3 exercises while your team learns the platform",
+          "Regulator-grade after-action reports you can hand to supervision",
+        ]}
+        contactInterest="consulting"
+      />
 
       {/* CTA */}
       <section className="bg-night-hero">

@@ -26,6 +26,16 @@ export default function RegulatorPrepUseCase() {
         "Action items tracked to closure with evidence",
         "Audit log of every material action, retained for the life of the tenant",
       ]}
+      consulting={{
+        headline: "We've sat on the firm side of supervisory visits — let's prepare yours.",
+        pitch:
+          "Regulator-prep engagements are short, dense and high-leverage. We run a 2-day deep-dive that produces the IBS register update, the gap analysis against SS1/21 and a written remediation plan you can present to your Risk Committee.",
+        bullets: [
+          "2-day intensive: IBS register, tolerances, evidence trail review",
+          "Mock supervisory Q&A with a peer-experienced facilitator",
+          "Written remediation plan with owners and dates, ready for committee",
+        ],
+      }}
       exercises={[
         {
           title: "PRA SS1/21 supervisory dry-run",
@@ -54,8 +64,8 @@ export default function RegulatorPrepUseCase() {
         A firm that's properly prepared can — within an hour of a supervisor walking in —
         produce: the IBS register (signed off), the most recent tolerance assessment, the last
         12 months of exercise reports, the open action item list with owners and due dates, the
-        IMP and BCP in their current versions, and the vendor register with criticality scores.
-        None of it is in a single email — but every piece is somewhere a named person can fetch.
+        current incident management and continuity plans, and the vendor register with criticality
+        scores. None of it is in a single email — but every piece is somewhere a named person can fetch.
       </p>
       <p>
         SnapFix is designed so all of the above is one or two queries away. Not because we want

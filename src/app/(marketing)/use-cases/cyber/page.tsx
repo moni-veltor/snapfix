@@ -27,6 +27,16 @@ export default function CyberUseCase() {
         "Customer + employee comms cascade in policy-correct order, vetted by Head of External Affairs",
         "Recovery plan with RTO targets per system, RPO acceptable per service",
       ]}
+      consulting={{
+        headline: "Run your next ransomware exercise with us.",
+        pitch:
+          "Cyber exercises are where under-calling severity costs you the most. We facilitate ransomware and exfiltration scenarios end-to-end, including the post-event regulator narrative, so the first time your IMT lives through one isn't the real one.",
+        bullets: [
+          "Cyber-specific scenario tailoring against your IBS register",
+          "Facilitation that drills the cyber-default-High rule and the don't-pay gate",
+          "After-action review tuned for the FCA / PRA cyber conversation",
+        ],
+      }}
       exercises={[
         {
           title: "CMORG-01 · Ransomware on a Tier 1 system",

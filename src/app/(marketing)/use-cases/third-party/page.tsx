@@ -26,6 +26,16 @@ export default function ThirdPartyUseCase() {
         "Comms cascade for vendor incidents distinct from your own (vendor customers and intermediaries also notified)",
         "Regulator notification framed correctly — your incident, your IBS, even though the cause is upstream",
       ]}
+      consulting={{
+        headline: "Get your vendor register exercise-ready before the next regulator visit.",
+        pitch:
+          "Third-party exercises are only as good as your vendor register. We coach the register through its first regulator-quality review and facilitate the scenarios that actually test the workarounds.",
+        bullets: [
+          "Vendor-register cleanup workshop — IBS linkage, criticality tiering, exit-plan posture",
+          "Tabletop or live facilitation of cloud, core-banking and payments scenarios",
+          "Evidence pack designed for Section 166-style questioning",
+        ],
+      }}
       exercises={[
         {
           title: "CMORG-06 · Critical cloud provider region outage",

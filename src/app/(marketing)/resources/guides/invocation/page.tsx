@@ -4,7 +4,7 @@ import InvocationWalker from "@/components/marketing/InvocationWalker";
 export const metadata = {
   title: "Should I invoke the IMT? — SnapFix Resources",
   description:
-    "The hardest call in a real incident: stand up the IMT or wait. Step through the five trigger questions the IMP uses and get a recommendation.",
+    "The hardest call in a real incident: stand up the IMT or wait. Step through five trigger questions and get a recommendation.",
 };
 
 export default function InvocationGuide() {

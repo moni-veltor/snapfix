@@ -80,7 +80,8 @@ export default function SeverityGuide() {
           severity is reassessed).
         </li>
         <li>
-          BCP activation becomes more likely — the joint CEO+CRO conversation usually happens at
+          Continuity activation becomes more likely — the dual-approval conversation
+          (typically CEO + CRO under the standard separation-of-roles model) usually happens at
           the first IMT meeting after a High classification.
         </li>
       </ul>

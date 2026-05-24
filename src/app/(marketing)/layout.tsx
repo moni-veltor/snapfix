@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { Logo } from "@/components/Logo";
+import NewsletterSignup from "@/components/marketing/NewsletterSignup";
 
 export default async function MarketingLayout({
   children,
@@ -74,23 +75,7 @@ export default async function MarketingLayout({
               Operational resilience consulting in technology, with a growing platform of practical
               apps for banks, fintechs, and financial market infrastructures.
             </p>
-            <form action="/contact" method="get" className="pt-2">
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                Get monthly briefings on operational resilience
-              </label>
-              <div className="mt-1 flex gap-2">
-                <input
-                  name="newsletter"
-                  type="email"
-                  required
-                  placeholder="you@firm.com" aria-label="you@firm.com"
-                  className="flex-1 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none"
-                />
-                <button className="rounded-md bg-indigo-500 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-400">
-                  Subscribe
-                </button>
-              </div>
-            </form>
+            <NewsletterSignup source="footer" />
           </div>
           <FooterCol title="Platform" links={[
             { href: "/product/simulator", label: "SnapFix Simulator" },

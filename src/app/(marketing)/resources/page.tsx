@@ -20,7 +20,7 @@ const GUIDES = [
     href: "/resources/guides/invocation",
     title: "Should I invoke the IMT? A decision walker",
     pitch:
-      "The hardest call in a real incident: stand up the IMT or wait. Step through the five trigger questions the IMP uses and get a recommendation with citations.",
+      "The hardest call in a real incident: stand up the IMT or wait. Step through five trigger questions and get a recommendation, with the reasoning a regulator would want to read.",
     badge: "Interactive",
     icon: Compass,
   },

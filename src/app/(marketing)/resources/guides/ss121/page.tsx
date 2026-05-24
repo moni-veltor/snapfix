@@ -45,17 +45,17 @@ const CHECKS = [
   {
     question: "Is your incident management plan documented and current?",
     evidence:
-      "IMP covering invocation, severity classification, IMT / IRT structure, regulator notification SLAs, closure criteria, lessons-learned.",
+      "A current incident management plan covering invocation, severity classification, IMT / IRT structure, regulator notification SLAs, closure criteria, and lessons-learned discipline.",
   },
   {
-    question: "Does your IMP separate Incident Leader (CEO) from Incident Manager (CRO)?",
+    question: "Does your incident management plan separate Incident Leader (CEO) from Incident Manager (CRO)?",
     evidence:
-      "Explicit statement in the IMP. Per industry best practice, the same person cannot hold both roles.",
+      "Explicit statement in the plan. Industry practice is that the same person cannot hold both roles — leadership and process discipline pull against each other in the first hour.",
   },
   {
-    question: "Do you have a Business Continuity Plan that wires into the IMP?",
+    question: "Do you have a continuity plan that wires into your incident process?",
     evidence:
-      "BCP with activation triggers (joint CEO + CRO decision), BRTs named, financial continuity rules, daily-liquidity-monitoring protocol if BC active.",
+      "Documented continuity arrangements with activation triggers (typically a dual-approval decision), business recovery teams named, financial continuity rules, and a daily-liquidity-monitoring protocol when continuity remains active.",
   },
   {
     question: "Can you map your critical third parties to the IBSs they support?",
@@ -119,7 +119,7 @@ export default function SS121Guide() {
           been refreshed in 18 months. New vendors aren't on it.
         </li>
         <li>
-          <strong>IMP separation of roles isn't enforced.</strong> The plan says CEO leads and
+          <strong>Separation of roles isn't enforced.</strong> The plan says CEO leads and
           CRO manages, but in the last incident one person did both because the CEO was
           unavailable. No deputy chain was documented.
         </li>
@@ -129,9 +129,9 @@ export default function SS121Guide() {
       <p>
         A firm that's properly prepared can — within an hour of a supervisor walking in —
         produce: the IBS register, the most recent tolerance assessment, the last 12 months of
-        exercise reports, the open action item list with owners and due dates, the IMP and BCP
-        in their current versions, and the vendor register with criticality scores. None of it
-        is in a single email — but every piece is somewhere a named person can fetch.
+        exercise reports, the open action item list with owners and due dates, the current
+        incident management and continuity plans, and the vendor register with criticality scores.
+        None of it is in a single email — but every piece is somewhere a named person can fetch.
       </p>
     </GuideLayout>
   );

@@ -20,12 +20,22 @@ export default function SevereWeatherUseCase() {
         "Industrial action or pandemic-style absenteeism — what's your minimum viable team?",
       ]}
       outcomes={[
-        "BCP activation tested with joint CEO + CRO decision in the live exercise",
+        "Continuity activation tested with a dual-approval decision in the live exercise",
         "Alternative work locations validated — not just listed in a document",
         "Staff welfare protocol exercised, with HR + CPO playing their actual roles",
         "Damage assessment report (produced as a real deliverable)",
         "Comms cascade for premises events — different stakeholders than cyber, similar discipline",
       ]}
+      consulting={{
+        headline: "The physical playbooks haven't been touched since 2020. Let's refresh them with you.",
+        pitch:
+          "Post-pandemic remote capacity, post-Brexit staffing, post-renewables grid — the assumptions in your physical-event runbooks may all be stale. We facilitate the workshops that surface the gaps and the live exercises that test the rewrites.",
+        bullets: [
+          "Continuity-plan refresh workshop against today's working patterns",
+          "Live facilitation of grid, weather, premises and absenteeism scenarios",
+          "Recovery-team mobilisation drill — who's actually on call when?",
+        ],
+      }}
       exercises={[
         {
           title: "CMORG-10 · Major power-grid disruption",
@@ -64,26 +74,26 @@ export default function SevereWeatherUseCase() {
         are stale.
       </p>
 
-      <h2>The BCP-activation angle</h2>
+      <h2>The continuity-activation angle</h2>
       <p>
-        Physical events are where the Business Continuity Plan moves from a sub-clause of the
-        IMP to a primary instrument. The joint CEO + CRO activation decision is real here:
-        which BRTs do we mobilise? What's the financial continuity protocol? Daily liquidity
-        monitoring kicks in if the BC remains active beyond 24 hours.
+        Physical events are where the continuity plan moves from a supporting reference to a
+        primary instrument. The dual-approval activation decision is real here: which business
+        recovery teams do we mobilise? What's the financial continuity protocol? Daily liquidity
+        monitoring kicks in if continuity remains active beyond 24 hours.
       </p>
       <p>
-        SnapFix's BCP activation surface (the joint-approval flow, BRT mobilisation, daily
-        liquidity gate, insurance-invocation decision) is built for this — but it only earns its
-        value through exercises that actually invoke it. Cyber events sometimes touch BCP;
-        physical events almost always do.
+        SnapFix's continuity-activation surface (the dual-approval flow, recovery-team mobilisation,
+        daily liquidity gate, insurance-invocation decision) is built for this — but it only earns
+        its value through exercises that actually invoke it. Cyber events sometimes touch
+        continuity; physical events almost always do.
       </p>
 
       <h2>What SnapFix gives you</h2>
       <ul>
         <li>Pre-built CMORG scenarios covering grid, weather, premises, and absenteeism</li>
-        <li>BCP activation as a joint CEO + CRO decision distinct from IMT invocation</li>
-        <li>BRT mobilisation tracking — Finance, Buildings, Tech, Comms</li>
-        <li>Damage assessment report template (per best practice)</li>
+        <li>Continuity activation as a dual-approval decision distinct from IMT invocation</li>
+        <li>Recovery-team mobilisation tracking — Finance, Buildings, Tech, Comms</li>
+        <li>Damage assessment report template aligned to industry practice</li>
         <li>Staff welfare protocol references built into the after-action retrospective</li>
       </ul>
     </UseCaseLayout>

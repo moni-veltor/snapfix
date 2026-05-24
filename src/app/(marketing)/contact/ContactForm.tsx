@@ -1,13 +1,27 @@
 "use client";
 
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import { sendContactMessageAction, type ContactState } from "@/app/actions/contact";
+
+const INTEREST_VALUES = new Set([
+  "demo",
+  "consulting",
+  "starter",
+  "growth",
+  "enterprise",
+  "other",
+]);
 
 export default function ContactForm() {
   const [state, action, pending] = useActionState<ContactState, FormData>(
     sendContactMessageAction,
     undefined,
   );
+  const searchParams = useSearchParams();
+  const interestParam = searchParams.get("interest");
+  const defaultInterest =
+    interestParam && INTEREST_VALUES.has(interestParam) ? interestParam : "demo";
   return (
     <form
       action={action}
@@ -32,6 +46,7 @@ export default function ContactForm() {
       <Select
         label="What are you interested in?"
         name="interest"
+        defaultValue={defaultInterest}
         options={[
           { v: "demo", l: "A platform demo" },
           { v: "consulting", l: "Consulting / facilitation" },
