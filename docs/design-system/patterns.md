@@ -265,7 +265,9 @@ The tone gradient (rose → amber → cyan → emerald) is consistent across eve
 
 ## Pattern 9 — Tabbed detail page
 
-Long detail surfaces split into 3–5 tabs to avoid long-scroll. Used on `/ibs/[id]`, `/vendors/[id]`, `/runbooks/[id]`, `/exercises/[id]/debrief`, `/settings`.
+Long detail surfaces split into 3–5 tabs to avoid long-scroll. Used on `/ibs/[id]`, `/vendors/[id]`, `/runbooks/[id]`, `/exercises/[id]` (PLANNING), `/exercises/[id]/debrief`, `/settings`.
+
+**Variant — health-tile tabs.** On `/exercises/[id]` (PLANNING) the tab triggers double as per-stage health tiles: each tab shows a pass/total count, a coloured progress bar, the top 2 failing required checks, and a tone border (emerald / amber / rose). Active tile gets a ring + shadow; inactive tiles dim to 80% opacity. The tile-as-tab pattern works when the tab list is genuinely informational at a glance — otherwise prefer the plainer `<TabsList>` from the snippet below.
 
 ```tsx
 <TabsRoot defaultValue={initial} value={active} onValueChange={setActive}>

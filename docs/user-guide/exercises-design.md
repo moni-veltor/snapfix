@@ -11,6 +11,16 @@ An exercise is a *run* of a scenario. The 5-step wizard at `/exercises/new` turn
 
 If you don't know which to pick: start with a library shell that matches your sector + the disruption type you want to rehearse. The library has filters for sector, coverage (people / property / tech / data-availability / data-integrity / 3rd party), and difficulty across cognitive / time-pressure / ambiguity / stakeholders axes.
 
+### Scenario IBSs must come from your register
+
+When you open a scenario at `/scenarios/[id]` and pick the **IBS** tab, the only IBSs you can attach are those already approved in your formal register at `/ibs`. Click **+ Add an IBS from the register** to open a searchable modal of approved entries — pick one and it's attached. There is no freeform "type a new IBS" path on this surface; if you need a new IBS, add and approve it in `/ibs` first.
+
+This is the integrity rule: exercises must test the firm's *real* services, not design-time placeholders.
+
+**Library-cloned scenarios** arrive with template IBSs that aren't tied to your register — they show up with a "Not in register" amber chip and an inline "Link to register" picker. Bind each one (or remove it) before you can run the exercise. The link-in-place preserves the row's event mappings, so all the inject-to-IBS wiring survives the bind.
+
+If you try to mark an exercise **Ready** while any scenario IBS is still unlinked, the readiness panel surfaces a blocker (`scenario-ibs-linked`) with a one-click jump to the scenario's IBS tab.
+
 ## The 5-step wizard
 
 | Step | What you set |
@@ -22,6 +32,24 @@ If you don't know which to pick: start with a library shell that matches your se
 | **5. Regulator + closure** | Regulator-evidence mode toggle (locks edits, audit-chain hashes every change). Regulator audience label (e.g. "PRA SS1/21"). Closure approver. |
 
 The wizard saves at each step so you can step away and come back.
+
+## The planning page — tabbed by stage
+
+Once an exercise exists, `/exercises/[id]` (status `PLANNING`) is your home base for finishing the plan. It has the same 5 stages as the wizard, but rendered as **tabs** so you only ever see one stage at a time:
+
+| Tab | What you edit here |
+|---|---|
+| **1 · Basics** | Date, duration, time zone, location, regulator audience |
+| **2 · Scenarios** | Objectives (1–5 short outcomes) and the IBSs the exercise tests |
+| **3 · Team** | Facilitator, backup facilitator, full roster (with SMF quick-add) |
+| **4 · Injects** | Inject count + deep-link to the timeline editor + edit-source-scenario link |
+| **5 · Pre-flight** | Briefing send / skip, .ics download, the final Mark READY button |
+
+A sticky **readiness gauge** lives at the top — overall % ready, the Mark READY button (only enabled when every required check passes), and an expandable list of failing required checks. Click any failing check label to jump to its stage.
+
+**Smart default tab.** On first visit, the page opens to the first stage with a failing required check (so you land where the work is). If everything passes, it opens to Pre-flight (where Mark READY lives). On return visits, your last-used tab is remembered. Deep-links like `?stage=team` work too.
+
+**Wizard escape hatch.** Each tab has a small "Open in wizard →" link at the bottom if you prefer the guided multi-step flow at `/exercises/new` for that stage.
 
 ## Modes — PRODUCTION vs DRY_RUN
 
