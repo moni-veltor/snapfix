@@ -16,7 +16,21 @@ import FacilitatorPanels from "@/components/facilitator/FacilitatorPanels";
 import InjectComposerModal from "@/components/scenario/InjectComposerModal";
 import { loadReadReceipts } from "@/lib/read-receipts";
 import FacilitatorRuntimeControls from "@/components/live/FacilitatorRuntimeControls";
+import FacilitatorSitrepGapPanel, {
+  type SitrepGapRow,
+} from "@/components/facilitator/FacilitatorSitrepGapPanel";
 import { prisma } from "@/lib/prisma";
+import { currentDDay } from "@/lib/dday";
+
+/** Parse a "HH:MM" D-Day clock value into total minutes; null if malformed. */
+function ddayHHMMToMinutes(value: string): number | null {
+  const m = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (Number.isNaN(h) || Number.isNaN(min)) return null;
+  return h * 60 + min;
+}
 
 export default async function FacilitatorPage({
   params,
@@ -35,6 +49,55 @@ export default async function FacilitatorPage({
     distinct: ["roleTitle"],
   });
   const rosterRoleTitles = rosterRoles.map((r) => r.roleTitle).sort();
+
+  // Sitrep-cadence roll-up per BU. Pulls the latest sitrep per BU for
+  // any incident invoked on this exercise, then computes minutes-since
+  // and promise-overdue against the live D-Day clock. Same thresholds
+  // as the participant-side SitrepCadenceBanner.
+  const activeIncident = await prisma.incident.findFirst({
+    where: {
+      exerciseId: exercise.id,
+      status: { in: ["INVOKED", "CONTAINED", "RESOLVED"] },
+    },
+    orderBy: { invokedAt: "desc" },
+    select: { id: true },
+  });
+  const sitrepRows = activeIncident
+    ? await prisma.sitrep.findMany({
+        where: { incidentId: activeIncident.id },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
+  const sitrepClock = currentDDay(exercise.dDayAnchor, exercise.speedMultiplier);
+  const sitrepDDayMin = ddayHHMMToMinutes(sitrepClock.hhmm);
+  // Server-component render maps 1:1 to a request — snapshot the wall
+  // clock once so all sitrep-age math is consistent for this response.
+  // eslint-disable-next-line react-hooks/purity
+  const sitrepNowMs = Date.now();
+  const latestPerBU = new Map<string, (typeof sitrepRows)[number]>();
+  for (const s of sitrepRows) {
+    if (!latestPerBU.has(s.businessUnit)) latestPerBU.set(s.businessUnit, s);
+  }
+  const sitrepGapRows: SitrepGapRow[] = Array.from(latestPerBU.values()).map((s) => {
+    const minutesSinceLast = Math.floor(
+      (sitrepNowMs - s.createdAt.getTime()) / 60_000,
+    );
+    const promised = s.nextUpdateDDayTime;
+    let promiseOverdueMin: number | null = null;
+    if (promised) {
+      const promisedMin = ddayHHMMToMinutes(promised);
+      if (promisedMin !== null && sitrepDDayMin !== null) {
+        const delta = sitrepDDayMin - promisedMin;
+        if (delta > 0) promiseOverdueMin = delta;
+      }
+    }
+    return {
+      businessUnit: s.businessUnit,
+      minutesSinceLast,
+      promisedNextUpdate: promised,
+      promiseOverdueMin,
+    };
+  });
 
   const overdueBeats =
     events.filter((e) => !e.released).length +
@@ -148,6 +211,11 @@ export default async function FacilitatorPage({
         exerciseId={exercise.id}
         status={exercise.status}
         rosterRoleTitles={rosterRoleTitles}
+      />
+
+      <FacilitatorSitrepGapPanel
+        rows={sitrepGapRows}
+        incidentInvoked={!!activeIncident}
       />
 
       {/* Two-pane: tabbed run sheet on the left, sticky live incident log on the right. */}

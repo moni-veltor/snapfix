@@ -43,6 +43,8 @@ import LivePoller from "@/components/live/LivePoller";
 import InjectArrivalNotifier from "@/components/live/InjectArrivalNotifier";
 import FirstTimeLiveTour from "@/components/live/FirstTimeLiveTour";
 import SitrepCadenceBanner from "@/components/live/SitrepCadenceBanner";
+import LiveToleranceBreachPanel from "@/components/live/LiveToleranceBreachPanel";
+import { evaluateLiveTolerance, type LiveToleranceRow } from "@/lib/rto-rpo-check";
 import MyApprovalsDock from "@/components/live/MyApprovalsDock";
 import { loadApprovalsQueue } from "@/lib/approvals";
 import FacilitatorAnnouncementsBanner, {
@@ -245,6 +247,11 @@ export default async function LiveWorkspacePage({
         orderBy: { startedAt: "asc" },
         include: { stepExecutions: { orderBy: { stepOrderIdx: "asc" } } },
       })
+    : [];
+
+  // ─── Live IBS impact-tolerance burn-down ───────────────────────────────
+  const liveToleranceRows: LiveToleranceRow[] = activeIncident
+    ? await evaluateLiveTolerance(activeIncident.id)
     : [];
 
   const linkedDecisionIds = runbookExecutionRows
@@ -532,6 +539,8 @@ export default async function LiveWorkspacePage({
         comms={approvalsQueue.comms}
       />
 
+      <LiveToleranceBreachPanel rows={liveToleranceRows} />
+
       {tickerEntries.length > 0 && <ActivityTicker entries={tickerEntries} />}
 
       <LiveTabs
@@ -560,6 +569,7 @@ export default async function LiveWorkspacePage({
               exerciseId={exercise.id}
               incidentId={activeIncident?.id ?? null}
             />
+            <LiveToleranceBreachPanel rows={liveToleranceRows} />
             <MyRunbookQueue
               exerciseId={exercise.id}
               executions={liveExecutions}
