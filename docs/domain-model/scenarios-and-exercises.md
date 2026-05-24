@@ -14,7 +14,7 @@ Scenarios are the *design* — what the test looks like. Exercises are the *run*
 
 **Children of `Scenario`:**
 
-* `ImportantBusinessService` — IBS rows used *inside* this scenario (not the same as the org's `OrganizationIBS` register — see [Domain overview](overview.md))
+* `ImportantBusinessService` — IBS rows used *inside* this scenario, snapshotted from the org's register at attach-time. Each row carries a nullable `organizationIBSId` FK back to `OrganizationIBS`. New rows added via the scenario IBS tab always set the FK (the picker only lists APPROVED register entries — freeform entry is no longer permitted). Legacy / library-cloned rows arrive with `organizationIBSId = null` and must be bound to an approved register entry before any exercise using the scenario can transition `PLANNING → READY` (see the `scenario-ibs-linked` readiness check)
 * `Event` — MSEL events with `eventNo`, `scheduledTime` (HH:MM), `title`, `description`, `expectedActions[]`, `objectives[]`, optional `senderRoleTitle` + `toRoleTitles[]` + `ccRoleTitles[]` for addressing
 * `Inject` — supplementary stimuli inside an event window. `injectNo`, `scheduledTime`, `summary`, `description`, `relation`, `kind` (`BUSINESS` | `TECHNICAL`)
 * `FacilitatorQuestion`, `DebriefQuestion` — the question banks asked during and after the run

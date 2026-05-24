@@ -1,19 +1,18 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowLeft,
   Building,
   Clock,
   FileText,
   History,
-  Plus,
   Trash2,
   Zap,
 } from "lucide-react";
 import { requireOrgUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
-  addIBSAction,
   deleteEventAction,
   deleteIBSAction,
   deleteInjectAction,
@@ -24,6 +23,7 @@ import InjectComposerModal from "@/components/scenario/InjectComposerModal";
 import EventComposerModal from "@/components/scenario/EventComposerModal";
 import ScenarioDetailTabs from "@/components/scenarios/ScenarioDetailTabs";
 import ScenarioPlayback from "@/components/scenarios/ScenarioPlayback";
+import IBSPicker, { type ApprovedIBS } from "@/components/scenarios/IBSPicker";
 
 const ARTEFACT_INCLUDE = {
   orderBy: { createdAt: "asc" as const },
@@ -60,6 +60,46 @@ export default async function ScenarioDetailPage({
   });
   if (!scenario) notFound();
   const canEdit = user.orgRole === "OWNER" || user.orgRole === "ADMIN";
+
+  // Approved register entries available to attach. Excludes IBSs already
+  // attached to this scenario so the picker doesn't show duplicates.
+  const attachedOrgIBSIds = scenario.ibsList
+    .map((i) => i.organizationIBSId)
+    .filter((id): id is string => !!id);
+  const approvedIBSs: ApprovedIBS[] = await prisma.organizationIBS.findMany({
+    where: {
+      orgId: user.orgId,
+      status: "APPROVED",
+      id: { notIn: attachedOrgIBSIds },
+    },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      criticality: true,
+      impactToleranceMin: true,
+    },
+    orderBy: { code: "asc" },
+  });
+
+  // For the link-in-place affordance, legacy/unlinked scenario rows need the
+  // full unfiltered approved list so an admin can bind a row whose code/name
+  // doesn't match anything in the register yet.
+  const allApprovedIBSs: ApprovedIBS[] = await prisma.organizationIBS.findMany({
+    where: { orgId: user.orgId, status: "APPROVED" },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      criticality: true,
+      impactToleranceMin: true,
+    },
+    orderBy: { code: "asc" },
+  });
+
+  const unlinkedCount = scenario.ibsList.filter(
+    (i) => !i.organizationIBSId,
+  ).length;
 
   const knownRoles = Array.from(
     new Set(scenario.exercises.flatMap((e) => e.participants.map((p) => p.roleTitle))),
@@ -445,109 +485,99 @@ export default async function ScenarioDetailPage({
           ),
           ibs: (
             <div className="space-y-4">
+              {unlinkedCount > 0 && (
+                <div className="flex items-start gap-3 rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-sm dark:border-amber-700/60 dark:bg-amber-950/30">
+                  <AlertTriangle
+                    size={16}
+                    className="mt-0.5 shrink-0 text-amber-700 dark:text-amber-300"
+                    aria-hidden
+                  />
+                  <div>
+                    <p className="font-medium text-amber-900 dark:text-amber-100">
+                      {unlinkedCount} IBS{unlinkedCount === 1 ? "" : "s"} not in your register
+                    </p>
+                    <p className="mt-0.5 text-xs text-amber-800/90 dark:text-amber-200/80">
+                      Library-cloned scenarios bring in template IBSs as design-time placeholders.
+                      Bind each one to an approved entry in your register, or remove it — exercises
+                      using this scenario can&apos;t be marked Ready until every IBS is linked.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {scenario.ibsList.length === 0 ? (
                 <EmptyTab
                   icon={<Building size={20} />}
-                  title="No IBSs linked yet"
-                  body="Link the Important Business Services this scenario stresses. Used for coverage analytics and tolerance reporting."
+                  title="No IBSs attached yet"
+                  body="Attach the Important Business Services this scenario stresses. Pick from your approved register so coverage analytics, tolerance reporting and exercise readiness all line up."
                 />
               ) : (
                 <ul className="grid gap-2 sm:grid-cols-2">
-                  {scenario.ibsList.map((ibs) => (
-                    <li
-                      key={ibs.id}
-                      className="flex items-start justify-between gap-2 rounded-xl border border-line bg-surface-1 p-3 text-sm"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-baseline gap-2">
-                          <span className="font-mono text-[10px] text-soft">{ibs.code}</span>
-                          <span className="font-medium text-ink">{ibs.name}</span>
-                          <CriticalityPill kind={ibs.criticality} />
+                  {scenario.ibsList.map((ibs) => {
+                    const linked = !!ibs.organizationIBSId;
+                    return (
+                      <li
+                        key={ibs.id}
+                        className={`flex flex-col gap-2 rounded-xl border p-3 text-sm ${
+                          linked
+                            ? "border-line bg-surface-1"
+                            : "border-amber-300/60 bg-amber-50/40 dark:border-amber-700/60 dark:bg-amber-950/20"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-baseline gap-2">
+                              <span className="font-mono text-[10px] text-soft">{ibs.code}</span>
+                              <span className="font-medium text-ink">{ibs.name}</span>
+                              <CriticalityPill kind={ibs.criticality} />
+                              {!linked && (
+                                <span className="rounded-full bg-amber-200/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-900 dark:bg-amber-900/40 dark:text-amber-200">
+                                  Not in register
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-1 text-[11px] text-muted">
+                              Tolerance {ibs.impactToleranceMin} min
+                              {ibs.impactMetrics ? ` · ${ibs.impactMetrics}` : ""}
+                            </div>
+                            {ibs.description && (
+                              <p className="mt-1 text-[11px] text-muted">{ibs.description}</p>
+                            )}
+                          </div>
+                          {canEdit && (
+                            <form action={deleteIBSAction}>
+                              <input type="hidden" name="id" value={ibs.id} />
+                              <input type="hidden" name="scenarioId" value={scenario.id} />
+                              <button
+                                type="submit"
+                                className="rounded-md p-1.5 text-soft hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
+                                aria-label="Remove IBS from scenario"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </form>
+                          )}
                         </div>
-                        <div className="mt-1 text-[11px] text-muted">
-                          Tolerance {ibs.impactToleranceMin} min
-                          {ibs.impactMetrics ? ` · ${ibs.impactMetrics}` : ""}
-                        </div>
-                        {ibs.description && (
-                          <p className="mt-1 text-[11px] text-muted">{ibs.description}</p>
+                        {canEdit && !linked && (
+                          <IBSPicker
+                            mode="link"
+                            scenarioId={scenario.id}
+                            scenarioIBSId={ibs.id}
+                            availableIBSs={allApprovedIBSs}
+                          />
                         )}
-                      </div>
-                      {canEdit && (
-                        <form action={deleteIBSAction}>
-                          <input type="hidden" name="id" value={ibs.id} />
-                          <input type="hidden" name="scenarioId" value={scenario.id} />
-                          <button
-                            type="submit"
-                            className="rounded-md p-1.5 text-soft hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-300"
-                            aria-label="Delete IBS"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </form>
-                      )}
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
 
               {canEdit && (
-                <form
-                  action={addIBSAction}
-                  className="grid grid-cols-2 gap-2 rounded-xl border-2 border-dashed border-indigo-300 bg-surface-1 p-4 text-sm dark:border-indigo-700"
-                >
-                  <div className="col-span-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-muted">
-                    <Plus size={11} /> Add an IBS
-                  </div>
-                  <input type="hidden" name="scenarioId" value={scenario.id} />
-                  <input
-                    name="code"
-                    required
-                    placeholder="IBS_06" aria-label="IBS_06"
-                    className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  />
-                  <input
-                    name="name"
-                    required
-                    placeholder="Name" aria-label="Name"
-                    className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  />
-                  <input
-                    name="impactToleranceMin"
-                    type="number"
-                    min={0}
-                    required
-                    placeholder="Impact tolerance (min)" aria-label="Impact tolerance (min)"
-                    className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  />
-                  <select
-                    name="criticality"
-                    required
-                    defaultValue="HIGH"
-                    className="rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  >
-                    <option>LOW</option>
-                    <option>MEDIUM</option>
-                    <option>HIGH</option>
-                    <option>CRITICAL</option>
-                  </select>
-                  <input
-                    name="impactMetrics"
-                    placeholder="Impact metrics (optional)" aria-label="Impact metrics (optional)"
-                    className="col-span-2 rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  />
-                  <textarea
-                    name="description"
-                    placeholder="Description (optional)" aria-label="Description (optional)"
-                    rows={2}
-                    className="col-span-2 rounded-md border border-line bg-surface-0 px-2 py-1.5"
-                  />
-                  <button
-                    type="submit"
-                    className="col-span-2 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
-                  >
-                    Add IBS
-                  </button>
-                </form>
+                <IBSPicker
+                  mode="add"
+                  scenarioId={scenario.id}
+                  availableIBSs={approvedIBSs}
+                />
               )}
             </div>
           ),

@@ -44,7 +44,7 @@ Failures inside `audit()` are caught and logged — they never break the calling
 
 `AuditAction` in `src/lib/audit.ts` is the registry. The union covers ~60 action types across nine domains:
 
-* **Scenarios** — `scenario.created`, `scenario.updated`, `scenario.deleted`, `scenario.added-from-library`
+* **Scenarios** — `scenario.created`, `scenario.updated`, `scenario.deleted`, `scenario.added-from-library`, `scenario.ibs.added`, `scenario.ibs.linked`, `scenario.ibs.unlinked`, `scenario.ibs.removed`
 * **Exercises** — `exercise.created`, `exercise.started`, `exercise.paused`, `exercise.completed`, `exercise.updated`, `exercise.member.added`, `exercise.member.removed`, `team.added`, `team.removed`, `event.released`, `inject.released`
 * **IBS** — `ibs.created`, `ibs.updated`, `ibs.approved`, `ibs.deprecated`, `ibs.deleted`, `ibs.added-from-library`, `ibs.attestation.requested`, `ibs.attestation.attested`, `ibs.attestation.rejected`
 * **Vendors + tech** — `vendor.added-from-library`, `vendor.mtp.updated`, `vendor.assessment.recorded`, `vendor.register.generated`, `vendor.notification.generated`, `vendor.notification.submitted`, `vendor.notification.acknowledged`, `system.added-from-library`, `dr_test.attested`, `dr_test.schedule_updated`

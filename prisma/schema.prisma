@@ -345,10 +345,18 @@ model ImportantBusinessService {
   impactMetrics      String?
   criticality        String
 
+  /// Link to the org's canonical IBS register. Nullable to keep existing
+  /// library / template rows working; new rows added via the scenario IBS
+  /// tab always set this. Exercise readiness blocks transition to READY
+  /// while any scenario IBS has a null link.
+  organizationIBSId String?
+  organizationIBS   OrganizationIBS? @relation("ScenarioIBSLink", fields: [organizationIBSId], references: [id], onDelete: SetNull)
+
   events   EventIBS[]
   breaches ImpactBreach[]
 
   @@unique([scenarioId, code])
+  @@index([organizationIBSId])
 }
 
 model Event {
@@ -1114,6 +1122,7 @@ model OrganizationIBS {
   exerciseLinks ExerciseIBSLink[]
   vendorLinks   VendorIBSLink[]
   runbookLinks  RunbookIBSLink[]
+  scenarioLinks ImportantBusinessService[] @relation("ScenarioIBSLink")
 
   @@unique([orgId, code])
 }

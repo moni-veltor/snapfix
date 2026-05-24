@@ -13,6 +13,7 @@ export type AuditAction =
   | "system.added-from-library"
   | "dr_test.attested" | "dr_test.schedule_updated"
   | "scenario.added-from-library"
+  | "scenario.ibs.added" | "scenario.ibs.linked" | "scenario.ibs.unlinked" | "scenario.ibs.removed"
   | "action_item.created" | "action_item.updated" | "action_item.closed"
   | "member.added" | "member.removed" | "member.role_changed" | "member.department_changed"
   | "department.created" | "department.updated" | "department.deleted"

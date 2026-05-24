@@ -48,12 +48,32 @@ export async function evaluateReadiness(exerciseId: string): Promise<ReadinessRe
       briefingSentAt: true,
       briefingSkippedReason: true,
       ibsLinks: { select: { ibsId: true } },
-      // Fallback: count scenario-level IBSs from the primary + chained scenarios.
-      // The wizard currently creates ExerciseIBSLink only when the user picks
-      // org-register IBSs explicitly; aggregated scenario IBSs satisfy the
-      // "this exercise tests at least one IBS" gate as well.
+      // The primary scenario + any chained scenarios. Each scenario's ibsList
+      // must have every row linked to an approved OrganizationIBS — otherwise
+      // the exercise would test design-time placeholders rather than the
+      // firm's real services.
+      scenario: {
+        select: {
+          id: true,
+          title: true,
+          ibsList: {
+            select: { id: true, code: true, organizationIBSId: true },
+          },
+        },
+      },
       chainedScenarios: {
-        select: { scenario: { select: { _count: { select: { ibsList: true } } } } },
+        select: {
+          scenario: {
+            select: {
+              id: true,
+              title: true,
+              _count: { select: { ibsList: true } },
+              ibsList: {
+                select: { id: true, code: true, organizationIBSId: true },
+              },
+            },
+          },
+        },
       },
       participants: {
         select: {
@@ -84,6 +104,17 @@ export async function evaluateReadiness(exerciseId: string): Promise<ReadinessRe
   const rejectedCount = exercise.approvals.filter((a) => a.status === "REJECTED").length;
 
   const briefingDealtWith = !!exercise.briefingSentAt || !!exercise.briefingSkippedReason;
+
+  // Every scenario IBS attached to this exercise (primary + chain) must point
+  // at an approved OrganizationIBS. Unlinked rows are template placeholders
+  // and the exercise can't be Ready while they exist.
+  const allScenarioIBSes = [
+    ...(exercise.scenario?.ibsList ?? []),
+    ...exercise.chainedScenarios.flatMap((c) => c.scenario.ibsList),
+  ];
+  const unlinkedScenarioIBSes = allScenarioIBSes.filter(
+    (i) => !i.organizationIBSId,
+  );
 
   const checks: ReadinessCheck[] = [
     {
@@ -119,10 +150,25 @@ export async function evaluateReadiness(exerciseId: string): Promise<ReadinessRe
       why: "The exercise has to stress-test at least one Important Business Service to be useful for evidence. Counted from org-register links or aggregated from the scenarios in the chain.",
       ok:
         exercise.ibsLinks.length > 0 ||
+        (exercise.scenario?.ibsList.length ?? 0) > 0 ||
         exercise.chainedScenarios.some((c) => c.scenario._count.ibsList > 0),
       required: true,
       stage: "SCENARIOS",
       fixHref: `/exercises/new?step=2&id=${exerciseId}`,
+    },
+    {
+      id: "scenario-ibs-linked",
+      label: "Every scenario IBS is linked to your approved register",
+      why:
+        unlinkedScenarioIBSes.length === 0
+          ? "All scenario IBSs trace back to an approved register entry — exercises will stress-test the firm's real services rather than design-time placeholders."
+          : `${unlinkedScenarioIBSes.length} scenario IBS${unlinkedScenarioIBSes.length === 1 ? "" : "s"} still reference template placeholders (e.g. ${unlinkedScenarioIBSes.slice(0, 2).map((i) => i.code).join(", ")}${unlinkedScenarioIBSes.length > 2 ? "…" : ""}). Open the scenario's IBS tab and bind each one to an approved entry.`,
+      ok: unlinkedScenarioIBSes.length === 0,
+      required: true,
+      stage: "SCENARIOS",
+      fixHref: exercise.scenario
+        ? `/scenarios/${exercise.scenario.id}?tab=ibs`
+        : undefined,
     },
     {
       id: "objective",
