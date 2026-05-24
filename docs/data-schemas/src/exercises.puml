@@ -1,0 +1,280 @@
+@startuml exercises
+hide circle
+hide methods
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName "Inter, system-ui, sans-serif"
+skinparam ArrowColor #6366F1
+skinparam entity {
+  BackgroundColor #FFFFFF
+  BorderColor #C7D2FE
+  HeaderBackgroundColor #EEF2FF
+  HeaderFontColor #3730A3
+  FontColor #0F172A
+  AttributeFontColor #475569
+  AttributeFontSize 11
+}
+skinparam package {
+  BackgroundColor #FAFAFF
+  BorderColor #C7D2FE
+  FontColor #3730A3
+}
+
+title <font color=#3730A3>**Exercises — planning + live run**</font>
+
+entity "Exercise" as Ex {
+  *id : string
+  --
+  *orgId : string
+  *scenarioId : string
+  title : string
+  status : enum  // PLANNING | READY | IN_PROGRESS | PAUSED | COMPLETED | ABANDONED
+  mode : enum    // PRODUCTION | WALKTHROUGH | DRY_RUN | TABLETOP | LIVE
+  plannedDate : DateTime?
+  startedAt : DateTime?
+  speedMultiplier : float
+  regulatorMode : boolean
+  regulatorAudience : string?
+  facilitatorId : string?
+  coFacilitatorId : string?
+  objectives : string[]
+  briefingSentAt : DateTime?
+}
+
+package "Planning" {
+  entity "ExerciseScenarioLink" as ScLink {
+    *id : string
+    --
+    *exerciseId : string
+    *scenarioId : string
+    offsetMin : int
+    label : string?
+  }
+
+  entity "ExerciseTeam" as Team {
+    *id : string
+    --
+    *exerciseId : string
+    name : string
+    orderIdx : int
+  }
+
+  entity "ExerciseParticipant" as Part {
+    *id : string
+    --
+    *exerciseId : string
+    *userId : string
+    teamId : string?
+    roleTitle : string
+    exerciseRole : enum
+    deputyParticipantId : string?
+    isStakeholder : boolean
+    preReadAckedAt : DateTime?
+  }
+
+  entity "ExerciseSeat" as Seat {
+    *id : string
+    --
+    *exerciseId : string
+    roleTitle : string
+    expectedUserId : string?
+  }
+
+  entity "ExerciseIBSLink" as ExIBS {
+    *id : string
+    --
+    *exerciseId : string
+    *ibsId : string
+  }
+
+  entity "ExerciseInjectOverride" as Ovr {
+    *id : string
+    --
+    *exerciseId : string
+    *injectId : string
+    hidden : boolean
+    offsetMin : int?
+    customRoles : string[]
+  }
+
+  entity "ExerciseVendorParticipant" as VPart {
+    *id : string
+    --
+    *exerciseId : string
+    *vendorId : string
+  }
+
+  entity "ExerciseClassifiedReader" as ClsRdr {
+    *id : string
+    --
+    *exerciseId : string
+    *userId : string
+  }
+}
+
+package "Live run" {
+  entity "EventRelease" as ER {
+    *id : string
+    --
+    *exerciseId : string
+    *eventId : string
+    releasedAt : DateTime
+    releasedBy : enum  // AUTO | MANUAL
+  }
+
+  entity "InjectRelease" as IR {
+    *id : string
+    --
+    *exerciseId : string
+    *injectId : string
+    releasedAt : DateTime
+  }
+
+  entity "EventReceipt" as ERc {
+    *id : string
+    --
+    *eventReleaseId : string
+    *participantId : string
+    seenAt : DateTime
+  }
+
+  entity "InjectReceipt" as IRc {
+    *id : string
+    --
+    *injectReleaseId : string
+    *participantId : string
+    seenAt : DateTime
+  }
+
+  entity "IncidentLogEntry" as Log {
+    *id : string
+    --
+    *exerciseId : string
+    *participantId : string?
+    action : string
+    summary : string
+    dDayTime : string
+    metadata : Json?
+  }
+
+  entity "ParticipantResponse" as Resp {
+    *id : string
+    --
+    *exerciseId : string
+    *participantId : string
+    *injectReleaseId : string?
+    body : string
+    createdAt : DateTime
+  }
+
+  entity "CommunicationDraft" as Comm {
+    *id : string
+    --
+    *exerciseId : string
+    stakeholder : enum
+    subject : string
+    bodyMarkdown : string
+    status : enum  // DRAFT | APPROVED | SENT
+    approvedById : string?
+  }
+
+  entity "Sitrep" as Sit {
+    *id : string
+    --
+    *exerciseId : string
+    seq : int
+    submittedById : string
+    summary : string
+    nextDueAt : DateTime
+    cadenceTier : enum  // INFO | DUE | ESCALATED | CRITICAL
+  }
+
+  entity "IMTMeeting" as IMT {
+    *id : string
+    --
+    *exerciseId : string
+    seq : int
+    summary : string?
+    convenedAt : DateTime
+  }
+
+  entity "FacilitatorAnnouncement" as Anc {
+    *id : string
+    --
+    *exerciseId : string
+    kind : enum  // HEADS_UP | INSTRUCTION | PAUSE | RESUME | WRAP_UP
+    message : string
+    releasedAt : DateTime
+    acknowledgedBy : Json
+  }
+
+  entity "ChatMessage" as Chat {
+    *id : string
+    --
+    *exerciseId : string
+    *participantId : string
+    body : string
+    createdAt : DateTime
+  }
+
+  entity "Reaction" as Rxn {
+    *id : string
+    --
+    *messageId : string
+    *participantId : string
+    emoji : string
+  }
+
+  entity "ExerciseScratchpad" as Sp {
+    *id : string
+    --
+    *exerciseId : string
+    *participantId : string
+    body : string
+  }
+
+  entity "ImpactBreach" as Br {
+    *id : string
+    --
+    *exerciseId : string
+    *ibsId : string  // → ImportantBusinessService
+    occurredAt : DateTime
+    minutesOverTolerance : int
+  }
+}
+
+Ex ||--o{ ScLink
+Ex ||--o{ Team
+Ex ||--o{ Part
+Ex ||--o{ Seat
+Ex ||--o{ ExIBS
+Ex ||--o{ Ovr
+Ex ||--o{ VPart
+Ex ||--o{ ClsRdr
+
+Ex ||--o{ ER
+Ex ||--o{ IR
+Ex ||--o{ Log
+Ex ||--o{ Resp
+Ex ||--o{ Comm
+Ex ||--o{ Sit
+Ex ||--o{ IMT
+Ex ||--o{ Anc
+Ex ||--o{ Chat
+Ex ||--o{ Sp
+Ex ||--o{ Br
+
+ER ||--o{ ERc
+IR ||--o{ IRc
+IR ||--o{ Resp
+Team ||--o{ Part
+Chat ||--o{ Rxn
+
+note bottom of Ex
+  An Exercise is one run of a Scenario.
+  Status drives routing: PLANNING → planning
+  workspace; IN_PROGRESS → facilitator/live;
+  COMPLETED → debrief.
+end note
+
+@enduml

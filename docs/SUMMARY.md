@@ -37,6 +37,19 @@
 * [Vendors & tech systems](domain-model/vendors-and-tech.md)
 * [Audit log](domain-model/audit-log.md)
 
+## Data schemas
+
+* [Overview](data-schemas/overview.md)
+* [Multi-tenant + auth](data-schemas/multi-tenant.md)
+* [IBS register](data-schemas/ibs.md)
+* [Scenarios & MSEL](data-schemas/scenarios.md)
+* [Exercises — planning + live run](data-schemas/exercises.md)
+* [Decisions, approvals & regulator notifications](data-schemas/decisions.md)
+* [Debrief & post-incident](data-schemas/debrief.md)
+* [Vendors & tech systems](data-schemas/vendors-tech.md)
+* [Runbooks](data-schemas/runbooks.md)
+* [Audit log + integrity](data-schemas/audit.md)
+
 ## Curated libraries
 
 * [Overview](libraries/overview.md)

@@ -1,0 +1,57 @@
+@startuml overview
+hide circle
+hide methods
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName "Inter, system-ui, sans-serif"
+skinparam ArrowColor #6366F1
+skinparam ArrowFontColor #475569
+skinparam entity {
+  BackgroundColor #FFFFFF
+  BorderColor #C7D2FE
+  HeaderBackgroundColor #EEF2FF
+  HeaderFontColor #3730A3
+  FontColor #0F172A
+  AttributeFontColor #475569
+  AttributeFontSize 11
+}
+
+title <font color=#3730A3>**SnapFix domain — entity map**</font>
+
+entity "Organization" as Org
+entity "User" as User
+entity "OrganizationIBS" as IBS <<register>>
+entity "Scenario" as Scenario <<design>>
+entity "Exercise" as Exercise <<run>>
+entity "Vendor" as Vendor
+entity "TechSystem" as Tech
+entity "Runbook" as Runbook
+entity "Incident" as Incident <<real-world>>
+entity "AuditLogEntry" as Audit
+
+Org ||--o{ User
+Org ||--o{ IBS
+Org ||--o{ Scenario
+Org ||--o{ Exercise
+Org ||--o{ Vendor
+Org ||--o{ Tech
+Org ||--o{ Runbook
+Org ||--o{ Incident
+Org ||--o{ Audit
+
+Scenario ||--o{ Exercise : "is run as"
+IBS }o--o{ Exercise : ExerciseIBSLink
+IBS }o--o{ Vendor : VendorIBSLink
+IBS }o--o{ Runbook : RunbookIBSLink
+Vendor ||--o{ Tech : "supports"
+Runbook ||--o{ Exercise : "executed against"
+Exercise ||--o{ Incident : "may declare"
+
+note bottom of Org
+  Multi-tenant boundary.
+  Every row belongs to exactly one org;
+  cross-org reads are forbidden in
+  requireOrgRole.
+end note
+
+@enduml

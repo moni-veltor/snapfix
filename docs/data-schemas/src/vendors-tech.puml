@@ -1,0 +1,142 @@
+@startuml vendors-tech
+hide circle
+hide methods
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName "Inter, system-ui, sans-serif"
+skinparam ArrowColor #6366F1
+skinparam entity {
+  BackgroundColor #FFFFFF
+  BorderColor #C7D2FE
+  HeaderBackgroundColor #EEF2FF
+  HeaderFontColor #3730A3
+  FontColor #0F172A
+  AttributeFontColor #475569
+  AttributeFontSize 11
+}
+
+title <font color=#3730A3>**Vendors & tech systems**</font>
+
+entity "Vendor" as V {
+  *id : string
+  --
+  *orgId : string
+  name : string
+  serviceKind : string?
+  tier : enum  // TIER_1 | TIER_2 | TIER_3
+  contactName : string?
+  contactEmail : string?
+  statusUrl : string?
+  contractStartAt : DateTime?
+  contractEndAt : DateTime?
+  contractRenewalNoticeDays : int?
+  contractAnnualValueGBP : int?
+  assuranceKind : enum?  // SOC2_TYPE_2, ISO27001, …
+  assuranceExpiryAt : DateTime?
+  exitPlanReviewedAt : DateTime?
+  exitPlanRTOMin : int?
+  hyperscaler : enum?
+  region : string?
+  fourthParties : string[]
+  isDoraCritical : boolean
+  doraIctTier : enum?
+  isMaterialThirdParty : boolean
+  // MTP register fields populated when MTP=true
+  contractRef : string?
+  legalEntityIdentifier : string?
+  materialityReason : string?
+  smfSignedOff : boolean
+  governanceApprovedAt : DateTime?
+}
+
+entity "VendorIBSLink" as VIBS {
+  *id : string
+  --
+  *vendorId : string
+  *ibsId : string
+}
+
+entity "VendorAssessment" as VA {
+  *id : string
+  --
+  *vendorId : string
+  kind : enum  // RISK | AUDIT | FINANCIAL_DD | CYBER_DD
+  performedAt : DateTime
+  performedById : string?
+  outcome : string?
+  notes : string?
+  evidenceUrl : string?
+}
+
+entity "VendorMtpNotification" as VMN {
+  *id : string
+  --
+  *vendorId : string
+  status : enum  // DRAFT | SUBMITTED | ACKNOWLEDGED
+  draftedAt : DateTime?
+  submittedAt : DateTime?
+  acknowledgedAt : DateTime?
+  ackReference : string?
+}
+
+entity "VendorRegisterSnapshot" as VRS {
+  *id : string
+  --
+  *orgId : string
+  generatedAt : DateTime
+  generatedById : string
+  blobUrl : string
+  vendorCount : int
+}
+
+entity "TechSystem" as TS {
+  *id : string
+  --
+  *orgId : string
+  name : string
+  kind : enum  // APPLICATION | INFRASTRUCTURE | DATABASE | NETWORK | AUTH | OBSERVABILITY | OTHER
+  tier : enum  // CRITICAL | ESSENTIAL | IMPORTANT | ROUTINE
+  owner : string?
+  rtoMin : int?
+  rpoMin : int?
+  mtpdMin : int?
+  primaryRegion : string?
+  failoverRegion : string?
+  failoverKind : enum  // ACTIVE_ACTIVE | ACTIVE_PASSIVE | WARM_STANDBY | COLD_RESTORE | NONE
+  backupFrequency : string?
+  backupRetentionDays : int?
+  lastBackupValidatedAt : DateTime?
+}
+
+entity "DRTest" as DR {
+  *id : string
+  --
+  *techSystemId : string
+  testedAt : DateTime
+  outcome : enum  // PASS | PARTIAL | FAIL
+  rtoActualMin : int?
+  rpoActualMin : int?
+  participants : string[]
+  notes : string?
+}
+
+V ||--o{ VIBS
+V ||--o{ VA
+V ||--o{ VMN
+TS ||--o{ DR
+
+note right of V
+  isMaterialThirdParty unlocks the
+  MTP register section (FCA / PRA
+  Annex 3). evaluateVendorReadiness
+  scores against ~25 mandatory fields.
+end note
+
+note right of TS
+  Posture score on /tech-recovery deducts
+  for missing RTO/RPO, stale DR tests,
+  missing failover topology, stale
+  backup validation.
+end note
+
+@enduml

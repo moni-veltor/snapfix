@@ -1,0 +1,135 @@
+@startuml runbooks
+hide circle
+hide methods
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName "Inter, system-ui, sans-serif"
+skinparam ArrowColor #6366F1
+skinparam entity {
+  BackgroundColor #FFFFFF
+  BorderColor #C7D2FE
+  HeaderBackgroundColor #EEF2FF
+  HeaderFontColor #3730A3
+  FontColor #0F172A
+  AttributeFontColor #475569
+  AttributeFontSize 11
+}
+
+title <font color=#3730A3>**Runbooks**</font>
+
+entity "Runbook" as RB {
+  *id : string
+  --
+  *orgId : string?  // null = library template
+  title : string
+  description : string?
+  category : enum  // RANSOMWARE | CYBER | CLOUD_REGION_OUTAGE | VENDOR_FAILURE | BCP_ACTIVATION | DATA_INCIDENT | PEOPLE_DISRUPTION | REGULATORY_NOTIFICATION | OTHER
+  ownerRoleTitle : string?
+  status : enum  // DRAFT | PUBLISHED | ARCHIVED
+  isTemplate : boolean
+  applicableTiers : enum[]
+  lastReviewedAt : DateTime?
+  lastDrilledAt : DateTime?
+  createdAt : DateTime
+}
+
+entity "RunbookStep" as Step {
+  *id : string
+  --
+  *runbookId : string
+  orderIdx : int
+  title : string
+  description : string?
+  kind : enum  // ACTION | DECISION | NOTIFICATION | COMMS | CHECKPOINT
+  ownerRoleTitle : string?
+  estimatedMin : int?
+  blocksOrders : int[]  // dependsOn resolved to indices
+  decisionTypeCode : string?
+  regulatorTrigger : Json?
+  commsTemplate : Json?
+}
+
+entity "RunbookIBSLink" as RIBS {
+  *id : string
+  --
+  *runbookId : string
+  *ibsId : string
+}
+
+entity "RunbookScenarioLink" as RScLink {
+  *id : string
+  --
+  *runbookId : string
+  *scenarioId : string
+}
+
+entity "RunbookTriggerCondition" as Trig {
+  *id : string
+  --
+  *runbookId : string
+  severityAtLeast : enum?
+  scenarioCategoryEquals : string?
+}
+
+entity "RunbookEscalation" as Esc {
+  *id : string
+  --
+  *sourceRunbookId : string
+  *targetRunbookId : string
+  severityAtLeast : enum?
+  rationale : string?
+  orderIdx : int
+}
+
+entity "RunbookExecution" as RX {
+  *id : string
+  --
+  *runbookId : string
+  *incidentId : string
+  runbookJson : Json  // frozen snapshot
+  activatedBy : enum  // AUTO | MANUAL
+  activationReason : string?
+  status : enum  // ACTIVE | COMPLETE | ABANDONED
+  activatedAt : DateTime
+  completedAt : DateTime?
+}
+
+entity "RunbookStepExecution" as RSX {
+  *id : string
+  --
+  *executionId : string
+  stepOrderIdx : int
+  status : enum  // PENDING | IN_PROGRESS | COMPLETED | SKIPPED
+  startedAt : DateTime?
+  completedAt : DateTime?
+  completedById : string?
+  decisionRecordId : string?
+  regulatorNotificationId : string?
+  communicationDraftId : string?
+}
+
+RB ||--o{ Step
+RB ||--o{ RIBS
+RB ||--o{ RScLink
+RB ||--o| Trig
+RB ||--o{ Esc : "source / target (self-join)"
+RB ||--o{ RX
+
+RX ||--o{ RSX
+
+note bottom of RX
+  runbookJson is a deep snapshot at
+  activation — edits to the runbook
+  after this never alter the historical
+  record. Step completion writes back
+  to RunbookStepExecution.
+end note
+
+note right of Step
+  Step kinds drive auto-side-effects:
+  DECISION → DecisionRecord on completion
+  NOTIFICATION → RegulatorNotification SENT
+  COMMS → CommunicationDraft APPROVED
+end note
+
+@enduml

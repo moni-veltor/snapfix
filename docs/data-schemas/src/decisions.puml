@@ -1,0 +1,105 @@
+@startuml decisions
+hide circle
+hide methods
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName "Inter, system-ui, sans-serif"
+skinparam ArrowColor #6366F1
+skinparam entity {
+  BackgroundColor #FFFFFF
+  BorderColor #C7D2FE
+  HeaderBackgroundColor #EEF2FF
+  HeaderFontColor #3730A3
+  FontColor #0F172A
+  AttributeFontColor #475569
+  AttributeFontSize 11
+}
+
+title <font color=#3730A3>**Decisions, approvals & regulator notifications**</font>
+
+entity "OrgDecisionType" as DT {
+  *id : string
+  --
+  *orgId : string
+  code : string
+  label : string
+  hint : string?
+  approverRoles : string[]
+  requiresDualControl : boolean
+}
+
+entity "DecisionRecord" as DR {
+  *id : string
+  --
+  *exerciseId : string?
+  *incidentId : string?
+  decisionType : enum  // built-in
+  decisionTypeCode : string?  // → OrgDecisionType.code
+  recordedById : string
+  recordedAt : DateTime
+  rationale : string
+  outcome : string?
+  approverIds : string[]
+}
+
+entity "ExerciseApproval" as Appr {
+  *id : string
+  --
+  *exerciseId : string
+  approverId : string
+  status : enum  // PENDING | APPROVED | REJECTED
+  decidedAt : DateTime?
+  notes : string?
+}
+
+entity "BCPActivation" as BCP {
+  *id : string
+  --
+  *exerciseId : string?
+  *incidentId : string?
+  activatedAt : DateTime
+  activatedByIds : string[]  // dual-approval
+  recoveryTeams : string[]
+  insuranceInvoked : boolean
+  dailyLiquidityActive : boolean
+}
+
+entity "RegulatorNotification" as RN {
+  *id : string
+  --
+  *exerciseId : string?
+  *incidentId : string?
+  regulator : enum  // FCA | PRA | ICO | BANK_OF_ENGLAND | OTHER
+  trigger : enum    // POST_INVOCATION | POST_AWARENESS
+  slaHours : int
+  triggeredAt : DateTime
+  dueAt : DateTime
+  status : enum     // DRAFT | SENT
+  draftBody : string?
+  sentAt : DateTime?
+  sentById : string?
+  ackReference : string?
+}
+
+DT |o..o{ DR : "code"
+DR }o--|| Appr : "may require"
+DR ||--o{ RN  : "may trigger"
+DR ||--o{ BCP : "may trigger"
+
+note bottom of DT
+  Org-defined decision presets.
+  requiresDualControl=true surfaces a chip
+  in the IncidentCapturePanel; hard
+  enforcement of 2-approver gating is on
+  the roadmap.
+end note
+
+note right of RN
+  SLA clock starts from triggeredAt
+  (= IMT invocation for POST_INVOCATION,
+  awareness time for POST_AWARENESS).
+  Completing the linked runbook NOTIFICATION
+  step flips status to SENT.
+end note
+
+@enduml
