@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Building2,
   FileSearch,
@@ -42,14 +43,34 @@ type Props = {
  */
 export default function VendorDetailTabs({ vendorId, panels, counts }: Props) {
   const STORAGE_KEY = `snapfix-vendor-tab.${vendorId}`;
+  const searchParams = useSearchParams();
+
   const [tab, setTab] = useState<VendorTabKey>(() => {
+    // Initial selection priority:
+    //   1. ?tab=<key> on the URL (deep-link from a suggestion / external link)
+    //   2. localStorage (sticky across visits)
+    //   3. "basics" default
     if (typeof window === "undefined") return "basics";
+    const urlTab = new URLSearchParams(window.location.search).get("tab");
+    if (urlTab && TABS.some((t) => t.key === urlTab)) {
+      return urlTab as VendorTabKey;
+    }
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored && TABS.some((t) => t.key === stored)) {
       return stored as VendorTabKey;
     }
     return "basics";
   });
+
+  // Honour later URL changes too (e.g. clicking a suggestion link while
+  // already on the page rewrites ?tab=).
+  useEffect(() => {
+    const urlTab = searchParams.get("tab");
+    if (urlTab && TABS.some((t) => t.key === urlTab) && urlTab !== tab) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTab(urlTab as VendorTabKey);
+    }
+  }, [searchParams, tab]);
 
   const choose = (next: VendorTabKey) => {
     setTab(next);

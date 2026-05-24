@@ -14,7 +14,10 @@ import VendorDetailTabs, {
   type VendorTabKey,
 } from "@/components/vendors/VendorDetailTabs";
 import VendorDetailWizardWrapper from "@/components/vendors/VendorDetailWizardWrapper";
+import VendorNextActions from "@/components/vendors/VendorNextActions";
 import { evaluateVendorReadiness } from "@/lib/vendor-mtp-readiness";
+import { deriveVendorState } from "@/lib/vendor-state";
+import { suggestNextActions } from "@/lib/vendor-suggestions";
 import NotificationsPanel from "@/components/vendors/NotificationsPanel";
 
 export const metadata = { title: "Vendor — SnapFix" };
@@ -39,6 +42,44 @@ export default async function VendorDetailPage({
   if (!vendor) notFound();
 
   const readiness = evaluateVendorReadiness(vendor);
+
+  // Derive the same lifecycle state we use on the list cards + risk
+  // dashboard, then ask vendor-suggestions for the top unblockers.
+  const state = deriveVendorState(
+    {
+      id: vendor.id,
+      name: vendor.name,
+      tier: vendor.tier,
+      isDoraCritical: vendor.isDoraCritical,
+      doraIctTier: vendor.doraIctTier,
+      hyperscaler: vendor.hyperscaler,
+      region: vendor.region,
+      contractStartAt: vendor.contractStartAt,
+      contractEndAt: vendor.contractEndAt,
+      contractRenewalNoticeDays: vendor.contractRenewalNoticeDays,
+      contractAnnualValueGBP: vendor.contractAnnualValueGBP,
+      assuranceKind: vendor.assuranceKind,
+      assuranceExpiryAt: vendor.assuranceExpiryAt,
+      exitPlanReviewedAt: vendor.exitPlanReviewedAt,
+      exitPlanRTOMin: vendor.exitPlanRTOMin,
+      exitPlanNotes: vendor.exitPlanNotes,
+      fourthParties: vendor.fourthParties,
+      ibsLinkCount: vendor.ibsLinks.length,
+      isMaterialThirdParty: vendor.isMaterialThirdParty,
+      mtpIncomplete: vendor.isMaterialThirdParty && !readiness.isRegisterReady,
+    },
+    new Date(),
+    vendor.assessments.map((a) => ({ kind: a.kind, assessedAt: a.assessedAt })),
+  );
+  const suggestions = suggestNextActions(
+    {
+      id: vendor.id,
+      isMaterialThirdParty: vendor.isMaterialThirdParty,
+      ibsLinkCount: vendor.ibsLinks.length,
+      exitPlanReviewedAt: vendor.exitPlanReviewedAt,
+    },
+    state,
+  );
 
   const wizardExisting: VendorExisting = {
     id: vendor.id,
@@ -143,6 +184,8 @@ export default async function VendorDetailPage({
       />
 
       <ReadinessHeader readiness={readiness} isMTP={vendor.isMaterialThirdParty} />
+
+      <VendorNextActions suggestions={suggestions} />
 
       <VendorDetailTabs vendorId={vendor.id} panels={panels} counts={counts} />
     </div>
