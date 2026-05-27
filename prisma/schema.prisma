@@ -43,22 +43,37 @@ model Organization {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  users                   User[]
-  invitations             Invitation[]
-  scenarios               Scenario[]
-  exercises               Exercise[]
-  ibsRegister             OrganizationIBS[]
-  actionItems             ExerciseActionItem[]
-  auditLog                AuditLogEntry[]
-  teamTemplates           OrganizationTeamTemplate[]
-  vendors                 Vendor[]
-  roles                   OrganizationRole[]
-  techSystems             TechSystem[]
-  departments             Department[]
-  decisionTypes           OrgDecisionType[]
-  vendorRegisterSnapshots VendorRegisterSnapshot[]
-  runbooks                Runbook[]
-  achievementUnlocks      AchievementUnlock[]
+  /// Named SMF accountable for operational resilience. The user who signs
+  /// the executive line of the annual self-attestation.
+  smfAccountableForResilienceUserId String?
+  smfAccountableForResilience       User?   @relation("OrgResilienceSMF", fields: [smfAccountableForResilienceUserId], references: [id], onDelete: SetNull)
+
+  /// Free-text name of the board / executive committee that takes the
+  /// attested self-assessment (e.g. "Board Risk Committee").
+  boardCommitteeForResilienceName String?
+
+  /// Calendar month (1-12) the annual attestation cycle opens. Default
+  /// (null) = January. Used by the cycle dashboard to compute due-dates.
+  attestationCycleStartMonth Int?
+
+  users                     User[]
+  invitations               Invitation[]
+  scenarios                 Scenario[]
+  exercises                 Exercise[]
+  ibsRegister               OrganizationIBS[]
+  actionItems               ExerciseActionItem[]
+  auditLog                  AuditLogEntry[]
+  teamTemplates             OrganizationTeamTemplate[]
+  vendors                   Vendor[]
+  roles                     OrganizationRole[]
+  techSystems               TechSystem[]
+  departments               Department[]
+  decisionTypes             OrgDecisionType[]
+  vendorRegisterSnapshots   VendorRegisterSnapshot[]
+  runbooks                  Runbook[]
+  achievementUnlocks        AchievementUnlock[]
+  resilienceAttestations    OrgResilienceAttestation[]
+  resilienceMaterialChanges OrgResilienceMaterialChange[]
 }
 
 /// Departmental org-chart node — a business unit / team / function. Separate
@@ -219,6 +234,15 @@ model User {
   chatMessages               ChatMessage[]              @relation("ChatAuthor")
   reactions                  Reaction[]                 @relation("ReactionAuthor")
   scratchpadEdits            ExerciseScratchpad[]       @relation("ScratchpadEditor")
+
+  // Operational-resilience self-attestation chain (annual cycle, three-line sign-off)
+  resilienceSMFAccountabilities  Organization[]                @relation("OrgResilienceSMF")
+  openedResilienceAttestations   OrgResilienceAttestation[]    @relation("ResilienceAttestationOpener")
+  firstLineResilienceSignatures  OrgResilienceAttestation[]    @relation("ResilienceAttestationFirstLine")
+  secondLineResilienceSignatures OrgResilienceAttestation[]    @relation("ResilienceAttestationSecondLine")
+  executiveResilienceSignatures  OrgResilienceAttestation[]    @relation("ResilienceAttestationExecutive")
+  declaredMaterialChanges        OrgResilienceMaterialChange[] @relation("ResilienceMaterialChangeDeclarer")
+  reviewedMaterialChanges        OrgResilienceMaterialChange[] @relation("ResilienceMaterialChangeReviewer")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2803,4 +2827,194 @@ model AchievementUnlock {
   @@unique([orgId, scope, achievementId])
   @@index([orgId, unlockedAt])
   @@index([orgId, level])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Annual operational-resilience self-attestation
+// ────────────────────────────────────────────────────────────────────────────
+//
+// The PRA (mirrored by FCA SYSC 15A) expects every in-scope firm to produce,
+// sign and retain an annual self-assessment stating it is operating within
+// impact tolerances for every IBS — or has a credible plan to get there.
+// The artefact must be reproducible at any supervisory visit and retained
+// for six years; material changes during the year may trigger re-attestation.
+//
+// These models layer ON TOP of the per-IBS three-line `IBSAttestation` chain:
+// the per-IBS layer captures granular sign-off for one service; this layer
+// captures the firm-wide annual roll-up signed by the named SMF.
+
+enum OrgResilienceAttestationStatus {
+  DRAFT
+  UNDER_REVIEW
+  ATTESTED
+  SUPERSEDED
+}
+
+enum OrgResilienceMaterialChangeKind {
+  IBS_ADDED
+  IBS_REMOVED
+  TOLERANCE_CHANGED
+  VENDOR_CRITICALITY_CHANGED
+  RESOURCE_MAP_CHANGED
+  NEW_REGULATORY_REQ
+  MATERIAL_INCIDENT
+  OTHER
+}
+
+enum OrgResilienceMaterialChangeOutcome {
+  PENDING
+  ACKNOWLEDGED
+  TRIGGERED_REATTESTATION
+  NO_ACTION
+}
+
+/// One annual self-attestation cycle. The firm-wide artefact that rolls up
+/// IBS register + tolerances + 12 months of testing + action items + gap
+/// analysis + investment plan, signed by 1st-line, 2nd-line and the named
+/// SMF (with optional board ratification). Hard-retained for six years
+/// from openedAt via retainUntilAt.
+model OrgResilienceAttestation {
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// Cycle year (e.g. 2026). Pairs with cycleLabel for free-text override
+  /// (e.g. "FY2026" or "H1 2026"). Used in the dashboard list.
+  cycleYear  Int
+  cycleLabel String?
+
+  status OrgResilienceAttestationStatus @default(DRAFT)
+
+  openedAt   DateTime @default(now())
+  openedById String?
+  openedBy   User?    @relation("ResilienceAttestationOpener", fields: [openedById], references: [id], onDelete: SetNull)
+
+  // Three-line sign-off chain. Each line records who, when, and any
+  // commentary attached to the signature. Lines must be completed in
+  // order: first → second → executive. Board ratification is captured
+  // as a free-text reference (minute / meeting date) — the platform
+  // doesn't model board membership.
+  firstLineSignedAt   DateTime?
+  firstLineSignedById String?
+  firstLineSignedBy   User?     @relation("ResilienceAttestationFirstLine", fields: [firstLineSignedById], references: [id], onDelete: SetNull)
+  firstLineNotes      String?
+
+  secondLineSignedAt   DateTime?
+  secondLineSignedById String?
+  secondLineSignedBy   User?     @relation("ResilienceAttestationSecondLine", fields: [secondLineSignedById], references: [id], onDelete: SetNull)
+  secondLineNotes      String?
+
+  executiveSignedAt   DateTime?
+  executiveSignedById String?
+  executiveSignedBy   User?     @relation("ResilienceAttestationExecutive", fields: [executiveSignedById], references: [id], onDelete: SetNull)
+  executiveNotes      String?
+
+  boardApprovedAt DateTime?
+  boardCommittee  String?
+  boardMinuteRef  String?
+
+  /// Frozen rollup of the firm's resilience posture at sign-off — every
+  /// approved IBS, attestation chain, resource map, vendor links, last
+  /// 12 months of exercise history, open action items. Built by
+  /// buildResilienceSnapshot(orgId, cycleId).
+  snapshotJson Json?
+
+  /// Structured gap analysis. Shape: [{ ibsId, gap, remediation, ownerId,
+  /// dueDate, costGBP }]. Hand-curated narrative — action items can be
+  /// surfaced as candidates but the firm writes the gap statement.
+  gapsJson Json?
+
+  /// Structured investment plan. Shape: [{ item, costGBP, ownerId,
+  /// plannedDate, status }].
+  investmentPlanJson Json?
+
+  /// Markdown executive summary that fronts the generated pack.
+  executiveSummary String?
+
+  /// Vercel Blob URL of the generated XLSX/PDF pack.
+  blobUrl  String?
+  blobPath String?
+
+  /// Set when a later cycle supersedes this one (e.g. mid-year re-attestation
+  /// after a material change). Read-only signal — the prior cycle stays
+  /// retrievable for six years.
+  supersededByCycleId String?
+
+  /// Hard floor on deletion. Computed as openedAt + 6 years at creation;
+  /// the cascade-delete path checks this before permitting any removal.
+  retainUntilAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  materialChanges OrgResilienceMaterialChange[]
+  hashChain       OrgResilienceAttestationHashEntry[]
+
+  @@unique([orgId, cycleYear])
+  @@index([orgId, status])
+  @@index([orgId, openedAt])
+}
+
+/// Material change declared against (or capable of triggering) an annual
+/// attestation cycle. Logged when something happens during the year that
+/// could undermine the firm's standing assertion — a new critical vendor,
+/// a tolerance change, a notable incident. Each entry is reviewed and
+/// either acknowledged (no action), triggers a re-attestation, or is
+/// flagged as no-action.
+model OrgResilienceMaterialChange {
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// Optional link to the cycle this change affects. Null when the change
+  /// is declared between cycles or before the next cycle is opened.
+  attestationCycleId String?
+  attestationCycle   OrgResilienceAttestation? @relation(fields: [attestationCycleId], references: [id], onDelete: SetNull)
+
+  kind        OrgResilienceMaterialChangeKind
+  description String
+
+  /// IDs of OrganizationIBS rows this change impacts. Empty array =
+  /// firm-wide change (e.g. a new regulatory requirement).
+  impactedIbsIds String[]
+
+  declaredAt   DateTime @default(now())
+  declaredById String?
+  declaredBy   User?    @relation("ResilienceMaterialChangeDeclarer", fields: [declaredById], references: [id], onDelete: SetNull)
+
+  reviewedAt    DateTime?
+  reviewedById  String?
+  reviewedBy    User?                              @relation("ResilienceMaterialChangeReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewOutcome OrgResilienceMaterialChangeOutcome @default(PENDING)
+  reviewNotes   String?
+
+  /// Reference to the audit log entry that captured the declaration.
+  auditEntryId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orgId, declaredAt])
+  @@index([orgId, reviewOutcome])
+  @@index([attestationCycleId])
+}
+
+/// Hash-chained record of attestation sign-off events. Mirrors the
+/// ExerciseAuditHashEntry pattern: each row's hash is SHA-256 of
+/// prevHash || canonical(payload) || timestamp, with sequence 0 starting
+/// from 64 zero-chars. Lets a supervisor verify the chain offline and
+/// detect tampering.
+model OrgResilienceAttestationHashEntry {
+  id            String                   @id @default(cuid())
+  attestationId String
+  attestation   OrgResilienceAttestation @relation(fields: [attestationId], references: [id], onDelete: Cascade)
+
+  sequence   Int
+  hash       String
+  prevHash   String
+  payload    Json
+  occurredAt DateTime @default(now())
+
+  @@unique([attestationId, sequence])
+  @@index([attestationId])
 }

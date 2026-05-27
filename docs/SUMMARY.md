@@ -35,6 +35,7 @@
 * [IBS register](domain-model/ibs-register.md)
 * [Scenarios & exercises](domain-model/scenarios-and-exercises.md)
 * [Vendors & tech systems](domain-model/vendors-and-tech.md)
+* [Annual self-attestation](domain-model/resilience-attestation.md)
 * [Audit log](domain-model/audit-log.md)
 
 ## Data schemas
@@ -48,6 +49,7 @@
 * [Debrief & post-incident](data-schemas/debrief.md)
 * [Vendors & tech systems](data-schemas/vendors-tech.md)
 * [Runbooks](data-schemas/runbooks.md)
+* [Annual self-attestation](data-schemas/attestation.md)
 * [Audit log + integrity](data-schemas/audit.md)
 
 ## Curated libraries

@@ -34,6 +34,7 @@ Small change but useful only after a critical mass of cross-sector library entri
 
 ## Recently shipped
 
+* **R1 — annual self-attestation foundation** — schema for the firm-wide annual self-attestation that mirrors PRA expectations. Three new models (`OrgResilienceAttestation`, `OrgResilienceMaterialChange`, `OrgResilienceAttestationHashEntry`), three `Organization` fields (named SMF, board committee, cycle start month), eleven new audit codes, `buildResilienceSnapshot` service for the frozen rollup, `appendAttestationHashEntry` for SHA-256 chain integrity, six-year retention floor via `retainUntilAt`. UI surfaces (dashboard, drill page, sign-off flow, material-change registry, XLSX/PDF pack) sequenced as R2–R5.
 * **Tabbed planning page** — `/exercises/[id]` (PLANNING) replaced its long-scroll card stack with a tab list mirroring the 5 wizard stages. URL-deep-linkable (`?stage=…`), localStorage-sticky, smart-default to the first failing stage. Sticky readiness gauge stays, with click-to-jump on failing check labels.
 * **Scenario IBS register integrity** — scenarios can no longer freeform-add IBSs. Every `ImportantBusinessService` row links to an APPROVED `OrganizationIBS` via the new nullable `organizationIBSId` FK. The IBS tab on `/scenarios/[id]` shows a modal picker of approved entries (search + click-to-add); library-cloned template IBSs flag as "Not in register" with inline link-in-place. New `scenario-ibs-linked` blocker in `evaluateReadiness` stops exercises going Ready while any IBS remains unlinked. Four new audit actions: `scenario.ibs.{added,linked,unlinked,removed}`.
 * **Marketing site M1 — doctrine cleanup + consulting woven through** — all IMP/BCP/ORP references across `(marketing)` rewritten to generic operational-resilience language. New `<ConsultingCTA>` primitive lands on the homepage, the simulator product page, and embedded in `<UseCaseLayout>` so every use-case sub-page surfaces a use-case-specific consulting pitch. Homepage hero gains a secondary "or run it with us" line that deep-links to `/contact?interest=consulting`. ContactForm now pre-selects `interest` from the URL param. Footer newsletter form fixed (was a GET to `/contact`; now a real `subscribeNewsletterAction` server action).
@@ -45,6 +46,17 @@ Small change but useful only after a critical mass of cross-sector library entri
 * **Runbook redesign** — pre-flight engine, drill flow, escalation chain resolver, library tier filter, execution snapshots.
 * **Participant-view redesign** — tabbed live workspace, capture drawers, facilitator announcements, approvals dock.
 * **Dark-mode + a11y sweep** — every screen audited; semantic tokens enforced; StatusBadge component lands so colour-only status pills are gone.
+
+## Annual self-attestation — R2 through R5 (in flight)
+
+R1 (foundation) has shipped: schema, snapshot service, hash chain, audit codes, six-year retention. The four follow-up milestones build the operator surface on top of that foundation:
+
+| Milestone | Scope |
+|---|---|
+| **R2** | `/resilience/attest` cycle dashboard + `/resilience/attest/[cycleYear]` drill page in read-only mode (snapshot rendering, sign-off progress, gap list). |
+| **R3** | Three-line signing UI with role gating (only the named SMF can sign the executive line), `openCycleAction` / `signLineAction` / `boardApproveAction` server actions, hash-chained writes via `appendAttestationHashEntry`. |
+| **R4** | Material change registry — `/resilience/material-changes`, declare / review actions, one-click deep-links from vendor criticality changes and IBS edits, banner integration on `/dashboard`. |
+| **R5** | XLSX/PDF pack generator (matching the `VendorRegisterSnapshot` pattern), Vercel Blob upload, hard delete-block until `retainUntilAt`, supervisor-facing hash-chain export. |
 
 ## Features deferred to v2
 

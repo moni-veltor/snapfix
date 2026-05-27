@@ -1,0 +1,114 @@
+@startuml attestation
+hide circle
+hide methods
+skinparam linetype ortho
+skinparam shadowing false
+skinparam defaultFontName "Inter, system-ui, sans-serif"
+skinparam ArrowColor #6366F1
+skinparam entity {
+  BackgroundColor #FFFFFF
+  BorderColor #C7D2FE
+  HeaderBackgroundColor #EEF2FF
+  HeaderFontColor #3730A3
+  FontColor #0F172A
+  AttributeFontColor #475569
+  AttributeFontSize 11
+}
+
+title <font color=#3730A3>**Annual operational-resilience self-attestation**</font>
+
+entity "Organization" as Org {
+  *id : string
+  --
+  smfAccountableForResilienceUserId : string?
+  boardCommitteeForResilienceName : string?
+  attestationCycleStartMonth : int?  // 1-12, null = January
+}
+
+entity "OrgResilienceAttestation" as Att {
+  *id : string
+  --
+  *orgId : string
+  cycleYear : int
+  cycleLabel : string?
+  status : enum  // DRAFT | UNDER_REVIEW | ATTESTED | SUPERSEDED
+  openedAt : DateTime
+  openedById : string?
+  firstLineSignedAt : DateTime?
+  firstLineSignedById : string?
+  firstLineNotes : string?
+  secondLineSignedAt : DateTime?
+  secondLineSignedById : string?
+  secondLineNotes : string?
+  executiveSignedAt : DateTime?
+  executiveSignedById : string?  // → SMF
+  executiveNotes : string?
+  boardApprovedAt : DateTime?
+  boardCommittee : string?
+  boardMinuteRef : string?
+  snapshotJson : Json?
+  gapsJson : Json?
+  investmentPlanJson : Json?
+  executiveSummary : string?
+  blobUrl : string?
+  supersededByCycleId : string?
+  retainUntilAt : DateTime  // openedAt + 6 years
+}
+
+entity "OrgResilienceMaterialChange" as MC {
+  *id : string
+  --
+  *orgId : string
+  attestationCycleId : string?
+  kind : enum  // IBS_ADDED | TOLERANCE_CHANGED | VENDOR_CRITICALITY_CHANGED
+              // | MATERIAL_INCIDENT | NEW_REGULATORY_REQ | …
+  description : string
+  impactedIbsIds : string[]
+  declaredAt : DateTime
+  declaredById : string?
+  reviewedAt : DateTime?
+  reviewedById : string?
+  reviewOutcome : enum  // PENDING | ACKNOWLEDGED | TRIGGERED_REATTESTATION | NO_ACTION
+  reviewNotes : string?
+  auditEntryId : string?
+}
+
+entity "OrgResilienceAttestationHashEntry" as Hash {
+  *id : string
+  --
+  *attestationId : string
+  sequence : int
+  hash : string  // SHA-256 of prevHash || canonical(payload) || timestamp
+  prevHash : string  // 64 zero-chars on sequence 0
+  payload : Json
+  occurredAt : DateTime
+}
+
+Org ||--o{ Att
+Org ||--o{ MC
+Att ||--o{ Hash
+Att ||--o{ MC : "may trigger / be triggered by"
+Att |o..o| Att : "supersededByCycleId"
+
+note bottom of Att
+  Firm-wide annual roll-up. snapshotJson
+  freezes IBS register + tolerances + 12mo
+  testing + open action items + vendor
+  criticality at sign-off. retainUntilAt
+  enforces 6-year retention floor.
+end note
+
+note right of MC
+  Logged during the year when something
+  changes that could undermine the standing
+  assertion. Review outcome decides whether
+  to re-attest mid-cycle.
+end note
+
+note right of Hash
+  Mirrors ExerciseAuditHashEntry. A supervisor
+  can re-walk the chain offline to verify
+  sign-off integrity.
+end note
+
+@enduml
