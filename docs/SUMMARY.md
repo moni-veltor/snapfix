@@ -84,6 +84,7 @@
 
 * [Deploying to Vercel](operations/deploying.md)
 * [Database (Prisma + Neon)](operations/database.md)
+* [Access gate (private beta)](operations/access-gate.md)
 * [Monitoring](operations/monitoring.md)
 
 ## Roadmap
