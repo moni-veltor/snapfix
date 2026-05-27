@@ -25,4 +25,4 @@
  * See docs/operations/access-gate.md for the full workflow.
  */
 export const ACCESS_CODE_HASH =
-  "272f90719794592ec88335973e1ff2c83b104cd2c72b99b6b800b68b229b6d8f";
+  "2e4d1cfd134c29927f0ff23b9b158e842cbc4f7c5adec9b6308cf762e837d7f9";
