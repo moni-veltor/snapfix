@@ -1,24 +1,27 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { ACCESS_CODE_HASH } from "@/lib/access-code";
 
 /**
  * Site-wide access gate.
  *
  * Runs on every request (excluding Next internals + obvious static files).
- * If `ACCESS_CODE` is set, redirects to /access unless the request carries
- * the matching cookie. If unset, the gate is disabled (local dev / CI).
+ * If ACCESS_CODE_HASH is set in src/lib/access-code.ts, redirects to
+ * /access unless the request carries the matching cookie. If unset, the
+ * gate is disabled (local dev / pre-launch). See that file's header for
+ * the rotation workflow.
  *
- * The cookie value is sha256(ACCESS_CODE) — neither the cookie nor the
- * middleware ever sees the plaintext. Rotating ACCESS_CODE auto-invalidates
- * every existing cookie because the hash changes.
+ * The cookie value IS the hash — neither the cookie nor middleware ever
+ * sees the plaintext code. Rotating the hash in source automatically
+ * invalidates every existing cookie.
  *
- * Once past the gate, the existing email-password sign-in (NextAuth) takes
- * over for per-user access control. Two layers, distinct purposes.
+ * Once past the gate, the existing email-password sign-in (NextAuth)
+ * takes over for per-user access control. Two layers, distinct purposes.
  */
 
 const COOKIE_NAME = "snapfix_access";
 
 /**
- * Routes that bypass the gate even when ACCESS_CODE is set:
+ * Routes that bypass the gate even when ACCESS_CODE_HASH is set:
  *   - /access itself (so the gate page is reachable)
  *   - NextAuth callbacks (so OAuth flows still resolve)
  *   - tiny health/metadata endpoints we want public
@@ -31,22 +34,20 @@ const SKIP_PATTERNS = [
   /^\/sitemap\.xml$/,
 ];
 
-export async function middleware(req: NextRequest) {
-  const code = process.env.ACCESS_CODE;
-  if (!code) return NextResponse.next(); // gate disabled
+export function middleware(req: NextRequest) {
+  if (!ACCESS_CODE_HASH) return NextResponse.next(); // gate disabled
 
   const { pathname } = req.nextUrl;
   if (SKIP_PATTERNS.some((re) => re.test(pathname))) return NextResponse.next();
 
-  const expected = await sha256Hex(code);
   const got = req.cookies.get(COOKIE_NAME)?.value;
-  if (got && safeEquals(got, expected)) return NextResponse.next();
+  if (got && safeEquals(got, ACCESS_CODE_HASH)) return NextResponse.next();
 
   const url = req.nextUrl.clone();
   url.pathname = "/access";
   url.search = "";
   // Pass the original target so the gate page can bounce back after success.
-  // Skip "/" — landing on the gate from root should land on root after, no need to encode.
+  // Skip "/" — landing on the gate from root should land on root after.
   if (pathname !== "/") {
     url.searchParams.set("from", pathname + req.nextUrl.search);
   }
@@ -60,16 +61,10 @@ export async function middleware(req: NextRequest) {
  * legible in one place.
  */
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon\\.ico|icon\\.svg|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|css|js|map|woff|woff2|ttf|otf)).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.ico|icon\\.svg|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|css|js|map|woff|woff2|ttf|otf)).*)",
+  ],
 };
-
-async function sha256Hex(value: string): Promise<string> {
-  const bytes = new TextEncoder().encode(value);
-  const buf = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
 
 /** Constant-time string equality (length-aware). */
 function safeEquals(a: string, b: string): boolean {
