@@ -34,7 +34,7 @@ export type ResilienceSnapshot = {
   materialChangesSinceLastCycle: SnapshotMaterialChange[];
 };
 
-type SnapshotIBS = {
+export type SnapshotIBS = {
   id: string;
   code: string;
   name: string;
@@ -69,7 +69,7 @@ type SnapshotResource = {
   departmentId: string | null;
 };
 
-type SnapshotVendor = {
+export type SnapshotVendor = {
   id: string;
   name: string;
   tier: string | null;
@@ -78,7 +78,7 @@ type SnapshotVendor = {
   ibsIds: string[];
 };
 
-type SnapshotExercise = {
+export type SnapshotExercise = {
   id: string;
   title: string;
   scenarioTitle: string;
@@ -90,7 +90,7 @@ type SnapshotExercise = {
   actionItemCount: number;
 };
 
-type SnapshotActionItem = {
+export type SnapshotActionItem = {
   id: string;
   title: string;
   ownerUserId: string | null;
@@ -308,6 +308,25 @@ export function computeRetainUntilAt(openedAt: Date): Date {
   const out = new Date(openedAt);
   out.setFullYear(out.getFullYear() + RETENTION_YEARS);
   return out;
+}
+
+/**
+ * When the cycle's sign-off is due. The cycle opens at the start of the
+ * org's configured cycle month (default January) of the cycle year; the
+ * firm has a 90-day window to complete the three-line sign-off. Surfaced
+ * on the dashboard as a countdown.
+ */
+export function computeCycleDueAt(cycleYear: number, startMonth: number | null): Date {
+  const monthIdx = Math.min(Math.max((startMonth ?? 1) - 1, 0), 11);
+  const start = new Date(Date.UTC(cycleYear, monthIdx, 1));
+  start.setUTCDate(start.getUTCDate() + 90);
+  return start;
+}
+
+/** Days from now until `due` (negative = overdue). */
+export function daysUntil(due: Date, now: Date = new Date()): number {
+  const ms = due.getTime() - now.getTime();
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
 
 /**

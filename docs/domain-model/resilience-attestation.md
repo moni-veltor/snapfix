@@ -99,15 +99,32 @@ attestation.settings.updated
 
 Each follows the standard `audit()` contract — `orgId`, `actorId`, `action`, `targetType` (`attestation` or `attestation_material_change`), `targetId`, `summary` and structured `metadata`.
 
-## What R1 does NOT include
+## R2 — dashboard + drill (shipped)
 
-R1 is foundation only — schema, service function, audit codes, docs. No UI, no server actions, no sign-off flow, no pack generation. Those land in R2–R5:
+The read-only operator surface, admin-gated under `/resilience/attest`:
+
+* **Dashboard** (`/resilience/attest`) — lists every cycle newest-first with a per-cycle sign-off progress bar (`n/3 signed`), a due-date countdown (green → amber ≤30d → rose when overdue), the IBS-count from the frozen snapshot, and a status badge. Surfaces a setup nudge when the SMF or cycle-start-month isn't configured, and a banner when material changes await review. Empty state offers a one-click "Open FY{year} cycle".
+* **Drill page** (`/resilience/attest/[cycleYear]`) — a tabbed view over the frozen `snapshotJson`:
+  * **Overview** — five stat tiles (IBS count, tested-in-12mo, exercises, open action items, vendors mapped).
+  * **IBS register** — every IBS with tolerances, attestation-line count, and a tested/not-tested chip.
+  * **Vendors** — criticality map with MTP / DORA-critical flags.
+  * **Exercises** — last-12-months history with AAR-filed status.
+  * **Action items** — open items with owner / due / priority.
+  * **Sign-off** — read-only three-line chain + board ratification status (signing actions arrive in R3).
+
+Two server actions create a cycle (sign-off stays read-only until R3):
+
+* `openAttestationCycleAction(cycleYear?)` — creates a DRAFT cycle (idempotent per `@@unique([orgId, cycleYear])`), captures the initial snapshot, audits `attestation.cycle.opened`, redirects to the drill page.
+* `regenerateAttestationSnapshotAction(cycleId)` — re-captures the snapshot on a DRAFT cycle (no-op once `UNDER_REVIEW` / `ATTESTED`), audits `attestation.snapshot.generated`.
+
+Plus two service helpers: `computeCycleDueAt(cycleYear, startMonth)` (cycle opens at the configured month + a 90-day sign-off window) and `daysUntil(due)`. Nav: an "Attestation" entry under the sidebar's Admin section (OWNER / ADMIN only).
+
+## What's still ahead
 
 | Milestone | Scope |
 |---|---|
-| **R2** | `/resilience/attest` dashboard + drill page (read-only snapshot view, sign-off progress, gap list) |
-| **R3** | Three-line signing UI + role gating + state machine + hash-chain writes |
-| **R4** | Material change registry, declare/review actions, vendor + IBS deep-links, banner integration |
+| **R3** | Three-line signing UI + role gating (only the named SMF signs the executive line) + state machine + hash-chain writes via `appendAttestationHashEntry`. Org settings page for SMF / board committee / cycle-start-month. |
+| **R4** | Material change registry, declare/review actions, vendor + IBS deep-links, dashboard banner integration |
 | **R5** | XLSX/PDF pack generator (Vercel Blob), retention lock, supervisor-facing chain export |
 
 ## See also

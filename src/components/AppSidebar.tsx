@@ -16,6 +16,7 @@ import {
   BarChart3,
   Users,
   ScrollText,
+  ShieldCheck,
   Settings,
   Award,
   Gift,
@@ -67,6 +68,7 @@ const REGISTRY: NavItem[] = [
 
 const ADMIN: NavItem[] = [
   { href: "/org", label: "Organisation", icon: Users },
+  { href: "/resilience/attest", label: "Attestation", icon: ShieldCheck },
   { href: "/audit", label: "Audit log", icon: ScrollText },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
