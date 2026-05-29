@@ -120,39 +120,52 @@ const SettingsInput = z.object({
   cycleStartMonth: z.coerce.number().int().min(1).max(12).optional().or(z.nan()),
 });
 
+export type ResilienceSettingsState = { ok?: true; error?: string } | undefined;
+
 /**
  * Update the org-level attestation configuration: the named SMF accountable
  * (who alone may sign the executive line), the board committee, and the
  * cycle start month. Surfaced at /settings/resilience.
+ *
+ * useActionState signature so the form can render a "Saved ✓" / error state.
  */
-export async function updateResilienceSettingsAction(formData: FormData) {
+export async function updateResilienceSettingsAction(
+  _prev: ResilienceSettingsState,
+  formData: FormData,
+): Promise<ResilienceSettingsState> {
   const me = await requireOrgRole("OWNER", "ADMIN");
-  const parsed = SettingsInput.parse({
+  const parsed = SettingsInput.safeParse({
     smfUserId: formData.get("smfUserId") || undefined,
     boardCommittee: formData.get("boardCommittee") || undefined,
     cycleStartMonth: formData.get("cycleStartMonth") || undefined,
   });
+  if (!parsed.success) {
+    return { error: "Couldn't save those settings — check the cycle month." };
+  }
 
   // Validate the SMF, if set, is a real user in this org.
   let smfId: string | null = null;
-  if (parsed.smfUserId) {
+  if (parsed.data.smfUserId) {
     const u = await prisma.user.findFirst({
-      where: { id: parsed.smfUserId, orgId: me.orgId },
+      where: { id: parsed.data.smfUserId, orgId: me.orgId },
       select: { id: true },
     });
-    smfId = u?.id ?? null;
+    if (!u) {
+      return { error: "That person isn't a member of this organisation." };
+    }
+    smfId = u.id;
   }
 
   const month =
-    parsed.cycleStartMonth === undefined || Number.isNaN(parsed.cycleStartMonth)
+    parsed.data.cycleStartMonth === undefined || Number.isNaN(parsed.data.cycleStartMonth)
       ? null
-      : parsed.cycleStartMonth;
+      : parsed.data.cycleStartMonth;
 
   await prisma.organization.update({
     where: { id: me.orgId },
     data: {
       smfAccountableForResilienceUserId: smfId,
-      boardCommitteeForResilienceName: parsed.boardCommittee?.trim() || null,
+      boardCommitteeForResilienceName: parsed.data.boardCommittee?.trim() || null,
       attestationCycleStartMonth: month,
     },
   });
@@ -163,11 +176,12 @@ export async function updateResilienceSettingsAction(formData: FormData) {
     action: "attestation.settings.updated",
     targetType: "attestation",
     summary: "Updated operational-resilience attestation settings",
-    metadata: { smfSet: !!smfId, boardSet: !!parsed.boardCommittee, cycleStartMonth: month },
+    metadata: { smfSet: !!smfId, boardSet: !!parsed.data.boardCommittee, cycleStartMonth: month },
   });
 
   revalidatePath("/settings/resilience");
   revalidatePath("/resilience/attest");
+  return { ok: true };
 }
 
 // ─── Three-line sign-off ─────────────────────────────────────────────────────
