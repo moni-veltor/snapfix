@@ -8,6 +8,7 @@ import {
   Layers,
   ListChecks,
   ScrollText,
+  ShieldCheck,
   User2,
   type LucideIcon,
 } from "lucide-react";
@@ -25,6 +26,12 @@ const ITEMS: Item[] = [
     icon: ListChecks,
   },
   { href: "/settings/exercise-rates", label: "Exercise cost", hint: "Per-role hourly rates", icon: Coins },
+  {
+    href: "/settings/resilience",
+    label: "Attestation",
+    hint: "SMF + board + cycle",
+    icon: ShieldCheck,
+  },
   { href: "/audit", label: "Audit log", hint: "Regulator-ready trace", icon: ScrollText },
 ];
 

@@ -154,11 +154,33 @@ Each area renders a status chip, the **actual evidence figure** ("4 of 5 IBS tes
 
 The engine is read-only and additive — no schema change, reads the existing `snapshotJson`.
 
+## R3 — three-line sign-off + settings (shipped)
+
+The writable surface that turns a captured cycle into a signed attestation.
+
+**Settings** (`/settings/resilience`, in the org-settings left-nav):
+* `smfAccountableForResilienceUserId` — picker over org users. The only person who can sign the executive line.
+* `boardCommitteeForResilienceName` — pre-fills the committee when ratification is recorded.
+* `attestationCycleStartMonth` — drives the due-date computation.
+* `updateResilienceSettingsAction` validates the SMF is a real org user and audits `attestation.settings.updated`.
+
+**Three-line sign-off** (the Sign-off tab is now interactive):
+* `signAttestationLineAction(cycleId, line, notes?)` enforces:
+  * **Ordering** — first → second → executive (you can't sign out of sequence).
+  * **Role gating** — the executive line is hard-gated to the named SMF (`org.smfAccountableForResilienceUserId === me.id`); a clear error otherwise.
+  * **State guard** — an `ATTESTED` / `SUPERSEDED` cycle can't be re-signed.
+* **State machine** — the first signature flips `DRAFT → UNDER_REVIEW` (freezing the snapshot from further refresh); the executive signature flips to `ATTESTED`.
+* Each signature appends an `OrgResilienceAttestationHashEntry` via `appendAttestationHashEntry` (SHA-256 chained), so the chain of custody is tamper-evident, and audits the matching `attestation.{first_line,second_line,executive}.signed` code.
+
+**Board ratification:**
+* `recordBoardApprovalAction(cycleId, committee?, minuteRef?)` — only after the executive has signed. Captures committee + minute reference (a recorded fact, not a signature — the platform doesn't model board membership), hash-chains the event, audits `attestation.board.approved`.
+
+**UI** — `SignOffActions` (client) replaces the old read-only panel. Each line shows its state (signed / ready / waiting-on-previous / SMF-only-locked / SMF-not-configured), an inline note field on signing, and a board-ratification row that unlocks once the executive signs. The signing buttons only appear when the viewer can actually act.
+
 ## What's still ahead
 
 | Milestone | Scope |
 |---|---|
-| **R3** | Three-line signing UI + role gating (only the named SMF signs the executive line) + state machine + hash-chain writes via `appendAttestationHashEntry`. Org settings page for SMF / board committee / cycle-start-month. |
 | **R4** | Material change registry, declare/review actions, vendor + IBS deep-links, dashboard banner integration |
 | **R5** | XLSX/PDF pack generator (Vercel Blob), retention lock, supervisor-facing chain export |
 

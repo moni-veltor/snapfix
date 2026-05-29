@@ -34,6 +34,7 @@ Small change but useful only after a critical mass of cross-sector library entri
 
 ## Recently shipped
 
+* **R3 — three-line attestation sign-off + settings** — the writable surface. `/settings/resilience` configures the named SMF (who alone signs the executive line), board committee, and cycle-start-month. Interactive Sign-off tab with `signAttestationLineAction` (ordering + SMF role-gating + state machine DRAFT→UNDER_REVIEW→ATTESTED) and `recordBoardApprovalAction`. Every signature appends a SHA-256 hash-chain entry (`appendAttestationHashEntry`) and audits its line code.
 * **R2.5 — computed attestation readiness scorecard** — `evaluateAttestationReadiness(snapshot, signOff)` scores eight capability areas (governance, IBS, tolerances, mapping, testing, third-party, remediation, sign-off) straight from the frozen snapshot — earned from evidence, not self-graded. Deliberate departure from the static self-assessment document: no Yes/No checklist, no clause-mapping table, no filename evidence. Surfaced as a default "Readiness" tab on the drill page (status cards with evidence + actionable gaps) and an overall RAG chip on each dashboard cycle card. Pure engine, no schema change.
 * **R2 — annual self-attestation dashboard + drill** — read-only operator surface at `/resilience/attest`. Cycle dashboard with per-cycle sign-off progress, due-date countdown, setup nudges, and a material-changes banner; tabbed drill page (`[cycleYear]`) rendering the frozen snapshot across Overview / IBS register / Vendors / Exercises / Action items / Sign-off. Two server actions — `openAttestationCycleAction` (creates a DRAFT cycle + snapshot) and `regenerateAttestationSnapshotAction` (refreshes a DRAFT snapshot). Sidebar nav entry under Admin.
 * **R1 — annual self-attestation foundation** — schema for the firm-wide annual self-attestation that mirrors PRA expectations. Three new models (`OrgResilienceAttestation`, `OrgResilienceMaterialChange`, `OrgResilienceAttestationHashEntry`), three `Organization` fields (named SMF, board committee, cycle start month), eleven new audit codes, `buildResilienceSnapshot` service for the frozen rollup, `appendAttestationHashEntry` for SHA-256 chain integrity, six-year retention floor via `retainUntilAt`.
@@ -51,11 +52,10 @@ Small change but useful only after a critical mass of cross-sector library entri
 
 ## Annual self-attestation — R2 through R5 (in flight)
 
-R1 (foundation) and R2 (read-only dashboard + drill) have shipped. The remaining milestones build the writable surface:
+R1 (foundation), R2 (read-only dashboard + drill), R2.5 (readiness scorecard) and R3 (three-line sign-off + settings) have shipped. The remaining milestones:
 
 | Milestone | Scope |
 |---|---|
-| **R3** | Three-line signing UI with role gating (only the named SMF can sign the executive line), `signLineAction` / `boardApproveAction` server actions, hash-chained writes via `appendAttestationHashEntry`. Org settings page for SMF / board committee / cycle-start-month. |
 | **R4** | Material change registry — `/resilience/material-changes`, declare / review actions, one-click deep-links from vendor criticality changes and IBS edits, banner integration on `/dashboard`. |
 | **R5** | XLSX/PDF pack generator (matching the `VendorRegisterSnapshot` pattern), Vercel Blob upload, hard delete-block until `retainUntilAt`, supervisor-facing hash-chain export. |
 

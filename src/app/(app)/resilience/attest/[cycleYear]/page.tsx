@@ -13,8 +13,8 @@ import {
   VendorsPanel,
   ExercisesPanel,
   ActionItemsPanel,
-  SignOffPanel,
 } from "@/components/resilience/SnapshotPanels";
+import SignOffActions from "@/components/resilience/SignOffActions";
 import { regenerateAttestationSnapshotAction } from "@/app/actions/resilience-attestation";
 import {
   computeCycleDueAt,
@@ -49,6 +49,7 @@ export default async function AttestationCyclePage({
       where: { id: me.orgId },
       select: {
         attestationCycleStartMonth: true,
+        smfAccountableForResilienceUserId: true,
         smfAccountableForResilience: { select: { name: true, email: true } },
       },
     }),
@@ -78,27 +79,31 @@ export default async function AttestationCyclePage({
 
   const signLines = [
     {
-      key: "first",
+      key: "first" as const,
       label: "First line (business owner)",
-      signedAt: cycle.firstLineSignedAt,
+      signedAt: cycle.firstLineSignedAt?.toISOString() ?? null,
       signerName: cycle.firstLineSignedBy?.name ?? cycle.firstLineSignedBy?.email ?? null,
       notes: cycle.firstLineNotes,
     },
     {
-      key: "second",
+      key: "second" as const,
       label: "Second line (risk & compliance)",
-      signedAt: cycle.secondLineSignedAt,
+      signedAt: cycle.secondLineSignedAt?.toISOString() ?? null,
       signerName: cycle.secondLineSignedBy?.name ?? cycle.secondLineSignedBy?.email ?? null,
       notes: cycle.secondLineNotes,
     },
     {
-      key: "executive",
+      key: "executive" as const,
       label: "Executive (SMF accountable)",
-      signedAt: cycle.executiveSignedAt,
+      signedAt: cycle.executiveSignedAt?.toISOString() ?? null,
       signerName: cycle.executiveSignedBy?.name ?? cycle.executiveSignedBy?.email ?? null,
       notes: cycle.executiveNotes,
     },
   ];
+
+  const viewerIsSMF =
+    !!org?.smfAccountableForResilienceUserId &&
+    org.smfAccountableForResilienceUserId === me.id;
 
   return (
     <div className="space-y-6">
@@ -175,14 +180,18 @@ export default async function AttestationCyclePage({
             exercises: <ExercisesPanel rows={snapshot.exerciseHistoryLast12Months} />,
             actions: <ActionItemsPanel rows={snapshot.openActionItems} />,
             signoff: (
-              <SignOffPanel
+              <SignOffActions
+                cycleId={cycle.id}
+                status={cycle.status}
                 lines={signLines}
                 board={{
-                  approvedAt: cycle.boardApprovedAt,
+                  approvedAt: cycle.boardApprovedAt?.toISOString() ?? null,
                   committee: cycle.boardCommittee,
                   minuteRef: cycle.boardMinuteRef,
                 }}
                 smfName={smfName}
+                viewerIsSMF={viewerIsSMF}
+                smfConfigured={!!org?.smfAccountableForResilienceUserId}
               />
             ),
           }}

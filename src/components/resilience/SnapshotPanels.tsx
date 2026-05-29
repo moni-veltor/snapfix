@@ -3,9 +3,6 @@ import {
   Boxes,
   Target,
   CheckSquare,
-  ShieldCheck,
-  Clock,
-  CircleDashed,
   CheckCircle2,
   AlertTriangle,
   XOctagon,
@@ -305,97 +302,6 @@ export function ActionItemsPanel({ rows }: { rows: SnapshotActionItem[] }) {
         </li>
       ))}
     </ul>
-  );
-}
-
-// ─── Sign-off (read-only in R2) ─────────────────────────────────────────────
-
-export function SignOffPanel({
-  lines,
-  board,
-  smfName,
-}: {
-  lines: { key: string; label: string; signedAt: Date | null; signerName: string | null; notes: string | null }[];
-  board: { approvedAt: Date | null; committee: string | null; minuteRef: string | null };
-  smfName: string | null;
-}) {
-  return (
-    <div className="space-y-4">
-      <ol className="space-y-2">
-        {lines.map((l, i) => (
-          <li
-            key={l.key}
-            className={`flex items-start gap-3 rounded-xl border p-3 ${
-              l.signedAt
-                ? "border-emerald-300/50 bg-emerald-50/40 dark:border-emerald-800/50 dark:bg-emerald-950/20"
-                : "border-line bg-surface-1"
-            }`}
-          >
-            <span
-              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                l.signedAt
-                  ? "bg-emerald-500 text-white"
-                  : "bg-surface-2 text-soft"
-              }`}
-            >
-              {l.signedAt ? <ShieldCheck size={14} /> : i + 1}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-ink">{l.label}</span>
-                {l.key === "executive" && smfName && (
-                  <span className="text-[11px] text-muted">· {smfName}</span>
-                )}
-              </div>
-              {l.signedAt ? (
-                <p className="mt-0.5 text-[11px] text-muted">
-                  Signed {l.signedAt.toISOString().slice(0, 16).replace("T", " ")} UTC
-                  {l.signerName && ` by ${l.signerName}`}
-                  {l.notes && ` — "${l.notes}"`}
-                </p>
-              ) : (
-                <p className="mt-0.5 flex items-center gap-1 text-[11px] text-soft">
-                  <CircleDashed size={11} /> Awaiting signature
-                </p>
-              )}
-            </div>
-          </li>
-        ))}
-        <li
-          className={`flex items-start gap-3 rounded-xl border p-3 ${
-            board.approvedAt
-              ? "border-emerald-300/50 bg-emerald-50/40 dark:border-emerald-800/50 dark:bg-emerald-950/20"
-              : "border-line bg-surface-1"
-          }`}
-        >
-          <span
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-              board.approvedAt ? "bg-emerald-500 text-white" : "bg-surface-2 text-soft"
-            }`}
-          >
-            {board.approvedAt ? <ShieldCheck size={14} /> : <Clock size={13} />}
-          </span>
-          <div className="min-w-0 flex-1">
-            <span className="text-sm font-medium text-ink">Board ratification</span>
-            {board.approvedAt ? (
-              <p className="mt-0.5 text-[11px] text-muted">
-                {board.committee ?? "Board"} · {board.approvedAt.toISOString().slice(0, 10)}
-                {board.minuteRef && ` · ${board.minuteRef}`}
-              </p>
-            ) : (
-              <p className="mt-0.5 flex items-center gap-1 text-[11px] text-soft">
-                <CircleDashed size={11} /> Not yet ratified
-              </p>
-            )}
-          </div>
-        </li>
-      </ol>
-
-      <div className="rounded-xl border border-dashed border-line bg-surface-1 p-4 text-center text-xs text-muted">
-        The three-line signing flow ships in <span className="font-medium text-ink">R3</span>. This
-        panel is read-only for now — it shows where each cycle sits in the chain.
-      </div>
-    </div>
   );
 }
 

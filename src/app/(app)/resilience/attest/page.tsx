@@ -88,9 +88,12 @@ export default async function AttestationDashboardPage() {
               {!smfName && <li>· Name the SMF accountable for operational resilience — they sign the executive line.</li>}
               {startMonth === null && <li>· Set the cycle start month so due-dates compute correctly (defaults to January).</li>}
             </ul>
-            <p className="mt-1.5 text-[11px] text-amber-700/80 dark:text-amber-300/70">
-              Configurable on the org settings page. Sign-off (R3) needs the SMF named.
-            </p>
+            <Link
+              href="/settings/resilience"
+              className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 underline underline-offset-2 hover:text-amber-900 dark:text-amber-200 dark:hover:text-amber-100"
+            >
+              Configure attestation settings →
+            </Link>
           </div>
         </div>
       )}
