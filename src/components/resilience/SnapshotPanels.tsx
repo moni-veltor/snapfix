@@ -6,6 +6,9 @@ import {
   ShieldCheck,
   Clock,
   CircleDashed,
+  CheckCircle2,
+  AlertTriangle,
+  XOctagon,
 } from "lucide-react";
 import type {
   ResilienceSnapshot,
@@ -14,6 +17,7 @@ import type {
   SnapshotExercise,
   SnapshotActionItem,
 } from "@/lib/resilience-attestation";
+import type { AttestationReadiness, AreaStatus } from "@/lib/attestation-readiness";
 
 const CRIT_TONE: Record<string, string> = {
   CRITICAL: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200",
@@ -28,6 +32,86 @@ function critPill(value: string) {
     <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${tone}`}>
       {value}
     </span>
+  );
+}
+
+// ─── Readiness scorecard ─────────────────────────────────────────────────────
+
+const STATUS_META: Record<AreaStatus, { cls: string; chip: string; icon: typeof CheckCircle2; label: string }> = {
+  READY: {
+    cls: "border-emerald-300/50 bg-emerald-50/50 dark:border-emerald-800/50 dark:bg-emerald-950/20",
+    chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200",
+    icon: CheckCircle2,
+    label: "Ready",
+  },
+  PARTIAL: {
+    cls: "border-amber-300/60 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/20",
+    chip: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+    icon: AlertTriangle,
+    label: "Partial",
+  },
+  GAP: {
+    cls: "border-rose-300/60 bg-rose-50 dark:border-rose-800/60 dark:bg-rose-950/20",
+    chip: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200",
+    icon: XOctagon,
+    label: "Gap",
+  },
+};
+
+export function ReadinessPanel({ readiness }: { readiness: AttestationReadiness }) {
+  const overall = STATUS_META[readiness.overall];
+  return (
+    <div className="space-y-4">
+      {/* Roll-up banner */}
+      <div className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 ${overall.cls}`}>
+        <div className="flex items-center gap-3">
+          <overall.icon size={20} className="shrink-0 text-ink" aria-hidden />
+          <div>
+            <p className="text-sm font-semibold text-ink">
+              {readiness.readyCount} of {readiness.totalAreas} capability areas ready
+            </p>
+            <p className="text-[11px] text-muted">
+              Computed from the frozen snapshot — earned from evidence, not self-graded.
+            </p>
+          </div>
+        </div>
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${overall.chip}`}>
+          {overall.label}
+        </span>
+      </div>
+
+      {/* Area cards */}
+      <ul className="grid gap-3 md:grid-cols-2">
+        {readiness.areas.map((area) => {
+          const meta = STATUS_META[area.status];
+          const Icon = meta.icon;
+          return (
+            <li key={area.key} className={`rounded-xl border p-4 ${meta.cls}`}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Icon size={15} className="shrink-0 text-ink" aria-hidden />
+                  <h3 className="text-sm font-semibold text-ink">{area.label}</h3>
+                </div>
+                <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${meta.chip}`}>
+                  {meta.label}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-muted">{area.evidence}</p>
+              {area.gaps.length > 0 && (
+                <ul className="mt-2 space-y-1 border-t border-line/60 pt-2">
+                  {area.gaps.map((g, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-[11px] text-ink/80">
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
+                      {g}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 

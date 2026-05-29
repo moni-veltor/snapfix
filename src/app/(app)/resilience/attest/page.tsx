@@ -5,7 +5,15 @@ import { prisma } from "@/lib/prisma";
 import PageHero from "@/components/ui/PageHero";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { openAttestationCycleAction } from "@/app/actions/resilience-attestation";
-import { computeCycleDueAt, daysUntil } from "@/lib/resilience-attestation";
+import {
+  computeCycleDueAt,
+  daysUntil,
+  type ResilienceSnapshot,
+} from "@/lib/resilience-attestation";
+import {
+  evaluateAttestationReadiness,
+  type AreaStatus,
+} from "@/lib/attestation-readiness";
 
 export const metadata = { title: "Annual attestation — SnapFix" };
 
@@ -113,8 +121,16 @@ export default async function AttestationDashboardPage() {
               { signedAt: c.executiveSignedAt, label: "Executive (SMF)" },
             ];
             const signedCount = lines.filter((l) => l.signedAt).length;
-            const snapshot = c.snapshotJson as { ibsRegister?: unknown[] } | null;
-            const ibsCount = Array.isArray(snapshot?.ibsRegister) ? snapshot!.ibsRegister!.length : 0;
+            const snapshot = (c.snapshotJson ?? null) as ResilienceSnapshot | null;
+            const ibsCount = snapshot?.ibsRegister.length ?? 0;
+            const readiness = snapshot
+              ? evaluateAttestationReadiness(snapshot, {
+                  firstLineSigned: !!c.firstLineSignedAt,
+                  secondLineSigned: !!c.secondLineSignedAt,
+                  executiveSigned: !!c.executiveSignedAt,
+                  boardApproved: !!c.boardApprovedAt,
+                })
+              : null;
 
             return (
               <li key={c.id}>
@@ -159,8 +175,22 @@ export default async function AttestationDashboardPage() {
                     </div>
                   </div>
 
+                  {/* Readiness roll-up */}
+                  {readiness && (
+                    <div className="mt-4 flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${readinessChip(readiness.overall)}`}
+                      >
+                        {readinessLabel(readiness.overall)}
+                      </span>
+                      <span className="text-[11px] text-muted">
+                        {readiness.readyCount} of {readiness.totalAreas} capability areas ready
+                      </span>
+                    </div>
+                  )}
+
                   {/* Sign-off progress */}
-                  <div className="mt-4 flex items-center gap-3">
+                  <div className="mt-3 flex items-center gap-3">
                     <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
                       <div
                         className={`h-full ${signedCount === 3 ? "bg-emerald-500" : "bg-indigo-500"}`}
@@ -206,6 +236,28 @@ function statusLabel(status: string): string {
       return "Superseded";
     default:
       return status;
+  }
+}
+
+function readinessChip(status: AreaStatus): string {
+  switch (status) {
+    case "READY":
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200";
+    case "PARTIAL":
+      return "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200";
+    case "GAP":
+      return "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200";
+  }
+}
+
+function readinessLabel(status: AreaStatus): string {
+  switch (status) {
+    case "READY":
+      return "Ready";
+    case "PARTIAL":
+      return "Partial";
+    case "GAP":
+      return "Gaps";
   }
 }
 

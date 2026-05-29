@@ -7,6 +7,7 @@ import PageHero from "@/components/ui/PageHero";
 import StatusBadge from "@/components/ui/StatusBadge";
 import AttestationTabs from "@/components/resilience/AttestationTabs";
 import {
+  ReadinessPanel,
   OverviewPanel,
   IBSPanel,
   VendorsPanel,
@@ -20,6 +21,7 @@ import {
   daysUntil,
   type ResilienceSnapshot,
 } from "@/lib/resilience-attestation";
+import { evaluateAttestationReadiness } from "@/lib/attestation-readiness";
 
 export const metadata = { title: "Attestation cycle — SnapFix" };
 
@@ -64,6 +66,15 @@ export default async function AttestationCyclePage({
   const testedIds = new Set(
     snapshot?.exerciseHistoryLast12Months.flatMap((e) => e.ibsIds) ?? [],
   );
+
+  const readiness = snapshot
+    ? evaluateAttestationReadiness(snapshot, {
+        firstLineSigned: !!cycle.firstLineSignedAt,
+        secondLineSigned: !!cycle.secondLineSignedAt,
+        executiveSigned: !!cycle.executiveSignedAt,
+        boardApproved: !!cycle.boardApprovedAt,
+      })
+    : null;
 
   const signLines = [
     {
@@ -150,12 +161,14 @@ export default async function AttestationCyclePage({
       ) : (
         <AttestationTabs
           counts={{
+            readiness: readiness?.readyCount,
             ibs: snapshot.ibsRegister.length,
             vendors: snapshot.vendorCriticality.length,
             exercises: snapshot.exerciseHistoryLast12Months.length,
             actions: snapshot.openActionItems.length,
           }}
           panels={{
+            readiness: readiness ? <ReadinessPanel readiness={readiness} /> : null,
             overview: <OverviewPanel snapshot={snapshot} generatedAt={snapshot.generatedAt} />,
             ibs: <IBSPanel rows={snapshot.ibsRegister} testedIds={testedIds} />,
             vendors: <VendorsPanel rows={snapshot.vendorCriticality} />,

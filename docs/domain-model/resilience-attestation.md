@@ -119,6 +119,41 @@ Two server actions create a cycle (sign-off stays read-only until R3):
 
 Plus two service helpers: `computeCycleDueAt(cycleYear, startMonth)` (cycle opens at the configured month + a 90-day sign-off window) and `daysUntil(due)`. Nav: an "Attestation" entry under the sidebar's Admin section (OWNER / ADMIN only).
 
+## R2.5 — computed readiness scorecard (shipped)
+
+The deliberate departure from the static self-assessment document. A traditional resilience self-assessment is a Word doc where each capability area carries a hand-ticked "Yes" — a firm grading its own homework, which tells a supervisor nothing. SnapFix inverts that: a pure engine **computes** a RAG status per area straight from the frozen snapshot, so status is *earned from evidence*, never asserted.
+
+`evaluateAttestationReadiness(snapshot, signOff)` in `src/lib/attestation-readiness.ts` returns `{ areas, overall, readyCount, totalAreas }`. It's pure (no DB, no secrets), reads only the frozen snapshot plus the four sign-off booleans the caller already holds, and scores eight capability areas — all named in plain operational-resilience language, **no regulator clause numbers anywhere**:
+
+| Area | Status logic (READY / PARTIAL / GAP) |
+|---|---|
+| **Governance & accountability** | SMF named + board committee set |
+| **Important Business Services** | approved-IBS count; PARTIAL while any IBS is still draft |
+| **Impact tolerances** | every approved IBS has a tolerance **and a documented rationale** |
+| **Resource mapping & dependencies** | every approved IBS has ≥1 resource-map row |
+| **Scenario testing** | every approved IBS tested in the last 12 months (the headline figure) |
+| **Third-party management** | material / DORA-critical vendors all linked to an IBS |
+| **Lessons learned & remediation** | open action items, none overdue |
+| **Sign-off & evidence** | the three-line chain + board ratification |
+
+Each area renders a status chip, the **actual evidence figure** ("4 of 5 IBS tested in the last 12 months"), and **exactly what's missing** ("IBS_03 has a tolerance but no rationale"). The roll-up `overall` is worst-of: GAP if any area is a gap, PARTIAL if any is partial, else READY.
+
+**Why this beats the document approach:**
+
+| The static-document way | The readiness-scorecard way |
+|---|---|
+| Self-graded "Yes / Yes / Yes" | Computed from real register data — you can't tick a box the evidence doesn't support |
+| Prose typed by hand, stale on signing | Drawn live from the register, frozen at sign-off |
+| Evidence = filenames ("IBS_01.pdf") | Evidence = live counts that drill through to the actual rows |
+| Manual clause-mapping table | Capability areas in plain language; mapping to any framework version stays the compliance team's separate concern |
+| One editable signature | Three-line, hash-chained sign-off (R1 / R3) |
+
+**Surfaces:**
+* Drill page (`/resilience/attest/[cycleYear]`) — a **Readiness** tab (now the default) renders the eight areas as status cards. The Overview / IBS / Vendors / Exercises / Action-items / Sign-off tabs remain as the drill-down evidence.
+* Dashboard — each cycle card shows the overall RAG chip + "X of 8 capability areas ready".
+
+The engine is read-only and additive — no schema change, reads the existing `snapshotJson`.
+
 ## What's still ahead
 
 | Milestone | Scope |

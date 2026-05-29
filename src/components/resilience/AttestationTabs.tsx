@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 
 export type TabKey =
+  | "readiness"
   | "overview"
   | "ibs"
   | "vendors"
@@ -11,6 +12,7 @@ export type TabKey =
   | "signoff";
 
 const TABS: { key: TabKey; label: string }[] = [
+  { key: "readiness", label: "Readiness" },
   { key: "overview", label: "Overview" },
   { key: "ibs", label: "IBS register" },
   { key: "vendors", label: "Vendors" },
@@ -26,7 +28,7 @@ export default function AttestationTabs({
   counts: Partial<Record<TabKey, number>>;
   panels: Record<TabKey, ReactNode>;
 }) {
-  const [active, setActive] = useState<TabKey>("overview");
+  const [active, setActive] = useState<TabKey>("readiness");
 
   return (
     <div className="space-y-4">
